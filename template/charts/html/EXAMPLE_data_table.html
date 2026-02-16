@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Key Financial Metrics (FY2023-FY2025)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #0a0a0a;
+            color: #ffffff;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .frame {
+            width: 1920px;
+            height: 1080px;
+            background: #0a0a0a;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* ─── Top Bar ─────────────────────────────────── */
+        .top-bar {
+            height: 52px;
+            background: linear-gradient(90deg, #111111 0%, #161616 100%);
+            border-bottom: 2px solid #1e88e5;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+            flex-shrink: 0;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .brand-logo {
+            height: 24px;
+            width: auto;
+            opacity: 0.9;
+        }
+
+        .brand-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #e0e0e0;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        .ticker-badge {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .ticker {
+            font-size: 16px;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: 1px;
+        }
+
+        .filing-badge {
+            font-size: 12px;
+            font-weight: 600;
+            color: #1e88e5;
+            background: rgba(30, 136, 229, 0.12);
+            border: 1px solid rgba(30, 136, 229, 0.3);
+            padding: 4px 12px;
+            border-radius: 4px;
+            letter-spacing: 0.5px;
+        }
+
+        /* ─── Title Bar ───────────────────────────────── */
+        .title-bar {
+            padding: 16px 32px 8px;
+            flex-shrink: 0;
+        }
+
+        .chart-title {
+            font-size: 26px;
+            font-weight: 600;
+            color: #ffffff;
+            letter-spacing: -0.3px;
+            line-height: 1.3;
+        }
+
+        .chart-subtitle {
+            font-size: 15px;
+            color: #888888;
+            margin-top: 6px;
+        }
+
+        /* ─── Chart Area ──────────────────────────────── */
+        .chart-area {
+            flex: 1;
+            margin: 0 24px;
+            padding: 16px 24px;
+            background: linear-gradient(180deg, #111111 0%, #0d0d0d 100%);
+            border: 1px solid #1a1a1a;
+            border-radius: 8px;
+            min-height: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chart-content {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+        }
+
+        /* ─── Bottom Bar ──────────────────────────────── */
+        .bottom-bar {
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+            flex-shrink: 0;
+        }
+
+        .source {
+            font-size: 12px;
+            color: #555555;
+        }
+
+        .brand-url {
+            font-size: 12px;
+            color: #444444;
+            letter-spacing: 0.5px;
+        }
+
+        /* ─── Accent line under top bar ───────────────── */
+        .accent-line {
+            height: 1px;
+            background: linear-gradient(90deg, #1e88e5 0%, transparent 60%);
+            flex-shrink: 0;
+        }
+
+        /* ─── Data Table ─────────────────────────────── */
+
+        /*
+            EXAMPLE: Comparison data table for video charts.
+
+            KEY DESIGN PRINCIPLES:
+            1. Copy EXACTLY this CSS structure from the CHART_TEMPLATE.html
+            2. Use large font sizes — this will be viewed on video at various screen sizes
+            3. Color-code values: green (#4caf50) for positive changes, red (#ef5350) for negative
+            4. Right-align numeric columns for easy scanning
+            5. Use section divider rows to group related metrics
+            6. Fill the available width — no narrow centered tables
+            7. Include a highlight row or insight callout for the most important takeaway
+        */
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 17px;
+        }
+
+        .data-table th {
+            text-align: left;
+            padding: 16px 24px;
+            color: #888888;
+            font-weight: 500;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            border-bottom: 2px solid #1e88e5;
+        }
+
+        .data-table th.numeric {
+            text-align: right;
+        }
+
+        .data-table td {
+            padding: 16px 24px;
+            color: #e0e0e0;
+            border-bottom: 1px solid #1a1a1a;
+        }
+
+        .data-table td.numeric {
+            text-align: right;
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+            font-size: 16px;
+        }
+
+        .data-table tr:hover td {
+            background: rgba(30, 136, 229, 0.04);
+        }
+
+        .metric-name {
+            color: #cccccc;
+            font-weight: 500;
+        }
+
+        .positive {
+            color: #4caf50;
+            font-weight: 600;
+        }
+
+        .negative {
+            color: #ef5350;
+            font-weight: 600;
+        }
+
+        .neutral {
+            color: #888888;
+        }
+
+        .highlight-value {
+            color: #ffffff;
+            font-weight: 700;
+            font-size: 18px;
+        }
+
+        /* Section divider row */
+        .section-divider td {
+            padding: 10px 24px;
+            background: #1a1a1a;
+            color: #888888;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 1px solid #222222;
+        }
+
+        /* Highlight row for key insight */
+        .highlight-row td {
+            background: rgba(30, 136, 229, 0.06);
+            border-left: 3px solid #1e88e5;
+        }
+
+        /* Insight callout at bottom */
+        .insight-callout {
+            margin-top: 16px;
+            padding: 14px 20px;
+            background: rgba(30, 136, 229, 0.08);
+            border: 1px solid rgba(30, 136, 229, 0.2);
+            border-radius: 6px;
+            font-size: 14px;
+            color: #aaaaaa;
+            line-height: 1.5;
+        }
+
+        .insight-callout strong {
+            color: #1e88e5;
+        }
+    </style>
+</head>
+<body>
+    <div class="frame">
+
+        <!-- Top Bar: Branding + Ticker -->
+        <div class="top-bar">
+            <div class="brand">
+                <img src="robosystems_logo.png" alt="RoboSystems" class="brand-logo">
+                <div class="brand-name">RoboSystems</div>
+            </div>
+            <div class="ticker-badge">
+                <span class="ticker">ACME</span>
+                <span class="filing-badge">10-K FY2025</span>
+            </div>
+        </div>
+        <div class="accent-line"></div>
+
+        <!-- Title -->
+        <div class="title-bar">
+            <div class="chart-title">Key Financial Metrics (FY2023-FY2025)</div>
+            <div class="chart-subtitle">Revenue declining but margins recovering sharply post-restructuring</div>
+        </div>
+
+        <!-- Chart Content Area -->
+        <div class="chart-area">
+            <div class="chart-content">
+
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Metric</th>
+                            <th class="numeric">FY2023</th>
+                            <th class="numeric">FY2024</th>
+                            <th class="numeric">FY2025</th>
+                            <th class="numeric">YoY Change</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Income Statement Section -->
+                        <tr class="section-divider">
+                            <td colspan="5">Income Statement</td>
+                        </tr>
+                        <tr>
+                            <td class="metric-name">Revenue</td>
+                            <td class="numeric">$9,209M</td>
+                            <td class="numeric">$9,094M</td>
+                            <td class="numeric highlight-value">$8,601M</td>
+                            <td class="numeric negative">-5.4%</td>
+                        </tr>
+                        <tr>
+                            <td class="metric-name">Gross Margin</td>
+                            <td class="numeric">42.8%</td>
+                            <td class="numeric">37.5%</td>
+                            <td class="numeric highlight-value">43.4%</td>
+                            <td class="numeric positive">+590 bps</td>
+                        </tr>
+                        <tr class="highlight-row">
+                            <td class="metric-name">Operating Income</td>
+                            <td class="numeric">$352M</td>
+                            <td class="numeric negative">-$710M</td>
+                            <td class="numeric negative">-$40M</td>
+                            <td class="numeric positive">+94.4%</td>
+                        </tr>
+                        <tr>
+                            <td class="metric-name">Net Income</td>
+                            <td class="numeric">$136M</td>
+                            <td class="numeric negative">-$337M</td>
+                            <td class="numeric positive">$45M</td>
+                            <td class="numeric positive">Turned positive</td>
+                        </tr>
+
+                        <!-- Cash Flow Section -->
+                        <tr class="section-divider">
+                            <td colspan="5">Cash Flow</td>
+                        </tr>
+                        <tr>
+                            <td class="metric-name">Operating Cash Flow</td>
+                            <td class="numeric">$287M</td>
+                            <td class="numeric">$85M</td>
+                            <td class="numeric negative">-$46M</td>
+                            <td class="numeric negative">Negative</td>
+                        </tr>
+                        <tr>
+                            <td class="metric-name">Free Cash Flow</td>
+                            <td class="numeric">$61M</td>
+                            <td class="numeric negative">-$96M</td>
+                            <td class="numeric negative">-$298M</td>
+                            <td class="numeric negative">-210%</td>
+                        </tr>
+
+                        <!-- Balance Sheet Section -->
+                        <tr class="section-divider">
+                            <td colspan="5">Balance Sheet</td>
+                        </tr>
+                        <tr>
+                            <td class="metric-name">Cash &amp; Equivalents</td>
+                            <td class="numeric">$412M</td>
+                            <td class="numeric">$1,869M</td>
+                            <td class="numeric highlight-value">$3,123M</td>
+                            <td class="numeric positive">+67%</td>
+                        </tr>
+                        <tr>
+                            <td class="metric-name">Long-Term Debt</td>
+                            <td class="numeric">$1,682M</td>
+                            <td class="numeric">$1,789M</td>
+                            <td class="numeric negative">$3,412M</td>
+                            <td class="numeric negative">+91%</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="insight-callout">
+                    <strong>Key insight:</strong> Margins are recovering strongly (+590 bps gross margin) but cash generation remains deeply negative. The company is funding the turnaround with debt, not operations.
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Bottom Bar: Source + URL -->
+        <div class="bottom-bar">
+            <div class="source">Source: ACME Corp 10-K Filing (FY2025), SEC XBRL</div>
+            <div class="brand-url">robosystems.dev</div>
+        </div>
+
+    </div>
+</body>
+</html>

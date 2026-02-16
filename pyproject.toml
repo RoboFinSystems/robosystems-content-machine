@@ -1,0 +1,8 @@
+[project]
+name = "robosystems-content-machine"
+version = "0.1.0"
+description = "RoboSystems Marketing — Video Content Pipeline"
+requires-python = ">=3.13"
+authors = [
+    {name = "RFS LLC"},
+]

@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Margin Trends (FY2021-FY2025)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #0a0a0a;
+            color: #ffffff;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .frame {
+            width: 1920px;
+            height: 1080px;
+            background: #0a0a0a;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* ─── Top Bar ─────────────────────────────────── */
+        .top-bar {
+            height: 52px;
+            background: linear-gradient(90deg, #111111 0%, #161616 100%);
+            border-bottom: 2px solid #1e88e5;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+            flex-shrink: 0;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .brand-logo {
+            height: 24px;
+            width: auto;
+            opacity: 0.9;
+        }
+
+        .brand-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #e0e0e0;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        .ticker-badge {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .ticker {
+            font-size: 16px;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: 1px;
+        }
+
+        .filing-badge {
+            font-size: 12px;
+            font-weight: 600;
+            color: #1e88e5;
+            background: rgba(30, 136, 229, 0.12);
+            border: 1px solid rgba(30, 136, 229, 0.3);
+            padding: 4px 12px;
+            border-radius: 4px;
+            letter-spacing: 0.5px;
+        }
+
+        /* ─── Title Bar ───────────────────────────────── */
+        .title-bar {
+            padding: 16px 32px 8px;
+            flex-shrink: 0;
+        }
+
+        .chart-title {
+            font-size: 26px;
+            font-weight: 600;
+            color: #ffffff;
+            letter-spacing: -0.3px;
+            line-height: 1.3;
+        }
+
+        .chart-subtitle {
+            font-size: 15px;
+            color: #888888;
+            margin-top: 6px;
+        }
+
+        /* ─── Chart Area ──────────────────────────────── */
+        .chart-area {
+            flex: 1;
+            margin: 0 24px;
+            padding: 16px 24px;
+            background: linear-gradient(180deg, #111111 0%, #0d0d0d 100%);
+            border: 1px solid #1a1a1a;
+            border-radius: 8px;
+            min-height: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chart-content {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* ─── Bottom Bar ──────────────────────────────── */
+        .bottom-bar {
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+            flex-shrink: 0;
+        }
+
+        .source {
+            font-size: 12px;
+            color: #555555;
+        }
+
+        .brand-url {
+            font-size: 12px;
+            color: #444444;
+            letter-spacing: 0.5px;
+        }
+
+        /* ─── Accent line under top bar ───────────────── */
+        .accent-line {
+            height: 1px;
+            background: linear-gradient(90deg, #1e88e5 0%, transparent 60%);
+            flex-shrink: 0;
+        }
+
+        /* ─── SVG defaults ────────────────────────────── */
+        svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .grid-line {
+            stroke: #1a1a1a;
+            stroke-width: 0.5;
+            stroke-dasharray: 4,4;
+        }
+
+        .axis-line {
+            stroke: #333333;
+            stroke-width: 1;
+        }
+
+        .axis-label {
+            font-size: 13px;
+            fill: #666666;
+        }
+
+        .value-label {
+            font-size: 16px;
+            fill: #ffffff;
+            font-weight: 600;
+        }
+
+        .point-label {
+            font-size: 13px;
+            fill: #aaaaaa;
+        }
+
+        .legend-text {
+            font-size: 14px;
+            fill: #aaaaaa;
+        }
+    </style>
+</head>
+<body>
+    <div class="frame">
+
+        <!-- Top Bar: Branding + Ticker -->
+        <div class="top-bar">
+            <div class="brand">
+                <img src="robosystems_logo.png" alt="RoboSystems" class="brand-logo">
+                <div class="brand-name">RoboSystems</div>
+            </div>
+            <div class="ticker-badge">
+                <span class="ticker">ACME</span>
+                <span class="filing-badge">10-K FY2025</span>
+            </div>
+        </div>
+        <div class="accent-line"></div>
+
+        <!-- Title -->
+        <div class="title-bar">
+            <div class="chart-title">Margin Trends (FY2021-FY2025)</div>
+            <div class="chart-subtitle">Gross margin recovering; operating margin still negative after FY2024 impairment</div>
+        </div>
+
+        <!-- Chart Content Area -->
+        <div class="chart-area">
+            <div class="chart-content">
+
+                <!--
+                    EXAMPLE: Multi-line chart for trend analysis.
+
+                    KEY DESIGN PRINCIPLES:
+                    1. Use SVG polyline/polygon for the lines — simple and reliable
+                    2. Plot area should fill most of the viewBox
+                    3. Add circles at each data point for readability
+                    4. Label the LAST data point with its value (avoid clutter on intermediate points)
+                    5. Use a ZERO LINE when data crosses from positive to negative
+                    6. Grid lines help the viewer estimate intermediate values
+                    7. Color-code each series distinctly and include a legend
+                    8. Use large fonts — 16px+ for values, 13px+ for axis labels
+
+                    MATH FOR THIS EXAMPLE:
+                    Data (3 series, 5 years):
+                      Gross Margin:     44.2%, 42.8%, 42.8%, 37.5%, 43.4%
+                      Operating Margin:  5.1%,  3.8%,  3.8%, -7.8%, -0.5%
+                      Net Margin:        3.2%,  1.5%,  1.5%, -3.7%,  0.5%
+
+                    Chart area: x=160..1740 (1580px wide), y=60..740 (680px tall)
+                    X spacing: 5 points across 1580px = 395px apart
+                    X positions: 160, 555, 950, 1345, 1740
+
+                    Y range: -10% to 50% (60% total range)
+                    Scale: 680px / 60 = 11.33px per percentage point
+                    Zero line y: 60 + (50/60 * 680) = 60 + 567 = 627
+                    Y for value V: 627 - (V * 11.33)
+
+                    Gross Margin points:
+                      44.2% → 627 - 501 = 126
+                      42.8% → 627 - 485 = 142
+                      42.8% → 142
+                      37.5% → 627 - 425 = 202
+                      43.4% → 627 - 492 = 135
+
+                    Operating Margin points:
+                      5.1% → 627 - 58 = 569
+                      3.8% → 627 - 43 = 584
+                      3.8% → 584
+                      -7.8% → 627 + 88 = 715
+                      -0.5% → 627 + 6 = 633
+
+                    Net Margin points:
+                      3.2% → 627 - 36 = 591
+                      1.5% → 627 - 17 = 610
+                      1.5% → 610
+                      -3.7% → 627 + 42 = 669
+                      0.5% → 627 - 6 = 621
+                -->
+
+                <svg viewBox="0 0 1840 820" preserveAspectRatio="xMidYMid meet">
+
+                    <!-- Horizontal grid lines -->
+                    <line x1="160" y1="126" x2="1740" y2="126" class="grid-line"/>  <!-- 44% -->
+                    <line x1="160" y1="240" x2="1740" y2="240" class="grid-line"/>  <!-- 34% -->
+                    <line x1="160" y1="353" x2="1740" y2="353" class="grid-line"/>  <!-- 24% -->
+                    <line x1="160" y1="467" x2="1740" y2="467" class="grid-line"/>  <!-- 14% -->
+                    <line x1="160" y1="715" x2="1740" y2="715" class="grid-line"/>  <!-- -8% -->
+
+                    <!-- Y-axis labels -->
+                    <text x="145" y="131" class="axis-label" text-anchor="end">44%</text>
+                    <text x="145" y="245" class="axis-label" text-anchor="end">34%</text>
+                    <text x="145" y="358" class="axis-label" text-anchor="end">24%</text>
+                    <text x="145" y="472" class="axis-label" text-anchor="end">14%</text>
+                    <text x="145" y="632" class="axis-label" text-anchor="end">0%</text>
+                    <text x="145" y="720" class="axis-label" text-anchor="end">-8%</text>
+
+                    <!-- ZERO LINE -->
+                    <line x1="160" y1="627" x2="1740" y2="627" stroke="#555555" stroke-width="1.5"/>
+
+                    <!-- X-axis labels -->
+                    <text x="160" y="790" class="axis-label" text-anchor="middle">FY2021</text>
+                    <text x="555" y="790" class="axis-label" text-anchor="middle">FY2022</text>
+                    <text x="950" y="790" class="axis-label" text-anchor="middle">FY2023</text>
+                    <text x="1345" y="790" class="axis-label" text-anchor="middle">FY2024</text>
+                    <text x="1740" y="790" class="axis-label" text-anchor="middle">FY2025</text>
+
+                    <!-- X-axis tick marks -->
+                    <line x1="160" y1="755" x2="160" y2="765" class="axis-line"/>
+                    <line x1="555" y1="755" x2="555" y2="765" class="axis-line"/>
+                    <line x1="950" y1="755" x2="950" y2="765" class="axis-line"/>
+                    <line x1="1345" y1="755" x2="1345" y2="765" class="axis-line"/>
+                    <line x1="1740" y1="755" x2="1740" y2="765" class="axis-line"/>
+
+                    <!-- Axes -->
+                    <line x1="160" y1="60" x2="160" y2="755" class="axis-line"/>
+                    <line x1="160" y1="755" x2="1740" y2="755" class="axis-line"/>
+
+                    <!-- === GROSS MARGIN LINE (Green #4caf50) === -->
+                    <polyline
+                        points="160,126 555,142 950,142 1345,202 1740,135"
+                        fill="none"
+                        stroke="#4caf50"
+                        stroke-width="3"
+                        stroke-linejoin="round"
+                    />
+                    <!-- Data points -->
+                    <circle cx="160" cy="126" r="6" fill="#4caf50"/>
+                    <circle cx="555" cy="142" r="6" fill="#4caf50"/>
+                    <circle cx="950" cy="142" r="6" fill="#4caf50"/>
+                    <circle cx="1345" cy="202" r="8" fill="#4caf50" stroke="#0a0a0a" stroke-width="2"/>
+                    <circle cx="1740" cy="135" r="8" fill="#4caf50" stroke="#0a0a0a" stroke-width="2"/>
+                    <!-- End label -->
+                    <text x="1770" y="125" class="value-label" fill="#4caf50">43.4%</text>
+                    <!-- Low-point label -->
+                    <text x="1345" y="230" class="point-label" text-anchor="middle" fill="#4caf50">37.5%</text>
+
+                    <!-- === OPERATING MARGIN LINE (Blue #1e88e5) === -->
+                    <polyline
+                        points="160,569 555,584 950,584 1345,715 1740,633"
+                        fill="none"
+                        stroke="#1e88e5"
+                        stroke-width="3"
+                        stroke-linejoin="round"
+                    />
+                    <!-- Data points -->
+                    <circle cx="160" cy="569" r="6" fill="#1e88e5"/>
+                    <circle cx="555" cy="584" r="6" fill="#1e88e5"/>
+                    <circle cx="950" cy="584" r="6" fill="#1e88e5"/>
+                    <circle cx="1345" cy="715" r="8" fill="#1e88e5" stroke="#0a0a0a" stroke-width="2"/>
+                    <circle cx="1740" cy="633" r="8" fill="#1e88e5" stroke="#0a0a0a" stroke-width="2"/>
+                    <!-- End label -->
+                    <text x="1770" y="643" class="value-label" fill="#1e88e5">-0.5%</text>
+                    <!-- Low-point label -->
+                    <text x="1345" y="743" class="point-label" text-anchor="middle" fill="#1e88e5">-7.8%</text>
+
+                    <!-- === NET MARGIN LINE (Cyan #26c6da) === -->
+                    <polyline
+                        points="160,591 555,610 950,610 1345,669 1740,621"
+                        fill="none"
+                        stroke="#26c6da"
+                        stroke-width="3"
+                        stroke-linejoin="round"
+                        stroke-dasharray="8,4"
+                    />
+                    <!-- Data points -->
+                    <circle cx="160" cy="591" r="5" fill="#26c6da"/>
+                    <circle cx="555" cy="610" r="5" fill="#26c6da"/>
+                    <circle cx="950" cy="610" r="5" fill="#26c6da"/>
+                    <circle cx="1345" cy="669" r="6" fill="#26c6da" stroke="#0a0a0a" stroke-width="2"/>
+                    <circle cx="1740" cy="621" r="6" fill="#26c6da" stroke="#0a0a0a" stroke-width="2"/>
+                    <!-- End label -->
+                    <text x="1770" y="611" class="value-label" fill="#26c6da">0.5%</text>
+                    <!-- Low-point label -->
+                    <text x="1375" y="695" class="point-label" text-anchor="start" fill="#26c6da">-3.7%</text>
+
+                    <!-- Legend -->
+                    <line x1="580" y1="28" x2="610" y2="28" stroke="#4caf50" stroke-width="3"/>
+                    <circle cx="595" cy="28" r="4" fill="#4caf50"/>
+                    <text x="618" y="33" class="legend-text">Gross Margin</text>
+
+                    <line x1="810" y1="28" x2="840" y2="28" stroke="#1e88e5" stroke-width="3"/>
+                    <circle cx="825" cy="28" r="4" fill="#1e88e5"/>
+                    <text x="848" y="33" class="legend-text">Operating Margin</text>
+
+                    <line x1="1080" y1="28" x2="1110" y2="28" stroke="#26c6da" stroke-width="3" stroke-dasharray="8,4"/>
+                    <circle cx="1095" cy="28" r="4" fill="#26c6da"/>
+                    <text x="1118" y="33" class="legend-text">Net Margin</text>
+
+                </svg>
+
+            </div>
+        </div>
+
+        <!-- Bottom Bar: Source + URL -->
+        <div class="bottom-bar">
+            <div class="source">Source: ACME Corp 10-K Filing (FY2025), SEC XBRL</div>
+            <div class="brand-url">robosystems.dev</div>
+        </div>
+
+    </div>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Avatar Background</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0a0a0a; color: #fff; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; width: 1280px; height: 720px; overflow: hidden; }
+  .frame { width: 1280px; height: 720px; display: flex; flex-direction: column; }
+
+  .top-bar {
+    height: 48px;
+    background: linear-gradient(90deg, #111 0%, #161616 100%);
+    border-bottom: 2px solid #1e88e5;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 28px;
+    flex-shrink: 0;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand-logo { height: 22px; width: auto; opacity: 0.9; }
+  .brand-name { font-size: 13px; font-weight: 600; color: #e0e0e0; letter-spacing: 3px; }
+  .ticker-badge { display: flex; align-items: center; gap: 10px; }
+  .ticker-badge .ticker { font-size: 20px; font-weight: 800; color: #fff; }
+  .ticker-badge .badge { background: #1e88e5; color: #fff; padding: 3px 10px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+
+  .center { flex: 1; }
+
+  .bottom-bar {
+    height: 32px;
+    background: #111;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 28px;
+    flex-shrink: 0;
+    border-top: 1px solid #1a1a1a;
+  }
+  .bottom-bar span { font-size: 11px; color: #444; }
+</style>
+</head>
+<body>
+<div class="frame">
+  <div class="top-bar">
+    <div class="brand">
+      <img src="robosystems_logo.png" alt="RoboSystems" class="brand-logo">
+      <span class="brand-name">ROBOSYSTEMS</span>
+    </div>
+  </div>
+  <div class="center"></div>
+  <div class="bottom-bar">
+    <span>SEC Filing Analysis</span>
+    <span>robosystems.ai</span>
+  </div>
+</div>
+</body>
+</html>

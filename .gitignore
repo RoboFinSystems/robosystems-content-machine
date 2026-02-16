@@ -1,0 +1,43 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Unit test / coverage reports
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Environments
+.env
+.env.local
+.env.*.local
+.envrc
+.venv
+venv/
+
+# Project outputs (generated per-project)
+projects/*/
+
+# Local (untracked scratch space)
+local/
+
+# MacOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# AI - Claude Code
+.claude/settings.local.json
+CLAUDE.local.md
+
+# Ruff cache
+.ruff_cache/

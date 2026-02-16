@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{CHART_TITLE}}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #0a0a0a;
+            color: #ffffff;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .frame {
+            width: 1920px;
+            height: 1080px;
+            background: #0a0a0a;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* ─── Top Bar ─────────────────────────────────── */
+        .top-bar {
+            height: 52px;
+            background: linear-gradient(90deg, #111111 0%, #161616 100%);
+            border-bottom: 2px solid #1e88e5;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+            flex-shrink: 0;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .brand-logo {
+            height: 24px;
+            width: auto;
+            opacity: 0.9;
+        }
+
+        .brand-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #e0e0e0;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        .ticker-badge {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .ticker {
+            font-size: 16px;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: 1px;
+        }
+
+        .filing-badge {
+            font-size: 12px;
+            font-weight: 600;
+            color: #1e88e5;
+            background: rgba(30, 136, 229, 0.12);
+            border: 1px solid rgba(30, 136, 229, 0.3);
+            padding: 4px 12px;
+            border-radius: 4px;
+            letter-spacing: 0.5px;
+        }
+
+        /* ─── Title Bar ───────────────────────────────── */
+        .title-bar {
+            padding: 16px 32px 8px;
+            flex-shrink: 0;
+        }
+
+        .chart-title {
+            font-size: 26px;
+            font-weight: 600;
+            color: #ffffff;
+            letter-spacing: -0.3px;
+            line-height: 1.3;
+        }
+
+        .chart-subtitle {
+            font-size: 15px;
+            color: #888888;
+            margin-top: 6px;
+        }
+
+        /* ─── Chart Area ──────────────────────────────── */
+        .chart-area {
+            flex: 1;
+            margin: 0 24px;
+            padding: 16px 24px;
+            background: linear-gradient(180deg, #111111 0%, #0d0d0d 100%);
+            border: 1px solid #1a1a1a;
+            border-radius: 8px;
+            min-height: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chart-content {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* ─── Bottom Bar ──────────────────────────────── */
+        .bottom-bar {
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+            flex-shrink: 0;
+        }
+
+        .source {
+            font-size: 12px;
+            color: #555555;
+        }
+
+        .brand-url {
+            font-size: 12px;
+            color: #444444;
+            letter-spacing: 0.5px;
+        }
+
+        /* ─── Accent line under top bar ───────────────── */
+        .accent-line {
+            height: 1px;
+            background: linear-gradient(90deg, #1e88e5 0%, transparent 60%);
+            flex-shrink: 0;
+        }
+
+        /* ─── Chart SVG defaults ──────────────────────── */
+        svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .bar-positive { fill: #1e88e5; }
+        .bar-negative { fill: #ef5350; }
+        .bar-neutral  { fill: #455a64; }
+        .bar-accent   { fill: #26c6da; }
+
+        .value-label {
+            font-size: 15px;
+            fill: #ffffff;
+            font-weight: 600;
+        }
+
+        .bar-label {
+            font-size: 13px;
+            fill: #cccccc;
+            font-weight: 500;
+        }
+
+        .growth-positive {
+            font-size: 12px;
+            fill: #4caf50;
+            font-weight: 600;
+        }
+
+        .growth-negative {
+            font-size: 12px;
+            fill: #ef5350;
+            font-weight: 600;
+        }
+
+        .axis-line {
+            stroke: #333333;
+            stroke-width: 1;
+        }
+
+        .grid-line {
+            stroke: #1a1a1a;
+            stroke-width: 0.5;
+            stroke-dasharray: 4,4;
+        }
+
+        .axis-label {
+            font-size: 12px;
+            fill: #666666;
+        }
+
+        /* ─── Table styles (for comparison tables) ───── */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 16px;
+        }
+
+        .data-table th {
+            text-align: left;
+            padding: 14px 20px;
+            color: #888888;
+            font-weight: 500;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            border-bottom: 1px solid #222222;
+        }
+
+        .data-table td {
+            padding: 14px 20px;
+            color: #e0e0e0;
+            border-bottom: 1px solid #141414;
+        }
+
+        .data-table tr:hover td {
+            background: rgba(30, 136, 229, 0.04);
+        }
+
+        .metric-name {
+            color: #cccccc;
+            font-weight: 500;
+        }
+
+        .metric-value {
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 18px;
+        }
+
+        .metric-change-positive {
+            color: #4caf50;
+            font-weight: 600;
+        }
+
+        .metric-change-negative {
+            color: #ef5350;
+            font-weight: 600;
+        }
+
+        .metric-note {
+            color: #666666;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <div class="frame">
+
+        <!-- Top Bar: Branding + Ticker -->
+        <div class="top-bar">
+            <div class="brand">
+                <img src="robosystems_logo.png" alt="RoboSystems" class="brand-logo">
+                <div class="brand-name">RoboSystems</div>
+            </div>
+            <div class="ticker-badge">
+                <span class="ticker">{{TICKER}}</span>
+                <span class="filing-badge">{{FILING_TYPE}} {{FISCAL_YEAR}}</span>
+            </div>
+        </div>
+        <div class="accent-line"></div>
+
+        <!-- Title -->
+        <div class="title-bar">
+            <div class="chart-title">{{CHART_TITLE}}</div>
+            <div class="chart-subtitle">{{CHART_SUBTITLE}}</div>
+        </div>
+
+        <!-- Chart Content Area -->
+        <div class="chart-area">
+            <div class="chart-content">
+
+                <!-- ============================================ -->
+                <!-- REPLACE THIS SECTION WITH ACTUAL CHART/TABLE -->
+                <!-- ============================================ -->
+
+                <!-- Example: Bar Chart -->
+                <!--
+                <svg viewBox="0 0 1600 520" preserveAspectRatio="xMidYMid meet">
+                    <rect x="200" y="100" width="160" height="380" class="bar-positive" rx="4"/>
+                    <text x="280" y="85" class="value-label" text-anchor="middle">$182.4B</text>
+                    <text x="280" y="510" class="bar-label" text-anchor="middle">FY2025</text>
+                    <text x="280" y="530" class="growth-positive" text-anchor="middle">+2.8%</text>
+                </svg>
+                -->
+
+                <!-- Example: Data Table -->
+                <!--
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Metric</th>
+                            <th>FY2024</th>
+                            <th>FY2025</th>
+                            <th>Change</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="metric-name">Total Revenue</td>
+                            <td class="metric-value">$177.3B</td>
+                            <td class="metric-value">$182.4B</td>
+                            <td class="metric-change-positive">+2.8%</td>
+                        </tr>
+                    </tbody>
+                </table>
+                -->
+
+                <!-- ============================================ -->
+
+            </div>
+        </div>
+
+        <!-- Bottom Bar: Source + URL -->
+        <div class="bottom-bar">
+            <div class="source">Source: {{SOURCE_TEXT}}</div>
+            <div class="brand-url">robosystems.dev</div>
+        </div>
+
+    </div>
+</body>
+</html>

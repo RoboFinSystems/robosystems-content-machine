@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Balance Sheet Snapshot (FY2025)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #0a0a0a;
+            color: #ffffff;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .frame {
+            width: 1920px;
+            height: 1080px;
+            background: #0a0a0a;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* ─── Top Bar ─────────────────────────────────── */
+        .top-bar {
+            height: 52px;
+            background: linear-gradient(90deg, #111111 0%, #161616 100%);
+            border-bottom: 2px solid #1e88e5;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+            flex-shrink: 0;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .brand-logo {
+            height: 24px;
+            width: auto;
+            opacity: 0.9;
+        }
+
+        .brand-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #e0e0e0;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        .ticker-badge {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .ticker {
+            font-size: 16px;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: 1px;
+        }
+
+        .filing-badge {
+            font-size: 12px;
+            font-weight: 600;
+            color: #1e88e5;
+            background: rgba(30, 136, 229, 0.12);
+            border: 1px solid rgba(30, 136, 229, 0.3);
+            padding: 4px 12px;
+            border-radius: 4px;
+            letter-spacing: 0.5px;
+        }
+
+        /* ─── Title Bar ───────────────────────────────── */
+        .title-bar {
+            padding: 16px 32px 8px;
+            flex-shrink: 0;
+        }
+
+        .chart-title {
+            font-size: 26px;
+            font-weight: 600;
+            color: #ffffff;
+            letter-spacing: -0.3px;
+            line-height: 1.3;
+        }
+
+        .chart-subtitle {
+            font-size: 15px;
+            color: #888888;
+            margin-top: 6px;
+        }
+
+        /* ─── Chart Area ──────────────────────────────── */
+        .chart-area {
+            flex: 1;
+            margin: 0 24px;
+            padding: 16px 24px;
+            background: linear-gradient(180deg, #111111 0%, #0d0d0d 100%);
+            border: 1px solid #1a1a1a;
+            border-radius: 8px;
+            min-height: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chart-content {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        /* ─── Bottom Bar ──────────────────────────────── */
+        .bottom-bar {
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+            flex-shrink: 0;
+        }
+
+        .source {
+            font-size: 12px;
+            color: #555555;
+        }
+
+        .brand-url {
+            font-size: 12px;
+            color: #444444;
+            letter-spacing: 0.5px;
+        }
+
+        /* ─── Accent line under top bar ───────────────── */
+        .accent-line {
+            height: 1px;
+            background: linear-gradient(90deg, #1e88e5 0%, transparent 60%);
+            flex-shrink: 0;
+        }
+
+        /* ─── Metric Cards ────────────────────────────── */
+
+        /*
+            EXAMPLE: Metric cards layout for displaying key numbers at a glance.
+
+            KEY DESIGN PRINCIPLES:
+            1. Use CSS grid to create a responsive card layout
+            2. Each card has a label, a BIG number, and a change indicator
+            3. Numbers should be HUGE (36px+) — the main point of this chart type
+            4. Color-code: green for positive, red for negative, blue for neutral/current
+            5. Include YoY change context so the number has meaning
+            6. Use 2-3 rows of 3 cards each — fills the 1920x1080 space well
+            7. Add subtle borders and backgrounds to separate cards visually
+        */
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .metric-card {
+            background: #0f0f0f;
+            border: 1px solid #1e1e1e;
+            border-radius: 8px;
+            padding: 24px 28px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .metric-card.highlight {
+            border-color: #1e88e5;
+            background: rgba(30, 136, 229, 0.05);
+        }
+
+        .metric-card.warning {
+            border-color: #ef5350;
+            background: rgba(239, 83, 80, 0.05);
+        }
+
+        .metric-label {
+            font-size: 13px;
+            color: #777777;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 500;
+        }
+
+        .metric-value {
+            font-size: 38px;
+            font-weight: 700;
+            letter-spacing: -1px;
+            line-height: 1.1;
+        }
+
+        .metric-value.positive { color: #4caf50; }
+        .metric-value.negative { color: #ef5350; }
+        .metric-value.neutral { color: #ffffff; }
+        .metric-value.accent { color: #1e88e5; }
+
+        .metric-change {
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .metric-change.up { color: #4caf50; }
+        .metric-change.down { color: #ef5350; }
+        .metric-change.flat { color: #888888; }
+
+        .metric-note {
+            font-size: 12px;
+            color: #555555;
+            margin-top: 4px;
+        }
+
+        /* Divider row label between grid sections */
+        .section-label {
+            font-size: 12px;
+            color: #555555;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 600;
+            padding: 4px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="frame">
+
+        <!-- Top Bar: Branding + Ticker -->
+        <div class="top-bar">
+            <div class="brand">
+                <img src="robosystems_logo.png" alt="RoboSystems" class="brand-logo">
+                <div class="brand-name">RoboSystems</div>
+            </div>
+            <div class="ticker-badge">
+                <span class="ticker">ACME</span>
+                <span class="filing-badge">10-K FY2025</span>
+            </div>
+        </div>
+        <div class="accent-line"></div>
+
+        <!-- Title -->
+        <div class="title-bar">
+            <div class="chart-title">Balance Sheet Snapshot (FY2025)</div>
+            <div class="chart-subtitle">Worldpac divestiture boosted cash but debt nearly doubled</div>
+        </div>
+
+        <!-- Chart Content Area -->
+        <div class="chart-area">
+            <div class="chart-content">
+
+                <div class="section-label">Assets</div>
+                <div class="metrics-grid">
+                    <div class="metric-card highlight">
+                        <div class="metric-label">Cash &amp; Equivalents</div>
+                        <div class="metric-value accent">$3.12B</div>
+                        <div class="metric-change up">+67% YoY</div>
+                        <div class="metric-note">Boosted by Worldpac proceeds</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Total Assets</div>
+                        <div class="metric-value neutral">$11.2B</div>
+                        <div class="metric-change down">-8.3% YoY</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Inventory</div>
+                        <div class="metric-value neutral">$3.65B</div>
+                        <div class="metric-change flat">+0.9% YoY</div>
+                    </div>
+                </div>
+
+                <div class="section-label">Liabilities &amp; Equity</div>
+                <div class="metrics-grid">
+                    <div class="metric-card warning">
+                        <div class="metric-label">Long-Term Debt</div>
+                        <div class="metric-value negative">$3.41B</div>
+                        <div class="metric-change down">+91% YoY</div>
+                        <div class="metric-note">Significant new debt issuance</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Shareholders' Equity</div>
+                        <div class="metric-value neutral">$2.20B</div>
+                        <div class="metric-change flat">+1.3% YoY</div>
+                    </div>
+                    <div class="metric-card warning">
+                        <div class="metric-label">Net Debt Position</div>
+                        <div class="metric-value negative">$289M</div>
+                        <div class="metric-change down">Was -$80M (net cash)</div>
+                        <div class="metric-note">Shifted from net cash to net debt</div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Bottom Bar: Source + URL -->
+        <div class="bottom-bar">
+            <div class="source">Source: ACME Corp 10-K Filing (FY2025), SEC XBRL</div>
+            <div class="brand-url">robosystems.dev</div>
+        </div>
+
+    </div>
+</body>
+</html>
