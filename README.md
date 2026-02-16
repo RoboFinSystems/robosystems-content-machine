@@ -1,5 +1,7 @@
 # RoboSystems Content Machine
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 Automated video content pipeline for SEC filing analysis. Uses [Claude Desktop Cowork](https://claude.ai) to generate written assets (report, script, charts), then a production pipeline to turn them into a finished video.
 
 ## How It Works
@@ -163,6 +165,22 @@ just clean NVDA_2025_10_K         # Remove generated assets (keeps source files)
         └── videos/
 ```
 
-## Links
+## Resources
 
-- [robosystems.ai](https://robosystems.ai) — RoboSystems platform
+- [RoboSystems Platform](https://robosystems.ai)
+- [GitHub Repository](https://github.com/RoboFinSystems/robosystems)
+- [MCP Client](https://github.com/RoboFinSystems/robosystems-mcp-client)
+- [Python Client](https://github.com/RoboFinSystems/robosystems-python-client)
+
+## Support
+
+- [Issues](https://github.com/RoboFinSystems/robosystems-content-machine/issues)
+- [Wiki](https://github.com/RoboFinSystems/robosystems/wiki)
+- [Projects](https://github.com/orgs/RoboFinSystems/projects)
+- [Discussions](https://github.com/orgs/RoboFinSystems/discussions)
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+MIT © 2026 RFS LLC
