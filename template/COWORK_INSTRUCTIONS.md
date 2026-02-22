@@ -13,55 +13,49 @@ The following MCP tools are available for querying SEC data. Use them by name:
 
 | Tool | Purpose |
 |------|---------|
+| `resolve-element` | **Map a financial concept to the correct element qname for a company** |
+| `resolve-structure` | **Find a company's income statement, balance sheet, etc. by type** |
 | `get-graph-schema` | See all node types, properties, and relationships |
 | `get-example-queries` | Get working Cypher query examples |
-| `discover-common-elements` | Find available XBRL element qnames (metrics) |
-| `discover-facts` | Explore fact patterns, dimensions, periods |
+| `discover-common-elements` | Browse all available XBRL element qnames (fallback) |
 | `discover-properties` | See properties on a specific node type |
 | `describe-graph-structure` | High-level overview of the database |
-| `read-graph-cypher` | **Execute a Cypher query** — this is the main data retrieval tool |
+| `read-graph-cypher` | **Execute a Cypher query** — the main data retrieval tool |
 
 ### Cypher Query Cheat Sheet
 
-These are tested, ready-to-use queries. Replace `TICKER` with the actual ticker (e.g., `'AAP'`). All queries use `read-graph-cypher`.
+These are tested, ready-to-use queries. Replace `TICKER` with the actual ticker (e.g., `'NVDA'`). All queries use `read-graph-cypher`.
 
-**Understanding `decimals` and `numeric_value`:**
-The `decimals` field tells you how to interpret `numeric_value`. The formula is: **actual_value = numeric_value × 10^(−decimals)**
-- `decimals = "-6"` → values are in **millions** (8601 → $8,601M = $8.6B)
-- `decimals = "-3"` → values are in **thousands** (9094327 → $9,094,327K = $9.1B)
-- `decimals = "2"` → divide by 100 (73 → $0.73 for per-share data like EPS)
-
-**IMPORTANT:** The same fact can appear at multiple scales from different filings (e.g., revenue at `-6` AND `-3`). Always include `f.decimals` in your RETURN clause so you can interpret values correctly. Use `DISTINCT` to deduplicate identical rows. If you see duplicate rows for the same period that differ only in scale, pick one scale and use it consistently.
+**Understanding `numeric_value`:**
+`numeric_value` is the actual value in base units (e.g., USD for monetary amounts, USD/share for per-share data). Use it directly — no scaling or transformation needed. Revenue of $23.7B is stored as `23739000000`. EPS of $174.96 is stored as `174.96`.
 
 ---
 
-**Step 1 — Discover what elements a company reports (DO THIS FIRST):**
+**Step 1 — Resolve the metrics you need (DO THIS FIRST):**
 
-Different companies use different XBRL element names for the same concept. For example, `us-gaap:Revenues` does NOT exist for many companies — they use `us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax` instead. Always discover available elements before querying specific metrics.
-```cypher
-MATCH (f:Fact)-[:FACT_HAS_ELEMENT]->(el:Element),
-      (f)-[:FACT_HAS_ENTITY]->(e:Entity {ticker: 'TICKER'})
-WHERE el.qname STARTS WITH 'us-gaap:' AND f.numeric_value IS NOT NULL
-RETURN DISTINCT el.qname, el.name, count(f) as fact_count
-ORDER BY fact_count DESC
-LIMIT 50
+Use `resolve-element` to find the correct element qnames for this company. Do NOT guess element names or hardcode qnames — always resolve first.
+
+```
+resolve-element {concept: "revenue", ticker: "TICKER"}
+resolve-element {concept: "net income", ticker: "TICKER"}
+resolve-element {concept: "total assets", ticker: "TICKER"}
+resolve-element {concept: "operating cash flow", ticker: "TICKER"}
+resolve-element {concept: "eps diluted", ticker: "TICKER"}
 ```
 
-To search for a specific concept (e.g., revenue):
-```cypher
-MATCH (f:Fact)-[:FACT_HAS_ELEMENT]->(el:Element),
-      (f)-[:FACT_HAS_ENTITY]->(e:Entity {ticker: 'TICKER'})
-WHERE el.qname CONTAINS 'Revenue' AND f.numeric_value IS NOT NULL
-RETURN DISTINCT el.qname, el.name, count(f) as fact_count
-ORDER BY fact_count DESC
-```
+Each result includes:
+- `qname` — the exact element name this company uses
+- `confidence` — how confident the match is (>0.90 is reliable)
+- `query_hint` — a ready-to-use Cypher query you can pass directly to `read-graph-cypher`
 
-**Step 2 — Find the company entity:**
+If `resolve-element` returns no match for a concept, fall back to `discover-common-elements` with a CONTAINS filter to search manually.
+
+**Step 2 — Find the company and its filings:**
+
 ```cypher
 MATCH (e:Entity) WHERE e.ticker = 'TICKER' RETURN e
 ```
 
-**Step 3 — List all filings for a company:**
 ```cypher
 MATCH (e:Entity)-[:ENTITY_HAS_REPORT]->(r:Report)
 WHERE e.ticker = 'TICKER'
@@ -69,108 +63,74 @@ RETURN r.form, r.filing_date, r.report_date, r.accession_number
 ORDER BY r.filing_date DESC
 ```
 
-**Step 4 — Get consolidated revenue (all periods):**
+**Step 3 — Run financial queries using resolved elements:**
 
-Use the revenue element name you discovered in Step 1. Common names:
-- `us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax` (most common)
-- `us-gaap:Revenues` (some companies)
-- `us-gaap:RevenueFromContractWithCustomerIncludingAssessedTax` (utilities, telcos)
+Use the `query_hint` from Step 1, or build queries with the resolved qnames.
+All `numeric_value` results are actual values — no transformation needed.
+
+Income statement / cash flow (flow metrics — use `duration_type`):
 ```cypher
-MATCH (f:Fact {has_dimensions: false})-[:FACT_HAS_ELEMENT]->(el:Element {qname: 'us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax'}),
+MATCH (f:Fact {has_dimensions: false})-[:FACT_HAS_ELEMENT]->(el:Element {qname: 'RESOLVED_QNAME'}),
       (f)-[:FACT_HAS_PERIOD]->(p:Period),
       (f)-[:FACT_HAS_ENTITY]->(e:Entity {ticker: 'TICKER'})
-WHERE f.numeric_value IS NOT NULL
-RETURN DISTINCT p.end_date, p.period_type, f.numeric_value, f.decimals
+WHERE f.numeric_value IS NOT NULL AND p.duration_type = 'annual'
+RETURN DISTINCT p.end_date, f.numeric_value
 ORDER BY p.end_date DESC
 ```
-Check `f.decimals` to interpret values (see formula above). Filter by `p.period_type = 'annual'` or `'quarterly'` as needed.
 
-**Step 5 — Get net income (all annual periods):**
+Balance sheet (point-in-time metrics — use `period_type = 'instant'`):
 ```cypher
-MATCH (f:Fact {has_dimensions: false})-[:FACT_HAS_ELEMENT]->(el:Element {qname: 'us-gaap:NetIncomeLoss'}),
+MATCH (f:Fact {has_dimensions: false})-[:FACT_HAS_ELEMENT]->(el:Element {qname: 'RESOLVED_QNAME'}),
       (f)-[:FACT_HAS_PERIOD]->(p:Period),
       (f)-[:FACT_HAS_ENTITY]->(e:Entity {ticker: 'TICKER'})
-WHERE f.numeric_value IS NOT NULL AND p.period_type = 'annual'
-RETURN DISTINCT p.end_date, f.numeric_value, f.decimals
+WHERE f.numeric_value IS NOT NULL AND p.period_type = 'instant'
+RETURN DISTINCT p.end_date, f.numeric_value
 ORDER BY p.end_date DESC
 ```
-Note: Companies with discontinued operations (divestitures, spin-offs) may report multiple NetIncomeLoss values for the same period — one for continuing operations, one for total. If you see two values, the larger magnitude is typically the total. You can also try `us-gaap:IncomeLossFromContinuingOperations` for just continuing ops.
 
-**Step 6 — Balance sheet snapshot (multiple metrics):**
+Multiple balance sheet metrics at once:
 ```cypher
 MATCH (f:Fact {has_dimensions: false})-[:FACT_HAS_ELEMENT]->(el:Element),
       (f)-[:FACT_HAS_PERIOD]->(p:Period),
       (f)-[:FACT_HAS_ENTITY]->(e:Entity {ticker: 'TICKER'})
-WHERE el.qname IN [
-  'us-gaap:Assets',
-  'us-gaap:Liabilities',
-  'us-gaap:StockholdersEquity',
-  'us-gaap:CashAndCashEquivalentsAtCarryingValue',
-  'us-gaap:LongTermDebt'
-]
-AND f.numeric_value IS NOT NULL
-AND p.period_type = 'instant'
-RETURN DISTINCT el.qname, p.end_date, f.numeric_value, f.decimals
+WHERE el.qname IN ['RESOLVED_QNAME_1', 'RESOLVED_QNAME_2', 'RESOLVED_QNAME_3']
+AND f.numeric_value IS NOT NULL AND p.period_type = 'instant'
+RETURN DISTINCT el.qname, p.end_date, f.numeric_value
 ORDER BY el.qname, p.end_date DESC
 ```
-Check `f.decimals` to interpret values. Balance sheet items use `period_type = 'instant'` (point-in-time).
 
-**Step 7 — Cash flow statement:**
+Multiple income statement / cash flow metrics at once:
 ```cypher
 MATCH (f:Fact {has_dimensions: false})-[:FACT_HAS_ELEMENT]->(el:Element),
       (f)-[:FACT_HAS_PERIOD]->(p:Period),
       (f)-[:FACT_HAS_ENTITY]->(e:Entity {ticker: 'TICKER'})
-WHERE el.qname IN [
-  'us-gaap:NetCashProvidedByUsedInOperatingActivities',
-  'us-gaap:PaymentsToAcquirePropertyPlantAndEquipment',
-  'us-gaap:NetCashProvidedByUsedInFinancingActivities',
-  'us-gaap:NetCashProvidedByUsedInInvestingActivities'
-]
-AND f.numeric_value IS NOT NULL
-AND p.period_type = 'annual'
-RETURN DISTINCT el.qname, p.end_date, f.numeric_value, f.decimals
+WHERE el.qname IN ['RESOLVED_QNAME_1', 'RESOLVED_QNAME_2', 'RESOLVED_QNAME_3']
+AND f.numeric_value IS NOT NULL AND p.duration_type = 'annual'
+RETURN DISTINCT el.qname, p.end_date, f.numeric_value
 ORDER BY el.qname, p.end_date DESC
 ```
-Check `f.decimals` to interpret values. Free cash flow = Operating - CapEx.
 
-**Step 8 — EPS data:**
-```cypher
-MATCH (f:Fact {has_dimensions: false})-[:FACT_HAS_ELEMENT]->(el:Element),
-      (f)-[:FACT_HAS_PERIOD]->(p:Period),
-      (f)-[:FACT_HAS_ENTITY]->(e:Entity {ticker: 'TICKER'})
-WHERE el.qname IN [
-  'us-gaap:EarningsPerShareBasic',
-  'us-gaap:EarningsPerShareDiluted'
-]
-AND f.numeric_value IS NOT NULL
-AND p.period_type = 'annual'
-RETURN DISTINCT el.qname, p.end_date, f.numeric_value, f.decimals
-ORDER BY el.qname, p.end_date DESC
-```
-EPS uses `decimals = "2"` — divide numeric_value by 100 to get the dollar amount (e.g., 932 → $9.32).
-
-**Step 9 — Segment revenue breakdowns (dimensional):**
+**Step 4 — Segment revenue breakdowns (dimensional):**
 ```cypher
 MATCH (f:Fact {has_dimensions: true})-[:FACT_HAS_ELEMENT]->(el:Element),
       (f)-[:FACT_HAS_DIMENSION]->(d:Dimension),
       (f)-[:FACT_HAS_PERIOD]->(p:Period),
       (f)-[:FACT_HAS_ENTITY]->(e:Entity {ticker: 'TICKER'})
 WHERE el.qname CONTAINS 'Revenue'
-AND f.numeric_value IS NOT NULL
-AND p.period_type = 'annual'
-RETURN DISTINCT el.qname, d.member_uri, p.end_date, f.numeric_value, f.decimals
+AND f.numeric_value IS NOT NULL AND p.duration_type = 'annual'
+RETURN DISTINCT el.qname, d.member_uri, p.end_date, f.numeric_value
 ORDER BY p.end_date DESC, f.numeric_value DESC
 ```
-Check `f.decimals` to interpret values. The `d.member_uri` shows the segment name (e.g., geographic region, business unit).
+
+The `d.member_uri` shows the segment name (e.g., geographic region, business unit).
 
 **Important query patterns:**
-- Always use **comma-separated patterns in a SINGLE MATCH** (not multiple MATCH clauses) — multiple MATCHes can timeout
+- Always use **comma-separated patterns in a SINGLE MATCH** — multiple MATCHes can timeout
 - Always use **`DISTINCT`** in RETURN to deduplicate facts from overlapping filings
-- Always include **`f.decimals`** in RETURN so you can interpret numeric values correctly (see formula at top)
-- If you see duplicate rows for the same period at different scales, pick one scale and use it consistently across your analysis
 - Use `has_dimensions: false` for consolidated totals, `has_dimensions: true` for segment breakdowns
-- `period_type` values: `instant` (balance sheet dates), `quarterly`, `annual`, `semi_annual`, `nine_months`
-- If a query returns no results, the company uses a different element name — go back to Step 1 and search with `CONTAINS`
+- `period_type` values: `instant` (balance sheet), `duration` (income/cash flow), `forever` (rare)
+- `duration_type` values: `quarterly`, `annual`, `semi_annual`, `nine_months`, `other` (only for duration periods)
+- `numeric_value` is the actual value — no decimals math needed
 
 ## What You Produce
 
@@ -338,11 +298,11 @@ Every SVG chart MUST include a comment block BEFORE any `<rect>` or `<polyline>`
 ```
 
 **After computing, verify these invariants (CRITICAL):**
-- Every `<rect>` y value must be ≥ 0 (nothing above the viewBox)
-- Every `<rect>` y + height must be ≤ viewBox height (nothing below the viewBox)
-- Every `<text>` value label y must be ≥ 10 (not clipped at top)
-- Bars with `class="bar-negative"` MUST have y ≥ zero_line_y (negative bars go DOWN, never up)
-- Bar heights must be proportional: if bar A's value is 2× bar B's value, bar A's height must be 2× bar B's height
+- Every `<rect>` y value must be >= 0 (nothing above the viewBox)
+- Every `<rect>` y + height must be <= viewBox height (nothing below the viewBox)
+- Every `<text>` value label y must be >= 10 (not clipped at top)
+- Bars with `class="bar-negative"` MUST have y >= zero_line_y (negative bars go DOWN, never up)
+- Bar heights must be proportional: if bar A's value is 2x bar B's value, bar A's height must be 2x bar B's height
 
 **Chart design rules — these are critical for readability on video:**
 - **Fill the chart area.** The SVG viewBox should use the full available space. Do NOT leave large empty regions above or below bars. Bars should be tall and wide — a viewer watching on a phone needs to read these.
@@ -380,16 +340,16 @@ A 1280x720 HTML file designed as a YouTube thumbnail:
 
 1. **Ask which ticker to analyze** (or accept one provided by the user)
 2. **Learn the graph schema** — call `get-graph-schema` and `get-example-queries` to understand the database structure (node types, relationships, properties).
-3. **Discover this company's element names (CRITICAL)** — Run the Cheat Sheet **Step 1** query above to see what XBRL elements this specific company reports. Do NOT skip this step. Element names vary widely between companies (e.g., `us-gaap:Revenues` vs `us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax`). You need to know the exact qnames before running metric queries.
-4. **Deep research via RoboSystems MCP** — this is the most important step. Don't skim the surface. Follow the Cheat Sheet steps (2-9) above, substituting the correct element names discovered in step 3:
-   - Start with entity info (Step 2) and recent reports (Step 3) to understand filing context
-   - **Pull comprehensive financials**: Revenue (Step 4), Net Income (Step 5), Balance Sheet (Step 6), Cash Flow (Step 7), EPS (Step 8)
-   - **Get segment breakdowns** (Step 9): Revenue/income by business segment, geography, product line — these are the interesting stories
-   - **Also discover additional metrics**: Use Step 1's element discovery to find Operating Income, Gross Profit, Dividends, Share Repurchases, and other company-specific metrics
-   - **Compare across 3+ years**: Always pull at least 3 years of annual data and recent quarterly data to show trends
-   - **Look for anomalies**: Big YoY swings, margin compression/expansion, unusual charges, segment divergence — these make the best narration
-   - **Calculate derived metrics**: Margins (gross, operating, net), efficiency ratios, growth rates, per-share metrics, return ratios (ROE, ROA, ROIC)
-   - **Remember**: Always check `f.decimals` to interpret values correctly — see the decimals formula at the top of the Cheat Sheet.
+3. **Resolve this company's element names (CRITICAL)** — Use `resolve-element` for each financial concept you need (revenue, net income, EPS, total assets, operating cash flow, etc.). Do NOT skip this step. Do NOT guess element qnames.
+4. **Deep research via RoboSystems MCP** — this is the most important step:
+   - Start with entity info (Step 2) and recent reports to understand filing context
+   - **Use the resolved element names** from Step 1/3 in all queries
+   - **Pull comprehensive financials**: Revenue, Net Income, Balance Sheet, Cash Flow, EPS
+   - **Get segment breakdowns** (Step 4): Revenue/income by business segment, geography, product line
+   - **Also discover additional metrics**: Use `resolve-element` for Operating Income, Gross Profit, Dividends, Share Repurchases
+   - **Compare across 3+ years**: Always pull at least 3 years of annual data and recent quarterly data
+   - **Look for anomalies**: Big YoY swings, margin compression/expansion, unusual charges
+   - **Calculate derived metrics**: Margins, efficiency ratios, growth rates, per-share metrics, return ratios (ROE, ROA, ROIC)
    - **Do not stop after 3-4 queries.** A thorough analysis requires 10-20+ MCP queries to build a complete picture
 5. **Web search** for current context:
    - Current stock price, market cap, 52-week range
