@@ -1,8 +1,9 @@
 """
-Generate voiceover audio for visual segments (charts/b-roll) via ElevenLabs API.
+Generate voiceover audio via ElevenLabs API.
 
-These are the segments where the avatar isn't shown — just narration over visuals.
-We generate the audio separately so Shotstack can layer it over chart PNGs.
+In slides-only mode (no avatar segments), generates voiceover for ALL segments.
+In mixed mode (avatar + visual), generates voiceover only for visual segments
+(avatar segments get their audio from HeyGen).
 
 Usage:
     uv run python tools/generate_voiceover_audio.py JPM_2025_10_K
@@ -81,9 +82,15 @@ def generate_all(project_name):
 
     ticker = script["metadata"]["ticker"]
     segments = script["segments"]
-    visual_segments = [s for s in segments if s["type"] == "visual"]
 
-    print(f"Script: {ticker} | {len(visual_segments)} visual segments need voiceover\n")
+    # Detect mode: if any avatar segments exist, only voiceover the visual ones
+    has_avatar = any(s["type"] == "avatar" for s in segments)
+    if has_avatar:
+        visual_segments = [s for s in segments if s["type"] == "visual"]
+        print(f"Script: {ticker} | Mixed mode: {len(visual_segments)} visual segments need voiceover\n")
+    else:
+        visual_segments = segments  # All segments get voiceover
+        print(f"Script: {ticker} | Slides-only mode: {len(visual_segments)} segments need voiceover\n")
 
     audio_dir = os.path.join(project_dir, "videos", "audio")
     os.makedirs(audio_dir, exist_ok=True)

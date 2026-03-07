@@ -58,9 +58,11 @@ def screenshot_charts(project_name):
     png_dir = os.path.join(project_dir, "charts", "png")
     os.makedirs(png_dir, exist_ok=True)
 
+    # Screenshot all chart HTMLs except templates and examples
+    # INTRO_SLIDE and OUTRO_SLIDE ARE included — they're part of the video timeline
     html_files = [
         f for f in glob.glob(os.path.join(html_dir, "*.html"))
-        if not os.path.basename(f).startswith(("CHART_TEMPLATE", "EXAMPLE_", "AVATAR_BG_TEMPLATE", "INTRO_SLIDE", "OUTRO_SLIDE"))
+        if not os.path.basename(f).startswith(("CHART_TEMPLATE", "EXAMPLE_", "AVATAR_BG_TEMPLATE"))
     ]
     if not html_files:
         print(f"No chart HTML files found in {html_dir}")

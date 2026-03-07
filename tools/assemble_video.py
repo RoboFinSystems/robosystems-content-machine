@@ -174,18 +174,23 @@ def build_asset_manifest(project_dir, ticker):
                 else:
                     print("upload failed")
 
-    # Intro/outro slides (from template directory)
+    # Intro/outro slides — check project charts/png/ first (campaign overrides),
+    # then fall back to template directory
     tools_dir = os.path.dirname(os.path.abspath(__file__))
     root_dir = os.path.dirname(tools_dir)
-    for slide in ("intro_slide.png", "outro_slide.png"):
-        slide_path = os.path.join(root_dir, "template", "charts", "png", slide)
+    for slide_name in ("intro_slide", "outro_slide"):
+        slide_png = f"{slide_name}.png"
+        # Prefer project-local (screenshotted from campaign override HTML)
+        slide_path = os.path.join(project_dir, "charts", "png", f"INTRO_SLIDE.png" if "intro" in slide_name else "OUTRO_SLIDE.png")
+        if not os.path.exists(slide_path):
+            slide_path = os.path.join(root_dir, "template", "charts", "png", slide_png)
         if os.path.exists(slide_path):
-            s3_key = f"{s3_prefix}/slides/{slide}"
-            print(f"  Uploading {slide}...", end=" ")
+            s3_key = f"{s3_prefix}/slides/{slide_png}"
+            print(f"  Uploading {slide_png}...", end=" ")
             if s3_upload(slide_path, s3_key):
                 url = s3_presign(s3_key)
                 if url:
-                    assets[slide] = {"type": "image", "url": url, "s3_key": s3_key}
+                    assets[slide_png] = {"type": "image", "url": url, "s3_key": s3_key}
                     print("OK")
                 else:
                     print("presign failed")
@@ -509,8 +514,12 @@ def build_timeline(project_dir, ticker, assets):
 
     segments = script["segments"]
 
-    # Pad all avatar segments to prevent codec startup audio glitch
-    pad_all_avatar_segments(project_dir, ticker, segments)
+    # Detect mode
+    has_avatar = any(s["type"] == "avatar" for s in segments)
+
+    # Pad all avatar segments to prevent codec startup audio glitch (mixed mode only)
+    if has_avatar:
+        pad_all_avatar_segments(project_dir, ticker, segments)
 
     # Map visual_ref to chart PNG filenames
     chart_map = {}
@@ -553,7 +562,8 @@ def build_timeline(project_dir, ticker, assets):
         seg_id = seg["id"]
         seg_type = seg["type"]
 
-        if seg_type == "avatar":
+        if seg_type == "avatar" and has_avatar:
+            # Mixed mode: avatar segment with HeyGen video
             video_file = f"{ticker}_segment_{seg_id}.mp4"
             asset_info = assets.get(video_file)
             if not asset_info:
@@ -575,7 +585,6 @@ def build_timeline(project_dir, ticker, assets):
             }
             video_clips.append(avatar_clip)
 
-            # SRT entry for avatar narration
             srt_entries.append({
                 "seg_id": seg_id,
                 "index": srt_index,
@@ -584,10 +593,10 @@ def build_timeline(project_dir, ticker, assets):
                 "text": seg.get("narration", ""),
             })
             srt_index += 1
-
             current_time += duration + SEGMENT_GAP
 
         elif seg_type == "visual":
+            # Visual segment: slide PNG + voiceover audio
             visual_ref = seg.get("visual_ref", "")
             chart_file = chart_map.get(visual_ref)
             audio_file = f"{ticker}_segment_{seg_id}_voiceover.mp3"
@@ -600,7 +609,8 @@ def build_timeline(project_dir, ticker, assets):
                 continue
 
             duration = audio_durations.get(str(seg_id), seg["duration_estimate_seconds"])
-            print(f"  Seg {seg_id} (chart): {duration:.1f}s")
+            slide_type = seg.get("visual_type", "chart")
+            print(f"  Seg {seg_id} ({slide_type}): {duration:.1f}s")
 
             if chart_info:
                 video_clips.append({
@@ -621,7 +631,6 @@ def build_timeline(project_dir, ticker, assets):
             }
             audio_clips.append(audio_clip)
 
-            # SRT entry for voiceover narration
             srt_entries.append({
                 "seg_id": seg_id,
                 "index": srt_index,
@@ -630,7 +639,6 @@ def build_timeline(project_dir, ticker, assets):
                 "text": seg.get("narration", ""),
             })
             srt_index += 1
-
             current_time += duration + SEGMENT_GAP
 
     # ── Outro slide ──

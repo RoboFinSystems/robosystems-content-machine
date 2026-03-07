@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Callout Slide Example</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background-color: #0a0a0a;
+    color: #ffffff;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+  }
+
+  .frame {
+    width: 1920px;
+    height: 1080px;
+    background: #0a0a0a;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .top-bar {
+    height: 52px;
+    background: linear-gradient(90deg, #111111 0%, #161616 100%);
+    border-bottom: 2px solid #1e88e5;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 32px;
+    flex-shrink: 0;
+  }
+
+  .brand { display: flex; align-items: center; gap: 14px; }
+  .brand-logo { height: 24px; width: auto; opacity: 0.9; }
+  .brand-name { font-size: 14px; font-weight: 600; color: #e0e0e0; letter-spacing: 1.5px; text-transform: uppercase; }
+  .ticker-badge { display: flex; align-items: center; gap: 16px; }
+  .ticker { font-size: 16px; font-weight: 700; color: #ffffff; letter-spacing: 1px; }
+  .filing-badge { font-size: 12px; font-weight: 600; color: #1e88e5; background: rgba(30, 136, 229, 0.12); border: 1px solid rgba(30, 136, 229, 0.3); padding: 4px 12px; border-radius: 4px; }
+  .accent-line { height: 1px; background: linear-gradient(90deg, #1e88e5 0%, transparent 60%); flex-shrink: 0; }
+
+  /* ─── Callout Content ──────────────────────────── */
+  .callout-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0 120px;
+    text-align: center;
+  }
+
+  .callout-label {
+    font-size: 16px;
+    font-weight: 600;
+    color: #888888;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  .callout-value {
+    font-size: 96px;
+    font-weight: 700;
+    line-height: 1.1;
+    margin-bottom: 16px;
+    letter-spacing: -2px;
+  }
+
+  .callout-positive { color: #4caf50; }
+  .callout-negative { color: #ef5350; }
+  .callout-neutral { color: #1e88e5; }
+  .callout-warning { color: #ff9800; }
+
+  .callout-context {
+    font-size: 22px;
+    color: #aaaaaa;
+    line-height: 1.5;
+    max-width: 800px;
+  }
+
+  .callout-context em {
+    color: #ffffff;
+    font-style: normal;
+    font-weight: 600;
+  }
+
+  .bottom-bar {
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 32px;
+    flex-shrink: 0;
+  }
+
+  .source { font-size: 12px; color: #555555; }
+  .brand-url { font-size: 12px; color: #444444; letter-spacing: 0.5px; }
+</style>
+</head>
+<body>
+  <div class="frame">
+    <div class="top-bar">
+      <div class="brand">
+        <img src="robosystems_logo.png" alt="RoboSystems" class="brand-logo">
+        <div class="brand-name">RoboSystems</div>
+      </div>
+      <div class="ticker-badge">
+        <span class="ticker">GTBIF</span>
+        <span class="filing-badge">10-K 2025</span>
+      </div>
+    </div>
+    <div class="accent-line"></div>
+
+    <!-- Callout Content -->
+    <div class="callout-content">
+      <div class="callout-label">Section 280E Tax Burden</div>
+      <div class="callout-value callout-warning">$147M</div>
+      <div class="callout-context">Green Thumb paid a <em>56% effective tax rate</em> in FY2025.<br>A normal company pays 21%. The difference is <em>$147 million</em> in lost earnings — every year.</div>
+    </div>
+
+    <div class="bottom-bar">
+      <div class="source">Source: Green Thumb Industries 10-K (FY2025) via RoboSystems</div>
+      <div class="brand-url">robosystems.ai</div>
+    </div>
+  </div>
+</body>
+</html>
