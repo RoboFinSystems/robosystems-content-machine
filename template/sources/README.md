@@ -5,7 +5,7 @@ Drop supplementary research materials here before running Cowork. Claude will re
 ## Suggested files
 
 - `{TICKER}_earnings_release.txt` — Copy/paste from the company's investor relations press release
-- `{TICKER}_earnings_transcript.txt` — Copy/paste from earnings call transcript (SeekingAlpha, Motley Fool, etc.)
+- `{TICKER}_earnings_transcript.txt` — Copy/paste from earnings call transcript
 - `{TICKER}_notes.md` — Your own research notes, angles to explore, questions to answer
 - Any other relevant documents (analyst reports, news articles, regulatory filings)
 

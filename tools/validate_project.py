@@ -360,6 +360,8 @@ def main():
     args = parser.parse_args()
 
     project_dir = get_project_dir(args.project)
+    # Company-centric projects use ticker as project name (e.g., "GTBIF")
+    # Legacy projects use TICKER_YEAR_FILING format (e.g., "UBER_2025_10_K")
     ticker = args.project.split("_")[0]
 
     print(f"{'='*50}")
