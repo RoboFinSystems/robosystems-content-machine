@@ -3,28 +3,157 @@
 <head>
 <meta charset="UTF-8">
 <title>Outro Slide — Cannabis Coverage</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: #0a0a0a; color: #fff; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; width: 1920px; height: 1080px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-  .container { text-align: center; max-width: 900px; }
-  .logo { height: 48px; width: auto; margin-bottom: 20px; opacity: 0.9; }
-  .brand { font-size: 22px; font-weight: 600; color: #e0e0e0; letter-spacing: 5px; margin-bottom: 32px; }
-  .accent { width: 80px; height: 3px; background: #1e88e5; margin: 0 auto 32px; }
-  .cta-main { font-size: 22px; color: #ffffff; font-weight: 500; margin-bottom: 16px; line-height: 1.5; }
-  .cta-detail { font-size: 16px; color: #888; margin-bottom: 24px; line-height: 1.6; }
-  .url { font-size: 28px; font-weight: 700; color: #1e88e5; letter-spacing: 1px; margin-bottom: 16px; }
-  .setup { font-size: 14px; color: #555; font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; background: #111; border: 1px solid #222; padding: 10px 24px; border-radius: 6px; display: inline-block; }
+  body {
+    background: #030712;
+    color: #fff;
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  .bg-glow {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 900px;
+    height: 900px;
+    background: radial-gradient(circle, rgba(0, 212, 170, 0.05) 0%, rgba(59, 122, 245, 0.03) 40%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  .container {
+    text-align: center;
+    position: relative;
+    z-index: 1;
+    max-width: 1000px;
+  }
+
+  .logo {
+    height: 56px;
+    width: auto;
+    margin-bottom: 24px;
+    opacity: 0.95;
+  }
+
+  .brand {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: #F9FAFB;
+    letter-spacing: 6px;
+    margin-bottom: 40px;
+  }
+
+  .accent-line {
+    width: 120px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #00D4AA, transparent);
+    margin: 0 auto 40px;
+  }
+
+  .cta-main {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 28px;
+    font-weight: 600;
+    color: #F9FAFB;
+    margin-bottom: 16px;
+    line-height: 1.4;
+  }
+
+  .cta-detail {
+    font-size: 17px;
+    color: #9CA3AF;
+    margin-bottom: 36px;
+    line-height: 1.7;
+    max-width: 700px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .url {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 32px;
+    font-weight: 700;
+    color: #00D4AA;
+    letter-spacing: 2px;
+    margin-bottom: 20px;
+  }
+
+  .setup-cmd {
+    font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    font-size: 15px;
+    color: #00D4AA;
+    background: rgba(0, 212, 170, 0.08);
+    border: 1px solid rgba(0, 212, 170, 0.2);
+    padding: 12px 28px;
+    border-radius: 6px;
+    display: inline-block;
+    letter-spacing: 0.5px;
+  }
+
+  .setup-cmd .prompt {
+    color: #6B7280;
+  }
+
+  .bottom-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 40px;
+    border-top: 1px solid #111827;
+  }
+
+  .bottom-bar span {
+    font-size: 13px;
+    color: #374151;
+    letter-spacing: 0.5px;
+  }
+
+  .social {
+    display: flex;
+    gap: 24px;
+  }
+
+  .social span {
+    color: #4B5563;
+    font-size: 13px;
+  }
 </style>
 </head>
 <body>
-<div class="container">
-  <img src="robosystems_logo.png" alt="RoboSystems" class="logo">
-  <div class="brand">ROBOSYSTEMS</div>
-  <div class="accent"></div>
-  <div class="cta-main">Run this analysis yourself</div>
-  <div class="cta-detail">Direct access to structured SEC filing data for every public company.<br>Revenue, earnings, balance sheet, cash flow, segment breakdowns &mdash; all queryable.</div>
-  <div class="url">robosystems.ai</div>
-  <div class="setup">npx -y @robosystems/mcp</div>
-</div>
+  <div class="bg-glow"></div>
+  <div class="container">
+    <img src="robosystems_logo.svg" alt="RoboSystems" class="logo">
+    <div class="brand">ROBOSYSTEMS</div>
+    <div class="accent-line"></div>
+    <div class="cta-main">Run This Analysis Yourself</div>
+    <div class="cta-detail">
+      Every public company's SEC filings in one knowledge graph.<br>
+      Revenue, earnings, balance sheet, cash flow, segment breakdowns &mdash; all queryable.
+    </div>
+    <div class="url">robosystems.ai</div>
+  </div>
+  <div class="bottom-bar">
+    <span>Open Source &middot; github.com/RoboFinSystems</span>
+    <div class="social">
+      <span>@RoboFinSystems</span>
+      <span>youtube.com/@RoboSystems</span>
+    </div>
+  </div>
 </body>
 </html>
