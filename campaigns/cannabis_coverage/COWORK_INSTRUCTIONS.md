@@ -41,38 +41,76 @@ The viewer decides what to do with the information. Our job is to be the analysi
 
 The following MCP tools are available for querying SEC data. Use them by name:
 
+**High-level tools (use these first — they handle XBRL complexity for you):**
+
 | Tool | Purpose |
 |------|---------|
-| `resolve-element` | **Map a financial concept to the correct element qname for a company** |
-| `resolve-structure` | **Find a company's income statement, balance sheet, etc. by type** |
-| `get-graph-schema` | See all node types, properties, and relationships |
+| `get-financial-statement` | **Get a full financial statement in one call** — income statement, balance sheet, or cash flow. No Cypher needed. |
+| `build-fact-grid` | **Pull specific metrics across years/companies** — supports `canonical_concepts` (e.g., "revenue", "net_income") so you don't need to know XBRL element names. Best for targeted comparisons and multi-year trend data. |
+| `resolve-element` | **Map a financial concept to the correct XBRL element qname** — use when you need to write custom Cypher queries. |
+
+**Lower-level tools (use when high-level tools don't cover your need):**
+
+| Tool | Purpose |
+|------|---------|
+| `read-graph-cypher` | Execute a Cypher query — for segment breakdowns, dimensional data, or anything the high-level tools can't do |
+| `resolve-structure` | Find a company's statement structures by type |
+| `list-disclosures` | Find disclosure notes (debt maturities, tax details, etc.) |
+| `get-disclosure-detail` | Get the content of a specific disclosure |
 | `get-example-queries` | Get working Cypher query examples |
 | `discover-common-elements` | Browse all available XBRL element qnames (fallback) |
-| `discover-properties` | See properties on a specific node type |
-| `describe-graph-structure` | High-level overview of the database |
-| `read-graph-cypher` | **Execute a Cypher query** — the main data retrieval tool |
 
-### Cypher Query Cheat Sheet
+### Recommended Workflow
 
-These are tested, ready-to-use queries. Replace `TICKER` with the actual ticker (e.g., `'GTBIF'`). All queries use `read-graph-cypher`.
+**Start with high-level tools.** They handle XBRL element variation across companies automatically.
 
-**Understanding `numeric_value`:**
-`numeric_value` is the actual value in base units (e.g., USD for monetary amounts, USD/share for per-share data). Use it directly — no scaling or transformation needed. Revenue of $1.175B is stored as `1175295000`. EPS of $0.48 is stored as `0.48`.
-
----
-
-**Step 1 — Resolve the metrics you need (DO THIS FIRST):**
-
-Use `resolve-element` to find the correct element qnames for this company. Do NOT guess element names or hardcode qnames — always resolve first.
+**Step 1 — Get full financial statements:**
 
 ```
+get-financial-statement {ticker: "TICKER", statement_type: "income_statement", period_type: "annual"}
+get-financial-statement {ticker: "TICKER", statement_type: "balance_sheet"}
+get-financial-statement {ticker: "TICKER", statement_type: "cash_flow_statement", period_type: "annual"}
+```
+
+This returns all line items for the statement across available years. No element resolution needed.
+
+**Step 2 — Pull specific metrics with `build-fact-grid`:**
+
+Use `canonical_concepts` to pull specific metrics by name — this handles cross-company XBRL tag variation automatically:
+
+```
+build-fact-grid {
+  canonical_concepts: ["revenue", "net_income", "income_tax_expense", "total_assets", "operating_cash_flow"],
+  entity: "TICKER",
+  period_type: "annual"
+}
+```
+
+For balance sheet items (point-in-time):
+```
+build-fact-grid {
+  canonical_concepts: ["total_assets", "total_liabilities", "goodwill", "long_term_debt"],
+  entity: "TICKER",
+  period_type: "instant"
+}
+```
+
+For cross-company comparisons:
+```
+build-fact-grid {
+  canonical_concepts: ["revenue", "net_income"],
+  entities: ["GTBIF", "TCNNF", "CURLF"],
+  period_type: "annual"
+}
+```
+
+**Step 3 — Use Cypher for segment breakdowns and dimensional data:**
+
+For segment revenue, geographic breakdowns, and anything the high-level tools don't cover, use `resolve-element` + `read-graph-cypher`.
+
+First resolve the element:
+```
 resolve-element {concept: "revenue", ticker: "TICKER"}
-resolve-element {concept: "net income", ticker: "TICKER"}
-resolve-element {concept: "total assets", ticker: "TICKER"}
-resolve-element {concept: "operating cash flow", ticker: "TICKER"}
-resolve-element {concept: "eps diluted", ticker: "TICKER"}
-resolve-element {concept: "income tax expense", ticker: "TICKER"}
-resolve-element {concept: "goodwill impairment", ticker: "TICKER"}
 ```
 
 Each result includes:
@@ -80,89 +118,7 @@ Each result includes:
 - `confidence` — how confident the match is (>0.90 is reliable)
 - `query_hint` — a ready-to-use Cypher query you can pass directly to `read-graph-cypher`
 
-If `resolve-element` returns no match for a concept, fall back to discovering elements manually:
-
-```cypher
-MATCH (f:Fact)-[:FACT_HAS_ELEMENT]->(el:Element),
-      (f)-[:FACT_HAS_ENTITY]->(e:Entity {ticker: 'TICKER'})
-WHERE el.qname CONTAINS 'Revenue' AND f.numeric_value IS NOT NULL
-RETURN DISTINCT el.qname, el.name, count(f) as fact_count
-ORDER BY fact_count DESC
-```
-
-**⚠️ IMPORTANT — 40-F / IFRS filers:** Some cannabis companies (Curaleaf, Cresco Labs) are Canadian-listed and file 40-F instead of 10-K. They may use IFRS elements (e.g., `ifrs-full:Revenue` instead of `us-gaap:Revenues`). If `resolve-element` returns no matches, search for IFRS elements:
-
-```cypher
-MATCH (f:Fact)-[:FACT_HAS_ELEMENT]->(el:Element),
-      (f)-[:FACT_HAS_ENTITY]->(e:Entity {ticker: 'TICKER'})
-WHERE (el.qname STARTS WITH 'ifrs-full:' OR el.qname STARTS WITH 'us-gaap:')
-AND f.numeric_value IS NOT NULL
-RETURN DISTINCT el.qname, el.name, count(f) as fact_count
-ORDER BY fact_count DESC
-LIMIT 50
-```
-
-**Step 2 — Find the company and its filings:**
-
-```cypher
-MATCH (e:Entity) WHERE e.ticker = 'TICKER' RETURN e
-```
-
-```cypher
-MATCH (e:Entity)-[:ENTITY_HAS_REPORT]->(r:Report)
-WHERE e.ticker = 'TICKER'
-RETURN r.form, r.filing_date, r.report_date, r.accession_number
-ORDER BY r.filing_date DESC
-```
-
-**Step 3 — Run financial queries using resolved elements:**
-
-Use the `query_hint` from Step 1, or build queries with the resolved qnames.
-All `numeric_value` results are actual values — no transformation needed.
-
-Income statement / cash flow (flow metrics — use `duration_type`):
-```cypher
-MATCH (f:Fact {has_dimensions: false})-[:FACT_HAS_ELEMENT]->(el:Element {qname: 'RESOLVED_QNAME'}),
-      (f)-[:FACT_HAS_PERIOD]->(p:Period),
-      (f)-[:FACT_HAS_ENTITY]->(e:Entity {ticker: 'TICKER'})
-WHERE f.numeric_value IS NOT NULL AND p.duration_type = 'annual'
-RETURN DISTINCT p.end_date, f.numeric_value
-ORDER BY p.end_date DESC
-```
-
-Balance sheet (point-in-time metrics — use `period_type = 'instant'`):
-```cypher
-MATCH (f:Fact {has_dimensions: false})-[:FACT_HAS_ELEMENT]->(el:Element {qname: 'RESOLVED_QNAME'}),
-      (f)-[:FACT_HAS_PERIOD]->(p:Period),
-      (f)-[:FACT_HAS_ENTITY]->(e:Entity {ticker: 'TICKER'})
-WHERE f.numeric_value IS NOT NULL AND p.period_type = 'instant'
-RETURN DISTINCT p.end_date, f.numeric_value
-ORDER BY p.end_date DESC
-```
-
-Multiple balance sheet metrics at once:
-```cypher
-MATCH (f:Fact {has_dimensions: false})-[:FACT_HAS_ELEMENT]->(el:Element),
-      (f)-[:FACT_HAS_PERIOD]->(p:Period),
-      (f)-[:FACT_HAS_ENTITY]->(e:Entity {ticker: 'TICKER'})
-WHERE el.qname IN ['RESOLVED_QNAME_1', 'RESOLVED_QNAME_2', 'RESOLVED_QNAME_3']
-AND f.numeric_value IS NOT NULL AND p.period_type = 'instant'
-RETURN DISTINCT el.qname, p.end_date, f.numeric_value
-ORDER BY el.qname, p.end_date DESC
-```
-
-Multiple income statement / cash flow metrics at once:
-```cypher
-MATCH (f:Fact {has_dimensions: false})-[:FACT_HAS_ELEMENT]->(el:Element),
-      (f)-[:FACT_HAS_PERIOD]->(p:Period),
-      (f)-[:FACT_HAS_ENTITY]->(e:Entity {ticker: 'TICKER'})
-WHERE el.qname IN ['RESOLVED_QNAME_1', 'RESOLVED_QNAME_2', 'RESOLVED_QNAME_3']
-AND f.numeric_value IS NOT NULL AND p.duration_type = 'annual'
-RETURN DISTINCT el.qname, p.end_date, f.numeric_value
-ORDER BY el.qname, p.end_date DESC
-```
-
-**Step 4 — Segment revenue breakdowns (dimensional):**
+Segment revenue breakdowns (dimensional):
 ```cypher
 MATCH (f:Fact {has_dimensions: true})-[:FACT_HAS_ELEMENT]->(el:Element),
       (f)-[:FACT_HAS_DIMENSION]->(d:Dimension),
@@ -174,7 +130,47 @@ RETURN DISTINCT el.qname, d.member_uri, p.end_date, f.numeric_value
 ORDER BY p.end_date DESC, f.numeric_value DESC
 ```
 
-The `d.member_uri` shows the segment name (e.g., geographic region, business unit).
+**Step 4 — Disclosures (debt maturities, tax details):**
+
+```
+list-disclosures {ticker: "TICKER"}
+```
+Then use `get-disclosure-detail` with the disclosure ID for specifics like debt maturity schedules or tax position details.
+
+### Cypher Query Patterns (when needed)
+
+All `numeric_value` results are actual values in base units — no scaling needed. Revenue of $1.175B is stored as `1175295000`.
+
+Income statement / cash flow (flow metrics):
+```cypher
+MATCH (f:Fact {has_dimensions: false})-[:FACT_HAS_ELEMENT]->(el:Element {qname: 'RESOLVED_QNAME'}),
+      (f)-[:FACT_HAS_PERIOD]->(p:Period),
+      (f)-[:FACT_HAS_ENTITY]->(e:Entity {ticker: 'TICKER'})
+WHERE f.numeric_value IS NOT NULL AND p.duration_type = 'annual'
+RETURN DISTINCT p.end_date, f.numeric_value
+ORDER BY p.end_date DESC
+```
+
+Balance sheet (point-in-time):
+```cypher
+MATCH (f:Fact {has_dimensions: false})-[:FACT_HAS_ELEMENT]->(el:Element {qname: 'RESOLVED_QNAME'}),
+      (f)-[:FACT_HAS_PERIOD]->(p:Period),
+      (f)-[:FACT_HAS_ENTITY]->(e:Entity {ticker: 'TICKER'})
+WHERE f.numeric_value IS NOT NULL AND p.period_type = 'instant'
+RETURN DISTINCT p.end_date, f.numeric_value
+ORDER BY p.end_date DESC
+```
+
+Multiple metrics at once:
+```cypher
+MATCH (f:Fact {has_dimensions: false})-[:FACT_HAS_ELEMENT]->(el:Element),
+      (f)-[:FACT_HAS_PERIOD]->(p:Period),
+      (f)-[:FACT_HAS_ENTITY]->(e:Entity {ticker: 'TICKER'})
+WHERE el.qname IN ['RESOLVED_QNAME_1', 'RESOLVED_QNAME_2', 'RESOLVED_QNAME_3']
+AND f.numeric_value IS NOT NULL AND p.duration_type = 'annual'
+RETURN DISTINCT el.qname, p.end_date, f.numeric_value
+ORDER BY el.qname, p.end_date DESC
+```
 
 **Important query patterns:**
 - Always use **comma-separated patterns in a SINGLE MATCH** — multiple MATCHes can timeout
@@ -182,7 +178,18 @@ The `d.member_uri` shows the segment name (e.g., geographic region, business uni
 - Use `has_dimensions: false` for consolidated totals, `has_dimensions: true` for segment breakdowns
 - `period_type` values: `instant` (balance sheet), `duration` (income/cash flow), `forever` (rare)
 - `duration_type` values: `quarterly`, `annual`, `semi_annual`, `nine_months`, `other` (only for duration periods)
-- `numeric_value` is the actual value — no decimals math needed
+
+**⚠️ IMPORTANT — 40-F / IFRS filers:** Some cannabis companies (Curaleaf, Cresco Labs) are Canadian-listed and file 40-F instead of 10-K. They may use IFRS elements (e.g., `ifrs-full:Revenue` instead of `us-gaap:Revenues`). The high-level tools (`get-financial-statement`, `build-fact-grid`) handle this automatically. If using raw Cypher and `resolve-element` returns no matches, search for IFRS elements:
+
+```cypher
+MATCH (f:Fact)-[:FACT_HAS_ELEMENT]->(el:Element),
+      (f)-[:FACT_HAS_ENTITY]->(e:Entity {ticker: 'TICKER'})
+WHERE (el.qname STARTS WITH 'ifrs-full:' OR el.qname STARTS WITH 'us-gaap:')
+AND f.numeric_value IS NOT NULL
+RETURN DISTINCT el.qname, el.name, count(f) as fact_count
+ORDER BY fact_count DESC
+LIMIT 50
+```
 
 ## Cannabis-Specific Analysis Requirements
 
@@ -232,9 +239,9 @@ This is the most important cannabis-specific section. Paint a concrete, numbers-
 
 **All outputs must be plain text files (HTML, JSON, TXT). Never create binary formats like .docx, .pdf, .xlsx, or .pptx.**
 
-**You MUST produce ALL 6 outputs listed below in the order shown. The narrative brief comes FIRST — it is the foundation that everything else is built from. Do not skip it. Do not jump straight to the video script. The task is not complete until all 6 files exist.**
+**You MUST produce ALL 7 outputs listed below in the order shown. The narrative brief comes FIRST — it is the foundation that everything else is built from. Do not skip it. Do not jump straight to the video script. The task is not complete until all 7 files exist.**
 
-For each stock analysis, you produce **6 outputs** saved to the working folder:
+For each stock analysis, you produce **7 outputs** saved to the working folder:
 
 ### 1. Narrative Brief (`reports/{TICKER}_brief.md`)
 
@@ -375,15 +382,10 @@ Format:
 - Close with a clear bull/bear summary — not a buy recommendation, but a framework for thinking about the opportunity
 - **Include RoboSystems plugs** — use the standard plugs below verbatim. Do NOT rewrite or get creative with the plug copy.
 
-**Standard plugs (use verbatim in narration):**
-
-*Mid-video attribution (use once, naturally after referencing a specific data point from the filing):*
-> "All of the financial data in this analysis comes from the company's actual SEC filing, pulled directly from the RoboSystems shared data repository. If you want to run your own queries on any public company's filings, check out robosystems dot A I."
-
-*Closing CTA (use as the final or second-to-last segment, over the outro slide):*
+**RoboSystems plug (use verbatim as the final or second-to-last segment):**
 > "This entire analysis was built using RoboSystems — an open source platform that gives you direct access to structured SEC filing data for every public company. Revenue, earnings, balance sheet, cash flow, segment breakdowns — all queryable, all from the original XBRL filings. You can set up the same tools I just used in about five minutes. Head to robosystems dot A I to get started — link in the description."
 
-Pick ONE of these per video — do not use both. The mid-video attribution works best in shorter videos. The closing CTA works best in longer analyses.
+Use `visual_ref: "outro_slide"` (the OUTRO_SLIDE template) for this segment. Do NOT pair the plug with a data chart.
 
 **Critical: Visual-narration alignment.**
 Each segment's slide MUST directly illustrate the specific metrics being narrated. The slide is the visual evidence for what the voice is saying — they must be tightly coupled.
@@ -489,6 +491,7 @@ Chart types to use (in order of preference):
 - Risk/caveat
 - Closing takeaway
 - Link to the YouTube video (placeholder: `[YOUTUBE_LINK]`)
+- Mention robosystems.ai with code LAUNCH for 50% off first month
 - Relevant $TICKER cashtag and hashtags (#Cannabis #MSO #280E #Rescheduling)
 - Tag @RoboFinSystems
 
@@ -497,16 +500,31 @@ Chart types to use (in order of preference):
 - 2-3 key data points from the filing (revenue, margins, cash flow)
 - One line on 280E impact / catalyst sensitivity
 - Link to the YouTube video (placeholder: `[YOUTUBE_LINK]`)
+- Mention robosystems.ai with code LAUNCH
 - Keep it punchy — StockTwits audience wants numbers, not narrative
 
-### 5. Thumbnail HTML (`charts/html/{TICKER}_thumbnail.html`)
+### 5. YouTube Description (`social/{TICKER}_youtube_description.txt`)
+
+A full YouTube description optimized for search and viewer context:
+- Opening hook (1-2 sentences summarizing the analysis)
+- Links section: `https://robosystems.ai` (with "code LAUNCH for 50% off first month") and `https://github.com/RoboFinSystems/robosystems-content-machine`
+- **Timestamps**: estimate from segment durations in the script. Format as `0:00 — Description`. Start at 0:00, accumulate each segment's `duration_estimate_seconds`.
+- **Key findings**: 6-8 bullet points with the most important numbers from the analysis
+- **280E explainer**: 2-3 sentence explanation of what Section 280E is (many viewers will land on this cold)
+- Disclaimer: "This is not investment advice. RoboSystems Initiating Coverage provides fact-based analysis from SEC filings. No paid promotions. No price targets."
+- Hashtags: #TICKER #CompanyName #Cannabis #MSO #280E #Rescheduling #SECFiling #StockAnalysis
+
+### 6. Thumbnail HTML (`charts/html/{TICKER}_thumbnail.html`)
 
 A 1280x720 HTML file designed as a YouTube thumbnail:
 - Bold ticker symbol and company name
-- "INITIATING COVERAGE" banner
-- One key metric (e.g., "Revenue: $1.18B" or "280E Tax Burden: $147M")
-- Cannabis-themed accent color (consider green/gold palette alongside standard financial aesthetic)
-- Large, readable text (viewers see this at small sizes)
+- "INITIATING COVERAGE" banner (top-left, gradient gold→green)
+- RoboSystems logo (top-right)
+- **Hero metric: the adjusted P/E ratio (post-280E relief).** This is the number that creates cognitive dissonance — show what the company trades at if taxed normally. Display in large green text in a bordered box.
+- Two secondary metrics below in blue boxes (e.g., Revenue + 280E Penalty, or Revenue + FCF Yield)
+- Dark background (#0a0a0a base), green accent glow effects
+- Do NOT use `width: 100%; height: 100%` on the body — use a fixed-size container (`width: 1280px; height: 720px`) or the screenshot will have rendering issues
+- Large, readable text (viewers see this at tiny sizes in YouTube search results)
 
 ## Workflow
 
@@ -541,14 +559,15 @@ A 1280x720 HTML file designed as a YouTube thumbnail:
    - What would margins look like post-rescheduling?
    - Is the debt manageable or is this a survival question?
    - What's the bull case? What's the bear case?
-8. **Produce all 6 outputs in this order** (order matters — each builds on the previous):
+8. **Produce all 7 outputs in this order** (order matters — each builds on the previous):
    1. `reports/{TICKER}_brief.md` — **Narrative brief (WRITE THIS FIRST).** This forces you to synthesize the research into a story before structuring it.
    2. `scripts/{TICKER}_script.json` — Video script JSON. **Adapt from the narrative brief** — don't write from scratch.
    3. `charts/html/{visual_ref}.html` — One HTML file per chart referenced in the script. **Before creating any chart, read the 4 EXAMPLE files** to understand the correct patterns.
    4. `social/{TICKER}_x_post.txt` — X post
    5. `social/{TICKER}_stocktwits_post.txt` — StockTwits post
-   6. `charts/html/{TICKER}_thumbnail.html` — YouTube thumbnail
-9. **Verify completeness** — before finishing, confirm all 6 output types exist. If any are missing, create them now. The task is NOT done until all files are saved.
+   6. `social/{TICKER}_youtube_description.txt` — YouTube description with timestamps, key findings, links, and LAUNCH discount code
+   7. `charts/html/{TICKER}_thumbnail.html` — YouTube thumbnail
+9. **Verify completeness** — before finishing, confirm all 7 output types exist. If any are missing, create them now. The task is NOT done until all files are saved.
 
 ## Important Rules
 
@@ -561,10 +580,14 @@ A 1280x720 HTML file designed as a YouTube thumbnail:
   - Percentages: "25%" → "25 percent", "+8.3%" → "up 8.3 percent"
   - Ratios: "P/E" → "price to earnings", "P/S" → "price to sales", "EV/EBITDA" → "E V to EBITDA"
   - Abbreviations: "YoY" → "year over year", "QoQ" → "quarter over quarter", "EPS" → "earnings per share", "ROE" → "return on equity", "FCF" → "free cash flow", "MSO" → "M S O" or "multi-state operator", "OTC" → "O T C" or "over the counter"
+  - Accounting: "GAAP" → "gap", "US GAAP" → "U S gap", "non-GAAP" → "non-gap"
+  - Government agencies: "DEA" → "Drug Enforcement Administration", "IRS" → "I R S", "SEC" → "S E C", "FDA" → "F D A", "DOJ" → "D O J"
   - Filing types: "10-K" → "10 K", "10-Q" → "10 Q", "40-F" → "40 F"
-  - Tax codes: "280E" → "section 280 E", "Schedule I" → "schedule one", "Schedule III" → "schedule three"
+  - Tax codes: "280E" → "section two eighty E", "Schedule I" → "schedule one", "Schedule III" → "schedule three"
+  - Company names: "Trulieve" → "true-leave" (phonetic hint — spell as "Trulieve" but TTS reads it wrong without guidance)
   - Symbols: "&" → "and", "/" → spell out context
   - Large numbers: prefer rounding in speech ("roughly 1.2 billion dollars")
+  - Billions: NEVER say "1,181 million" or "1,175 million" — always convert to spoken billions: "one point two billion", "one point one eight billion". Write the number out in words, not digits — TTS engines mispronounce "1.175 billion" but handle "one point two billion" naturally. Round to one decimal place when possible.
   - Never use symbols like $, %, x, /, & in narration text — always spell them out
 - Charts must use ACTUAL data from the analysis, not placeholder values.
 - **Framing**: This is initiating coverage, not a buy recommendation. Present the data objectively, acknowledge catalysts but emphasize uncertainty, and let viewers draw their own conclusions.

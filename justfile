@@ -81,10 +81,10 @@ voiceover project:
     @just ensure-env
     UV_ENV_FILE={{_env}} uv run python tools/generate_voiceover_audio.py {{project}}
 
-# Assemble final video via Shotstack
-assemble project:
+# Assemble final video via Shotstack (add --production to use credits)
+assemble project *args:
     @just ensure-env
-    UV_ENV_FILE={{_env}} uv run python tools/assemble_video.py {{project}}
+    UV_ENV_FILE={{_env}} uv run python tools/assemble_video.py {{project}} {{args}}
 
 # Run full pipeline: validate → screenshots → voiceover → assemble
 pipeline project:

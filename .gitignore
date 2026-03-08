@@ -25,6 +25,9 @@ venv/
 # Project outputs (generated per-project)
 projects/*/
 
+# Campaign shared sources (may contain third-party data)
+campaigns/*/sources/
+
 # Local (untracked scratch space)
 local/
 

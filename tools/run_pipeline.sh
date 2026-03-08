@@ -97,6 +97,7 @@ if [ "$MODE" = "mixed" ]; then
     echo ""
 
     # Step 4: Assemble video
+    rm -f "$PROJECT_DIR/videos/shotstack_assets.json" "$PROJECT_DIR/videos/media_durations.json"
     echo "Step 4/$STEPS: Assemble video (upload to S3 + Shotstack render)"
     uv run python tools/assemble_video.py "$PROJECT"
     echo ""
@@ -107,6 +108,8 @@ else
     echo ""
 
     # Step 3: Assemble video
+    # Clear asset cache so fresh audio/screenshots are uploaded
+    rm -f "$PROJECT_DIR/videos/shotstack_assets.json" "$PROJECT_DIR/videos/media_durations.json"
     echo "Step 3/$STEPS: Assemble video (upload to S3 + Shotstack render)"
     uv run python tools/assemble_video.py "$PROJECT"
     echo ""

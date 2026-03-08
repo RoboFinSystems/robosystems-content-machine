@@ -33,13 +33,14 @@ from helpers import get_project_dir, require_env
 
 S3_BUCKET = require_env("S3_BUCKET")
 S3_REGION = os.environ.get("S3_REGION", "us-east-1")
-EDIT_BASE = "https://api.shotstack.io/edit/stage"
+EDIT_BASE = None  # Set in main() from CLI arg
+_SHOTSTACK_API_KEY = None  # Set in main() based on environment
 
 
 def shotstack_request(method, path, data=None):
     url = f"{EDIT_BASE}{path}"
     headers = {
-        "x-api-key": require_env("SHOTSTACK_API_KEY"),
+        "x-api-key": _SHOTSTACK_API_KEY,
         "Content-Type": "application/json",
         "Accept": "application/json",
     }
@@ -506,7 +507,7 @@ def normalize_audio(video_path):
         return False
 
 
-def build_timeline(project_dir, ticker, assets):
+def build_timeline(project_dir, ticker, assets, production=False):
     """Build the Shotstack timeline JSON from the script and uploaded assets."""
     script_path = os.path.join(project_dir, "scripts", f"{ticker}_script.json")
     with open(script_path) as f:
@@ -608,15 +609,18 @@ def build_timeline(project_dir, ticker, assets):
                 print(f"  Warning: No audio for segment {seg_id}, skipping")
                 continue
 
-            duration = audio_durations.get(str(seg_id), seg["duration_estimate_seconds"])
+            audio_duration = audio_durations.get(str(seg_id), seg["duration_estimate_seconds"])
+            # Add buffer so voiceover finishes cleanly before next segment
+            AUDIO_TAIL_BUFFER = 0.5
+            image_duration = audio_duration + AUDIO_TAIL_BUFFER
             slide_type = seg.get("visual_type", "chart")
-            print(f"  Seg {seg_id} ({slide_type}): {duration:.1f}s")
+            print(f"  Seg {seg_id} ({slide_type}): {audio_duration:.1f}s")
 
             if chart_info:
                 video_clips.append({
                     "asset": {"type": "image", "src": chart_info["url"]},
                     "start": round(current_time, 2),
-                    "length": round(duration, 2),
+                    "length": round(image_duration, 2),
                     "transition": {"in": "fade"},
                 })
 
@@ -627,7 +631,7 @@ def build_timeline(project_dir, ticker, assets):
                     "volume": 1.0,
                 },
                 "start": round(current_time, 2),
-                "length": round(duration, 2),
+                "length": round(audio_duration + 0.1, 2),  # slight buffer to avoid clipping
             }
             audio_clips.append(audio_clip)
 
@@ -635,11 +639,11 @@ def build_timeline(project_dir, ticker, assets):
                 "seg_id": seg_id,
                 "index": srt_index,
                 "start": current_time,
-                "end": current_time + duration,
+                "end": current_time + audio_duration,
                 "text": seg.get("narration", ""),
             })
             srt_index += 1
-            current_time += duration + SEGMENT_GAP
+            current_time += image_duration + SEGMENT_GAP
 
     # ── Outro slide ──
     outro_info = assets.get("outro_slide.png")
@@ -708,7 +712,7 @@ def build_timeline(project_dir, ticker, assets):
 
     output = {
         "format": "mp4",
-        "resolution": "hd",
+        "resolution": "1080" if production else "hd",
         "fps": 25,
     }
 
@@ -786,8 +790,17 @@ def main():
     parser.add_argument("project", help="Project name (e.g., JPM_2025_10_K)")
     parser.add_argument("--edit-only", action="store_true", help="Build edit JSON only (no render)")
     parser.add_argument("--status", metavar="RENDER_ID", help="Check render status")
+    parser.add_argument("--production", action="store_true", help="Use Shotstack production API (v1) instead of stage")
 
     args = parser.parse_args()
+
+    global EDIT_BASE, _SHOTSTACK_API_KEY
+    if args.production:
+        EDIT_BASE = "https://api.shotstack.io/edit/v1"
+        _SHOTSTACK_API_KEY = require_env("SHOTSTACK_API_KEY")
+    else:
+        EDIT_BASE = "https://api.shotstack.io/edit/stage"
+        _SHOTSTACK_API_KEY = os.environ.get("SHOTSTACK_API_KEY_SANDBOX", require_env("SHOTSTACK_API_KEY"))
     project_dir = get_project_dir(args.project)
 
     # Find ticker
@@ -818,7 +831,7 @@ def main():
     assets = build_asset_manifest(project_dir, ticker)
 
     # Step 2: Build timeline
-    edit = build_timeline(project_dir, ticker, assets)
+    edit = build_timeline(project_dir, ticker, assets, production=args.production)
 
     if args.edit_only:
         print("\nEdit JSON saved. Skipping render (--edit-only).")

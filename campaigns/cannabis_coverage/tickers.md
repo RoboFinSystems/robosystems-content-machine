@@ -1,63 +1,88 @@
 # Cannabis Coverage — Ticker List
 
-Ranked by market cap (March 2026).
+Companies with structured SEC filing data available in RoboSystems, ranked by priority.
 
-## Tier 1 — Large Cap MSOs (>$1B market cap)
+**Strategy:** Turn around coverage reports the night each FY2025 10-K drops. Huge cluster week of Mar 11-16, 2026.
 
-| Ticker | Company | Price | Mkt Cap | 52W Range | Notes |
-|--------|---------|-------|---------|-----------|-------|
-| CURLF | Curaleaf Holdings | $2.37 | $1.72B | $0.68-$5.05 | Largest MSO by revenue. 40-F filer. International operations. |
-| GTBIF | Green Thumb Industries | $6.67 | $1.45B | $4.63-$10.43 | Most profitable MSO. FY2025 10-K loaded. |
-| TCNNF | Trulieve Cannabis | $6.61 | $1.17B | $3.02-$11.83 | 60% gross margin, record FCF. FY2025 10-K loaded. Florida-dominant. |
+## Earnings Calendar — FY2025 Annual Filings
 
-## Tier 2 — Mid Cap ($100M-$1B market cap)
+```
+Mar 11  MRMD     Post-Market    10-K
+Mar 12  VRNO     Pre-Market     10-K    ← top priority
+Mar 12  TSNDF    Post-Market    10-K    ← top priority
+Mar 12  AAWH     Post-Market    10-K
+Mar 12  VREOF    During-Market  10-K
+Mar 12  GLASF    Post-Market    40-F    (blocked — no MCP data)
+Mar 13  PLNH     Post-Market    10-K
+Mar 16  CBSTF    During-Market  10-K
+---
+May 6   GTBIF    Post-Market    Q1 FY2026 (annual already done)
+May 8   TCNNF    During-Market  Q1 FY2026 (annual already done)
+May 8   CURLF    Post-Market    quarterly (40-F blocked)
+```
 
-| Ticker | Company | Price | Mkt Cap | 52W Range | Notes |
-|--------|---------|-------|---------|-----------|-------|
-| VRNO | Verano Holdings | $1.27 | $383M | $0.41-$1.95 | IL/NJ strong. FY2025 earnings 3/12. |
-| CRLBF | Cresco Labs | $1.05 | $415M | $0.43-$2.30 | 40-F filer (IFRS). |
-| GLASF | Glass House Brands | $8.54 | ~$300M | $3.80-$10.10 | California greenhouse cultivator. |
-| TSNDF | TerrAscend | $0.73 | ~$200M | $0.23-$1.45 | FY2025 earnings expected soon. |
-| JUSHF | Jushi Holdings | $0.53 | $90M | $0.23-$0.98 | PA/VA focused. |
+CRLBF last reported 3/5/2026 — FY2025 annual may already be filed. No upcoming date listed.
+JUSHF, GRUSF, CXXIF — no upcoming date listed.
 
-## Tier 3 — Small Cap (<$100M market cap)
+## Coverage Status
 
-| Ticker | Company | Price | Mkt Cap | 52W Range | Notes |
-|--------|---------|-------|---------|-----------|-------|
-| AAWH | Ascend Wellness | $0.54 | $75M | $0.26-$1.20 | IL/NJ/MA focused. FY2025 earnings 3/12. |
-| MRMD | MariMed | $0.08 | $33M | $0.07-$0.23 | Earnings 3/11. |
-| CBSTF | Cannabist (fka Columbia Care) | $0.03 | ~$20M | $0.03-$0.16 | Struggling. Revenue declining. |
-| PLNH | Planet 13 | $0.18 | ~$15M | $0.15-$0.50 | Entertainment-focused dispensary. |
-| CNTMF | C21 Investments | $0.04 | small | $0.03-$0.09 | Micro-cap. |
-| CXXIF | C21 Investments | $0.32 | small | $0.12-$0.54 | Micro-cap. |
-| GRUSF | Grown Rogue | $0.33 | small | $0.28-$0.57 | Micro-cap. |
-| VEXTF | Vext Science | $0.18 | small | $0.07-$0.32 | Micro-cap. |
-| VREOF | Vireo Health | $0.45 | small | $0.31-$0.80 | Micro-cap. |
+| Status | Ticker | Company | CIK | Filing Type | MCP Data | FY | Earnings | Notes |
+|--------|--------|---------|-----|-------------|----------|----|----------|-------|
+| DONE | GTBIF | Green Thumb Industries | 0001795139 | 10-K | FY2025 (4yr) | 2025 | 5/6 Q1 | Video published. Most profitable MSO. |
+| DONE | TCNNF | Trulieve Cannabis | 0001754195 | 10-K | FY2025 (4yr) | 2025 | 5/8 Q1 | Video published. 60% gross margin, record FCF. |
+| READY | VRNO | Verano Holdings | 0001848416 | 10-K | FY2021-2024 (4yr) | 2024 | 3/12 Pre | Solid data. FY2025 10-K night-of target. |
+| READY | TSNDF | TerrAscend | 0001778129 | 10-K | FY2021-2024 (4yr) | 2024 | 3/12 Post | Solid data. NJ/PA growth story. |
+| READY | AAWH | Ascend Wellness | 0001756390 | 10-K | FY2021-2024 (4yr) | 2024 | 3/12 Post | Solid data. IL/NJ/MA focused. |
+| READY | CBSTF | Cannabist (fka Columbia Care) | 0001776738 | 10-K | FY2021-2024 (4yr) | 2024 | 3/16 | Solid data. Revenue declining. |
+| READY | MRMD | MariMed | 0001522767 | 10-K | FY2022-2024 (3yr) | 2024 | 3/11 Post | Solid data. Small-cap. |
+| READY | PLNH | Planet 13 Holdings | 0001813452 | 10-K | FY2022-2024 (3yr) | 2024 | 3/13 Post | Solid data. Entertainment dispensary. |
+| READY | JUSHF | Jushi Holdings | 0001909747 | 10-K | FY2021-2024 (4yr) | 2024 | TBD | Solid data. PA/VA focused. No date yet. |
+| READY | GRUSF | Grown Rogue International | 0001463000 | 20-F | FY2021-2024 (5 periods) | 2024 | TBD | Solid data. Changed FY end (Oct to Dec). Micro-cap. |
+| READY | CXXIF | C21 Investments | 0000831609 | 20-F | FY2023-2025 (3yr) | 2025 | TBD | Solid data. Non-standard FY (Jan/Mar end). Micro-cap. |
+| BLOCKED | CURLF | Curaleaf Holdings | 0001756770 | 40-F | FY2022-2023 only | 2025 | 5/8 Q | 40-F XBRL not loaded for FY2024/2025. Largest MSO by revenue. |
+| BLOCKED | CRLBF | Cresco Labs | 0001832928 | 40-F | FY2022-2023 only | 2024 | filed? | 40-F XBRL not loaded for FY2024. Last reported 3/5/2026. |
+| BLOCKED | GLASF | Glass House Brands | 0001848731 | 40-F | No data | 2024 | 3/12 Post | Zero XBRL facts loaded. 40-F/IFRS filer. |
+| STALE | VREOF | Vireo Growth | 0001771706 | 10-K | FY2022-2023 only | 2024 | 3/12 | FY2024 10-K filed but not loaded. Needs data refresh. |
+
+## Not in RoboSystems (no data available)
+
+| Ticker | Company | Reason |
+|--------|---------|--------|
+| VEXTF | Vext Science | Not in SEC graph — may file in Canada only |
+| CNTMF | Fluent Corp | Not in SEC graph — may file under different entity or Canada only |
+
+## Production Priority — Night-of Turnaround Plan
+
+**Week of Mar 11-16, 2026 — BLITZ WEEK (7 tickers in 6 days)**
+
+| Date | Ticker | Time | Revenue Est. | Plan |
+|------|--------|------|-------------|------|
+| Mar 11 | MRMD | Post | $40.8M | Scaffold day-of, publish overnight |
+| Mar 12 | VRNO | Pre | $205.9M | **Priority.** Scaffold ahead, data loads AM, publish by evening |
+| Mar 12 | TSNDF | Post | $64.7M | **Priority.** Scaffold ahead, data loads PM, publish overnight |
+| Mar 12 | AAWH | Post | $120.0M | Scaffold ahead, publish overnight or next AM |
+| Mar 12 | VREOF | During | $94.2M | Blocked — needs data refresh first |
+| Mar 13 | PLNH | Post | $22.8M | Publish overnight |
+| Mar 16 | CBSTF | During | — | Catch-up day |
+
+**Prep work before blitz week:**
+- Scaffold all Tier 1 projects ahead of time (`just campaign TICKER cannabis_coverage`)
+- Pre-collect sources (comps table, earnings presentations if available)
+- Ensure RoboSystems data pipeline auto-ingests new 10-Ks within hours of filing
+
+**No date yet (produce when filing drops):**
+- **JUSHF** — PA/VA focused, 4yr data depth, strong candidate
+- **GRUSF** — Micro-cap, non-standard FY
+- **CXXIF** — Micro-cap, already has FY2025 data
+
+**Blocked — needs RoboSystems 40-F pipeline fix:**
+- **CURLF** — Would be #1 priority if data loads (largest MSO, $317M rev est.)
+- **CRLBF** — May have already filed FY2025 (last reported 3/5/2026)
+- **GLASF** — Reports 3/12 but zero XBRL data, can't produce
+- **VREOF** — 10-K filer but FY2024 not loaded, needs data refresh
 
 ## Reference — ETF
 
-| Ticker | Name | Price | Notes |
-|--------|------|-------|-------|
-| MSOS | AdvisorShares Pure US Cannabis ETF | $4.00 | Benchmark for the sector. |
-| CNBS | Amplify US Alternative Harvest ETF | $24.43 | Broader cannabis/alt harvest. |
-
-## Upcoming Earnings (March 2026)
-
-| Date | Ticker | Time |
-|------|--------|------|
-| Mar 11 | MRMD | Post-Market |
-| Mar 12 | AAWH | Post-Market |
-| Mar 12 | VRNO | Pre-Market |
-| Mar 12 | TSNDF | (expected) |
-| Mar 12 | VEXTF | (expected) |
-
-## Production Priority
-
-Start with tickers that have fresh FY2025 data in the SEC graph:
-1. **GTBIF** — FY2025 10-K loaded, most profitable, cleanest data
-2. **TCNNF** — FY2025 10-K loaded, 60% gross margin, record cash flow story
-3. **CURLF** — FY2025 40-F filed, largest by revenue, international angle
-4. **VRNO** — FY2025 earnings 3/12, cover after results
-5. **CRLBF** — 40-F/IFRS filer, FY2024 data loaded
-6. **GLASF** — California play, different angle from MSOs
-7. Work down the list as filings arrive through March
+| Ticker | Name | Notes |
+|--------|------|-------|
+| MSOS | AdvisorShares Pure US Cannabis ETF | Benchmark for the sector |

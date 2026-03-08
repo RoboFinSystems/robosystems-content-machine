@@ -69,6 +69,13 @@ if [ -n "$CAMPAIGN_DIR" ]; then
         cp -r "$CAMPAIGN_DIR/overrides/." "$PROJECT_DIR/"
     fi
 
+    # Copy campaign-level shared sources (comps tables, sector data, etc.)
+    if [ -d "$CAMPAIGN_DIR/sources" ]; then
+        cp "$CAMPAIGN_DIR/sources/"* "$PROJECT_DIR/sources/" 2>/dev/null || true
+        SHARED_COUNT=$(ls -1 "$CAMPAIGN_DIR/sources/" 2>/dev/null | wc -l | tr -d ' ')
+        echo "  Shared sources: $SHARED_COUNT files copied"
+    fi
+
     echo "Initiated coverage: $PROJECT_DIR"
     echo "  Campaign: $CAMPAIGN"
 else

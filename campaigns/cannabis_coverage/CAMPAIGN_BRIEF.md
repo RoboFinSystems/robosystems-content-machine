@@ -203,6 +203,7 @@ Cannabis-specific metrics that matter beyond standard analysis:
 - **Mix**: 71% retail, 29% CPG
 - **Guidance**: Mid-single-digit Q1 2026 revenue decline
 - **Filing**: 10-K filed Feb 25, 2026. FY2025 data loaded in RoboSystems.
+- **NOTE**: GTI does NOT hold earnings calls. No transcript exists. Ben Kovler discontinued them — "let the numbers speak." This is notable for the narrative (signals confidence/independence from Wall Street).
 
 ### Trulieve Cannabis (TCNNF) — "The Cash Flow Machine"
 - **Revenue**: $1.181B (~flat YoY)
