@@ -58,9 +58,11 @@ def screenshot_charts(project_name):
     png_dir = os.path.join(project_dir, "charts", "png")
     os.makedirs(png_dir, exist_ok=True)
 
+    # Screenshot all chart HTMLs except templates and examples
+    # INTRO_SLIDE and OUTRO_SLIDE ARE included — they're part of the video timeline
     html_files = [
         f for f in glob.glob(os.path.join(html_dir, "*.html"))
-        if not os.path.basename(f).startswith(("CHART_TEMPLATE", "EXAMPLE_", "AVATAR_BG_TEMPLATE", "INTRO_SLIDE", "OUTRO_SLIDE"))
+        if not os.path.basename(f).startswith(("CHART_TEMPLATE", "EXAMPLE_", "AVATAR_BG_TEMPLATE"))
     ]
     if not html_files:
         print(f"No chart HTML files found in {html_dir}")
@@ -73,7 +75,17 @@ def screenshot_charts(project_name):
         png_path = os.path.join(png_dir, f"{name}.png")
 
         print(f"  {name}.html -> {name}.png ...", end=" ")
-        ok, result = _screenshot(html_path, png_path)
+        # Thumbnails are 1280x720, everything else is 1920x1080
+        if "thumbnail" in name.lower():
+            ok, result = _screenshot(html_path, png_path, width=1280, height=720)
+            # Crop to exact dimensions — Chrome headless sometimes captures extra height
+            if ok:
+                subprocess.run(
+                    ["sips", "--cropToHeightWidth", "720", "1280", png_path],
+                    capture_output=True, timeout=10,
+                )
+        else:
+            ok, result = _screenshot(html_path, png_path)
 
         if ok:
             size_kb = os.path.getsize(png_path) / 1024

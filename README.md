@@ -2,168 +2,117 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Automated video content pipeline for SEC filing analysis. Uses [Claude Desktop Cowork](https://claude.ai) to generate written assets (report, script, charts), then a production pipeline to turn them into a finished video.
+Automated video content pipeline for financial analysis. Combines AI-generated content with production automation to turn SEC filings into narrated videos, podcasts, and social posts.
 
-## How It Works
+- **Campaign-Driven**: Reusable campaign templates define the editorial angle, slide designs, and output specs — apply them to any ticker
+- **AI Content Generation**: [Claude Cowork](https://claude.ai) analyzes filings via [RoboSystems](https://robosystems.ai) MCP tools and produces narrative briefs, video scripts, charts, and social posts
+- **Automated Production**: Pipeline screenshots charts, synthesizes voiceover, assembles video, and extracts podcast audio
+- **Two Production Modes**: Slides-only (voiceover + charts) or mixed (avatar segments + charts) — auto-detected from script
 
-There are two phases:
-
-1. **Content generation (Claude Cowork)** — Claude analyzes a company's SEC filing via the [RoboSystems](https://robosystems.ai) MCP tools and produces a video script, chart HTMLs, stock report, social post, and thumbnail.
-2. **Video production (pipeline)** — A series of Python scripts screenshot the charts, generate avatar video segments (HeyGen), synthesize voiceover audio (ElevenLabs), upload assets to S3, and assemble the final video (Shotstack).
-
-## Prerequisites
-
-**CLI tools:**
-
-- [uv](https://docs.astral.sh/uv/) — Python package manager (handles all Python deps)
-- [just](https://github.com/casey/just) — command runner
-- [Google Chrome](https://www.google.com/chrome/) — used headlessly for chart screenshots
-- [ffmpeg / ffprobe](https://ffmpeg.org/) — media duration detection
-- [AWS CLI](https://aws.amazon.com/cli/) — S3 uploads (with SSO or credentials configured)
-
-**API accounts:**
-
-- [HeyGen](https://www.heygen.com/) — avatar video generation
-- [ElevenLabs](https://elevenlabs.io/) — voice synthesis
-- [Shotstack](https://shotstack.io/) — cloud video assembly
-
-**For the Cowork phase:**
-
-- [Claude Desktop](https://claude.ai/download) with the RoboSystems MCP server configured
-
-## Setup
+## Quick Start
 
 ```bash
 git clone https://github.com/RoboFinSystems/robosystems-content-machine.git
 cd robosystems-content-machine
+
+# Scaffold a project from a campaign
+just campaign TICKER campaign_name
+
+# Or scaffold from the base template (no campaign)
+just new TICKER
 ```
 
-The first time you run any `just` command, `.env` is auto-created from `.env.example`. Open it and fill in your API keys:
+The first `just` command auto-creates `.env` from `.env.example`. Fill in your API keys (see [Setup](#setup)).
 
-### HeyGen (avatar video segments)
+## How It Works
 
-Sign up at [heygen.com](https://www.heygen.com/). Then:
+### 1. Scaffold a Project
 
-- **`HEYGEN_API_KEY`** — Settings → API Keys
-- **`HEYGEN_AVATAR_ID`** — Create or pick an avatar, copy its ID from the avatar editor URL
-- **`HEYGEN_VOICE_ID`** — Pick a voice in the avatar editor, copy its ID from the API or voice library
-
-### ElevenLabs (voiceover audio)
-
-Sign up at [elevenlabs.io](https://elevenlabs.io/). Then:
-
-- **`ELEVEN_LABS_API_KEY`** — Profile → API Keys
-- **`ELEVEN_LABS_VOICE_ID`** — Voice Library → select a voice → copy the Voice ID
-
-### Shotstack (video assembly)
-
-Sign up at [shotstack.io](https://shotstack.io/). Then:
-
-- **`SHOTSTACK_API_KEY`** — Dashboard → API Keys (use the **Stage** key for testing)
-- **`SHOTSTACK_OWNER_ID`** — shown on the same Dashboard page
-
-### AWS (S3 uploads)
-
-The assemble step uploads assets to S3 (so Shotstack can access them via presigned URLs). You need a bucket created beforehand.
-
-- **`AWS_PROFILE`** — your AWS CLI profile name. Run `aws sso login --profile <name>` before the pipeline if using SSO
-- **`S3_BUCKET`** — the bucket name for asset uploads (must already exist, your profile needs `s3:PutObject` and `s3:GetObject`)
-- **`S3_REGION`** — bucket region (default: `us-east-1`)
-
-## Usage
-
-### 1. Scaffold a new project
+Every project starts from the base `template/`, which provides the folder structure, chart types, slide examples, and pipeline assets. Scaffold one for any ticker:
 
 ```bash
-just new NVDA 10-K 2025
+just new TICKER
 ```
 
-This copies the template into `projects/NVDA_2025_10_K/` with the folder structure and instructions Claude needs.
+#### Campaigns
 
-### 2. Generate content with Claude Cowork
+For thematic coverage across multiple companies, campaigns add an editorial layer on top of the base template. A campaign defines the voice, analytical framework, slide designs, and target tickers for a class of companies.
 
-Open Claude Desktop and start a Cowork session pointed at the new project folder. Claude reads `COWORK_INSTRUCTIONS.md` and produces:
+```
+campaigns/
+  my_campaign/
+    CAMPAIGN_BRIEF.md        # Editorial strategy and analytical framework
+    COWORK_INSTRUCTIONS.md   # Claude's production instructions (overrides base)
+    tickers.md               # Target companies and production calendar
+    sources/                 # Third-party research and reference data (gitignored)
+    overrides/               # File replacements (custom slide templates, assets)
+```
 
-- `reports/{TICKER}_report.html` — investor-grade HTML report
-- `scripts/{TICKER}_script.json` — structured video script
-- `charts/html/*.html` — one chart per visual segment
-- `social/{TICKER}_x_post.txt` — X post
-- `charts/html/{TICKER}_thumbnail.html` — YouTube thumbnail
-
-### 3. Run the production pipeline
+When you scaffold with a campaign, the base template is applied first, then the campaign overlays its instructions, briefs, and templates on top.
 
 ```bash
-just pipeline NVDA_2025_10_K
+just campaigns                       # List available campaigns
+just campaign TICKER campaign_name   # Scaffold with campaign overlay
 ```
 
-This runs all steps end-to-end. The final video opens automatically when done.
+### 2. Content Generation (Claude Cowork)
 
-## Pipeline Steps
+Open Claude Desktop and start a Cowork session pointed at the scaffolded project folder. Claude reads the instructions and produces:
 
-| Step | What it does |
-|------|-------------|
-| **Validate** | Checks that all Cowork outputs exist and the script JSON matches the expected schema. Auto-fixes common issues. |
-| **Screenshots** | Opens each chart HTML in headless Chrome and captures a 1920x1080 PNG. |
-| **Avatar** | Sends avatar segment narration to the HeyGen API, polls until videos are ready, downloads them. |
-| **Voiceover** | Sends visual segment narration to ElevenLabs TTS, downloads the audio files. |
-| **Assemble** | Uploads all assets to S3, builds a Shotstack timeline, submits the render, and downloads the final MP4. |
+- **Narrative brief** — written analysis (Markdown)
+- **Video script** — structured JSON with segment timing and narration
+- **Charts and slides** — one HTML file per visual segment
+- **Social posts** — platform-specific copy (X, StockTwits)
+- **Thumbnail** — YouTube thumbnail HTML
 
-## Running Steps Individually
+### 3. Production Pipeline
 
 ```bash
-just validate NVDA_2025_10_K      # Validate cowork outputs
-just validate-fix NVDA_2025_10_K  # Validate and auto-fix
-just screenshots NVDA_2025_10_K   # Screenshot charts to PNG
-just avatar NVDA_2025_10_K        # Generate HeyGen avatar segments
-just avatar-poll NVDA_2025_10_K   # Resume polling (if interrupted)
-just voiceover NVDA_2025_10_K     # Generate ElevenLabs voiceovers
-just assemble NVDA_2025_10_K      # Assemble final video via Shotstack
+just pipeline PROJECT   # Run all steps end-to-end
 ```
 
-**Utilities:**
+| Step | Command | What it does |
+|------|---------|-------------|
+| **Validate** | `just validate PROJECT` | Checks Cowork outputs exist and script JSON matches schema |
+| **Screenshots** | `just screenshots PROJECT` | Opens each chart HTML in headless Chrome, captures 1920x1080 PNGs |
+| **Avatar** | `just avatar PROJECT` | Sends avatar narration to HeyGen API (mixed mode only) |
+| **Voiceover** | `just voiceover PROJECT` | Sends visual narration to ElevenLabs TTS |
+| **Assemble** | `just assemble PROJECT` | Uploads assets to S3, builds Shotstack timeline, renders final MP4 |
+| **Podcast** | `just podcast PROJECT` | Extracts podcast audio (MP3) from final video |
+
+### Batch Operations
 
 ```bash
-just projects                     # List all projects
-just play NVDA_2025_10_K          # Play the final video
-just durations NVDA_2025_10_K     # Show media durations via ffprobe
-just clean NVDA_2025_10_K         # Remove generated assets (keeps source files)
+just projects              # List all projects
+just play PROJECT          # Play the final video
+just durations PROJECT     # Show media durations via ffprobe
+just clean PROJECT         # Remove generated assets (keeps source files)
 ```
 
-## Project Structure
+## Setup
 
-```
-.
-├── justfile                        # All commands
-├── .env.example                    # Environment variable template
-├── template/                       # Project template (copied by `just new`)
-│   ├── COWORK_INSTRUCTIONS.md      # Prompt for Claude Cowork
-│   ├── assets/                     # Brand assets (logo)
-│   └── charts/html/                # Chart template + examples
-│       ├── CHART_TEMPLATE.html
-│       ├── EXAMPLE_bar_chart.html
-│       ├── EXAMPLE_data_table.html
-│       ├── EXAMPLE_line_chart.html
-│       ├── EXAMPLE_metric_cards.html
-│       ├── INTRO_SLIDE.html
-│       └── OUTRO_SLIDE.html
-├── tools/                          # Pipeline scripts
-│   ├── run_pipeline.sh             # Full pipeline runner
-│   ├── new_project.sh              # Project scaffolding
-│   ├── validate_project.py         # Schema validation
-│   ├── screenshot_charts.py        # Headless Chrome screenshots
-│   ├── generate_avatar_segments.py # HeyGen API
-│   ├── generate_voiceover_audio.py # ElevenLabs API
-│   └── assemble_video.py           # S3 upload + Shotstack render
-└── projects/                       # Generated projects (gitignored)
-    └── NVDA_2025_10_K/
-        ├── COWORK_INSTRUCTIONS.md
-        ├── scripts/
-        ├── charts/html/
-        ├── charts/png/
-        ├── reports/
-        ├── social/
-        └── videos/
-```
+### Required Tools
+
+- [uv](https://docs.astral.sh/uv/) — Python package manager
+- [just](https://github.com/casey/just) — command runner
+- [Google Chrome](https://www.google.com/chrome/) — headless chart screenshots
+- [ffmpeg / ffprobe](https://ffmpeg.org/) — media processing
+- [AWS CLI](https://aws.amazon.com/cli/) — S3 uploads
+
+### API Keys
+
+Configure in `.env` after first run:
+
+| Service | Keys | Purpose |
+|---------|------|---------|
+| [ElevenLabs](https://elevenlabs.io/) | `ELEVEN_LABS_API_KEY`, `ELEVEN_LABS_VOICE_ID` | Voice synthesis |
+| [Shotstack](https://shotstack.io/) | `SHOTSTACK_API_KEY`, `SHOTSTACK_OWNER_ID` | Cloud video assembly |
+| [HeyGen](https://www.heygen.com/) | `HEYGEN_API_KEY`, `HEYGEN_AVATAR_ID`, `HEYGEN_VOICE_ID` | Avatar video (mixed mode only) |
+| AWS | `AWS_PROFILE`, `S3_BUCKET`, `S3_REGION` | Asset uploads for Shotstack |
+
+### Claude Cowork
+
+The content generation phase requires [Claude Desktop](https://claude.ai/download) with the [RoboSystems MCP server](https://github.com/RoboFinSystems/robosystems-mcp-client) configured.
 
 ## Resources
 

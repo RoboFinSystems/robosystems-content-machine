@@ -44,15 +44,29 @@ def ok(msg):
 
 
 def check_required_files(project_dir, ticker):
-    """Check all 5 required output types exist."""
+    """Check required output types exist."""
     print("\n--- Required Files ---")
 
+    # Report can be either HTML (generic) or markdown brief (campaign)
+    report_html = f"reports/{ticker}_report.html"
+    report_md = f"reports/{ticker}_brief.md"
+    report_path = report_html
+    if os.path.exists(os.path.join(project_dir, report_md)):
+        report_path = report_md
+    elif not os.path.exists(os.path.join(project_dir, report_html)):
+        report_path = report_md  # will show as missing
+
     checks = {
-        "Report": f"reports/{ticker}_report.html",
+        "Report/Brief": report_path,
         "Script": f"scripts/{ticker}_script.json",
         "X Post": f"social/{ticker}_x_post.txt",
         "Thumbnail": f"charts/html/{ticker}_thumbnail.html",
     }
+
+    # Optional: StockTwits post (campaign projects)
+    stocktwits_path = f"social/{ticker}_stocktwits_post.txt"
+    if os.path.exists(os.path.join(project_dir, stocktwits_path)):
+        checks["StockTwits Post"] = stocktwits_path
 
     found = {}
     for name, path in checks.items():
@@ -346,6 +360,8 @@ def main():
     args = parser.parse_args()
 
     project_dir = get_project_dir(args.project)
+    # Company-centric projects use ticker as project name (e.g., "GTBIF")
+    # Legacy projects use TICKER_YEAR_FILING format (e.g., "UBER_2025_10_K")
     ticker = args.project.split("_")[0]
 
     print(f"{'='*50}")
