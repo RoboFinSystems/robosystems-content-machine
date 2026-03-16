@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git show:*)",
+      "Bash(git log:*)",
+      "Bash(git branch --list:*)",
+      "Bash(git branch -a:*)",
+      "Bash(git branch -r:*)",
+      "Bash(git branch -v:*)",
+      "Bash(ls:*)",
+      "Bash(tree:*)",
+      "Bash(wc:*)",
+      "Bash(jq:*)",
+      "Bash(curl:*)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "mcp__robosystems__read-graph-cypher",
+      "mcp__robosystems__resolve-element",
+      "mcp__robosystems__build-fact-grid",
+      "mcp__robosystems__get-graph-info",
+      "mcp__robosystems__get-graph-schema",
+      "mcp__robosystems__list-workspaces",
+      "mcp__robosystems__switch-workspace",
+      "mcp__Context7__resolve-library-id",
+      "mcp__Context7__get-library-docs",
+      "mcp__sequential-thinking__sequentialthinking"
+    ],
+    "deny": [
+      "Bash(git push:*)",
+      "Bash(git reset:*)",
+      "Bash(git clean:*)",
+      "Bash(git branch -D:*)",
+      "Bash(aws secretsmanager get-secret-value:*)",
+      "Bash(aws iam:*)"
+    ]
+  }
+}
