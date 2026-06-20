@@ -121,6 +121,19 @@ Beyond standard analysis, every cannabis video MUST address:
      that makes it a cheap acquisition — at what premium?
    - **Medicare CBD pilot:** any CBD/hemp ops that could benefit from the April 2026 Medicare
      reimbursement pilot ($500/yr per beneficiary)?
+7. **Valuation — "what it's worth if it's a normal business"** — synthesize the catalyst math
+   into implied-value **ranges** (never a single target). Two lenses:
+   - **DCF (scenario-ranged):** project free cash flow under a **base case** (280E persists) and
+     a **rescheduling case** (280E removed from year N), with an explicit, elevated WACC for a
+     Schedule-I OTC name and conservative terminal growth. Present a **range** with the key
+     assumptions stated — not a point estimate.
+   - **Cross-sector re-rating:** the company trades around [its EV/EBITDA] today; CPG names
+     (Constellation, Altria, Turning Point) and health/wellness peers trade ~10–14x. Apply those
+     multiples to **280E-normalized** EBITDA → implied value if it re-rated to a normal industry.
+     Web-search current peer multiples; cross-check the MSO set against `sources/cannabis_comps_table.md`.
+   - **Output:** an implied-value **band** across base / partial-catalyst / full-catalyst, plus
+     what today's price implies the market is pricing in. **Framing: implied value under stated
+     assumptions — not a price target, not advice.**
 
 ## What You Produce
 
@@ -145,9 +158,14 @@ posts derive from it. Structure:
    company's own numbers. Show the 280E-relief pro forma, interstate-commerce footprint read,
    consolidation positioning. Be specific: "280E relief adds $92M to the bottom line, turning
    a $114M earner into a $206M earner — the current price implies 9x those adjusted earnings."
-5. **Risks and Open Questions** (1-2 ¶) — honest and specific (rescheduling stalls, state
+5. **Valuation — "What It's Worth If It's a Normal Business"** (2-3 ¶) — synthesize the catalyst
+   math into implied-value **ranges**: a scenario DCF (base vs rescheduling, assumptions stated)
+   and a cross-sector re-rating (vs CPG / health-and-wellness multiples on 280E-normalized
+   EBITDA). Give the band and what today's price implies the market is pricing in — framed as
+   implied value under stated assumptions, never a target.
+6. **Risks and Open Questions** (1-2 ¶) — honest and specific (rescheduling stalls, state
    oversupply, debt maturities forcing dilution, hemp crackdown), not generic disclaimers.
-6. **The Bottom Line** (1 ¶) — where it stands today, how the math changes under each
+7. **The Bottom Line** (1 ¶) — where it stands today, how the math changes under each
    catalyst, what to watch next. Give the framework, not a recommendation.
 
 **Quality check:** re-read it. Is there a clear narrative arc? Would you watch this video?
@@ -167,6 +185,9 @@ Cannabis editorial guidance for the script:
 - **Include a 280E / catalyst slide** — the adjusted-earnings pro forma is the slide that
   makes cannabis coverage unique. A `callout` for the 280E dollar cost, a `dual` for the
   before/after rescheduling math.
+- **Include a valuation slide** — turn the DCF + cross-sector re-rating into a `dual`: current
+  price vs implied-value bands by scenario, with the assumptions listed; cover it in the
+  narration. Framing: implied value under stated assumptions, not a target.
 - Long-form target 3-5 min (~800-1200 words narration); Short 45-60s.
 - Vary slide kinds for rhythm (don't stack chart slides). Title → chart → chart → callout →
   dual → chart → callout → title.
