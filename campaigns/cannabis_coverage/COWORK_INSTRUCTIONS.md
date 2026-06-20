@@ -124,8 +124,9 @@ Beyond standard analysis, every cannabis video MUST address:
 
 ## What You Produce
 
-Produce these **6 outputs** in order. The narrative brief comes FIRST — it's the foundation
+Produce these **4 outputs** in order. The narrative brief comes FIRST — it's the foundation
 everything else derives from. (Schema and slide mechanics: see `PRODUCTION_CONTRACT.md`.)
+The deck **and** the thumbnail are built in Claude Design from the script — you author no HTML.
 
 ### 1. Narrative Brief (`reports/{TICKER}_brief.md`) — write this FIRST
 
@@ -178,6 +179,10 @@ Cannabis editorial guidance for the script:
   > balance sheet, cash flow, segment breakdowns — all queryable, all from the original XBRL
   > filings. You can set up the same tools I just used in about five minutes. Head to
   > robosystems dot A I to get started — link in the description."
+- **Thumbnail block** — fill the script's `thumbnail` block (Claude Design builds it; see
+  `DESIGN_INSTRUCTIONS.md`): **hero = the adjusted P/E post-280E-relief** (the
+  cognitive-dissonance number); **banner = "INITIATING COVERAGE"**; **secondary = 1–2 of**
+  Revenue, 280E penalty, or FCF yield.
 
 ### 3. X Post (`social/{TICKER}_x_post.txt`)
 Long-form (under 4000 chars): hook framing the coverage angle; 3-5 findings with specific
@@ -185,26 +190,12 @@ numbers (include 280E impact); catalyst sensitivity; risk/caveat; closing takeaw
 `[YOUTUBE_LINK]`; mention robosystems.ai with code **LAUNCH** for 50% off first month;
 `$TICKER` + `#Cannabis #MSO #280E #Rescheduling`; tag @RoboFinSystems.
 
-### 4. StockTwits Post (`social/{TICKER}_stocktwits_post.txt`)
-Shorter, trader-focused (under 1000 chars): `$TICKER` lead; 2-3 key data points (revenue,
-margins, cash flow); one line on 280E/catalyst; `[YOUTUBE_LINK]`; robosystems.ai code LAUNCH.
-Punchy — numbers, not narrative.
-
-### 5. YouTube Description (`social/{TICKER}_youtube_description.txt`)
+### 4. YouTube Description (`social/{TICKER}_youtube_description.txt`)
 Hook (1-2 sentences); links: `https://robosystems.ai` (code LAUNCH for 50% off first month)
 and `https://github.com/RoboFinSystems/robosystems-content-machine`; **timestamps** estimated
 from segment `duration_estimate_seconds` (`0:00 — Description`, accumulate); 6-8 key-finding
 bullets with numbers; a 2-3 sentence **280E explainer** (many viewers land cold); disclaimer
 ("This is not investment advice. … No paid promotions. No price targets."); hashtags.
-
-### 6. Thumbnail (`charts/html/{TICKER}_thumbnail.html`)
-1280×720 HTML (the one hand-authored HTML — see contract). Fixed `1280px × 720px` container.
-- Bold ticker + company name; "INITIATING COVERAGE" banner (top-left, gold→green gradient);
-  RoboSystems logo (top-right).
-- **Hero metric: the adjusted P/E (post-280E relief)** — the cognitive-dissonance number —
-  large green text in a bordered box.
-- Two secondary metrics in blue boxes (e.g., Revenue + 280E penalty, or Revenue + FCF yield).
-- Dark background (#0a0a0a), green accent glow. Large, readable at tiny sizes.
 
 ## Workflow
 
@@ -213,8 +204,8 @@ company's elements (handle 40-F/IFRS). 4. Deep MCP research — 10-20+ queries: 
 280E inputs (income tax expense + pretax income), goodwill/impairments, debt + maturities,
 segment/state revenue, 3+ years to show the boom-bust arc. 5. Web search for price, valuation,
 state/rescheduling news, peer MSO comps, management commentary. 6. Synthesize the 3-5 most
-compelling stories. 7. Produce all 6 outputs in order (brief first). 8. Verify completeness —
-all 6 files exist and `script.json` validates (see contract).
+compelling stories. 7. Produce all 4 outputs in order (brief first). 8. Verify completeness —
+all 4 files exist and `script.json` validates (see contract).
 
 ## Domain narration hints (spoken-form — adds to the contract's general rules)
 

@@ -88,6 +88,8 @@ def build_brief(script):
              f"Slide kinds used: title / chart / callout / dual.")
     L.append("> Keep every on-screen number EXACTLY as given. Narration is speaker context "
              "(it is *not* shown on the slide).")
+    L.append("> Also build the **thumbnail** (separate frame, spec'd at the end). Full "
+             "conventions: `DESIGN_INSTRUCTIONS.md`.")
     L.append("")
     if meta.get("filing_type"):
         L.append(f"**Filing:** {meta.get('filing_type')} · {meta.get('filing_date','')}  ")
@@ -136,10 +138,26 @@ def build_brief(script):
         L.append("")
         L.append("---")
 
+    # Thumbnail — a separate 16:9 frame, not part of the video sequence.
+    thumb = script.get("thumbnail") or {}
+    if thumb:
+        L.append("")
+        L.append("## Thumbnail — separate 16:9 frame, NOT in the video sequence")
+        if thumb.get("hero"):
+            L.append(f"- **Hero metric (huge, centered):** {thumb['hero']}")
+        if thumb.get("banner"):
+            L.append(f"- **Banner:** {thumb['banner']}")
+        secondary = thumb.get("secondary") or []
+        if secondary:
+            L.append(f"- **Secondary metrics:** {', '.join(str(s) for s in secondary)}")
+        L.append(f"- Ticker + company ({company}) + RoboSystems logo. Bold; readable at tiny sizes.")
+        L.append("")
+        L.append("---")
+
     L.append("")
     L.append("### After you build it")
-    L.append("1. Export the deck as **PDF** (16:9).")
-    L.append(f"2. Save it to `deck/{ticker}_deck.pdf` in the project.")
+    L.append(f"1. Export the **deck** as PDF (16:9, one slide/page) → `deck/{ticker}_deck.pdf`.")
+    L.append(f"2. Export the **thumbnail** as PNG → `charts/png/{ticker}_thumbnail.png`.")
     L.append(f"3. Run `just pipeline {ticker}` (slices the deck, voices it, renders the video).")
     return "\n".join(L) + "\n"
 

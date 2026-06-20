@@ -19,16 +19,17 @@ video. You do **not** author slide HTML or do any layout — slides are built in
 Design from the brand design system.
 
 ```
-You (Cowork)                          Pipeline + Claude Design
+You (Cowork)                          Claude Design (DESIGN_INSTRUCTIONS.md)
 ─────────────                         ─────────────────────────
 scripts/{TICKER}_script.json   ──►  build_deck_brief → deck/{TICKER}_deck_brief.md
    (source of truth: narration            │
-    + per-slide content, in order)        ▼
-                                     paste into claude.ai/design
-                                     → compose 16:9 deck on @robosystems/core
-                                     → export deck/{TICKER}_deck.pdf
+    + per-slide content + thumbnail)      ▼
+                                     paste into claude.ai/design (on @robosystems/core)
+                                     → compose 16:9 deck  → deck/{TICKER}_deck.pdf
+                                     → compose thumbnail  → charts/png/{TICKER}_thumbnail.png
                                           │
                                           ▼
+                                     Pipeline (code)
                                      slice_deck → charts/png/{visual_ref}.png
                                      voiceover (ElevenLabs) → assemble (Shotstack) → MP4
 ```
@@ -61,6 +62,13 @@ defines the slides — their count, their order, and the narration timed to each
   "deck": {
     "slide_count": 12,                  // MUST equal the number of segments below
     "source": "deck/GTBIF_deck.pdf"     // filled in after the deck is built/exported
+  },
+
+  "thumbnail": {                        // content for the YouTube thumbnail (built in Claude Design)
+    "hero": "9x adjusted P/E",          // the one cognitive-dissonance number (huge, centered)
+    "banner": "INITIATING COVERAGE",    // optional top banner (campaign-specific; omit if none)
+    "secondary": ["Revenue $1.1B", "280E cost $147M/yr"],  // 1–2 small supporting metrics
+    "file": "charts/png/GTBIF_thumbnail.png"  // where the exported PNG lands
   },
 
   "segments": [
@@ -123,6 +131,9 @@ defines the slides — their count, their order, and the narration timed to each
 - `slide` — the on-screen content (see slide kinds). Put **exact numbers** here; this is
   what the deck renders, so vague data here = vague slides.
 - `deck.slide_count` — set it to the number of segments. **Validation fails if they differ.**
+- `thumbnail` — content for the YouTube thumbnail (hero metric + optional banner + 1–2
+  secondary metrics). Built in Claude Design (see `DESIGN_INSTRUCTIONS.md`), exported to
+  `thumbnail.file`. You spec the content here; you do **not** author any thumbnail HTML.
 
 ### Mapping rule
 
@@ -174,12 +185,13 @@ last is the close/CTA (no separate intro/outro files in deck mode).
 
 ---
 
-## Thumbnail (`charts/html/{TICKER}_thumbnail.html`)
+## Thumbnail (`charts/png/{TICKER}_thumbnail.png`)
 
-The thumbnail is the **one remaining hand-authored HTML file** (1280×720; the pipeline
-screenshots it). It is *not* a deck slide. Your `COWORK_INSTRUCTIONS.md` specifies its
-content; keep it a fixed-size `1280px × 720px` container, bold and readable at small sizes.
-*(Candidate to move into Claude Design later — for now it stays HTML.)*
+The thumbnail is **built in Claude Design**, not hand-authored — Cowork authors **no HTML at
+all**. You spec the content in the script's `thumbnail` block (hero metric, optional banner,
+1–2 secondary metrics); Claude Design builds it as a separate 16:9 frame (see
+`DESIGN_INSTRUCTIONS.md`) and exports a PNG to `charts/png/{TICKER}_thumbnail.png`. It is
+*not* part of the video sequence — the pipeline treats it as a publish-only asset.
 
 ---
 

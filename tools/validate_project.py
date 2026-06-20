@@ -62,12 +62,10 @@ def check_required_files(project_dir, ticker, deck_mode=False):
     recommended = {
         "Report/Brief": report_path,
         "X Post": f"social/{ticker}_x_post.txt",
-        "Thumbnail": f"charts/html/{ticker}_thumbnail.html",
+        # Deck mode: thumbnail is a PNG exported from Claude Design. Legacy: hand-authored HTML.
+        "Thumbnail": (f"charts/png/{ticker}_thumbnail.png" if deck_mode
+                      else f"charts/html/{ticker}_thumbnail.html"),
     }
-    stocktwits_path = f"social/{ticker}_stocktwits_post.txt"
-    if os.path.exists(os.path.join(project_dir, stocktwits_path)):
-        recommended["StockTwits Post"] = stocktwits_path
-
     found = {}
     for name, path in required.items():
         full = os.path.join(project_dir, path)
@@ -356,6 +354,11 @@ def check_deck_contract(project_dir, script):
         ok("all slide PNGs present")
     else:
         warn(f"{len(missing)} slide(s) not sliced yet — run the slice step: {', '.join(missing[:5])}")
+
+    if script.get("thumbnail"):
+        ok("thumbnail block present")
+    else:
+        warn("no thumbnail block — add one so Claude Design can build the thumbnail")
 
 
 def try_fix_script(project_dir, ticker, script):

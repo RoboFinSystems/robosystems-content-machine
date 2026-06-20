@@ -42,8 +42,9 @@ is the actual value in base units (revenue $23.7B is stored as `23739000000`) �
 
 ## What You Produce
 
-Produce these **4 outputs** in order. The narrative brief comes FIRST — it's the foundation
+Produce these **3 outputs** in order. The narrative brief comes FIRST — it's the foundation
 everything else derives from. (Schema and slide mechanics: see `PRODUCTION_CONTRACT.md`.)
+The deck **and** the thumbnail are built in Claude Design from the script — you author no HTML.
 
 ### 1. Narrative Brief (`reports/{TICKER}_brief.md`) — write this FIRST
 
@@ -71,6 +72,8 @@ the hook and financial story until there's a genuine insight. Only then move to 
 **Build it from the brief — don't write from scratch.** The hook becomes the opening title
 slide; the financial story becomes chart/callout/dual slides; the bottom line becomes the
 close. Follow the schema, slide kinds, and field rules in `PRODUCTION_CONTRACT.md` exactly.
+Also fill the `thumbnail` block (hero metric + 1–2 secondary metrics) — Claude Design builds
+the YouTube thumbnail from it (see `DESIGN_INSTRUCTIONS.md`).
 
 Editorial guidance for the script:
 - Open with a HOOK (first 3 seconds must grab attention).
@@ -96,19 +99,14 @@ Editorial guidance for the script:
 Long-form (under 4000 chars): opening hook; 3-5 key findings with specific numbers; a
 risk/caveat; closing takeaway; relevant `$TICKER` cashtag and hashtags; tag @RoboFinSystems.
 
-### 4. Thumbnail (`charts/html/{TICKER}_thumbnail.html`)
-1280×720 HTML (the one hand-authored HTML — see contract). Fixed `1280px × 720px` container.
-Bold ticker + company name; one hero metric (e.g., "Revenue: $39.3B"); eye-catching colors on
-a dark background; large, readable at tiny sizes; RoboSystems logo.
-
 ## Workflow
 
 1. Accept the ticker. 2. Learn the schema (`get-graph-schema`, `get-example-queries`).
 3. Resolve the company's element names. 4. Deep MCP research — 10-20+ queries: full financials
 across 3+ years, segment breakdowns, derived metrics (margins, growth, FCF, ROE/ROA/ROIC).
 5. Web search for price, valuation ratios, analyst consensus, peer context, recent news.
-6. Synthesize the 3-5 most compelling stories. 7. Produce all 4 outputs in order (brief first).
-8. Verify completeness — all 4 files exist and `script.json` validates (see contract).
+6. Synthesize the 3-5 most compelling stories. 7. Produce all 3 outputs in order (brief first).
+8. Verify completeness — all 3 files exist and `script.json` validates (see contract).
 
 ## Important Rules
 
