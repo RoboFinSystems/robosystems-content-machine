@@ -1,17 +1,15 @@
 """
-Validate a project's cowork outputs before running the production pipeline.
+Validate a project's cowork outputs before running the deck-mode pipeline.
 
 Checks:
-  - All 5 required outputs exist
+  - The script exists; publish artifacts (brief, X post, thumbnail) are noted if missing
   - Script JSON uses correct field names for pipeline compatibility
-  - All chart refs in script have corresponding HTML files
-  - Narration text is in spoken form (no raw symbols)
-  - Logo file present for branded charts
-  - Chart HTMLs reference the logo
+  - Deck contract: slide_count == visual segments, unique/ordered visual_ref, deck + slides present
+  - Narration is in spoken form (no raw symbols / bad TTS spacings)
 
 Usage:
-    uv run python tools/validate_project.py AAP_2025_10_K
-    uv run python tools/validate_project.py AAP_2025_10_K --fix
+    uv run python tools/validate_project.py GTBIF
+    uv run python tools/validate_project.py GTBIF --fix
 """
 
 import argparse
@@ -43,8 +41,8 @@ def ok(msg):
     print(f"  OK    {msg}")
 
 
-def check_required_files(project_dir, ticker, deck_mode=False):
-    """Check required output types exist. In deck mode, publish artifacts are warnings."""
+def check_required_files(project_dir, ticker):
+    """Check outputs. Only the script is required to render; the rest are publish artifacts."""
     print("\n--- Required Files ---")
 
     # Report can be either HTML (generic) or markdown brief (campaign)
@@ -56,15 +54,12 @@ def check_required_files(project_dir, ticker, deck_mode=False):
     elif not os.path.exists(os.path.join(project_dir, report_html)):
         report_path = report_md  # will show as missing
 
-    # The script is the only file required to RENDER. The rest are publish artifacts —
-    # required in legacy mode, but only warnings in deck mode (you can render without them).
     required = {"Script": f"scripts/{ticker}_script.json"}
+    # Publish artifacts — needed to ship, not to render. Thumbnail is a Claude Design PNG.
     recommended = {
         "Report/Brief": report_path,
         "X Post": f"social/{ticker}_x_post.txt",
-        # Deck mode: thumbnail is a PNG exported from Claude Design. Legacy: hand-authored HTML.
-        "Thumbnail": (f"charts/png/{ticker}_thumbnail.png" if deck_mode
-                      else f"charts/html/{ticker}_thumbnail.html"),
+        "Thumbnail": f"charts/png/{ticker}_thumbnail.png",
     }
     found = {}
     for name, path in required.items():
@@ -80,10 +75,8 @@ def check_required_files(project_dir, ticker, deck_mode=False):
         if os.path.exists(full):
             ok(f"{name}: {path} ({os.path.getsize(full):,} bytes)")
             found[name] = full
-        elif deck_mode:
-            warn(f"{name} missing (needed to publish, not to render): {path}")
         else:
-            error(f"{name} missing: {path}")
+            warn(f"{name} missing (needed to publish, not to render): {path}")
 
     return found
 
@@ -151,38 +144,6 @@ def check_script_schema(project_dir, ticker):
     return script
 
 
-def check_chart_files(project_dir, script):
-    """Verify chart HTML files exist for all visual_ref references in the script."""
-    print("\n--- Chart Files ---")
-
-    if not script:
-        return
-
-    charts_dir = os.path.join(project_dir, "charts", "html")
-    segments = script.get("segments", [])
-
-    visual_refs = set()
-    for seg in segments:
-        ref = seg.get("visual_ref") or seg.get("chart_id")
-        if ref and seg.get("type") == "visual":
-            visual_refs.add(ref)
-
-    for ref in sorted(visual_refs):
-        html_path = os.path.join(charts_dir, f"{ref}.html")
-        if os.path.exists(html_path):
-            size = os.path.getsize(html_path)
-            ok(f"{ref}.html ({size:,} bytes)")
-        else:
-            error(f"Chart HTML missing: {ref}.html")
-
-    # Check logo
-    logo_path = os.path.join(charts_dir, "robosystems_logo.png")
-    if os.path.exists(logo_path):
-        ok("robosystems_logo.png present")
-    else:
-        warn("robosystems_logo.png missing — charts won't have branded logo")
-
-
 def check_narration_quality(script):
     """Check narration text for raw symbols that TTS will mispronounce."""
     print("\n--- Narration Quality ---")
@@ -222,80 +183,6 @@ def check_narration_quality(script):
         ok("All narration in spoken form")
     else:
         warn(f"{issues_found} narration issues found (TTS may mispronounce)")
-
-
-def check_chart_svg_bounds(project_dir, script):
-    """Check SVG charts for out-of-bounds rects and misplaced negative bars."""
-    print("\n--- Chart SVG Bounds ---")
-
-    if not script:
-        return
-
-    charts_dir = os.path.join(project_dir, "charts", "html")
-
-    # Collect visual_ref chart files (skip examples, templates, thumbnails)
-    segments = script.get("segments", [])
-    visual_refs = set()
-    for seg in segments:
-        ref = seg.get("visual_ref") or seg.get("chart_id")
-        if ref and seg.get("type") == "visual":
-            visual_refs.add(ref)
-
-    if not visual_refs:
-        ok("No visual charts to check")
-        return
-
-    issues = 0
-    for ref in sorted(visual_refs):
-        html_path = os.path.join(charts_dir, f"{ref}.html")
-        if not os.path.exists(html_path):
-            continue
-
-        with open(html_path) as f:
-            html = f.read()
-
-        # Extract viewBox dimensions
-        vb_match = re.search(r'viewBox="0 0 (\d+) (\d+)"', html)
-        if not vb_match:
-            continue
-        vb_w, vb_h = int(vb_match.group(1)), int(vb_match.group(2))
-
-        # Find all rects
-        rects = re.finditer(
-            r'<rect\s+[^>]*?x="([\d.-]+)"[^>]*?y="([\d.-]+)"[^>]*?'
-            r'width="([\d.-]+)"[^>]*?height="([\d.-]+)"[^>]*?'
-            r'(?:class="([^"]*)")?',
-            html,
-        )
-
-        for rect in rects:
-            x = float(rect.group(1))
-            y = float(rect.group(2))
-            w = float(rect.group(3))
-            h = float(rect.group(4))
-            cls = rect.group(5) or ""
-
-            # Skip small rects (legend swatches, decorative elements)
-            if w <= 20 or h <= 20:
-                continue
-
-            if y < 0:
-                error(f"{ref}: rect at y={y} is above viewBox (off-screen top)")
-                issues += 1
-            if y + h > vb_h + 5:
-                error(f"{ref}: rect bottom at y={y + h} exceeds viewBox height {vb_h}")
-                issues += 1
-
-        # Find text labels that are off-screen
-        texts = re.finditer(r'<text\s+[^>]*?y="([\d.-]+)"', html)
-        for t in texts:
-            ty = float(t.group(1))
-            if ty < 0:
-                warn(f"{ref}: text label at y={ty} is above viewBox (clipped)")
-                issues += 1
-
-    if issues == 0:
-        ok("All chart SVG elements within viewBox bounds")
 
 
 def check_robosystems_plug(script):
@@ -424,25 +311,9 @@ def main():
     print(f"  Validating: {args.project}")
     print(f"{'='*50}")
 
-    # Detect deck mode (Claude Design deck vs legacy hand-authored HTML charts)
-    deck_mode = False
-    script_path = os.path.join(project_dir, "scripts", f"{ticker}_script.json")
-    if os.path.exists(script_path):
-        try:
-            with open(script_path) as f:
-                deck_mode = bool(json.load(f).get("deck"))
-        except Exception:
-            pass
-    if deck_mode:
-        print("  Mode: deck (Claude Design)")
-
-    check_required_files(project_dir, ticker, deck_mode)
+    check_required_files(project_dir, ticker)
     script = check_script_schema(project_dir, ticker)
-    if deck_mode:
-        check_deck_contract(project_dir, script)
-    else:
-        check_chart_files(project_dir, script)
-        check_chart_svg_bounds(project_dir, script)
+    check_deck_contract(project_dir, script)
     check_narration_quality(script)
     check_robosystems_plug(script)
 

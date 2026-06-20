@@ -1,6 +1,6 @@
 """
-Assemble the final video from avatar segments, chart PNGs, and voiceover audio
-using the Shotstack Edit API.
+Assemble the final video from deck slide PNGs and voiceover audio using the
+Shotstack Edit API.
 
 Flow:
   1. Upload assets to S3 and generate presigned URLs
@@ -162,23 +162,6 @@ def build_asset_manifest(project_dir, ticker):
     s3_prefix = _get_s3_prefix(project_dir)
     assets = {"_created": time.time()}
 
-    # Avatar MP4s (skip _original backups from padding step)
-    videos_dir = os.path.join(project_dir, "videos")
-    for f in sorted(os.listdir(videos_dir)):
-        if f.startswith(f"{ticker}_segment_") and f.endswith(".mp4") and "_original" not in f:
-            local_path = os.path.join(videos_dir, f)
-            s3_key = f"{s3_prefix}/videos/{f}"
-            print(f"  Uploading {f}...", end=" ")
-            if s3_upload(local_path, s3_key):
-                url = s3_presign(s3_key)
-                if url:
-                    assets[f] = {"type": "video", "url": url, "s3_key": s3_key}
-                    print("OK")
-                else:
-                    print("presign failed")
-            else:
-                print("upload failed")
-
     # Voiceover MP3s
     audio_dir = os.path.join(project_dir, "videos", "audio")
     if os.path.isdir(audio_dir):
@@ -215,29 +198,6 @@ def build_asset_manifest(project_dir, ticker):
                 else:
                     print("upload failed")
 
-    # Intro/outro slides — check project charts/png/ first (campaign overrides),
-    # then fall back to template directory
-    tools_dir = os.path.dirname(os.path.abspath(__file__))
-    root_dir = os.path.dirname(tools_dir)
-    for slide_name in ("intro_slide", "outro_slide"):
-        slide_png = f"{slide_name}.png"
-        # Prefer project-local (screenshotted from campaign override HTML)
-        slide_path = os.path.join(project_dir, "charts", "png", f"INTRO_SLIDE.png" if "intro" in slide_name else "OUTRO_SLIDE.png")
-        if not os.path.exists(slide_path):
-            slide_path = os.path.join(root_dir, "template", "charts", "png", slide_png)
-        if os.path.exists(slide_path):
-            s3_key = f"{s3_prefix}/slides/{slide_png}"
-            print(f"  Uploading {slide_png}...", end=" ")
-            if s3_upload(slide_path, s3_key):
-                url = s3_presign(s3_key)
-                if url:
-                    assets[slide_png] = {"type": "image", "url": url, "s3_key": s3_key}
-                    print("OK")
-                else:
-                    print("presign failed")
-            else:
-                print("upload failed")
-
     # Save manifest
     with open(manifest_path, "w") as f:
         json.dump(assets, f, indent=2)
@@ -247,110 +207,17 @@ def build_asset_manifest(project_dir, ticker):
     return assets
 
 
-# ─── Avatar Segment Padding ────────────────────────────────────
-
-def pad_avatar_segment(project_dir, ticker, seg_id, pad_seconds=0.4):
-    """Pad an avatar segment with black/silence to prevent codec startup glitch.
-
-    Shotstack's renderer produces an audio pop/glitch when a video clip starts.
-    Adding a short black+silent lead-in avoids this.
-    Skips if already padded (checks for _original backup file).
-    """
-    videos_dir = os.path.join(project_dir, "videos")
-    segment_file = os.path.join(videos_dir, f"{ticker}_segment_{seg_id}.mp4")
-    original_file = os.path.join(videos_dir, f"{ticker}_segment_{seg_id}_original.mp4")
-
-    if not os.path.exists(segment_file):
-        return
-
-    # Skip if already padded
-    if os.path.exists(original_file):
-        return True  # already done
-
-    import shutil
-    shutil.copy2(segment_file, original_file)
-
-    delay_ms = int(pad_seconds * 1000)
-    padded_tmp = segment_file + ".tmp.mp4"
-
-    result = subprocess.run(
-        [
-            "ffmpeg", "-y", "-i", original_file,
-            "-vf", f"tpad=start_duration={pad_seconds}:start_mode=clone",
-            "-af", f"adelay={delay_ms}|{delay_ms}",
-            "-c:v", "libx264", "-c:a", "aac",
-            padded_tmp,
-        ],
-        capture_output=True, text=True, timeout=60,
-    )
-
-    if result.returncode == 0:
-        os.replace(padded_tmp, segment_file)
-        new_dur = _ffprobe_duration(segment_file)
-        print(f"  Padded segment {seg_id}: +{pad_seconds}s → {new_dur:.2f}s")
-        return new_dur
-    else:
-        print(f"  Warning: ffmpeg padding failed for segment {seg_id}: {result.stderr[:200]}")
-        if os.path.exists(padded_tmp):
-            os.remove(padded_tmp)
-        return None
-
-
-def pad_all_avatar_segments(project_dir, ticker, segments, pad_seconds=0.4):
-    """Pad all avatar segments and update media_durations.json."""
-    avatar_ids = [s["id"] for s in segments if s["type"] == "avatar"]
-    if not avatar_ids:
-        return
-
-    print(f"\nPadding {len(avatar_ids)} avatar segments (+{pad_seconds}s each)...")
-    durations_path = os.path.join(project_dir, "videos", "media_durations.json")
-    durations_data = None
-    if os.path.exists(durations_path):
-        with open(durations_path) as f:
-            durations_data = json.load(f)
-
-    padded_count = 0
-    skipped_count = 0
-    for seg_id in avatar_ids:
-        result = pad_avatar_segment(project_dir, ticker, seg_id, pad_seconds)
-        if result is True:
-            skipped_count += 1
-        elif result and durations_data:
-            durations_data.get("videos", {})[str(seg_id)] = round(result, 4)
-            padded_count += 1
-
-    if padded_count > 0 and durations_data:
-        with open(durations_path, "w") as f:
-            json.dump(durations_data, f, indent=2)
-
-    if skipped_count == len(avatar_ids):
-        print(f"  All {len(avatar_ids)} segments already padded")
-    elif padded_count > 0:
-        print(f"  Padded {padded_count} segments, {skipped_count} already done")
-
-
 # ─── Timeline Builder ───────────────────────────────────────────
 
 def get_media_durations(project_dir):
-    """Get actual media durations from media_durations.json or via ffprobe."""
+    """Get actual voiceover durations (seg_id -> seconds) from cache or via ffprobe."""
     durations_path = os.path.join(project_dir, "videos", "media_durations.json")
 
     if os.path.exists(durations_path):
         with open(durations_path) as f:
-            data = json.load(f)
-        return data.get("videos", {}), data.get("audio", {})
+            return json.load(f).get("audio", {})
 
-    # Generate via ffprobe if not cached
-    videos, audio = {}, {}
-
-    videos_dir = os.path.join(project_dir, "videos")
-    for f in os.listdir(videos_dir):
-        if f.endswith(".mp4") and "segment" in f:
-            seg = f.split("segment_")[1].replace(".mp4", "")
-            dur = _ffprobe_duration(os.path.join(videos_dir, f))
-            if dur:
-                videos[seg] = dur
-
+    audio = {}
     audio_dir = os.path.join(project_dir, "videos", "audio")
     if os.path.isdir(audio_dir):
         for f in os.listdir(audio_dir):
@@ -360,11 +227,10 @@ def get_media_durations(project_dir):
                 if dur:
                     audio[seg] = dur
 
-    # Cache
     with open(durations_path, "w") as f:
-        json.dump({"videos": videos, "audio": audio}, f, indent=2)
+        json.dump({"audio": audio}, f, indent=2)
 
-    return videos, audio
+    return audio
 
 
 def _ffprobe_duration(filepath):
@@ -448,26 +314,17 @@ def _whisper_transcribe(audio_path):
 
 
 def _whisper_transcribe_all(project_dir, ticker, segments):
-    """Run Whisper on all avatar MP4s and voiceover MP3s, return map of seg_id -> srt_path."""
+    """Run Whisper on each segment's voiceover MP3; return map seg_id -> srt_path."""
     srt_map = {}
-    videos_dir = os.path.join(project_dir, "videos")
     audio_dir = os.path.join(project_dir, "videos", "audio")
 
     for seg in segments:
         seg_id = seg["id"]
-        seg_type = seg["type"]
-
-        if seg_type == "avatar":
-            audio_path = os.path.join(videos_dir, f"{ticker}_segment_{seg_id}.mp4")
-        elif seg_type == "visual":
-            audio_path = os.path.join(audio_dir, f"{ticker}_segment_{seg_id}_voiceover.mp3")
-        else:
-            continue
-
+        audio_path = os.path.join(audio_dir, f"{ticker}_segment_{seg_id}_voiceover.mp3")
         if not os.path.exists(audio_path):
             continue
 
-        print(f"  Seg {seg_id} ({seg_type})...", end=" ")
+        print(f"  Seg {seg_id}...", end=" ")
         srt_path = _whisper_transcribe(audio_path)
         if srt_path:
             srt_map[seg_id] = srt_path
@@ -555,148 +412,70 @@ def build_timeline(project_dir, ticker, assets, production=False):
 
     segments = script["segments"]
 
-    # Detect mode
-    has_avatar = any(s["type"] == "avatar" for s in segments)
-
-    # Pad all avatar segments to prevent codec startup audio glitch (mixed mode only)
-    if has_avatar:
-        pad_all_avatar_segments(project_dir, ticker, segments)
-
-    # Map visual_ref to chart PNG filenames
-    chart_map = {}
-    for chart in script.get("charts", []):
-        ref = chart["ref"]
-        chart_map[ref] = f"{ref}.png"
-
-    # Get ACTUAL durations (not estimates) — read AFTER padding so duration is current
-    video_durations, audio_durations = get_media_durations(project_dir)
+    # Get ACTUAL voiceover durations (not estimates)
+    audio_durations = get_media_durations(project_dir)
 
     print("\nSegment durations (actual):")
 
     # Build clips in sequence
-    SEGMENT_GAP = 0.3   # seconds of black between segments
-    INTRO_DURATION = 4   # seconds for intro slide
-    OUTRO_DURATION = 5   # seconds for outro slide
+    SEGMENT_GAP = 0.3   # seconds of black between slides
     video_clips = []
     audio_clips = []
     srt_entries = []      # for subtitle generation
-    current_time = 0.0
+    current_time = SEGMENT_GAP  # tiny lead-in before the first slide
 
-    # ── Intro slide ──
-    intro_info = assets.get("intro_slide.png")
-    if intro_info:
-        video_clips.append({
-            "asset": {"type": "image", "src": intro_info["url"]},
-            "start": 0,
-            "length": INTRO_DURATION,
-            "transition": {"in": "fade", "out": "fade"},
-        })
-        current_time = INTRO_DURATION + SEGMENT_GAP
-        print(f"  Intro: {INTRO_DURATION}s")
-    else:
-        current_time = SEGMENT_GAP
-
-    # ── Content segments ──
+    # ── Content slides (each: deck slide PNG + its voiceover) ──
     subtitles_on = os.environ.get("SUBTITLES", "true").lower() in ("true", "1", "yes")
     srt_index = 1
-    for i, seg in enumerate(segments):
+    for seg in segments:
         seg_id = seg["id"]
-        seg_type = seg["type"]
 
-        if seg_type == "avatar" and has_avatar:
-            # Mixed mode: avatar segment with HeyGen video
-            video_file = f"{ticker}_segment_{seg_id}.mp4"
-            asset_info = assets.get(video_file)
-            if not asset_info:
-                print(f"  Warning: No asset for {video_file}, skipping")
-                continue
+        # Slide PNG (named by visual_ref) + voiceover audio
+        visual_ref = seg.get("visual_ref", "")
+        chart_file = f"{visual_ref}.png" if visual_ref else None
+        audio_file = f"{ticker}_segment_{seg_id}_voiceover.mp3"
 
-            duration = video_durations.get(str(seg_id), seg["duration_estimate_seconds"])
-            print(f"  Seg {seg_id} (avatar): {duration:.1f}s")
+        audio_info = assets.get(audio_file)
+        chart_info = assets.get(chart_file) if chart_file else None
 
-            avatar_clip = {
-                "asset": {
-                    "type": "video",
-                    "src": asset_info["url"],
-                    "volume": 1.0,
-                },
+        if not audio_info:
+            print(f"  Warning: No audio for segment {seg_id}, skipping")
+            continue
+
+        audio_duration = audio_durations.get(str(seg_id), seg["duration_estimate_seconds"])
+        # Add buffer so voiceover finishes cleanly before the next slide
+        AUDIO_TAIL_BUFFER = 0.5
+        image_duration = audio_duration + AUDIO_TAIL_BUFFER
+        slide_type = seg.get("visual_type", "chart")
+        print(f"  Seg {seg_id} ({slide_type}): {audio_duration:.1f}s")
+
+        if chart_info:
+            video_clips.append({
+                "asset": {"type": "image", "src": chart_info["url"]},
                 "start": round(current_time, 2),
-                "length": round(duration, 2),
+                "length": round(image_duration, 2),
                 "transition": {"in": "fade"},
-            }
-            video_clips.append(avatar_clip)
-
-            srt_entries.append({
-                "seg_id": seg_id,
-                "index": srt_index,
-                "start": current_time,
-                "end": current_time + duration,
-                "text": seg.get("narration", ""),
             })
-            srt_index += 1
-            current_time += duration + SEGMENT_GAP
 
-        elif seg_type == "visual":
-            # Visual segment: slide PNG + voiceover audio.
-            # Deck mode has no charts[] array — default to {visual_ref}.png.
-            visual_ref = seg.get("visual_ref", "")
-            chart_file = chart_map.get(visual_ref) or (f"{visual_ref}.png" if visual_ref else None)
-            audio_file = f"{ticker}_segment_{seg_id}_voiceover.mp3"
-
-            audio_info = assets.get(audio_file)
-            chart_info = assets.get(chart_file) if chart_file else None
-
-            if not audio_info:
-                print(f"  Warning: No audio for segment {seg_id}, skipping")
-                continue
-
-            audio_duration = audio_durations.get(str(seg_id), seg["duration_estimate_seconds"])
-            # Add buffer so voiceover finishes cleanly before next segment
-            AUDIO_TAIL_BUFFER = 0.5
-            image_duration = audio_duration + AUDIO_TAIL_BUFFER
-            slide_type = seg.get("visual_type", "chart")
-            print(f"  Seg {seg_id} ({slide_type}): {audio_duration:.1f}s")
-
-            if chart_info:
-                video_clips.append({
-                    "asset": {"type": "image", "src": chart_info["url"]},
-                    "start": round(current_time, 2),
-                    "length": round(image_duration, 2),
-                    "transition": {"in": "fade"},
-                })
-
-            audio_clip = {
-                "asset": {
-                    "type": "audio",
-                    "src": audio_info["url"],
-                    "volume": 1.0,
-                },
-                "start": round(current_time, 2),
-                "length": round(audio_duration + 0.1, 2),  # slight buffer to avoid clipping
-            }
-            audio_clips.append(audio_clip)
-
-            srt_entries.append({
-                "seg_id": seg_id,
-                "index": srt_index,
-                "start": current_time,
-                "end": current_time + audio_duration,
-                "text": seg.get("narration", ""),
-            })
-            srt_index += 1
-            current_time += image_duration + SEGMENT_GAP
-
-    # ── Outro slide ──
-    outro_info = assets.get("outro_slide.png")
-    if outro_info:
-        video_clips.append({
-            "asset": {"type": "image", "src": outro_info["url"]},
+        audio_clips.append({
+            "asset": {
+                "type": "audio",
+                "src": audio_info["url"],
+                "volume": 1.0,
+            },
             "start": round(current_time, 2),
-            "length": OUTRO_DURATION,
-            "transition": {"in": "fade", "out": "fade"},
+            "length": round(audio_duration + 0.1, 2),  # slight buffer to avoid clipping
         })
-        current_time += OUTRO_DURATION
-        print(f"  Outro: {OUTRO_DURATION}s")
+
+        srt_entries.append({
+            "seg_id": seg_id,
+            "index": srt_index,
+            "start": current_time,
+            "end": current_time + audio_duration,
+            "text": seg.get("narration", ""),
+        })
+        srt_index += 1
+        current_time += image_duration + SEGMENT_GAP
 
     # ── Whisper transcription for accurate subtitle timing (only when subtitles are on) ──
     if subtitles_on:

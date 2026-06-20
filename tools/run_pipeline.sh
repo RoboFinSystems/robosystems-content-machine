@@ -1,18 +1,14 @@
 #!/bin/bash
-# Run the full production pipeline for a project.
+# Run the deck-mode production pipeline for a project.
 #
-# Prerequisites: Claude Cowork has already generated the content
-# (script JSON, chart HTMLs, brief/report, social posts, thumbnail)
+# Prerequisite: the project has a deck-mode script (scripts/{TICKER}_script.json with a
+# "deck" block), the exported Claude Design deck at deck/{TICKER}_deck.pdf, and
+# voiceover-ready narration. See DESIGN_INSTRUCTIONS.md for building the deck.
 #
 # Usage:
-#   ./tools/run_pipeline.sh JPM_2025_10_K
+#   ./tools/run_pipeline.sh GTBIF
 #
-# Steps:
-#   0. Validate & auto-fix cowork outputs
-#   1. Screenshot charts/slides (HTML -> PNG)
-#   2. Generate avatar segments (HeyGen) — skipped in slides-only mode
-#   3. Generate voiceover audio (ElevenLabs)
-#   4. Assemble final video (upload to S3 + Shotstack render)
+# Steps:  validate -> slice deck (PDF->PNG) -> voiceover (ElevenLabs) -> assemble (S3 + Shotstack)
 
 set -euo pipefail
 
@@ -39,41 +35,24 @@ if grep -q '^AWS_PROFILE=' .env 2>/dev/null; then
     export $(grep '^AWS_PROFILE=' .env)
 fi
 
-# Detect pipeline mode from script JSON
+# Require a deck-mode script (this pipeline is deck-only)
 SCRIPT_FILE=$(ls "$PROJECT_DIR/scripts/"*_script.json 2>/dev/null | head -1)
 if [ -z "$SCRIPT_FILE" ]; then
     echo "Error: No script JSON found in $PROJECT_DIR/scripts/"
     exit 1
 fi
 
-# Check if any avatar segments exist
-HAS_AVATAR=$(python3 -c "
-import json, sys
-with open('$SCRIPT_FILE') as f:
-    segs = json.load(f).get('segments', [])
-print('yes' if any(s.get('type') == 'avatar' for s in segs) else 'no')
-")
-
-# Deck mode: visuals come from a Claude Design deck (script has a "deck" block)
 DECK_MODE=$(python3 -c "
 import json
 with open('$SCRIPT_FILE') as f:
     print('yes' if json.load(f).get('deck') else 'no')
 ")
-
-if [ "$DECK_MODE" = "yes" ]; then
-    MODE="deck"
-    STEPS=3
-    echo "  Mode: Deck (Claude Design slides + ElevenLabs voiceover)"
-elif [ "$HAS_AVATAR" = "yes" ]; then
-    MODE="mixed"
-    STEPS=4
-    echo "  Mode: Avatar + Visual (HeyGen + ElevenLabs)"
-else
-    MODE="slides"
-    STEPS=3
-    echo "  Mode: Slides only (ElevenLabs voiceover)"
+if [ "$DECK_MODE" != "yes" ]; then
+    echo "Error: $PROJECT is not a deck-mode project (script has no 'deck' block)."
+    echo "  This pipeline is deck-only — see PRODUCTION_CONTRACT.md / DESIGN_INSTRUCTIONS.md."
+    exit 1
 fi
+echo "  Mode: Deck (Claude Design slides + ElevenLabs voiceover)"
 echo ""
 
 # Pre-flight: check AWS creds before doing expensive API work
@@ -86,50 +65,26 @@ aws sts get-caller-identity --query Account --output text > /dev/null 2>&1 || {
 echo "  AWS OK"
 echo ""
 
-# Step 0: Validate & fix
-echo "Step 0: Validate & fix"
+# Step 0: Validate
+echo "Step 0/3: Validate"
 uv run python tools/validate_project.py "$PROJECT" --fix
 echo ""
 
-# Step 1: Build slide images
-if [ "$MODE" = "deck" ]; then
-    echo "Step 1/$STEPS: Slice deck (PDF -> 1920x1080 PNGs)"
-    uv run python tools/slice_deck.py "$PROJECT"
-else
-    echo "Step 1/$STEPS: Screenshots"
-    uv run python tools/screenshot_charts.py "$PROJECT"
-fi
+# Step 1: Slice the deck (PDF -> 1920x1080 slide PNGs)
+echo "Step 1/3: Slice deck"
+uv run python tools/slice_deck.py "$PROJECT"
 echo ""
 
-if [ "$MODE" = "mixed" ]; then
-    # Step 2: Generate avatar segments (mixed mode only)
-    echo "Step 2/$STEPS: Avatar segments (HeyGen)"
-    uv run python tools/generate_avatar_segments.py "$PROJECT"
-    echo ""
+# Step 2: Voiceover (ElevenLabs)
+echo "Step 2/3: Voiceover audio (ElevenLabs)"
+uv run python tools/generate_voiceover_audio.py "$PROJECT"
+echo ""
 
-    # Step 3: Generate voiceover audio
-    echo "Step 3/$STEPS: Voiceover audio (ElevenLabs)"
-    uv run python tools/generate_voiceover_audio.py "$PROJECT"
-    echo ""
-
-    # Step 4: Assemble video
-    rm -f "$PROJECT_DIR/videos/shotstack_assets.json" "$PROJECT_DIR/videos/media_durations.json"
-    echo "Step 4/$STEPS: Assemble video (upload to S3 + Shotstack render)"
-    uv run python tools/assemble_video.py "$PROJECT"
-    echo ""
-else
-    # Step 2: Generate voiceover audio (slides-only — all segments)
-    echo "Step 2/$STEPS: Voiceover audio (ElevenLabs)"
-    uv run python tools/generate_voiceover_audio.py "$PROJECT"
-    echo ""
-
-    # Step 3: Assemble video
-    # Clear asset cache so fresh audio/screenshots are uploaded
-    rm -f "$PROJECT_DIR/videos/shotstack_assets.json" "$PROJECT_DIR/videos/media_durations.json"
-    echo "Step 3/$STEPS: Assemble video (upload to S3 + Shotstack render)"
-    uv run python tools/assemble_video.py "$PROJECT"
-    echo ""
-fi
+# Step 3: Assemble (clear asset cache so fresh slides/audio upload)
+rm -f "$PROJECT_DIR/videos/shotstack_assets.json" "$PROJECT_DIR/videos/media_durations.json"
+echo "Step 3/3: Assemble video (upload to S3 + Shotstack render)"
+uv run python tools/assemble_video.py "$PROJECT"
+echo ""
 
 echo "═══════════════════════════════════════════"
 echo "  Done! Opening final video..."

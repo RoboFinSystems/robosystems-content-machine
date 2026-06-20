@@ -9,9 +9,10 @@
 # Sources accumulate over time. Each video run produces outputs in the
 # standard directories (reports/, scripts/, charts/, social/, videos/).
 #
-# Base template provides: folder structure, chart examples, slide templates, assets.
+# Base template provides: folder structure, the stage instructions
+# (COWORK_INSTRUCTIONS / DESIGN_INSTRUCTIONS / PRODUCTION_CONTRACT), and assets.
 # Campaign overlay adds: COWORK_INSTRUCTIONS.md, CAMPAIGN_BRIEF.md, and any file
-# overrides (e.g. custom INTRO_SLIDE.html) from campaigns/{name}/overrides/.
+# overrides from campaigns/{name}/overrides/.
 
 set -euo pipefail
 
@@ -48,11 +49,11 @@ if [ -n "$CAMPAIGN" ]; then
     fi
 fi
 
-# 1. Clone base template (folder structure + chart examples + assets)
+# 1. Clone base template (folder structure + stage instructions + assets)
 cp -r "${ROOT_DIR}/template" "$PROJECT_DIR"
 
 # Ensure standard output directories exist
-mkdir -p "$PROJECT_DIR/reports" "$PROJECT_DIR/scripts" "$PROJECT_DIR/social" "$PROJECT_DIR/videos" "$PROJECT_DIR/sources"
+mkdir -p "$PROJECT_DIR/reports" "$PROJECT_DIR/scripts" "$PROJECT_DIR/social" "$PROJECT_DIR/videos" "$PROJECT_DIR/sources" "$PROJECT_DIR/deck"
 
 # Remove generated output directory (will be recreated by pipeline)
 rm -rf "$PROJECT_DIR/charts/png"
@@ -88,8 +89,9 @@ echo "Folder structure:"
 find "$PROJECT_DIR" -type d | sort | sed "s|$ROOT_DIR/||"
 echo ""
 echo "Next steps:"
-echo "  1. Collect sources:  /collect $TICKER"
-echo "  2. Add earnings transcript to sources/ (manual)"
-echo "  3. Point Claude Desktop Cowork at: $PROJECT_DIR"
-echo "  4. Tell it: Analyze $TICKER"
-echo "  5. Run the pipeline: just pipeline $TICKER"
+echo "  1. Collect sources into sources/ (filings, transcripts)"
+echo "  2. Cowork: point Claude Desktop at $PROJECT_DIR, analyze $TICKER -> script + brief + social"
+echo "  3. just deck-brief $TICKER   (generate the Claude Design hand-off)"
+echo "  4. Build deck + thumbnail in Claude Design (see DESIGN_INSTRUCTIONS.md);"
+echo "     export deck/${TICKER}_deck.pdf and charts/png/${TICKER}_thumbnail.png"
+echo "  5. just pipeline $TICKER     (slice -> voiceover -> render)"

@@ -1,12 +1,10 @@
 """
-Generate voiceover audio via ElevenLabs API.
+Generate voiceover audio via ElevenLabs API — one MP3 per script segment.
 
-In slides-only mode (no avatar segments), generates voiceover for ALL segments.
-In mixed mode (avatar + visual), generates voiceover only for visual segments
-(avatar segments get their audio from HeyGen).
+Idempotent: skips segments whose MP3 already exists (use --force to regenerate).
 
 Usage:
-    uv run python tools/generate_voiceover_audio.py JPM_2025_10_K
+    uv run python tools/generate_voiceover_audio.py GTBIF
 """
 
 import argparse
@@ -102,14 +100,9 @@ def generate_all(project_name, force=False):
     ticker = script["metadata"]["ticker"]
     segments = script["segments"]
 
-    # Detect mode: if any avatar segments exist, only voiceover the visual ones
-    has_avatar = any(s["type"] == "avatar" for s in segments)
-    if has_avatar:
-        visual_segments = [s for s in segments if s["type"] == "visual"]
-        print(f"Script: {ticker} | Mixed mode: {len(visual_segments)} visual segments need voiceover\n")
-    else:
-        visual_segments = segments  # All segments get voiceover
-        print(f"Script: {ticker} | Slides-only mode: {len(visual_segments)} segments need voiceover\n")
+    # Deck mode: every segment is a slide with its own voiceover.
+    visual_segments = segments
+    print(f"Script: {ticker} | {len(visual_segments)} segments need voiceover\n")
 
     audio_dir = os.path.join(project_dir, "videos", "audio")
     os.makedirs(audio_dir, exist_ok=True)

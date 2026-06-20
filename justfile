@@ -8,11 +8,11 @@
 #   just pipeline GTBIF                           # Run full pipeline
 #
 # STEP BY STEP:
-#   just screenshots TICKER     # Screenshot charts/slides to PNG
+#   just deck-brief TICKER      # Generate the Claude Design hand-off brief
+#   just slice TICKER           # Slice the exported deck PDF into slide PNGs
 #   just voiceover TICKER       # Generate ElevenLabs voiceovers
 #   just assemble TICKER        # Assemble final video via Shotstack
 #   just podcast TICKER         # Extract podcast audio (MP3)
-#   just avatar TICKER          # Generate HeyGen avatar segments (mixed mode only)
 #
 # =============================================================================
 
@@ -61,11 +61,6 @@ validate-fix project:
 
 # ─── Pipeline Steps ──────────────────────────────────────────
 
-# Screenshot chart HTMLs to PNGs (legacy mode)
-screenshots project:
-    @just ensure-env
-    UV_ENV_FILE={{_env}} uv run python tools/screenshot_charts.py {{project}}
-
 # Generate the Claude Design hand-off brief from the script (deck mode)
 deck-brief project:
     @just ensure-env
@@ -75,16 +70,6 @@ deck-brief project:
 slice project:
     @just ensure-env
     UV_ENV_FILE={{_env}} uv run python tools/slice_deck.py {{project}}
-
-# Generate avatar video segments via HeyGen (mixed mode only)
-avatar project:
-    @just ensure-env
-    UV_ENV_FILE={{_env}} uv run python tools/generate_avatar_segments.py {{project}}
-
-# Resume polling HeyGen (if interrupted)
-avatar-poll project:
-    @just ensure-env
-    UV_ENV_FILE={{_env}} uv run python tools/generate_avatar_segments.py {{project}} --poll
 
 # Generate voiceover audio via ElevenLabs
 voiceover project:
@@ -96,7 +81,7 @@ assemble project *args:
     @just ensure-env
     UV_ENV_FILE={{_env}} uv run python tools/assemble_video.py {{project}} {{args}}
 
-# Run full pipeline: validate → screenshots → voiceover → assemble
+# Run full deck pipeline: validate → slice → voiceover → assemble
 pipeline project:
     @just ensure-env
     ./tools/run_pipeline.sh {{project}}
@@ -130,7 +115,7 @@ play project:
 durations project:
     ./tools/durations.sh {{project}}
 
-# Clean generated assets (keep sources/scripts/charts HTML, remove videos/PNGs)
+# Clean generated assets (keep sources/scripts/deck, remove videos + sliced PNGs)
 clean project:
     rm -rf projects/{{project}}/videos projects/{{project}}/charts/png
     echo "Cleaned generated assets for {{project}}"
