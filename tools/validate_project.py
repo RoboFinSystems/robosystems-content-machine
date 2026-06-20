@@ -43,8 +43,8 @@ def ok(msg):
     print(f"  OK    {msg}")
 
 
-def check_required_files(project_dir, ticker):
-    """Check required output types exist."""
+def check_required_files(project_dir, ticker, deck_mode=False):
+    """Check required output types exist. In deck mode, publish artifacts are warnings."""
     print("\n--- Required Files ---")
 
     # Report can be either HTML (generic) or markdown brief (campaign)
@@ -56,25 +56,34 @@ def check_required_files(project_dir, ticker):
     elif not os.path.exists(os.path.join(project_dir, report_html)):
         report_path = report_md  # will show as missing
 
-    checks = {
+    # The script is the only file required to RENDER. The rest are publish artifacts —
+    # required in legacy mode, but only warnings in deck mode (you can render without them).
+    required = {"Script": f"scripts/{ticker}_script.json"}
+    recommended = {
         "Report/Brief": report_path,
-        "Script": f"scripts/{ticker}_script.json",
         "X Post": f"social/{ticker}_x_post.txt",
         "Thumbnail": f"charts/html/{ticker}_thumbnail.html",
     }
-
-    # Optional: StockTwits post (campaign projects)
     stocktwits_path = f"social/{ticker}_stocktwits_post.txt"
     if os.path.exists(os.path.join(project_dir, stocktwits_path)):
-        checks["StockTwits Post"] = stocktwits_path
+        recommended["StockTwits Post"] = stocktwits_path
 
     found = {}
-    for name, path in checks.items():
+    for name, path in required.items():
         full = os.path.join(project_dir, path)
         if os.path.exists(full):
-            size = os.path.getsize(full)
-            ok(f"{name}: {path} ({size:,} bytes)")
+            ok(f"{name}: {path} ({os.path.getsize(full):,} bytes)")
             found[name] = full
+        else:
+            error(f"{name} missing: {path}")
+
+    for name, path in recommended.items():
+        full = os.path.join(project_dir, path)
+        if os.path.exists(full):
+            ok(f"{name}: {path} ({os.path.getsize(full):,} bytes)")
+            found[name] = full
+        elif deck_mode:
+            warn(f"{name} missing (needed to publish, not to render): {path}")
         else:
             error(f"{name} missing: {path}")
 
@@ -196,6 +205,8 @@ def check_narration_quality(script):
         (r'\bROE\b', "ROE — should be 'return on equity'"),
         (r'\bEPS\b', "EPS — should be 'earnings per share'"),
         (r'\bFCF\b', "FCF — should be 'free cash flow'"),
+        (r'\bA I\b', 'Spaced "A I" — TTS reads it as the word "ai"; use "AI" or "A.I."'),
+        (r'\bD E A\b', 'Spaced "D E A" — TTS drags it; spell out "Drug Enforcement Administration"'),
     ]
 
     issues_found = 0
@@ -305,6 +316,48 @@ def check_robosystems_plug(script):
         warn("No RoboSystems mention in narration — add the standard plug")
 
 
+def check_deck_contract(project_dir, script):
+    """Deck mode: validate the script↔deck contract (replaces chart-HTML checks)."""
+    print("\n--- Deck Contract ---")
+    if not script:
+        return
+
+    segs = [s for s in script.get("segments", []) if s.get("type") == "visual"]
+    refs = [s.get("visual_ref") for s in segs]
+
+    if not all(refs):
+        error("Some visual segments are missing visual_ref")
+    elif len(refs) != len(set(refs)):
+        dupes = sorted({r for r in refs if refs.count(r) > 1})
+        error(f"visual_ref not unique: {', '.join(dupes)}")
+    else:
+        ok(f"{len(refs)} unique, ordered visual_ref slide ids")
+
+    deck = script.get("deck", {})
+    declared = deck.get("slide_count")
+    if declared is not None and declared != len(segs):
+        error(f"deck.slide_count={declared} but {len(segs)} visual segments — must match")
+    elif declared is not None:
+        ok(f"deck.slide_count matches segment count ({len(segs)})")
+    else:
+        warn("deck.slide_count not set (set it to the number of visual segments)")
+
+    source = deck.get("source")
+    if source and os.path.exists(os.path.join(project_dir, source)):
+        ok(f"deck source present: {source}")
+    elif source:
+        warn(f"deck not built yet: {source} — build it in Claude Design, export PDF there")
+    else:
+        warn("deck.source not set (e.g. deck/TICKER_deck.pdf)")
+
+    png_dir = os.path.join(project_dir, "charts", "png")
+    missing = [r for r in refs if r and not os.path.exists(os.path.join(png_dir, f"{r}.png"))]
+    if not missing:
+        ok("all slide PNGs present")
+    else:
+        warn(f"{len(missing)} slide(s) not sliced yet — run the slice step: {', '.join(missing[:5])}")
+
+
 def try_fix_script(project_dir, ticker, script):
     """Attempt to fix common schema issues in the script JSON."""
     if not script:
@@ -368,10 +421,25 @@ def main():
     print(f"  Validating: {args.project}")
     print(f"{'='*50}")
 
-    check_required_files(project_dir, ticker)
+    # Detect deck mode (Claude Design deck vs legacy hand-authored HTML charts)
+    deck_mode = False
+    script_path = os.path.join(project_dir, "scripts", f"{ticker}_script.json")
+    if os.path.exists(script_path):
+        try:
+            with open(script_path) as f:
+                deck_mode = bool(json.load(f).get("deck"))
+        except Exception:
+            pass
+    if deck_mode:
+        print("  Mode: deck (Claude Design)")
+
+    check_required_files(project_dir, ticker, deck_mode)
     script = check_script_schema(project_dir, ticker)
-    check_chart_files(project_dir, script)
-    check_chart_svg_bounds(project_dir, script)
+    if deck_mode:
+        check_deck_contract(project_dir, script)
+    else:
+        check_chart_files(project_dir, script)
+        check_chart_svg_bounds(project_dir, script)
     check_narration_quality(script)
     check_robosystems_plug(script)
 

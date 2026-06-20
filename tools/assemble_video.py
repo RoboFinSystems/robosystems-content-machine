@@ -36,6 +36,19 @@ S3_REGION = os.environ.get("S3_REGION", "us-east-1")
 EDIT_BASE = None  # Set in main() from CLI arg
 _SHOTSTACK_API_KEY = None  # Set in main() based on environment
 
+# ─── Reliability config (env-overridable) ──────────────────────
+# Presigned URLs must outlive the entire render; long videos can take >1h, and the
+# default 1h expiry was causing "access denied" failures on slow renders.
+S3_URL_TTL = int(os.environ.get("SHOTSTACK_URL_TTL", "21600"))  # 6 hours
+# Max time to wait for a render before giving up. Real renders routinely exceed the
+# old 10-min cap, which made successful renders look like failures.
+SHOTSTACK_MAX_WAIT = int(os.environ.get("SHOTSTACK_MAX_WAIT", "2700"))  # 45 min
+# Exponential-backoff retry count for transient HTTP / S3 failures.
+MAX_RETRIES = int(os.environ.get("HTTP_MAX_RETRIES", "4"))
+
+# HTTP status codes worth retrying (rate limit + transient server errors).
+_RETRYABLE_HTTP = (429, 500, 502, 503, 504)
+
 
 def shotstack_request(method, path, data=None):
     url = f"{EDIT_BASE}{path}"
@@ -45,44 +58,71 @@ def shotstack_request(method, path, data=None):
         "Accept": "application/json",
     }
     body = json.dumps(data).encode() if data else None
-    req = urllib.request.Request(url, data=body, headers=headers, method=method)
-    try:
-        with urllib.request.urlopen(req, timeout=60) as resp:
-            return json.loads(resp.read().decode())
-    except urllib.error.HTTPError as e:
-        error_body = e.read().decode()
-        print(f"  Shotstack API Error {e.code}: {error_body[:500]}")
-        return None
+    for attempt in range(MAX_RETRIES):
+        req = urllib.request.Request(url, data=body, headers=headers, method=method)
+        try:
+            with urllib.request.urlopen(req, timeout=60) as resp:
+                return json.loads(resp.read().decode())
+        except urllib.error.HTTPError as e:
+            error_body = e.read().decode()
+            if e.code in _RETRYABLE_HTTP and attempt < MAX_RETRIES - 1:
+                wait = 2 ** attempt
+                print(f"  Shotstack {e.code} (attempt {attempt+1}/{MAX_RETRIES}), retrying in {wait}s...")
+                time.sleep(wait)
+                continue
+            print(f"  Shotstack API Error {e.code}: {error_body[:500]}")
+            return None
+        except urllib.error.URLError as e:
+            if attempt < MAX_RETRIES - 1:
+                wait = 2 ** attempt
+                print(f"  Shotstack network error ({e.reason}), retrying in {wait}s...")
+                time.sleep(wait)
+                continue
+            print(f"  Shotstack network error: {e.reason}")
+            return None
+    return None
 
 
 # ─── S3 Asset Management ───────────────────────────────────────
 
-def s3_presign(s3_key, expires=3600):
-    """Generate a presigned URL for an S3 object (valid 1 hour)."""
-    result = subprocess.run(
-        [
-            "aws", "s3", "presign",
-            f"s3://{S3_BUCKET}/{s3_key}",
-            "--expires-in", str(expires),
-            "--region", S3_REGION,
-        ],
-        capture_output=True,
-        text=True,
-    )
-    if result.returncode != 0:
+def s3_presign(s3_key, expires=None):
+    """Generate a presigned URL for an S3 object (TTL defaults to S3_URL_TTL)."""
+    if expires is None:
+        expires = S3_URL_TTL
+    for attempt in range(MAX_RETRIES):
+        result = subprocess.run(
+            [
+                "aws", "s3", "presign",
+                f"s3://{S3_BUCKET}/{s3_key}",
+                "--expires-in", str(expires),
+                "--region", S3_REGION,
+            ],
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode == 0:
+            return result.stdout.strip()
+        if attempt < MAX_RETRIES - 1:
+            time.sleep(2 ** attempt)
+            continue
         print(f"  Presign failed for {s3_key}: {result.stderr}")
         return None
-    return result.stdout.strip()
 
 
 def s3_upload(local_path, s3_key):
-    """Upload a local file to S3."""
-    result = subprocess.run(
-        ["aws", "s3", "cp", local_path, f"s3://{S3_BUCKET}/{s3_key}", "--quiet"],
-        capture_output=True,
-        text=True,
-    )
-    return result.returncode == 0
+    """Upload a local file to S3, retrying transient failures."""
+    for attempt in range(MAX_RETRIES):
+        result = subprocess.run(
+            ["aws", "s3", "cp", local_path, f"s3://{S3_BUCKET}/{s3_key}", "--quiet"],
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode == 0:
+            return True
+        if attempt < MAX_RETRIES - 1:
+            time.sleep(2 ** attempt)
+            continue
+    return False
 
 
 def check_aws_credentials():
@@ -110,12 +150,12 @@ def build_asset_manifest(project_dir, ticker):
     """Upload local assets to S3 and build manifest with presigned URLs."""
     manifest_path = os.path.join(project_dir, "videos", "shotstack_assets.json")
 
-    # Check for fresh manifest (presigned URLs valid for 1 hour)
+    # Reuse a cached manifest only while its presigned URLs are still valid.
     if os.path.exists(manifest_path):
         with open(manifest_path) as f:
             existing = json.load(f)
         created = existing.get("_created", 0)
-        if time.time() - created < 3000:  # Less than 50 min old
+        if time.time() - created < (S3_URL_TTL - 600):  # 10-min safety buffer
             print(f"Using cached manifest ({len(existing) - 1} assets, still fresh)")
             return existing
 
@@ -597,9 +637,10 @@ def build_timeline(project_dir, ticker, assets, production=False):
             current_time += duration + SEGMENT_GAP
 
         elif seg_type == "visual":
-            # Visual segment: slide PNG + voiceover audio
+            # Visual segment: slide PNG + voiceover audio.
+            # Deck mode has no charts[] array — default to {visual_ref}.png.
             visual_ref = seg.get("visual_ref", "")
-            chart_file = chart_map.get(visual_ref)
+            chart_file = chart_map.get(visual_ref) or (f"{visual_ref}.png" if visual_ref else None)
             audio_file = f"{ticker}_segment_{seg_id}_voiceover.mp3"
 
             audio_info = assets.get(audio_file)
@@ -657,10 +698,13 @@ def build_timeline(project_dir, ticker, assets, production=False):
         current_time += OUTRO_DURATION
         print(f"  Outro: {OUTRO_DURATION}s")
 
-    # ── Whisper transcription for accurate subtitle timing ──
-    print("\nTranscribing audio with Whisper...")
-    whisper_srts = _whisper_transcribe_all(project_dir, ticker, segments)
-    print(f"  Whisper: {len(whisper_srts)}/{len(srt_entries)} segments transcribed")
+    # ── Whisper transcription for accurate subtitle timing (only when subtitles are on) ──
+    if subtitles_on:
+        print("\nTranscribing audio with Whisper...")
+        whisper_srts = _whisper_transcribe_all(project_dir, ticker, segments)
+        print(f"  Whisper: {len(whisper_srts)}/{len(srt_entries)} segments transcribed")
+    else:
+        whisper_srts = {}
 
     # ── Generate SRT subtitle file ──
     srt_path = os.path.join(project_dir, "videos", f"{ticker}_captions.srt")
@@ -750,15 +794,20 @@ def submit_render(edit):
 
 
 def poll_render(render_id):
-    print(f"\nPolling render {render_id}...")
-    for attempt in range(120):
+    print(f"\nPolling render {render_id} (up to {SHOTSTACK_MAX_WAIT // 60} min)...")
+    deadline = time.time() + SHOTSTACK_MAX_WAIT
+    interval = 5
+    attempt = 0
+    while time.time() < deadline:
+        attempt += 1
         resp = shotstack_request("GET", f"/render/{render_id}")
         if not resp:
-            time.sleep(5)
+            time.sleep(interval)
             continue
 
         status = resp.get("response", {}).get("status", "unknown")
-        print(f"  [{attempt+1}] Status: {status}")
+        elapsed = int(SHOTSTACK_MAX_WAIT - (deadline - time.time()))
+        print(f"  [{attempt}] {elapsed}s — status: {status}")
 
         if status == "done":
             return resp["response"].get("url")
@@ -767,9 +816,11 @@ def poll_render(render_id):
             print(f"  Render failed: {error}")
             return None
 
-        time.sleep(5)
+        time.sleep(interval)
+        interval = min(interval + 2, 20)  # ramp 5s → 20s to ease API load on long renders
 
-    print("  Render timed out")
+    print(f"  Still rendering after {SHOTSTACK_MAX_WAIT // 60} min — likely not failed, just slow.")
+    print(f"  Check later:  uv run python tools/assemble_video.py PROJECT --status {render_id}")
     return None
 
 

@@ -61,10 +61,20 @@ validate-fix project:
 
 # ─── Pipeline Steps ──────────────────────────────────────────
 
-# Screenshot chart HTMLs to PNGs
+# Screenshot chart HTMLs to PNGs (legacy mode)
 screenshots project:
     @just ensure-env
     UV_ENV_FILE={{_env}} uv run python tools/screenshot_charts.py {{project}}
+
+# Generate the Claude Design hand-off brief from the script (deck mode)
+deck-brief project:
+    @just ensure-env
+    UV_ENV_FILE={{_env}} uv run python tools/build_deck_brief.py {{project}}
+
+# Slice a Claude Design deck PDF into 1920x1080 slide PNGs (deck mode)
+slice project:
+    @just ensure-env
+    UV_ENV_FILE={{_env}} uv run python tools/slice_deck.py {{project}}
 
 # Generate avatar video segments via HeyGen (mixed mode only)
 avatar project:

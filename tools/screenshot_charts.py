@@ -8,12 +8,33 @@ Usage:
 import argparse
 import glob
 import os
+import shutil
 import subprocess
 import sys
 
 from helpers import get_project_dir
 
-CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+
+def _find_chrome():
+    """Locate a Chrome/Chromium binary. Override with CHROME_BIN env var."""
+    override = os.environ.get("CHROME_BIN")
+    if override:
+        return override
+    candidates = [
+        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+        "/Applications/Chromium.app/Contents/MacOS/Chromium",
+    ]
+    for name in ("google-chrome", "google-chrome-stable", "chromium", "chromium-browser", "chrome"):
+        found = shutil.which(name)
+        if found:
+            candidates.append(found)
+    for path in candidates:
+        if path and os.path.exists(path):
+            return path
+    return None
+
+
+CHROME = _find_chrome()
 
 
 def _screenshot_avatar_background():
@@ -53,6 +74,10 @@ def _screenshot(html_path, png_path, width=1920, height=1080):
 
 
 def screenshot_charts(project_name):
+    if not CHROME:
+        print("ERROR: Could not find a Chrome/Chromium binary.")
+        print("  Install Google Chrome, or set CHROME_BIN to its path in .env.")
+        sys.exit(1)
     project_dir = get_project_dir(project_name)
     html_dir = os.path.join(project_dir, "charts", "html")
     png_dir = os.path.join(project_dir, "charts", "png")

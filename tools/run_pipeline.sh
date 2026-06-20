@@ -54,7 +54,18 @@ with open('$SCRIPT_FILE') as f:
 print('yes' if any(s.get('type') == 'avatar' for s in segs) else 'no')
 ")
 
-if [ "$HAS_AVATAR" = "yes" ]; then
+# Deck mode: visuals come from a Claude Design deck (script has a "deck" block)
+DECK_MODE=$(python3 -c "
+import json
+with open('$SCRIPT_FILE') as f:
+    print('yes' if json.load(f).get('deck') else 'no')
+")
+
+if [ "$DECK_MODE" = "yes" ]; then
+    MODE="deck"
+    STEPS=3
+    echo "  Mode: Deck (Claude Design slides + ElevenLabs voiceover)"
+elif [ "$HAS_AVATAR" = "yes" ]; then
     MODE="mixed"
     STEPS=4
     echo "  Mode: Avatar + Visual (HeyGen + ElevenLabs)"
@@ -80,9 +91,14 @@ echo "Step 0: Validate & fix"
 uv run python tools/validate_project.py "$PROJECT" --fix
 echo ""
 
-# Step 1: Screenshot charts/slides
-echo "Step 1/$STEPS: Screenshots"
-uv run python tools/screenshot_charts.py "$PROJECT"
+# Step 1: Build slide images
+if [ "$MODE" = "deck" ]; then
+    echo "Step 1/$STEPS: Slice deck (PDF -> 1920x1080 PNGs)"
+    uv run python tools/slice_deck.py "$PROJECT"
+else
+    echo "Step 1/$STEPS: Screenshots"
+    uv run python tools/screenshot_charts.py "$PROJECT"
+fi
 echo ""
 
 if [ "$MODE" = "mixed" ]; then
