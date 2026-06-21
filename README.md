@@ -142,9 +142,11 @@ Configure in `.env` after first run:
 
 | Service | Keys | Purpose |
 |---------|------|---------|
-| [ElevenLabs](https://elevenlabs.io/) | `ELEVEN_LABS_API_KEY`, `ELEVEN_LABS_VOICE_ID`, `ELEVEN_LABS_INTERVIEWER_VOICE_ID` | Voiceover (narrator) + Q&A interviewer voice + Music API |
+| [ElevenLabs](https://try.elevenlabs.io/v9z3wzm97gk3) | `ELEVEN_LABS_API_KEY`, `ELEVEN_LABS_VOICE_ID`, `ELEVEN_LABS_INTERVIEWER_VOICE_ID` | Voiceover (narrator) + Q&A interviewer voice + Music API |
 | [Shotstack](https://shotstack.io/) | `SHOTSTACK_API_KEY`, `SHOTSTACK_OWNER_ID` (+ sandbox keys) | Cloud video assembly |
 | AWS | `AWS_PROFILE`, `S3_BUCKET`, `S3_REGION` | Asset uploads for Shotstack |
+
+<sub>The ElevenLabs link above is a referral link.</sub>
 
 ### Claude Cowork + Claude Design
 
