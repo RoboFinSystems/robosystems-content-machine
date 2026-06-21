@@ -177,6 +177,11 @@ everything else derives from), then the **2 companion formats** (#5–6). (Schem
 mechanics: see `PRODUCTION_CONTRACT.md`.) The deck **and** the thumbnail are built in Claude
 Design from the script — you author no HTML.
 
+**Promo code (optional placeholder).** Where copy invites sign-up, add the offer line
+`New customers get 50% off your first month with code [PROMO_CODE].` Keep `[PROMO_CODE]` as a
+literal token (swap in the live Stripe code at post time, or omit the line if no promo is
+running) — never hardcode a real code here, since codes change and expire.
+
 ### 1. Narrative Brief (`reports/{TICKER}_brief.md`) — write this FIRST
 
 A markdown document synthesizing your research into a compelling story. Opinionated prose,
@@ -205,6 +210,10 @@ posts derive from it. Structure:
    suit; hemp-ban demand-migration that's state-dependent), not generic disclaimers.
 7. **The Bottom Line** (1 ¶) — where it stands today, how the math changes under each
    catalyst, what to watch next. Give the framework, not a recommendation.
+
+**Footer (optional CTA).** After the analysis, end with a one-line soft RoboSystems CTA; when a
+promo is running, append `New customers get 50% off your first month with code [PROMO_CODE].`
+Keep it a footer, separate from the analysis — never a sales pitch inside the report.
 
 **Quality check:** re-read it. Is there a clear narrative arc? Would you watch this video?
 If it reads like a generic summary, rewrite the hook and financial story until there's a real
@@ -248,12 +257,14 @@ Cannabis editorial guidance for the script:
 ### 3. X Post (`social/{TICKER}_x_post.txt`)
 Long-form (under 4000 chars): hook framing the coverage angle; 3-5 findings with specific
 numbers (include 280E impact); catalyst sensitivity; risk/caveat; closing takeaway;
-`[YOUTUBE_LINK]`; mention robosystems.ai;
+`[YOUTUBE_LINK]`; mention robosystems.ai + the promo line (`New customers get 50% off your first
+month with code [PROMO_CODE].`);
 `$TICKER` + `#Cannabis #MSO #280E #Rescheduling`; tag @RoboFinSystems.
 
 ### 4. YouTube Description (`social/{TICKER}_youtube_description.txt`)
 Hook (1-2 sentences); links: `https://robosystems.ai`
-and `https://github.com/RoboFinSystems/robosystems-content-machine`; **timestamps** — draft from
+and `https://github.com/RoboFinSystems/robosystems-content-machine`; a `🎟️ New customers: 50%
+off your first month with code [PROMO_CODE]` line under the links; **timestamps** — draft from
 `duration_estimate_seconds` (`0:00` start, accumulate); after render, finalize from the generated
 `videos/{TICKER}_timestamps.txt` (actual chapter times); 6-8 key-finding
 bullets with numbers; a 2-3 sentence **280E explainer** (many viewers land cold); disclaimer
