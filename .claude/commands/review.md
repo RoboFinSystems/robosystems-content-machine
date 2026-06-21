@@ -36,9 +36,9 @@ ls projects/{TICKER}/charts/html/*.html | grep -v EXAMPLE_ | grep -v CHART_TEMPL
 For each chart, show the filename and the visual_type from the script.
 
 ### 5. Social posts preview
-Show the X post and StockTwits post content:
+Show the X post and YouTube description content:
 - `social/{TICKER}_x_post.txt`
-- `social/{TICKER}_stocktwits_post.txt`
+- `social/{TICKER}_youtube_description.txt`
 
 ### 6. Narration quality spot-check
 Pick 2-3 narration segments and check for:
@@ -55,7 +55,7 @@ Review: {TICKER}
   Script:     14 segments, ~4:20 estimated
               3 title | 5 chart | 3 callout | 2 dual | 1 outro
   Charts:     8 HTML files
-  Social:     X post (2,341 chars) + StockTwits (487 chars)
+  Social:     X post (2,341 chars) + YouTube description
   Narration:  2 TTS issues found (see above)
 
   Ready for pipeline?

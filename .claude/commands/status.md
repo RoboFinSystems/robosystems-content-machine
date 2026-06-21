@@ -24,7 +24,7 @@ For each project directory, check for the presence of key files:
 - `scripts/*_script.json` — video script
 - `charts/html/*.html` — chart/slide files (count excluding EXAMPLE_, CHART_TEMPLATE, INTRO_SLIDE, OUTRO_SLIDE)
 - `social/*_x_post.txt` — X post
-- `social/*_stocktwits_post.txt` — StockTwits post
+- `social/*_youtube_description.txt` — YouTube description
 - `charts/html/*_thumbnail.html` — thumbnail
 
 **Pipeline outputs:**

@@ -62,7 +62,7 @@ Open Claude Desktop and start a Cowork session pointed at the scaffolded project
 - **Narrative brief** — written analysis (Markdown)
 - **Video script** — structured JSON with segment timing and narration
 - **Charts and slides** — one HTML file per visual segment
-- **Social posts** — platform-specific copy (X, StockTwits)
+- **Social posts** — platform-specific copy (X, YouTube)
 - **Thumbnail** — YouTube thumbnail HTML
 
 ### 3. Production Pipeline
