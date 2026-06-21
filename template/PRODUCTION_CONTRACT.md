@@ -285,9 +285,13 @@ Never use `$ % x / &` in narration — spell everything out:
   the fallback.
 - **`AI` is special — never space it.** `A I` gets read as the *word* "ai" (sounds like
   "eh"/"eye"). Write `AI` or `A.I.` instead.
+- **`center` mispronounces** — it comes out like "centandar." Respell it phonetically as
+  `senter` / `senters` (e.g. "data senters"). Narration is audio-only, so the respelling never
+  shows on screen (the slide keeps "center").
 
-*(Confirmed-bad spacings, by ear 2026-06: `A I`, `D E A`. Campaigns may add their own
-pronunciation hints — e.g. a sector tax code or a company name TTS reads wrong.)*
+*(Confirmed-bad by ear 2026-06: spaced `A I`, spaced `D E A`, and the word `center` (→ `senter`).
+Campaigns may add their own pronunciation hints — e.g. a sector tax code or a company name TTS
+reads wrong.)*
 
 ---
 
