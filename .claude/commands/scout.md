@@ -53,7 +53,26 @@ Scout Report: {TICKER} ({company name})
   Project:   Not scaffolded
 
   Ready to cover: YES
-  Next: just campaign {TICKER} cannabis_coverage
+  Next: scaffold → write _SOURCE_NOTES.md → just kickoff {TICKER}  (see step 7)
 ```
 
 If the company is NOT in the graph or has no recent filings, say so clearly and suggest loading it.
+
+### 7. If covering: scaffold + write the scout notes, then kick off Cowork
+The recon above is only useful if it persists into the project. Once you decide to cover it:
+
+1. **Scaffold** — `just campaign {TICKER} <campaign>` (thematic) or `just new {TICKER}` (generic).
+2. **Write `projects/{TICKER}/sources/_SOURCE_NOTES.md`** — the scout's durable output and the
+   per-ticker "kick" Cowork reads. Capture, from the recon above:
+   - **Coverage type** — initiating, or a continuing-coverage update (check `local/archive/` +
+     prior videos). If an update, carry the prior brief/script into `sources/_v1_reference/` and
+     frame "what changed since we covered it."
+   - **The angle** — the single most compelling story, in 1–2 sentences.
+   - **Verified anchor numbers** — the figures pulled from the graph, so Cowork re-verifies rather
+     than invents.
+   - **Refresh live** — what Cowork must pull fresh (current price/valuation, the latest 10-Q,
+     segment/Azure-style detail, guidance).
+   - **FY-end / keying quirks** — e.g. fiscal year not ending in December; CIK vs. a changed ticker.
+3. **`just kickoff {TICKER}`** → paste into a Cowork session pointed at the project folder.
+
+This makes the pre-Cowork phase a real stage: `/scout` (recon + notes) → `just kickoff` (cold start).

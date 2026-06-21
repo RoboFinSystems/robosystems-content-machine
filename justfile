@@ -47,6 +47,14 @@ campaigns:
 open project:
     open projects/{{project}}
 
+# Print the Cowork cold-start prompt for a project (ready to paste into Cowork)
+kickoff project:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    SRC="projects/{{project}}/KICKOFF.md"
+    [ -f "$SRC" ] || SRC="template/KICKOFF.md"
+    sed "s/{TICKER}/{{project}}/g" "$SRC"
+
 # ─── QA ──────────────────────────────────────────────────────
 
 # Validate cowork outputs before running pipeline
