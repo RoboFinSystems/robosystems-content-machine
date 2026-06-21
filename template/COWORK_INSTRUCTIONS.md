@@ -20,25 +20,35 @@ Use the RoboSystems MCP for SEC filing data, and web search for current price/va
 
 | Tool | Purpose |
 |------|---------|
-| `get-financial-statement` | A full statement (income / balance sheet / cash flow) in one call. |
-| `build-fact-grid` | Specific metrics across years/companies via `canonical_concepts` (e.g. "revenue", "net_income") — no XBRL names needed. Best for trends + cross-company comps. |
+| `financial-statement-analysis` | A full statement (income / balance sheet / cash flow / equity) in one call. Params: `statement_type` (required), `ticker`, `period_type`. |
+| `build-fact-grid` | Specific metrics across years/companies via `canonical_concepts` (e.g. "revenue", "net_income") — no XBRL names needed. Best for trends + cross-company comps. `entity` accepts ticker, CIK, or name (CIK is the canonical key if a ticker is ambiguous or has changed). |
 | `resolve-element` | Map a concept → the company's exact XBRL qname (for custom Cypher). |
 | `read-graph-cypher` | Run Cypher — for segment breakdowns and anything the high-level tools can't do. |
-| `list-disclosures` / `get-disclosure-detail` | Find + read disclosure notes. |
+| `search-documents` → `get-document-section` | Find + read disclosure narrative (debt maturities, tax notes, MD&A, risk factors). Filter by `entity` and `section`. |
+| `get-example-queries` / `get-graph-schema` | Run FIRST on a new session — confirms working Cypher patterns and the canonical-concept vocabulary. |
 
-Typical flow: `get-financial-statement` for each statement → `build-fact-grid` for targeted
-metrics and multi-year trends → `resolve-element` + `read-graph-cypher` for segment/geographic
-breakdowns → `list-disclosures` for specifics (debt maturities, tax detail).
+Typical flow: `get-example-queries` to confirm patterns → `financial-statement-analysis` for each
+statement → `build-fact-grid` for targeted metrics and multi-year trends → `resolve-element` +
+`read-graph-cypher` for segment/geographic breakdowns → `search-documents` + `get-document-section`
+for disclosure specifics (debt maturities, tax notes).
 
 ```
-get-financial-statement {ticker:"TICKER", statement_type:"income_statement", period_type:"annual"}
+financial-statement-analysis {ticker:"TICKER", statement_type:"income_statement", period_type:"annual"}
 build-fact-grid {canonical_concepts:["revenue","net_income","gross_profit","operating_income",
                  "total_assets","operating_cash_flow","eps_diluted"], entity:"TICKER", period_type:"annual"}
 ```
+Verify the canonical-concept names you need via `get-example-queries`/`resolve-element` first —
+`revenue` and `net_income` are confirmed; other concepts may use different canonical strings (or
+no mapping), in which case use `resolve-element` → qname and query via `read-graph-cypher`.
 
 Query tips: comma-separate patterns in a SINGLE MATCH (multiple MATCHes can time out); use
 `DISTINCT`; `has_dimensions:false` for consolidated totals, `true` for segments; `numeric_value`
 is the actual value in base units (revenue $23.7B is stored as `23739000000`) — no scaling.
+
+**⚠️ 40-F / 20-F / IFRS filers:** foreign private issuers (e.g. many Canadian companies) file
+40-F/20-F and tag under IFRS elements (`ifrs-full:Revenue`, not `us-gaap:Revenues`). The
+high-level tools usually handle this; if `build-fact-grid` returns nothing for revenue/net_income,
+fall back to `read-graph-cypher` searching `ifrs-full:` elements by fact count.
 
 ## What You Produce
 
@@ -58,8 +68,17 @@ not a data dump. The script and social posts derive from it. Structure:
 3. **The Financial Story** (3-5 ¶) — the core analysis: revenue trajectory, margins (gross /
    operating / net), balance sheet, cash flow. Tell the story the numbers reveal; every ¶ has
    a "so what." Note anomalies — big YoY swings, margin compression/expansion, unusual charges.
-4. **Valuation & Context** (1-2 ¶) — current price, market cap, P/E, P/S, EV/EBITDA, analyst
-   consensus (from web search); how it sits vs peers/sector.
+4. **Valuation — "what it's worth as a normal business"** (2-3 ¶) — go beyond quoting multiples:
+   - **Where it trades:** current price, market cap, P/E, P/S, EV/EBITDA, FCF yield; analyst
+     consensus and how it sits vs peers/sector (web search).
+   - **Scenario DCF:** project free cash flow under **bull / base / bear** cases with explicit,
+     stated assumptions (revenue growth, margins, WACC, terminal growth). Present a **range**, not
+     a point estimate.
+   - **Peer / cross-sector re-rating:** apply representative peer (or adjacent-sector) multiples
+     to normalized earnings/EBITDA → implied value if it re-rated to the comp set.
+   - **Output:** an implied-value **range** plus what today's price implies the market is pricing
+     in. **Framing: implied value under stated assumptions — not a price target, not investment
+     advice.**
 5. **Risks** (1-2 ¶) — specific risks from the filing's risk factors and the financials.
 6. **The Bottom Line** (1 ¶) — where the company stands and what to watch next. Framework,
    not a recommendation.
@@ -81,6 +100,9 @@ Editorial guidance for the script:
 - Vary slide kinds for rhythm — don't stack chart slides. Title → chart → chart → callout →
   dual → chart → callout → title (close).
 - Every claim references a specific filing number; the slide's `data` shows that exact number.
+- **Include a valuation slide** — turn the scenario DCF + peer re-rating into a `dual`: current
+  price vs the implied-value range, with the key assumptions listed; cover it in the narration.
+  Framing: implied value under stated assumptions, not a price target.
 - Close with a clear takeaway and call-to-action.
 - **RoboSystems plug** — use ONE of these verbatim (don't rewrite), in a `title` slide
   (`visual_ref: "cta"`), never over a chart:
