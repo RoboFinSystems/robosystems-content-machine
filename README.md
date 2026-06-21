@@ -2,12 +2,12 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Automated video content pipeline for financial analysis. Combines AI-generated content with production automation to turn SEC filings into narrated videos, podcasts, and social posts.
+Automated content pipeline for financial analysis. Turns a company's SEC filings into a narrated **video**, a vertical **teaser short**, a two-voice **Q&A podcast**, and **social posts** — one analysis, multiple formats.
 
-- **Campaign-Driven**: Reusable campaign templates define the editorial angle, slide designs, and output specs — apply them to any ticker
-- **AI Content Generation**: [Claude Cowork](https://claude.ai) analyzes filings via [RoboSystems](https://robosystems.ai) MCP tools and produces narrative briefs, video scripts, charts, and social posts
-- **Automated Production**: Pipeline screenshots charts, synthesizes voiceover, assembles video, and extracts podcast audio
-- **Two Production Modes**: Slides-only (voiceover + charts) or mixed (avatar segments + charts) — auto-detected from script
+- **Campaign-Driven** — reusable campaign templates define the editorial angle, analytical framework, and output specs; apply them to any ticker.
+- **AI Content Generation** — [Claude Cowork](https://claude.ai) analyzes filings via [RoboSystems](https://robosystems.ai) MCP tools and writes the brief, video script, Q&A script, and social posts.
+- **On-Brand Decks** — slides are composed in [Claude Design](https://claude.ai/design) from the `@robosystems/core` design system (no hand-authored HTML).
+- **Automated Production** — the pipeline slices the deck, synthesizes voiceover, assembles the video, and produces the short + podcast.
 
 ## Quick Start
 
@@ -26,59 +26,87 @@ The first `just` command auto-creates `.env` from `.env.example`. Fill in your A
 
 ## How It Works
 
+Three stages: **research** and **production** automate; the **design** step in the middle is human-in-the-loop (the craft step).
+
 ### 1. Scaffold a Project
 
-Every project starts from the base `template/`, which provides the folder structure, chart types, slide examples, and pipeline assets. Scaffold one for any ticker:
+Every project starts from the base `template/` (folder structure + stage instructions + assets). Projects are company-centric — sources accumulate over time, each run produces a new set of outputs.
 
 ```bash
-just new TICKER
+just new TICKER                      # base template
+just campaign TICKER campaign_name   # with a campaign overlay
+just campaigns                       # list available campaigns
 ```
 
 #### Campaigns
 
-For thematic coverage across multiple companies, campaigns add an editorial layer on top of the base template. A campaign defines the voice, analytical framework, slide designs, and target tickers for a class of companies.
+Campaigns add an editorial layer for thematic coverage across many companies — the voice, analytical framework, target tickers, and shared reference data.
 
 ```
 campaigns/
   my_campaign/
     CAMPAIGN_BRIEF.md        # Editorial strategy and analytical framework
-    COWORK_INSTRUCTIONS.md   # Claude's production instructions (overrides base)
+    COWORK_INSTRUCTIONS.md   # Production instructions (overrides base)
     tickers.md               # Target companies and production calendar
     sources/                 # Third-party research and reference data (gitignored)
-    overrides/               # File replacements (custom slide templates, assets)
+    overrides/               # File replacements (custom assets/instructions)
 ```
 
-When you scaffold with a campaign, the base template is applied first, then the campaign overlays its instructions, briefs, and templates on top.
-
-```bash
-just campaigns                       # List available campaigns
-just campaign TICKER campaign_name   # Scaffold with campaign overlay
-```
+The base template is applied first, then the campaign overlays its instructions, brief, and shared sources on top.
 
 ### 2. Content Generation (Claude Cowork)
 
-Open Claude Desktop and start a Cowork session pointed at the scaffolded project folder. Claude reads the instructions and produces:
+Point a Cowork session at the scaffolded project folder. Claude reads the instructions (`COWORK_INSTRUCTIONS.md` + `PRODUCTION_CONTRACT.md`) and produces:
 
-- **Narrative brief** — written analysis (Markdown)
-- **Video script** — structured JSON with segment timing and narration
-- **Charts and slides** — one HTML file per visual segment
-- **Social posts** — platform-specific copy (X, YouTube)
-- **Thumbnail** — YouTube thumbnail HTML
+- **Narrative brief** — the written analysis (Markdown), authored first.
+- **Video script** (`scripts/{TICKER}_script.json`) — the source of truth: ordered segments with narration + per-slide content, the `thumbnail` block, and a `short` block (the teaser).
+- **Q&A script** (`scripts/{TICKER}_qa.json`) — a two-voice interviewer/analyst conversation for the podcast.
+- **Social posts** — X post + YouTube description.
 
-### 3. Production Pipeline
+Cowork authors **no HTML** — slides and the thumbnail are specced in the script and built in Claude Design.
+
+### 3. Design (Claude Design)
+
+Generate the hand-off brief, then compose the deck + thumbnail on-brand:
 
 ```bash
-just pipeline PROJECT   # Run all steps end-to-end
+just deck-brief TICKER   # render the Claude Design hand-off from the script
+```
+
+Paste the brief into [claude.ai/design](https://claude.ai/design) (on `@robosystems/core`), compose a 16:9 deck and a thumbnail, then export `deck/{TICKER}_deck.pdf` and `charts/png/{TICKER}_thumbnail.png`.
+
+### 4. Production Pipeline
+
+```bash
+just pipeline PROJECT       # validate -> slice -> voiceover -> assemble (long-form video)
+just short PROJECT          # 9:16 teaser short (b-roll + music + VO + caption cards)
+just podcast-qa PROJECT     # two-voice Q&A podcast (MP3 for Spotify + MP4 for YouTube)
+just podcast PROJECT        # extract podcast MP3 from the long-form video
 ```
 
 | Step | Command | What it does |
 |------|---------|-------------|
-| **Validate** | `just validate PROJECT` | Checks Cowork outputs exist and script JSON matches schema |
-| **Screenshots** | `just screenshots PROJECT` | Opens each chart HTML in headless Chrome, captures 1920x1080 PNGs |
-| **Avatar** | `just avatar PROJECT` | Sends avatar narration to HeyGen API (mixed mode only) |
-| **Voiceover** | `just voiceover PROJECT` | Sends visual narration to ElevenLabs TTS |
-| **Assemble** | `just assemble PROJECT` | Uploads assets to S3, builds Shotstack timeline, renders final MP4 |
-| **Podcast** | `just podcast PROJECT` | Extracts podcast audio (MP3) from final video |
+| **Validate** | `just validate PROJECT` | Checks Cowork outputs exist and the script matches the deck contract |
+| **Slice** | `just slice PROJECT` | Slices the exported deck PDF into per-slide 1920×1080 PNGs (pdftoppm) |
+| **Voiceover** | `just voiceover PROJECT` | Sends narration to ElevenLabs TTS (idempotent; `--force` to regen) |
+| **Assemble** | `just assemble PROJECT` | Uploads assets to S3, builds the Shotstack timeline, renders the MP4 (`--production` for 1080p) |
+| **Short** | `just short PROJECT` | Renders a 9:16 teaser locally with ffmpeg |
+| **Podcast (Q&A)** | `just podcast-qa PROJECT` | Synthesizes the two-voice conversation → MP3 + MP4 |
+
+Assembly writes `videos/{TICKER}_timestamps.txt` with the actual YouTube chapter times.
+
+### Shared Media Libraries
+
+The short pulls from reusable, mood/tag-tagged libraries that compound across every ticker:
+
+```bash
+just broll          # show the b-roll library + coverage by category
+just broll-sync     # register new clips dropped into assets/broll/
+just music-sync     # register new tracks dropped into assets/music/
+just music "<prompt>"   # generate a music bed via the ElevenLabs Music API
+```
+
+Cowork selects clips/tracks by theme: a `broll_theme` / `music_mood` (tags) or an explicit list. Manifests are tracked; the heavy `.mp4`/`.mp3` binaries are gitignored (local-only).
 
 ### Batch Operations
 
@@ -95,9 +123,9 @@ just clean PROJECT         # Remove generated assets (keeps source files)
 
 - [uv](https://docs.astral.sh/uv/) — Python package manager
 - [just](https://github.com/casey/just) — command runner
-- [Google Chrome](https://www.google.com/chrome/) — headless chart screenshots
-- [ffmpeg / ffprobe](https://ffmpeg.org/) — media processing
-- [AWS CLI](https://aws.amazon.com/cli/) — S3 uploads
+- [ffmpeg / ffprobe](https://ffmpeg.org/) — media processing (short, podcast, slicing)
+- [poppler](https://poppler.freedesktop.org/) — `pdftoppm` for slicing the deck PDF + rasterizing the thumbnail
+- [AWS CLI](https://aws.amazon.com/cli/) — S3 uploads for Shotstack
 
 ### API Keys
 
@@ -105,14 +133,13 @@ Configure in `.env` after first run:
 
 | Service | Keys | Purpose |
 |---------|------|---------|
-| [ElevenLabs](https://elevenlabs.io/) | `ELEVEN_LABS_API_KEY`, `ELEVEN_LABS_VOICE_ID` | Voice synthesis |
-| [Shotstack](https://shotstack.io/) | `SHOTSTACK_API_KEY`, `SHOTSTACK_OWNER_ID` | Cloud video assembly |
-| [HeyGen](https://www.heygen.com/) | `HEYGEN_API_KEY`, `HEYGEN_AVATAR_ID`, `HEYGEN_VOICE_ID` | Avatar video (mixed mode only) |
+| [ElevenLabs](https://elevenlabs.io/) | `ELEVEN_LABS_API_KEY`, `ELEVEN_LABS_VOICE_ID`, `ELEVEN_LABS_INTERVIEWER_VOICE_ID` | Voiceover (narrator) + Q&A interviewer voice + Music API |
+| [Shotstack](https://shotstack.io/) | `SHOTSTACK_API_KEY`, `SHOTSTACK_OWNER_ID` (+ sandbox keys) | Cloud video assembly |
 | AWS | `AWS_PROFILE`, `S3_BUCKET`, `S3_REGION` | Asset uploads for Shotstack |
 
-### Claude Cowork
+### Claude Cowork + Claude Design
 
-The content generation phase requires [Claude Desktop](https://claude.ai/download) with the [RoboSystems MCP server](https://github.com/RoboFinSystems/robosystems-mcp-client) configured.
+Content generation uses [Claude Desktop](https://claude.ai/download) with the [RoboSystems MCP server](https://github.com/RoboFinSystems/robosystems-mcp-client) configured; the deck is composed in [claude.ai/design](https://claude.ai/design) on the `@robosystems/core` design system.
 
 ## Resources
 

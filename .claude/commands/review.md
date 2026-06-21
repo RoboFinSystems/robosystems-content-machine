@@ -9,7 +9,7 @@ Post-Cowork quality review before running the pipeline. This is where you spend 
 ```bash
 just validate {TICKER}
 ```
-Report any errors or warnings.
+Report any errors or warnings (it also checks the deck contract + the `short`/`qa` companion formats).
 
 ### 2. Show the narrative brief
 Read and display `projects/{TICKER}/reports/{TICKER}_brief.md` in full.
@@ -22,45 +22,50 @@ This is the most important output to review. Ask the user:
 
 ### 3. Script summary
 Read `projects/{TICKER}/scripts/{TICKER}_script.json` and show:
-- Total segments and estimated duration
-- Segment breakdown by slide type (title/chart/callout/dual)
+- Total segments and estimated duration (≈ narration chars ÷ 16)
+- Segment breakdown by slide type (title / chart / callout / dual)
 - Word count of total narration
-- Whether the RoboSystems plug is present
-- Short version segment selection
+- Whether the RoboSystems plug (`visual_ref: "cta"`) is present
+- The `thumbnail` block (hero / banner / secondary)
 
-### 4. Chart inventory
-List all chart HTML files that were created (excluding templates/examples):
-```bash
-ls projects/{TICKER}/charts/html/*.html | grep -v EXAMPLE_ | grep -v CHART_TEMPLATE | grep -v AVATAR_BG
-```
-For each chart, show the filename and the visual_type from the script.
+### 4. Deck contract check
+The deck is built in Claude Design from the script (no chart HTML). Confirm:
+- `deck.slide_count` equals the number of `visual` segments
+- `visual_ref`s are unique and in narration order
+- If the deck is built: `deck/{TICKER}_deck.pdf` exists (and slices to `charts/png/{visual_ref}.png`)
 
-### 5. Social posts preview
-Show the X post and YouTube description content:
+### 5. Companion formats
+- **Short** — the `short` block: narration (a self-contained hook that names the company), `broll`/`broll_theme`, `music`/`music_mood`, and the caption cards (does it resolve, not just tease?).
+- **Q&A** — `scripts/{TICKER}_qa.json`: turn count, interviewer/analyst alternation, written-for-the-ear.
+
+### 6. Social posts preview
+Show the X post and YouTube description:
 - `social/{TICKER}_x_post.txt`
 - `social/{TICKER}_youtube_description.txt`
 
-### 6. Narration quality spot-check
-Pick 2-3 narration segments and check for:
-- Raw symbols ($, %, x) that should be spelled out for TTS
-- Sentences that are too long or complex for spoken delivery
-- Numbers that aren't rounded for speech
+### 7. Narration quality spot-check
+Across the script narration, the short narration, and the Q&A turns, check for:
+- Raw symbols (`$ % x /`) that should be spelled out for TTS
+- Spaced `A I` (use `AI`) or `D E A` (spell out "Drug Enforcement Administration")
+- Sentences too long/complex for spoken delivery; numbers not rounded for speech
 
-### 7. Print review summary
+### 8. Print review summary
 ```
 Review: {TICKER}
 ━━━━━━━━━━━━━━━━
   Validator:  PASSED (2 warnings)
   Brief:      1,847 words — review above
-  Script:     14 segments, ~4:20 estimated
-              3 title | 5 chart | 3 callout | 2 dual | 1 outro
-  Charts:     8 HTML files
+  Script:     14 segments, ~9:00 estimated
+              3 title | 5 chart | 3 callout | 3 dual
+  Deck:       slide_count matches (14) · deck PDF: not built yet
+  Short:      present (broll_theme: cultivation,markets · 6 cards)
+  Q&A:        22 turns
   Social:     X post (2,341 chars) + YouTube description
   Narration:  2 TTS issues found (see above)
 
   Ready for pipeline?
-  → Fix TTS issues, then: just pipeline {TICKER}
+  → Fix TTS issues, build the deck, then: just pipeline {TICKER}
 ```
 
-### 8. Offer to fix
+### 9. Offer to fix
 If there are TTS narration issues or other fixable problems, offer to fix them. Do NOT auto-fix without asking — the user has creative discretion over the content.

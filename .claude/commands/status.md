@@ -14,46 +14,49 @@ ls -1 projects/ 2>/dev/null
 For each project directory, check for the presence of key files:
 
 **Sources (pre-Cowork):**
-- `sources/*_filing.txt` — SEC filing text
+- `sources/*_filing.txt` / `*_10K_filing.txt` — SEC filing text
 - `sources/*_earnings_release.txt` — earnings release
 - `sources/*_earnings_transcript.txt` — earnings transcript
-- `sources/*_market_context.txt` — market data
 
 **Cowork outputs:**
 - `reports/*_brief.md` — narrative brief
-- `scripts/*_script.json` — video script
-- `charts/html/*.html` — chart/slide files (count excluding EXAMPLE_, CHART_TEMPLATE, INTRO_SLIDE, OUTRO_SLIDE)
+- `scripts/*_script.json` — video script (also holds the `thumbnail` + `short` blocks)
+- `scripts/*_qa.json` — Q&A podcast script
 - `social/*_x_post.txt` — X post
 - `social/*_youtube_description.txt` — YouTube description
-- `charts/html/*_thumbnail.html` — thumbnail
+
+**Design outputs (Claude Design):**
+- `deck/*_deck.pdf` — the composed 16:9 deck
+- `charts/png/*_thumbnail.png` — the YouTube thumbnail
 
 **Pipeline outputs:**
-- `charts/png/*.png` — screenshots
-- `videos/audio/*_voiceover.mp3` — voiceover files
-- `videos/*_final.mp4` — final video
-- `videos/*_podcast.mp3` — podcast audio
+- `charts/png/{visual_ref}.png` — sliced deck slides
+- `videos/audio/*_voiceover.mp3` — voiceover segments
+- `videos/*_final.mp4` — long-form video
+- `videos/*_short.mp4` — 9:16 teaser short
+- `videos/*_qa_podcast.mp3` / `*_qa_podcast.mp4` — Q&A podcast (Spotify + YouTube)
+- `videos/*_podcast.mp3` — long-form audio extract
 
 ### 3. Print dashboard
 ```
 Content Machine — Production Status
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  TICKER   SOURCES    COWORK     PIPELINE   VIDEO    PODCAST
-  ──────   ───────    ──────     ────────   ─────    ───────
-  GTBIF    3/4        not run    —          —        —
-  TCNNF    0/4        —          —          —        —
-  CURLF    scaffold   —          —          —        —
-  VRNO     scaffold   —          —          —        —
+  TICKER   SOURCES   COWORK   DECK   VIDEO   SHORT   Q&A
+  ──────   ───────   ──────   ────   ─────   ─────   ───
+  GTBIF    3/3       done     —      —       —       —
+  TRLV     done      done     done   done    done    done
+  CURLF    scaffold  —        —      —       —       —
 
   Legend: scaffold = project exists but no sources
-          3/4 = 3 of 4 source files present
-          done = all outputs present
-          — = not started
+          3/3 = 3 of 3 source files present
+          done = outputs present  ·  — = not started
 ```
 
 ### 4. Highlight next actions
 Based on the state, suggest what to do next:
 - Projects needing sources → `/collect TICKER`
 - Projects with sources but no Cowork → "Point Cowork at projects/TICKER/"
-- Projects with Cowork outputs → `just pipeline TICKER`
-- Projects with video → `just podcast TICKER`
+- Projects with Cowork outputs but no deck → `just deck-brief TICKER`, then build the deck in Claude Design
+- Projects with a deck PDF → `just pipeline TICKER`
+- Projects with a video → `just short TICKER` · `just podcast-qa TICKER`
