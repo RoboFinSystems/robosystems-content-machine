@@ -248,11 +248,11 @@ Cannabis editorial guidance for the script:
 ### 3. X Post (`social/{TICKER}_x_post.txt`)
 Long-form (under 4000 chars): hook framing the coverage angle; 3-5 findings with specific
 numbers (include 280E impact); catalyst sensitivity; risk/caveat; closing takeaway;
-`[YOUTUBE_LINK]`; mention robosystems.ai with code **LAUNCH** for 50% off first month;
+`[YOUTUBE_LINK]`; mention robosystems.ai;
 `$TICKER` + `#Cannabis #MSO #280E #Rescheduling`; tag @RoboFinSystems.
 
 ### 4. YouTube Description (`social/{TICKER}_youtube_description.txt`)
-Hook (1-2 sentences); links: `https://robosystems.ai` (code LAUNCH for 50% off first month)
+Hook (1-2 sentences); links: `https://robosystems.ai`
 and `https://github.com/RoboFinSystems/robosystems-content-machine`; **timestamps** — draft from
 `duration_estimate_seconds` (`0:00` start, accumulate); after render, finalize from the generated
 `videos/{TICKER}_timestamps.txt` (actual chapter times); 6-8 key-finding
