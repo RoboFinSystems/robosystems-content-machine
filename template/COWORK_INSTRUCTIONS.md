@@ -87,12 +87,12 @@ Editorial guidance for the script:
   - *Mid-video attribution (best for shorter videos), after citing a specific data point:*
     > "All of the financial data in this analysis comes from the company's actual SEC filing,
     > pulled directly from the RoboSystems shared data repository. If you want to run your own
-    > queries on any public company's filings, check out robosystems dot A I."
+    > queries on any public company's filings, check out robosystems dot AI."
   - *Closing CTA (best for longer analyses), as the final or second-to-last slide:*
     > "This entire analysis was built using RoboSystems — a platform that gives you direct
     > access to structured SEC filing data for every public company. Revenue, earnings, balance
     > sheet, cash flow, segment breakdowns — all queryable, all from the original XBRL filings.
-    > If you want to do your own deep dives like this one, head to robosystems dot A I. Link in
+    > If you want to do your own deep dives like this one, head to robosystems dot AI. Link in
     > the description."
 
 ### 3. X Post (`social/{TICKER}_x_post.txt`)

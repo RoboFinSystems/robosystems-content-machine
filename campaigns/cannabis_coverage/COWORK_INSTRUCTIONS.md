@@ -14,26 +14,43 @@ written assets for a video.
 
 ## Campaign Context
 
-**Why this coverage matters:** US cannabis companies are blacklisted from major exchanges
-because cannabis is a Schedule I substance. They trade on OTC markets with zero sell-side
-analyst coverage, no institutional ownership, and no research reports. For an industry
-generating billions in revenue, it is invisible to traditional finance. These videos fill
-that vacuum.
+**Why this coverage matters:** For a decade US cannabis companies were blacklisted from major
+exchanges as a Schedule I substance — OTC-only, with little sell-side coverage, institutional
+ownership, or research. That vacuum is now *starting* to close at the very top: a partial,
+medical-only rescheduling to Schedule III took effect April 28, 2026, and Trulieve became the
+first US plant-touching operator on a major exchange (NYSE: TRLV, June 10, 2026). But adult-use
+is still Schedule I, most names remain OTC and uncovered, and the situation is complex and
+fast-moving — which makes this coverage *more* valuable, not less. These videos fill that vacuum.
 
 **The macro setup:**
 - **Bust period (2022-present):** The 2020-2021 boom (fueled by federal legalization
   expectations) led to capital deployment at peak valuations. That cycle unwound — stocks
   down 70-90% from peaks, wholesale prices collapsed, goodwill impairments wiped out billions.
 - **280E tax burden:** Section 280E bars cannabis companies from deducting normal business
-  expenses (only COGS is deductible) because they traffic a Schedule I substance. Effective
-  tax rates hit 50-80%+, crushing profitability even for healthy operators.
-- **Rescheduling catalyst:** A Dec 2025 executive order directs expedited rescheduling from
-  Schedule I to Schedule III. If finalized: eliminates 280E, enables NYSE/NASDAQ uplisting,
-  unlocks institutional capital, and could trigger retroactive tax settlements worth billions.
-- **Consolidation wave:** Scarce capital is a moat for survivors. M&A expected between MSOs
-  and from outside industries (alcohol, tobacco, CPG) buying low ahead of regulatory tailwinds.
-- **Secular shift:** Consumers (especially younger) shifting alcohol → cannabis;
-  hemp-derived THC beverages growing fast.
+  expenses (only COGS is deductible) because they traffic a Schedule I/II substance. Effective
+  tax rates hit 50-80%+, crushing profitability. **As of 2026, relief has begun — but only for
+  MEDICAL income** (see rescheduling); adult-use revenue still carries the full 280E burden.
+- **Rescheduling catalyst (partially fired):** A Dec 2025 executive order directed expedited
+  rescheduling. On **April 28, 2026 a partial, medical-only Schedule III order took effect** —
+  FDA-approved + state-licensed *medical* marijuana only; **adult-use remains Schedule I.** A
+  broader DEA hearing (covering adult-use) starts **June 29, 2026**, and the partial order is
+  under a pending D.C. Circuit stay. Two nuances the analysis must respect: **Schedule III ≠
+  legal recreational** (it changes tax/criminal treatment, not the legality of OTC rec sales),
+  and **280E keys off the drug's schedule** — so a *broad* Schedule III order would lift 280E for
+  adult-use too. Relief so far is **prospective and medical-only; retroactive refunds are
+  contested** (the IRS is clawing them back), and accrued back-taxes are a balance-sheet
+  liability, not a likely refund. See `CAMPAIGN_BRIEF.md` §1–2.
+- **Uplisting (begun):** Trulieve uplisted to NYSE (TRLV) June 10, 2026 by deconsolidating
+  adult-use into a medical-only entity; Curaleaf/Verano/Vireo did prep reverse-splits and Glass
+  House applied to NYSE — but **no new exchange tickers are confirmed yet** (the CURLD/VRNOD/
+  VREOD "D" symbols are temporary post-split OTC placeholders, NOT uplisting tickers).
+- **Consolidation wave:** Scarce capital is a moat for survivors. M&A expected between MSOs and
+  from outside industries (alcohol, tobacco, CPG) — though much of 2026's activity has been
+  distress-driven (AYR equity wiped out, Cannabist Chapter 15, Gold Flora receivership).
+- **Secular shift + hemp ban:** Consumers (esp. younger) shifting alcohol → cannabis. The federal
+  **intoxicating-hemp ban (effective ~Nov 2026)** should migrate hemp-THC demand toward licensed
+  cannabis — but it's **state-dependent** (states that channel hemp into dispensaries, e.g.
+  CA/IL/NJ, benefit; ban-only states risk leakage to illicit/online).
 
 **Your analytical stance:** Not investment advice, no price targets. We ARE genuinely
 interested in the sector and its catalysts — they're real. Build **detailed, fact-based
@@ -63,32 +80,44 @@ Use the RoboSystems MCP for SEC filing data, and web search for current price/va
 
 **Start with the high-level tools — they handle XBRL element variation across companies:**
 
+> **Keying — read first.** RoboSystems is keyed by **CIK / legacy OTC ticker**, NOT the new
+> exchange symbol. Look the company up in `sources/ticker_crosswalk.md` and query with the legacy
+> ticker (e.g. Trulieve = **TCNNF**, not TRLV) or the CIK. `financial-statement-analysis` wants
+> the (legacy) `ticker`; `build-fact-grid`'s `entity` also accepts a CIK. The "D"-suffix symbols
+> (CURLD/VRNOD/VREOD) are temporary and won't resolve.
+
 | Tool | Purpose |
 |------|---------|
-| `get-financial-statement` | A full statement (income / balance sheet / cash flow) in one call. |
-| `build-fact-grid` | Specific metrics across years/companies via `canonical_concepts` (e.g. "revenue", "net_income") — no XBRL names needed. Best for trends + cross-company comps. |
+| `financial-statement-analysis` | A full statement (income / balance sheet / cash flow / equity) in one call. Params: `statement_type` (required), `ticker`, `period_type`. |
+| `build-fact-grid` | Specific metrics across years/companies via `canonical_concepts` (e.g. "revenue", "net_income") — no XBRL names needed. Best for trends + cross-company comps. `entity` accepts ticker, CIK, or name. |
 | `resolve-element` | Map a concept → the company's exact XBRL qname (for custom Cypher). |
 | `read-graph-cypher` | Run Cypher — for segment breakdowns and anything the high-level tools can't do. |
-| `list-disclosures` / `get-disclosure-detail` | Find + read disclosure notes (debt maturities, tax detail). |
+| `search-documents` → `get-document-section` | Find + read disclosure narrative (debt maturities, tax notes, MD&A, risk factors). Filter by `entity` and `section`. |
+| `get-example-queries` / `get-graph-schema` | Run FIRST on a new session — confirms working Cypher patterns and the canonical-concept vocabulary. |
 
-Typical flow: `get-financial-statement` for each statement → `build-fact-grid` for targeted
-metrics and multi-year trends → `resolve-element` + `read-graph-cypher` for segment/state
-breakdowns → `list-disclosures` for the debt maturity schedule and tax notes.
+Typical flow: `get-example-queries` to confirm patterns → `financial-statement-analysis` for each
+statement → `build-fact-grid` for targeted metrics and multi-year trends → `resolve-element` +
+`read-graph-cypher` for segment/state breakdowns → `search-documents` + `get-document-section`
+for the debt maturity schedule and tax notes.
 
 ```
-get-financial-statement {ticker:"TICKER", statement_type:"income_statement", period_type:"annual"}
-build-fact-grid {canonical_concepts:["revenue","net_income","income_tax_expense",
-                 "goodwill","long_term_debt","operating_cash_flow"], entity:"TICKER", period_type:"annual"}
+financial-statement-analysis {ticker:"TCNNF", statement_type:"income_statement", period_type:"annual"}
+build-fact-grid {canonical_concepts:["revenue","net_income"], entity:"0001754195", period_type:"annual"}
 ```
+Verify the canonical-concept names you need via `get-example-queries`/`resolve-element` first —
+`revenue` and `net_income` are confirmed; tax/debt/cash-flow concepts may use different canonical
+strings (or no mapping), in which case use `resolve-element` → qname and query via `read-graph-cypher`.
 
 Query tips: comma-separate patterns in a SINGLE MATCH (multiple MATCHes can time out); use
 `DISTINCT`; `has_dimensions:false` for consolidated totals, `true` for segments; `numeric_value`
 is the actual value in base units (revenue $1.175B is stored as `1175295000`).
 
-**⚠️ 40-F / IFRS filers:** Some cannabis companies (Curaleaf, Cresco) are Canadian-listed,
-file 40-F, and use IFRS elements (`ifrs-full:Revenue` not `us-gaap:Revenues`). The high-level
-tools handle this automatically. If raw Cypher + `resolve-element` returns no match, search
-for `ifrs-full:` / `us-gaap:` elements by fact count.
+**⚠️ 40-F / IFRS filers:** Some cannabis companies (Curaleaf, Cresco, Glass House) are
+Canadian-listed, file 40-F, and use IFRS elements (`ifrs-full:Revenue` not `us-gaap:Revenues`).
+The high-level tools usually handle this, but for IFRS filers the canonical-concept mapping can
+miss revenue/net_income — if `build-fact-grid` returns nothing, fall back to `read-graph-cypher`
+searching `ifrs-full:` elements by fact count. FY2025 40-Fs for Curaleaf, Cresco, and Glass House
+are now loaded (the previously-"blocked" names).
 
 ## Cannabis-Specific Analysis Requirements
 
@@ -100,27 +129,33 @@ Beyond standard analysis, every cannabis video MUST address:
    like if 280E went away.
 2. **Goodwill & impairment** — total goodwill/intangibles; cumulative impairments since the
    2021-22 peak; % of boom-era acquisition value written off; remaining goodwill as % of assets.
-3. **Debt & survival** — total debt + maturity schedule (`list-disclosures` →
-   `LongTermDebtMaturities`); interest as % of revenue; can operating cash flow service it;
-   near-term maturities needing refinancing in a scarce-capital market.
+3. **Debt & survival** — total debt + maturity schedule (`search-documents` for "long-term debt
+   maturities" → `get-document-section`, or `read-graph-cypher`); interest as % of revenue; can
+   operating cash flow service it; near-term maturities needing refinancing in a scarce-capital
+   market.
 4. **Operating cash flow vs GAAP earnings** — cannabis names often post GAAP losses but
    positive operating cash flow (280E non-cash accruals, impairments, depreciation). Cash flow
    is the better health signal here.
 5. **Geographic / market concentration** — revenue by state; which states are growing vs in
-   price compression; limited- vs open-license moats. FL, IL, NJ, PA, NY are key.
+   price compression; limited- vs open-license moats. FL, IL, NJ, PA, NY, OH, MN are key (note
+   the Ohio AG antitrust suit naming nine MSOs).
 6. **Catalyst sensitivity — "what does this company look like when the switch flips?"** *(the
    most important section)*. Build concrete, numbers-backed pro formas:
-   - **280E relief:** apply a normal 21-25% rate to actual pretax income → adjusted net
-     income, adjusted EPS, and the implied P/E at today's price. This is the most powerful
-     data point in every video — show the company hiding under the 280E distortion.
+   - **280E relief:** apply a normal 21-25% rate to actual pretax income → adjusted net income,
+     adjusted EPS, and the implied P/E at today's price — the most powerful data point in every
+     video. **Split it by medical vs adult-use:** medical income gets relief *now* (2026);
+     adult-use only after a broad Schedule III order. Also flag the accrued 280E **back-tax
+     liability** (the unrecognized-tax-benefit reserve) — the prospective fix doesn't erase it.
    - **Interstate commerce:** map footprint + asset base — excess low-cost cultivation,
      multi-state retail that could go national, brands that scale; or single-state exposure.
-   - **Uplisting:** rate "uplisting readiness" — clean balance sheet, consistent profitability,
-     clear growth story attract institutional capital first.
+   - **Uplisting:** rate "uplisting readiness" — and note the *real* enabler proven in 2026: can
+     the entity ring-fence a **medical-only structure** (deconsolidate adult-use, à la Trulieve/
+     Glass House) to clear a major exchange? Plus clean balance sheet, profitability, growth story.
    - **Consolidation:** buyer or target? Balance-sheet capacity for M&A, or EV vs asset base
      that makes it a cheap acquisition — at what premium?
-   - **Medicare CBD pilot:** any CBD/hemp ops that could benefit from the April 2026 Medicare
-     reimbursement pilot ($500/yr per beneficiary)?
+   - **Medicare CBD / hemp-ban read:** any CBD/hemp ops affected by the April 2026 Medicare CBD
+     *incentive* pilot (provider-led, $500/yr — NOT reimbursement, small) or by the Nov 2026
+     intoxicating-hemp ban (a competitor removed — net positive for licensed retail)?
 7. **Valuation — "what it's worth if it's a normal business"** — synthesize the catalyst math
    into implied-value **ranges** (never a single target). Two lenses:
    - **DCF (scenario-ranged):** project free cash flow under a **base case** (280E persists) and
@@ -163,8 +198,10 @@ posts derive from it. Structure:
    and a cross-sector re-rating (vs CPG / health-and-wellness multiples on 280E-normalized
    EBITDA). Give the band and what today's price implies the market is pricing in — framed as
    implied value under stated assumptions, never a target.
-6. **Risks and Open Questions** (1-2 ¶) — honest and specific (rescheduling stalls, state
-   oversupply, debt maturities forcing dilution, hemp crackdown), not generic disclaimers.
+6. **Risks and Open Questions** (1-2 ¶) — honest and specific (broad rescheduling stalls or the
+   partial order is stayed by the D.C. Circuit; state oversupply / price compression; debt
+   maturities forcing dilution; 280E back-tax / refund-clawback exposure; the Ohio AG antitrust
+   suit; hemp-ban demand-migration that's state-dependent), not generic disclaimers.
 7. **The Bottom Line** (1 ¶) — where it stands today, how the math changes under each
    catalyst, what to watch next. Give the framework, not a recommendation.
 
@@ -199,7 +236,7 @@ Cannabis editorial guidance for the script:
   > direct access to structured SEC filing data for every public company. Revenue, earnings,
   > balance sheet, cash flow, segment breakdowns — all queryable, all from the original XBRL
   > filings. You can set up the same tools I just used in about five minutes. Head to
-  > robosystems dot A I to get started — link in the description."
+  > robosystems dot AI to get started — link in the description."
 - **Thumbnail block** — fill the script's `thumbnail` block (Claude Design builds it; see
   `DESIGN_INSTRUCTIONS.md`): **hero = the adjusted P/E post-280E-relief** (the
   cognitive-dissonance number); **banner = "INITIATING COVERAGE"**; **secondary = 1–2 of**
