@@ -52,7 +52,7 @@ fall back to `read-graph-cypher` searching `ifrs-full:` elements by fact count.
 
 ## What You Produce
 
-Produce these **3 outputs** in order. The narrative brief comes FIRST — it's the foundation
+Produce these **4 outputs** in order. The narrative brief comes FIRST — it's the foundation
 everything else derives from. (Schema and slide mechanics: see `PRODUCTION_CONTRACT.md`.)
 The deck **and** the thumbnail are built in Claude Design from the script — you author no HTML.
 
@@ -121,14 +121,22 @@ Editorial guidance for the script:
 Long-form (under 4000 chars): opening hook; 3-5 key findings with specific numbers; a
 risk/caveat; closing takeaway; relevant `$TICKER` cashtag and hashtags; tag @RoboFinSystems.
 
+### 4. YouTube Description (`social/{TICKER}_youtube_description.txt`)
+Hook (1-2 sentences); links: `https://robosystems.ai` and
+`https://github.com/RoboFinSystems/robosystems-content-machine`; **timestamps** estimated from
+each segment's `duration_estimate_seconds` (start `0:00`, accumulate down the segments); 6-8
+key-finding bullets with specific numbers; a 1-2 sentence plain-English explainer of any key
+metric or term a cold viewer needs; disclaimer ("This is not investment advice. No price
+targets."); relevant `$TICKER` and topic hashtags.
+
 ## Workflow
 
 1. Accept the ticker. 2. Learn the schema (`get-graph-schema`, `get-example-queries`).
 3. Resolve the company's element names. 4. Deep MCP research — 10-20+ queries: full financials
 across 3+ years, segment breakdowns, derived metrics (margins, growth, FCF, ROE/ROA/ROIC).
 5. Web search for price, valuation ratios, analyst consensus, peer context, recent news.
-6. Synthesize the 3-5 most compelling stories. 7. Produce all 3 outputs in order (brief first).
-8. Verify completeness — all 3 files exist and `script.json` validates (see contract).
+6. Synthesize the 3-5 most compelling stories. 7. Produce all 4 outputs in order (brief first).
+8. Verify completeness — all 4 files exist and `script.json` validates (see contract).
 
 ## Important Rules
 
