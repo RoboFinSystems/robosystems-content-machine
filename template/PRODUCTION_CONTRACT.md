@@ -197,6 +197,68 @@ all**. You spec the content in the script's `thumbnail` block (hero metric, opti
 
 ---
 
+## Companion formats — Short and Q&A podcast
+
+From the *same* research, the pipeline produces two more deliverables. Author them when your
+`COWORK_INSTRUCTIONS.md` asks for them. Both reuse the analyst (narrator) voice for brand
+continuity and follow the **same spoken-form TTS rules** below.
+
+### A. Short — the `short` block (inside `scripts/{TICKER}_script.json`)
+
+A **self-contained** 9:16 piece (~20–45s) for **YouTube Shorts + Instagram Reels** — a complete
+micro-story (hook → the numbers → a payoff), NOT a trailer. It drives to the long-form via the
+*pinned comment*, never by withholding the point. Rendered by `just short {TICKER}` (b-roll bed +
+ducked music + ElevenLabs VO + caption cards — all local ffmpeg).
+
+```jsonc
+"short": {
+  "duration_target_seconds": 30,
+  "narration": "Self-contained ~20–45s story for the ear (NOT a slice of the main VO). Name the company; land the payoff; end on a question.",
+  "broll": ["wide_low_angle", "wide_modern_city", "macro_detail"],  // ids from assets/broll/manifest.json, in play order
+  "music": "tech_corporate",                                        // id from assets/music/manifest.json (optional; defaults to first)
+  "cards": [                                                        // curated overlays — must stand alone for muted viewers
+    { "text": "$1.2B revenue, 60% margins", "at_seconds": 2.0 },
+    { "text": "TAXED AT 228%",             "at_seconds": 13.0 },
+    { "text": "TRULIEVE — NYSE: TRLV",     "at_seconds": 17.5 },  // name + ticker reveal
+    { "text": "WHAT DOES IT BUY FIRST?",   "at_seconds": 41.5 }   // payoff, not "go to YouTube"
+  ]
+}
+```
+
+- `narration` — a fresh, standalone script for the ear (no "as you can see here"); tell a complete micro-story, don't just tease. Budget ~20–45s — the voice runs ~14–15 chars/sec (slower than the ÷16 draft estimate), so ~600 chars ≈ ~43s. Spoken-form rules apply.
+- `broll` — pick clip `id`s from `assets/broll/manifest.json` by tag/description, in play order. The renderer cycles/trims them to fill the runtime. (Clips are produced manually in ElevenLabs Studio / Veo and dropped into the library — there is no video-generation API.)
+- `music` — a track `id` from `assets/music/manifest.json` (optional).
+- `cards` — 4–8 curated text overlays (the hook + hero stats + the ticker reveal), timed to VO beats via `at_seconds`. Keep them short and punchy; ~80% of Shorts play muted, so the cards must carry the story alone. (Card text is *rendered*, not spoken — the `$ % x` ban does not apply here.) `at_seconds` are estimates — re-time them to the actual VO after the first render (the spoken pace rarely matches the guess).
+- **Name the company + show the ticker.** A brief anonymous mystery hook is fine, but the Short MUST name the company in the VO and show the ticker on a card (e.g. a `TRULIEVE — NYSE: TRLV` reveal card) — viewers can't act on a name they never heard.
+- **Resolve, don't withhold.** A Short is self-contained content, not a trailer. Land the actual payoff and end on a provocative question or takeaway; the long-form link goes in the **pinned comment / caption**, NOT on a card.
+- This supersedes the legacy `short_version` (segment-id list); you can omit `short_version`.
+
+### B. Q&A podcast — `scripts/{TICKER}_qa.json`
+
+A CNBC-style two-voice conversation (host + analyst), written for audio. ~5–8 min. Rendered by
+`just podcast-qa {TICKER}` → `{TICKER}_qa_podcast.mp3` (Spotify / Apple / Amazon) +
+`{TICKER}_qa_podcast.mp4` (static thumbnail background, for YouTube). Interviewer = a fixed
+host voice (`ELEVEN_LABS_INTERVIEWER_VOICE_ID`); analyst = the brand narrator voice.
+
+```jsonc
+{
+  "ticker": "TRLV",
+  "company": "Trulieve Cannabis Corp.",
+  "title": "Trulieve: Tax Relief Is Finally Here — Now What?",
+  "intro_sting": false,
+  "turns": [
+    { "speaker": "interviewer", "text": "Let's start with the setup — why look at this name now?" },
+    { "speaker": "analyst",     "text": "Two things changed this quarter..." }
+  ]
+}
+```
+
+- Alternate `interviewer` / `analyst`. Open with the host framing the name; close on the RoboSystems angle and a short sign-off.
+- Written for the **ear**: contractions, natural cadence, no on-screen references. Cover the deck's beats as *dialogue*: setup → the numbers → the catalyst → valuation range → bull/bear → the RoboSystems angle.
+- Same spoken-form TTS rules as the main narration (spell out agencies, never space `AI`, numbers as words). The host asks; the analyst delivers the substance and the numbers.
+
+---
+
 ## Narration must be spoken-form (for text-to-speech)
 
 `narration` is sent directly to ElevenLabs. Symbols and abbreviations get mispronounced.

@@ -248,6 +248,73 @@ def check_deck_contract(project_dir, script):
         warn("no thumbnail block — add one so Claude Design can build the thumbnail")
 
 
+def _load_manifest_ids(rel_path):
+    """Return the set of ids in a shared assets manifest (repo-root relative)."""
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    path = os.path.join(root, rel_path)
+    if not os.path.exists(path):
+        return None
+    with open(path) as f:
+        return {item["id"] for item in json.load(f)}
+
+
+def check_companion_formats(project_dir, ticker, script):
+    """Validate the optional Short block + Q&A script when present (silent if absent)."""
+    print("\n--- Companion Formats (Short / Q&A) ---")
+
+    # --- Teaser Short: the `short` block in the main script ---
+    short = (script or {}).get("short")
+    if not short:
+        ok("no `short` block (optional — add one for a 9:16 teaser)")
+    else:
+        if not short.get("narration"):
+            error("short: missing narration")
+        broll_ids = _load_manifest_ids(os.path.join("assets", "broll", "manifest.json"))
+        refs = short.get("broll", [])
+        if not refs:
+            error("short: `broll` is empty — list clip ids from assets/broll/manifest.json")
+        elif broll_ids is None:
+            warn("short: assets/broll/manifest.json not found — can't verify broll ids")
+        else:
+            bad = [r for r in refs if r not in broll_ids]
+            if bad:
+                error(f"short: broll ids not in manifest: {', '.join(bad)}")
+            else:
+                ok(f"short: {len(refs)} broll ids resolve")
+        music_ids = _load_manifest_ids(os.path.join("assets", "music", "manifest.json"))
+        m = short.get("music")
+        if m and music_ids is not None and m not in music_ids:
+            error(f"short: music id '{m}' not in assets/music/manifest.json")
+        cards = short.get("cards", [])
+        bad_cards = [i for i, c in enumerate(cards)
+                     if not c.get("text") or "at_seconds" not in c]
+        if bad_cards:
+            error(f"short: cards missing text/at_seconds at index {bad_cards}")
+        elif cards:
+            ok(f"short: {len(cards)} caption cards")
+        else:
+            warn("short: no caption cards (recommended for muted viewers)")
+
+    # --- Q&A podcast: scripts/{ticker}_qa.json ---
+    qa_path = os.path.join(project_dir, "scripts", f"{ticker}_qa.json")
+    if not os.path.exists(qa_path):
+        ok("no Q&A script (optional — scripts/{ticker}_qa.json)".replace("{ticker}", ticker))
+        return
+    with open(qa_path) as f:
+        qa = json.load(f)
+    turns = qa.get("turns", [])
+    if not turns:
+        error("qa: no turns")
+        return
+    bad = [i for i, t in enumerate(turns)
+           if t.get("speaker") not in ("interviewer", "analyst") or not t.get("text")]
+    if bad:
+        error(f"qa: bad turns (speaker must be interviewer|analyst, text required) at {bad[:5]}")
+    else:
+        chars = sum(len(t["text"]) for t in turns)
+        ok(f"qa: {len(turns)} turns, ~{chars // 16 // 60}–{chars // 13 // 60} min")
+
+
 def try_fix_script(project_dir, ticker, script):
     """Attempt to fix common schema issues in the script JSON."""
     if not script:
@@ -316,6 +383,7 @@ def main():
     check_deck_contract(project_dir, script)
     check_narration_quality(script)
     check_robosystems_plug(script)
+    check_companion_formats(project_dir, ticker, script)
 
     if args.fix:
         try_fix_script(project_dir, ticker, script)

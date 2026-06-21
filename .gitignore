@@ -31,6 +31,12 @@ campaigns/*/sources/
 # Local (untracked scratch space)
 local/
 
+# Shared media libraries — track the manifests, not the heavy binaries
+assets/broll/*.mp4
+assets/broll/*.mov
+assets/music/*.mp3
+assets/music/*.wav
+
 # MacOS
 .DS_Store
 

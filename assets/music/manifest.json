@@ -1,0 +1,10 @@
+[
+  {
+    "id": "tech_corporate",
+    "file": "tech_corporate.mp3",
+    "duration": 510.0,
+    "mood": ["electronic", "edm", "corporate", "clean", "driving"],
+    "description": "Tech-corporate electronic bed. Confident, modern, not cheesy. Default Short track.",
+    "source": "ElevenLabs (download)"
+  }
+]

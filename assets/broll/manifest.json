@@ -1,0 +1,38 @@
+[
+  {
+    "id": "wide_low_angle",
+    "file": "wide_low_angle.mp4",
+    "duration": 6.0,
+    "resolution": "1920x1080",
+    "fps": 24,
+    "tags": ["city", "towers", "growth", "wide", "aspirational"],
+    "description": "Wide shot, low angle looking up at modern towers — slow, aspirational push."
+  },
+  {
+    "id": "wide_modern_city",
+    "file": "wide_modern_city.mp4",
+    "duration": 6.0,
+    "resolution": "1920x1080",
+    "fps": 24,
+    "tags": ["city", "modern", "wide", "establishing"],
+    "description": "Wide shot, eye level, modern cityscape — clean establishing atmosphere."
+  },
+  {
+    "id": "medium_eye_level",
+    "file": "medium_eye_level.mp4",
+    "duration": 6.0,
+    "resolution": "1920x1080",
+    "fps": 24,
+    "tags": ["people", "human", "medium", "warm"],
+    "description": "Medium shot, eye level — human/scene detail for warmth between data beats."
+  },
+  {
+    "id": "macro_detail",
+    "file": "macro_detail.mp4",
+    "duration": 6.0,
+    "resolution": "1920x1080",
+    "fps": 24,
+    "tags": ["macro", "texture", "detail", "closeup"],
+    "description": "Extreme close-up, macro detail — texture/insert shot, good for transitions."
+  }
+]

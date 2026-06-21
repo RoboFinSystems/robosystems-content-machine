@@ -52,9 +52,10 @@ fall back to `read-graph-cypher` searching `ifrs-full:` elements by fact count.
 
 ## What You Produce
 
-Produce these **4 outputs** in order. The narrative brief comes FIRST — it's the foundation
-everything else derives from. (Schema and slide mechanics: see `PRODUCTION_CONTRACT.md`.)
-The deck **and** the thumbnail are built in Claude Design from the script — you author no HTML.
+Produce these **4 core outputs** in order (brief FIRST — it's the foundation everything else
+derives from), then the **2 companion formats** (#5–6). (Schema and slide mechanics: see
+`PRODUCTION_CONTRACT.md`.) The deck **and** the thumbnail are built in Claude Design from the
+script — you author no HTML.
 
 ### 1. Narrative Brief (`reports/{TICKER}_brief.md`) — write this FIRST
 
@@ -131,14 +132,30 @@ key-finding bullets with specific numbers; a 1-2 sentence plain-English explaine
 metric or term a cold viewer needs; disclaimer ("This is not investment advice. No price
 targets."); relevant `$TICKER` and topic hashtags.
 
+### 5. Short — the `short` block in `scripts/{TICKER}_script.json`
+A **self-contained** 9:16 piece (~20–45s) for YouTube Shorts + Instagram Reels — a complete
+micro-story, NOT a trailer. Write a **fresh standalone script** for the ear (not a slice of the
+main narration): hook, the key numbers, **the company name + ticker** (a brief mystery hook is
+fine, but reveal it), and a payoff that ends on a question or takeaway (long-form link → pinned
+comment, not a card). Pick b-roll `id`s from `assets/broll/manifest.json`, and write 4–8 caption
+cards that stand alone for muted viewers. Schema + rules: `PRODUCTION_CONTRACT.md` → "Companion
+formats → A". Rendered by `just short {TICKER}`.
+
+### 6. Q&A Podcast (`scripts/{TICKER}_qa.json`)
+A CNBC-style two-voice conversation (host + analyst), ~5–8 min, written for audio. Cover the
+deck's beats as dialogue, open with the host framing the name, close on the RoboSystems angle.
+Schema + rules: `PRODUCTION_CONTRACT.md` → "Companion formats → B". Rendered by
+`just podcast-qa {TICKER}` (MP3 for Spotify, MP4 for YouTube).
+
 ## Workflow
 
 1. Accept the ticker. 2. Learn the schema (`get-graph-schema`, `get-example-queries`).
 3. Resolve the company's element names. 4. Deep MCP research — 10-20+ queries: full financials
 across 3+ years, segment breakdowns, derived metrics (margins, growth, FCF, ROE/ROA/ROIC).
 5. Web search for price, valuation ratios, analyst consensus, peer context, recent news.
-6. Synthesize the 3-5 most compelling stories. 7. Produce all 4 outputs in order (brief first).
-8. Verify completeness — all 4 files exist and `script.json` validates (see contract).
+6. Synthesize the 3-5 most compelling stories. 7. Produce the 4 core outputs in order (brief
+first), then the Short block + the Q&A script. 8. Verify completeness — all files exist and
+`script.json` validates (see contract).
 
 ## Important Rules
 

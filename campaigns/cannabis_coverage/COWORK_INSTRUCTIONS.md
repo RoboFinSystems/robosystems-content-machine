@@ -172,9 +172,10 @@ Beyond standard analysis, every cannabis video MUST address:
 
 ## What You Produce
 
-Produce these **4 outputs** in order. The narrative brief comes FIRST — it's the foundation
-everything else derives from. (Schema and slide mechanics: see `PRODUCTION_CONTRACT.md`.)
-The deck **and** the thumbnail are built in Claude Design from the script — you author no HTML.
+Produce these **4 core outputs** in order (the narrative brief comes FIRST — it's the foundation
+everything else derives from), then the **2 companion formats** (#5–6). (Schema and slide
+mechanics: see `PRODUCTION_CONTRACT.md`.) The deck **and** the thumbnail are built in Claude
+Design from the script — you author no HTML.
 
 ### 1. Narrative Brief (`reports/{TICKER}_brief.md`) — write this FIRST
 
@@ -258,6 +259,25 @@ and `https://github.com/RoboFinSystems/robosystems-content-machine`; **timestamp
 bullets with numbers; a 2-3 sentence **280E explainer** (many viewers land cold); disclaimer
 ("This is not investment advice. … No paid promotions. No price targets."); hashtags.
 
+### 5. Short — the `short` block in `scripts/{TICKER}_script.json`
+A **self-contained** 9:16 piece (~20–45s) for YouTube Shorts + Instagram Reels — a complete
+micro-story, NOT a trailer. Write a **fresh standalone script** for the ear (not a slice of the
+main narration): open on the cognitive-dissonance number (the 280E paradox — big revenue / high
+margins / a reported loss), **name the company and ticker** (a brief mystery hook is fine, but
+reveal it), land the catalyst/now-what payoff, and **end on a provocative question or takeaway**
+(the long-form link goes in the pinned comment, not a card). Pick b-roll `id`s from
+`assets/broll/manifest.json`, and write 4–8 caption cards that carry the story for muted viewers
+(e.g. "$1.2B revenue, 60% margins" → "TAXED AT 228%" → "TRULIEVE — NYSE: TRLV" → "NOW 87% —
+FIRST PROFIT" → "A BUYER, NOT A TARGET" → "WHAT DOES IT BUY FIRST?"). Schema + rules:
+`PRODUCTION_CONTRACT.md` → "Companion formats → A". Rendered by `just short {TICKER}`.
+
+### 6. Q&A Podcast (`scripts/{TICKER}_qa.json`)
+A CNBC-style two-voice conversation (host + analyst), ~5–8 min, written for audio. Cover the
+cannabis beats as dialogue — the 280E paradox, the catalyst/pro-forma math, the valuation range,
+the honest bull/bear — opening with the host framing the name and closing on the RoboSystems
+angle. Same domain narration hints below. Schema + rules: `PRODUCTION_CONTRACT.md` → "Companion
+formats → B". Rendered by `just podcast-qa {TICKER}` (MP3 for Spotify, MP4 for YouTube).
+
 ## Workflow
 
 1. Accept the ticker. 2. Read `CAMPAIGN_BRIEF.md` + everything in `sources/`. 3. Resolve the
@@ -265,8 +285,8 @@ company's elements (handle 40-F/IFRS). 4. Deep MCP research — 10-20+ queries: 
 280E inputs (income tax expense + pretax income), goodwill/impairments, debt + maturities,
 segment/state revenue, 3+ years to show the boom-bust arc. 5. Web search for price, valuation,
 state/rescheduling news, peer MSO comps, management commentary. 6. Synthesize the 3-5 most
-compelling stories. 7. Produce all 4 outputs in order (brief first). 8. Verify completeness —
-all 4 files exist and `script.json` validates (see contract).
+compelling stories. 7. Produce the 4 core outputs in order (brief first), then the Short block +
+the Q&A script. 8. Verify completeness — all files exist and `script.json` validates (see contract).
 
 ## Domain narration hints (spoken-form — adds to the contract's general rules)
 
