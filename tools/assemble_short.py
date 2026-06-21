@@ -51,6 +51,65 @@ def load_manifest(path):
         return {item["id"]: item for item in json.load(f)}
 
 
+def select_broll(short, manifest):
+    """Choose the clip pool: explicit `broll` ids > `broll_theme` tag match > all clips."""
+    refs = short.get("broll")
+    if isinstance(refs, list) and refs:
+        missing = [i for i in refs if i not in manifest]
+        if missing:
+            sys.exit(f"short.broll ids not in manifest: {', '.join(missing)}")
+        return [manifest[i] for i in refs]
+    items = list(manifest.values())
+    theme = short.get("broll_theme")
+    if theme:
+        want = set(theme)
+        matched = [it for it in items if want & set(it.get("tags", []))]
+        # most-relevant first (stable sort: ties keep manifest order)
+        matched.sort(key=lambda it: len(want & set(it.get("tags", []))), reverse=True)
+        if not matched:
+            print(f"  WARN: broll_theme {sorted(want)} matched no clips — using all")
+        return matched or items
+    return items
+
+
+def build_sequence(pool, runtime):
+    """Sequence full-length clips to cover runtime; rotate the pool each pass so order varies
+    and nothing repeats back-to-back; trim only the final clip to fit."""
+    if not pool:
+        sys.exit("No b-roll clips available (empty manifest).")
+    seq, total, p = [], 0.0, 0
+    while total < runtime - 0.05 and p < 100:
+        rot = pool[p % len(pool):] + pool[:p % len(pool)]
+        for it in rot:
+            if total >= runtime - 0.05:
+                break
+            use = min(it["duration"], runtime - total)
+            seq.append((os.path.join(BROLL_DIR, it["file"]), round(use, 3)))
+            total += use
+        p += 1
+    return seq
+
+
+def select_music(short, manifest):
+    """Pick one track: explicit `music` id > `music_mood` tag match > first track."""
+    mid = short.get("music")
+    if mid:
+        if mid not in manifest:
+            sys.exit(f"short.music id '{mid}' not in music manifest")
+        return manifest[mid]
+    items = list(manifest.values())
+    if not items:
+        sys.exit("No music tracks available (empty manifest).")
+    mood = short.get("music_mood")
+    if mood:
+        want = set(mood)
+        best = max(items, key=lambda it: len(want & set(it.get("mood", []))))
+        if want & set(best.get("mood", [])):
+            return best
+        print(f"  WARN: music_mood {sorted(want)} matched no track moods — using first")
+    return items[0]
+
+
 def ffprobe_duration(path):
     out = subprocess.run(
         ["ffprobe", "-v", "error", "-show_entries", "format=duration",
@@ -127,7 +186,7 @@ def render_card(text, out_path):
     img.save(out_path)
 
 
-def assemble(project_name, production=False, force=False):
+def assemble(project_name, production=False, force=False, music_override=None):
     project_dir = get_project_dir(project_name)
     analyst_id = require_env("ELEVEN_LABS_VOICE_ID")
 
@@ -142,6 +201,8 @@ def assemble(project_name, production=False, force=False):
     short = script.get("short")
     if not short:
         sys.exit("No `short` block in the script. Add one (see template/PRODUCTION_CONTRACT.md).")
+    if music_override:
+        short = {**short, "music": music_override}  # explicit override wins over music_mood
 
     # --- 1. Voiceover for the short hook ---
     vo_dir = os.path.join(project_dir, "videos", "short_audio")
@@ -158,22 +219,19 @@ def assemble(project_name, production=False, force=False):
     runtime = round(runtime, 2)
     print(f"  VO {vo_dur:.1f}s -> runtime {runtime:.1f}s")
 
-    # --- 2. Resolve b-roll into slots covering the runtime ---
+    # --- 2. Resolve b-roll: select a pool, then sequence full-length clips to cover runtime ---
     broll_manifest = load_manifest(os.path.join(BROLL_DIR, "manifest.json"))
-    ids = short["broll"]
-    clip_max = min(broll_manifest[i]["duration"] for i in ids)
-    n_slots = len(ids)
-    while runtime / n_slots > clip_max:
-        n_slots += len(ids)
-    per_slot = runtime / n_slots
-    slot_files = [os.path.join(BROLL_DIR, broll_manifest[ids[k % len(ids)]]["file"])
-                  for k in range(n_slots)]
-    print(f"  B-roll: {n_slots} slots x {per_slot:.2f}s")
+    pool = select_broll(short, broll_manifest)
+    seq = build_sequence(pool, runtime)   # list of (file_path, use_seconds)
+    n_slots = len(seq)
+    names = list(dict.fromkeys(os.path.splitext(os.path.basename(f))[0] for f, _ in seq))
+    print(f"  B-roll: {n_slots} clip(s) from a pool of {len(pool)} — {', '.join(names)}")
 
-    # --- 3. Music ---
+    # --- 3. Music: explicit id > music_mood match > first track ---
     music_manifest = load_manifest(os.path.join(MUSIC_DIR, "manifest.json"))
-    music_id = short.get("music") or next(iter(music_manifest))
-    music_path = os.path.join(MUSIC_DIR, music_manifest[music_id]["file"])
+    music_entry = select_music(short, music_manifest)
+    music_path = os.path.join(MUSIC_DIR, music_entry["file"])
+    print(f"  Music: {music_entry['id']}")
 
     # --- 4. Caption cards -> PNGs ---
     tmpdir = tempfile.mkdtemp(prefix=f"{ticker}_short_")
@@ -186,20 +244,22 @@ def assemble(project_name, production=False, force=False):
 
     # --- Build the ffmpeg graph ---
     inputs = []
-    for sf in slot_files:
+    for (sf, _) in seq:
         inputs += ["-i", sf]                 # 0 .. n_slots-1
     inputs += ["-i", music_path]             # idx_music
     inputs += ["-i", vo_path]                # idx_vo
     idx_music = n_slots
     idx_vo = n_slots + 1
     for (p, _) in card_files:
-        inputs += ["-loop", "1", "-i", p]    # idx_card_base + j
+        # Bound each looped image to the runtime (with an explicit framerate) so the
+        # infinite image stream can't stall/deadlock the filtergraph.
+        inputs += ["-loop", "1", "-framerate", str(FPS), "-t", f"{runtime:.2f}", "-i", p]
     idx_card_base = n_slots + 2
 
     parts = []
-    for k in range(n_slots):
+    for k, (_, dur) in enumerate(seq):
         parts.append(
-            f"[{k}:v]trim=0:{per_slot:.3f},setpts=PTS-STARTPTS,"
+            f"[{k}:v]trim=0:{dur:.3f},setpts=PTS-STARTPTS,"
             f"scale={W}:{H}:force_original_aspect_ratio=increase,"
             f"crop={W}:{H},fps={FPS},setsar=1,format=yuv420p[v{k}]")
     concat = "".join(f"[v{k}]" for k in range(n_slots)) + \
@@ -228,7 +288,8 @@ def assemble(project_name, production=False, force=False):
     filtergraph = ";".join(parts)
 
     out_dir = os.path.join(project_dir, "videos")
-    out_path = os.path.join(out_dir, f"{ticker}_short.mp4")
+    suffix = f"_{music_override}" if music_override else ""
+    out_path = os.path.join(out_dir, f"{ticker}_short{suffix}.mp4")
     cmd = ["ffmpeg", "-y", *inputs,
            "-filter_complex", filtergraph,
            "-map", f"[{video_label}]", "-map", "[aout]",
@@ -251,8 +312,9 @@ def main():
     p.add_argument("project", help="Project name (e.g., TRLV)")
     p.add_argument("--production", action="store_true", help="Higher quality (crf 18)")
     p.add_argument("--force", action="store_true", help="Regenerate the short VO")
+    p.add_argument("--music", default=None, help="Override the music track id (output named _<id>; for A/B)")
     args = p.parse_args()
-    assemble(args.project, production=args.production, force=args.force)
+    assemble(args.project, production=args.production, force=args.force, music_override=args.music)
 
 
 if __name__ == "__main__":

@@ -1,5 +1,23 @@
 [
   {
+    "id": "canopy_push",
+    "file": "canopy_push.mp4",
+    "duration": 8.0,
+    "resolution": "1920x1080",
+    "fps": 25,
+    "tags": ["cultivation", "grow", "scale", "operations", "canopy", "wide"],
+    "description": "Wide shot down the center aisle of a large indoor cultivation facility — endless rows of plants under purple-pink LED grow lights. The 'real operating business' workhorse shot."
+  },
+  {
+    "id": "canopy_establishing",
+    "file": "canopy_establishing.mp4",
+    "duration": 8.0,
+    "resolution": "1920x1080",
+    "fps": 25,
+    "tags": ["cultivation", "grow", "establishing", "atmospheric", "wide"],
+    "description": "Wide establishing shot of an indoor grow room — blue-magenta LEDs, atmospheric haze, center aisle. Moodier cultivation establishing shot."
+  },
+  {
     "id": "wide_low_angle",
     "file": "wide_low_angle.mp4",
     "duration": 6.0,
@@ -7,15 +25,6 @@
     "fps": 24,
     "tags": ["city", "towers", "growth", "wide", "aspirational"],
     "description": "Wide shot, low angle looking up at modern towers — slow, aspirational push."
-  },
-  {
-    "id": "wide_modern_city",
-    "file": "wide_modern_city.mp4",
-    "duration": 6.0,
-    "resolution": "1920x1080",
-    "fps": 24,
-    "tags": ["city", "modern", "wide", "establishing"],
-    "description": "Wide shot, eye level, modern cityscape — clean establishing atmosphere."
   },
   {
     "id": "medium_eye_level",
@@ -34,5 +43,149 @@
     "fps": 24,
     "tags": ["macro", "texture", "detail", "closeup"],
     "description": "Extreme close-up, macro detail — texture/insert shot, good for transitions."
+  },
+  {
+    "id": "data_stream_glass",
+    "file": "data_stream_glass.mp4",
+    "duration": 8.0,
+    "resolution": "1920x1080",
+    "fps": 25,
+    "tags": ["markets", "data", "fintech", "abstract", "valuation"],
+    "description": "Abstract financial data — glowing teal numbers and faint charts drifting across dark glass. Premium fintech mood for valuation / data beats. No readable tickers."
+  },
+  {
+    "id": "data_glass_macro",
+    "file": "data_glass_macro.mp4",
+    "duration": 8.0,
+    "resolution": "1920x1080",
+    "fps": 25,
+    "tags": ["markets", "data", "fintech", "abstract", "macro", "texture"],
+    "description": "Macro abstract of glowing teal data particles on dark glass with bokeh — clean fintech texture/transition insert for markets beats."
+  },
+  {
+    "id": "rising_line_light",
+    "file": "rising_line_light.mp4",
+    "duration": 8.0,
+    "resolution": "1920x1080",
+    "fps": 24,
+    "tags": ["markets", "growth", "bullish", "abstract", "fintech"],
+    "description": "Glowing teal ascending line graph rendered as particles of light on a dark background — optimistic, clean fintech. Bull / growth beats."
+  },
+  {
+    "id": "upward_trend",
+    "file": "upward_trend.mp4",
+    "duration": 8.0,
+    "resolution": "1920x1080",
+    "fps": 24,
+    "tags": ["markets", "growth", "bullish", "relief", "abstract"],
+    "description": "Warm gold streak of light trending upward with a particle trail — dramatic, optimistic. Bull / relief / catalyst beats."
+  },
+  {
+    "id": "capitol_dawn",
+    "file": "capitol_dawn.mp4",
+    "duration": 8.0,
+    "resolution": "1920x1080",
+    "fps": 24,
+    "tags": ["policy", "regulation", "government", "federal", "catalyst"],
+    "description": "Low-angle wide establishing shot of the U.S. Capitol dome against a soft pink dawn sky — serene, authoritative. 280E / rescheduling / federal-policy beats."
+  },
+  {
+    "id": "capitol_push",
+    "file": "capitol_push.mp4",
+    "duration": 8.0,
+    "resolution": "1920x1080",
+    "fps": 24,
+    "tags": ["policy", "regulation", "government", "federal", "catalyst"],
+    "description": "Tighter low-angle push on the U.S. Capitol dome in warm golden light — federal-policy / catalyst beats (alt to capitol_dawn)."
+  },
+  {
+    "id": "dispensary_interior",
+    "file": "dispensary_interior.mp4",
+    "duration": 8.0,
+    "resolution": "1920x1080",
+    "fps": 24,
+    "tags": ["retail", "dispensary", "consumer", "demand", "premium"],
+    "description": "Wide interior of a premium minimalist wellness retail space — warm wood shelving, frosted glass cases, slow dolly down the aisle. No people/branding. Retail / demand beats."
+  },
+  {
+    "id": "retail_interior",
+    "file": "retail_interior.mp4",
+    "duration": 8.0,
+    "resolution": "1920x1080",
+    "fps": 24,
+    "tags": ["retail", "dispensary", "consumer", "sales", "premium"],
+    "description": "Sleek modern retail interior with a checkout counter and lit display cases — upscale, no branding. Retail / sales / transactions beats."
+  },
+  {
+    "id": "checkout_flow",
+    "file": "checkout_flow.mp4",
+    "duration": 6.0,
+    "resolution": "1920x1080",
+    "fps": 24,
+    "tags": ["retail", "sales", "transactions", "demand", "consumer", "human"],
+    "description": "Over-the-counter shot of a hand using a tablet POS terminal in a premium wellness store — no face, illegible screen. Sales / transactions / demand beats."
+  },
+  {
+    "id": "checkout_counter",
+    "file": "checkout_counter.mp4",
+    "duration": 6.0,
+    "resolution": "1920x1080",
+    "fps": 24,
+    "tags": ["retail", "sales", "transactions", "demand", "consumer", "human"],
+    "description": "Card payment at a modern retail counter POS — hand only, no face, warm bokeh background. Sales / transactions beats (alt to checkout_flow)."
+  },
+  {
+    "id": "exchange_facade",
+    "file": "exchange_facade.mp4",
+    "duration": 8.0,
+    "resolution": "1920x1080",
+    "fps": 24,
+    "tags": ["uplisting", "exchange", "milestone", "catalyst", "institutional", "bullish"],
+    "description": "Wide low-angle establishing shot of a grand neoclassical stock-exchange facade with columns and flags, bright midday light — prestigious, institutional. Uplisting / NYSE-milestone beats."
+  },
+  {
+    "id": "exchange_push",
+    "file": "exchange_push.mp4",
+    "duration": 8.0,
+    "resolution": "1920x1080",
+    "fps": 24,
+    "tags": ["uplisting", "exchange", "milestone", "catalyst", "institutional", "bullish"],
+    "description": "Low-angle dolly push toward the columned entrance of a neoclassical exchange building against deep blue sky — uplisting / milestone beats (alt to exchange_facade)."
+  },
+  {
+    "id": "facility_distress",
+    "file": "facility_distress.mp4",
+    "duration": 8.0,
+    "resolution": "1920x1080",
+    "fps": 24,
+    "tags": ["risk", "bearish", "distress", "mood", "oversupply"],
+    "description": "Slow dolly through a dim, empty cultivation facility — bare racks, switched-off grow lights, cold haze. The bear twin of canopy_push. Risk / distress / oversupply beats."
+  },
+  {
+    "id": "facility_abandoned",
+    "file": "facility_abandoned.mp4",
+    "duration": 8.0,
+    "resolution": "1920x1080",
+    "fps": 24,
+    "tags": ["risk", "bearish", "distress", "mood", "bankruptcy"],
+    "description": "Lateral dolly through a fully abandoned, decayed grow facility — dust, debris, collapsing racks. Strong distress / bankruptcy / 'handed to creditors' beats."
+  },
+  {
+    "id": "gavel_courtroom",
+    "file": "gavel_courtroom.mp4",
+    "duration": 6.0,
+    "resolution": "1920x1080",
+    "fps": 24,
+    "tags": ["legal", "court", "risk", "regulation", "appeal"],
+    "description": "Slow push-in on a wooden judge's gavel on its block in a softly lit courtroom — legal-risk beats (pending appeal, antitrust suit, back-tax)."
+  },
+  {
+    "id": "gavel_closeup",
+    "file": "gavel_closeup.mp4",
+    "duration": 6.0,
+    "resolution": "1920x1080",
+    "fps": 24,
+    "tags": ["legal", "court", "risk", "regulation", "appeal", "macro"],
+    "description": "Extreme close-up push-in on a gavel and sound block, warm courtroom bokeh — legal-risk insert (alt to gavel_courtroom)."
   }
 ]

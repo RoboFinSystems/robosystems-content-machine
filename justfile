@@ -86,6 +86,10 @@ pipeline project:
     @just ensure-env
     ./tools/run_pipeline.sh {{project}}
 
+# Show the b-roll library + coverage across shoot-list categories
+broll:
+    UV_ENV_FILE={{_env}} uv run python tools/list_broll.py
+
 # Sync assets/broll/manifest.json with the clips present (run after dropping in new b-roll)
 broll-sync:
     UV_ENV_FILE={{_env}} uv run python tools/sync_broll.py

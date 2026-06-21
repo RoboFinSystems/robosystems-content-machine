@@ -214,8 +214,9 @@ ducked music + ElevenLabs VO + caption cards — all local ffmpeg).
 "short": {
   "duration_target_seconds": 30,
   "narration": "Self-contained ~20–45s story for the ear (NOT a slice of the main VO). Name the company; land the payoff; end on a question.",
-  "broll": ["wide_low_angle", "wide_modern_city", "macro_detail"],  // ids from assets/broll/manifest.json, in play order
-  "music": "tech_corporate",                                        // id from assets/music/manifest.json (optional; defaults to first)
+  "broll": ["wide_low_angle", "canopy_push", "macro_detail"],       // explicit ids in play order, OR omit and use:
+  // "broll_theme": ["cultivation", "city", "macro"],               // auto-pick clips whose tags match (most-relevant first)
+  "music": "tech_corporate",                                        // explicit id, OR omit and use "music_mood": ["uplifting","corporate"] to auto-pick
   "cards": [                                                        // curated overlays — must stand alone for muted viewers
     { "text": "$1.2B revenue, 60% margins", "at_seconds": 2.0 },
     { "text": "TAXED AT 228%",             "at_seconds": 13.0 },
@@ -226,8 +227,8 @@ ducked music + ElevenLabs VO + caption cards — all local ffmpeg).
 ```
 
 - `narration` — a fresh, standalone script for the ear (no "as you can see here"); tell a complete micro-story, don't just tease. Budget ~20–45s — the voice runs ~14–15 chars/sec (slower than the ÷16 draft estimate), so ~600 chars ≈ ~43s. Spoken-form rules apply.
-- `broll` — pick clip `id`s from `assets/broll/manifest.json` by tag/description, in play order. The renderer cycles/trims them to fill the runtime. (Clips are produced manually in ElevenLabs Studio / Veo and dropped into the library — there is no video-generation API.)
-- `music` — a track `id` from `assets/music/manifest.json` (optional).
+- `broll` / `broll_theme` — either an explicit ordered list of clip `id`s, OR omit `broll` and set `broll_theme` (a list of tags) to auto-select matching clips from `assets/broll/manifest.json` (most-relevant first); with neither, all clips are used. The renderer plays clips at **full length**, rotates the order each pass so nothing repeats back-to-back, and trims only the last clip to fit the runtime. (Clips are produced manually in ElevenLabs Studio / Veo and dropped into the library — there is no video-generation API.)
+- `music` / `music_mood` — an explicit track `id`, OR omit it and set `music_mood` (a list of mood tags) to auto-pick the best-matching track from `assets/music/manifest.json` (most mood overlaps wins; ties → first); with neither, the first track is used.
 - `cards` — 4–8 curated text overlays (the hook + hero stats + the ticker reveal), timed to VO beats via `at_seconds`. Keep them short and punchy; ~80% of Shorts play muted, so the cards must carry the story alone. (Card text is *rendered*, not spoken — the `$ % x` ban does not apply here.) `at_seconds` are estimates — re-time them to the actual VO after the first render (the spoken pace rarely matches the guess).
 - **Name the company + show the ticker.** A brief anonymous mystery hook is fine, but the Short MUST name the company in the VO and show the ticker on a card (e.g. a `TRULIEVE — NYSE: TRLV` reveal card) — viewers can't act on a name they never heard.
 - **Resolve, don't withhold.** A Short is self-contained content, not a trailer. Land the actual payoff and end on a provocative question or takeaway; the long-form link goes in the **pinned comment / caption**, NOT on a card.

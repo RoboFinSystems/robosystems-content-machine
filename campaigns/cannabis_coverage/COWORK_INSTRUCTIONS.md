@@ -266,7 +266,8 @@ main narration): open on the cognitive-dissonance number (the 280E paradox — b
 margins / a reported loss), **name the company and ticker** (a brief mystery hook is fine, but
 reveal it), land the catalyst/now-what payoff, and **end on a provocative question or takeaway**
 (the long-form link goes in the pinned comment, not a card). Pick b-roll `id`s from
-`assets/broll/manifest.json`, and write 4–8 caption cards that carry the story for muted viewers
+`assets/broll/manifest.json` (or set a `broll_theme` of tags — e.g. ["cultivation","city","macro"]
+— to auto-pick by theme), and write 4–8 caption cards that carry the story for muted viewers
 (e.g. "$1.2B revenue, 60% margins" → "TAXED AT 228%" → "TRULIEVE — NYSE: TRLV" → "NOW 87% —
 FIRST PROFIT" → "A BUYER, NOT A TARGET" → "WHAT DOES IT BUY FIRST?"). Schema + rules:
 `PRODUCTION_CONTRACT.md` → "Companion formats → A". Rendered by `just short {TICKER}`.

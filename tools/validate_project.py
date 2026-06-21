@@ -250,12 +250,18 @@ def check_deck_contract(project_dir, script):
 
 def _load_manifest_ids(rel_path):
     """Return the set of ids in a shared assets manifest (repo-root relative)."""
+    items = _load_manifest_items(rel_path)
+    return {item["id"] for item in items} if items is not None else None
+
+
+def _load_manifest_items(rel_path):
+    """Return the list of entries in a shared assets manifest (repo-root relative)."""
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     path = os.path.join(root, rel_path)
     if not os.path.exists(path):
         return None
     with open(path) as f:
-        return {item["id"] for item in json.load(f)}
+        return json.load(f)
 
 
 def check_companion_formats(project_dir, ticker, script):
@@ -269,22 +275,42 @@ def check_companion_formats(project_dir, ticker, script):
     else:
         if not short.get("narration"):
             error("short: missing narration")
-        broll_ids = _load_manifest_ids(os.path.join("assets", "broll", "manifest.json"))
-        refs = short.get("broll", [])
-        if not refs:
-            error("short: `broll` is empty — list clip ids from assets/broll/manifest.json")
-        elif broll_ids is None:
-            warn("short: assets/broll/manifest.json not found — can't verify broll ids")
-        else:
-            bad = [r for r in refs if r not in broll_ids]
-            if bad:
-                error(f"short: broll ids not in manifest: {', '.join(bad)}")
+        items = _load_manifest_items(os.path.join("assets", "broll", "manifest.json"))
+        broll_ids = {it["id"] for it in items} if items else None
+        refs = short.get("broll")
+        theme = short.get("broll_theme")
+        if isinstance(refs, list) and refs:
+            if broll_ids is None:
+                warn("short: broll manifest not found — can't verify ids")
             else:
-                ok(f"short: {len(refs)} broll ids resolve")
-        music_ids = _load_manifest_ids(os.path.join("assets", "music", "manifest.json"))
+                bad = [r for r in refs if r not in broll_ids]
+                if bad:
+                    error(f"short: broll ids not in manifest: {', '.join(bad)}")
+                else:
+                    ok(f"short: {len(refs)} broll ids resolve")
+        elif theme:
+            if items is None:
+                warn("short: broll manifest not found — can't verify broll_theme")
+            else:
+                matched = [it for it in items if set(theme) & set(it.get("tags", []))]
+                if matched:
+                    ok(f"short: broll_theme matches {len(matched)} clip(s)")
+                else:
+                    error(f"short: broll_theme {theme} matches no clip tags")
+        else:
+            warn("short: no broll/broll_theme — will use ALL clips in the manifest")
+        music_items = _load_manifest_items(os.path.join("assets", "music", "manifest.json"))
+        music_ids = {it["id"] for it in music_items} if music_items else None
         m = short.get("music")
+        mmood = short.get("music_mood")
         if m and music_ids is not None and m not in music_ids:
             error(f"short: music id '{m}' not in assets/music/manifest.json")
+        elif mmood and music_items is not None:
+            mm = [it for it in music_items if set(mmood) & set(it.get("mood", []))]
+            if mm:
+                ok(f"short: music_mood matches {len(mm)} track(s)")
+            else:
+                warn(f"short: music_mood {mmood} matches no track moods (will use first track)")
         cards = short.get("cards", [])
         bad_cards = [i for i, c in enumerate(cards)
                      if not c.get("text") or "at_seconds" not in c]

@@ -137,8 +137,8 @@ A **self-contained** 9:16 piece (~20–45s) for YouTube Shorts + Instagram Reels
 micro-story, NOT a trailer. Write a **fresh standalone script** for the ear (not a slice of the
 main narration): hook, the key numbers, **the company name + ticker** (a brief mystery hook is
 fine, but reveal it), and a payoff that ends on a question or takeaway (long-form link → pinned
-comment, not a card). Pick b-roll `id`s from `assets/broll/manifest.json`, and write 4–8 caption
-cards that stand alone for muted viewers. Schema + rules: `PRODUCTION_CONTRACT.md` → "Companion
+comment, not a card). Pick b-roll `id`s from `assets/broll/manifest.json` (or set a `broll_theme`
+of tags to auto-pick by theme), and write 4–8 caption cards that stand alone for muted viewers. Schema + rules: `PRODUCTION_CONTRACT.md` → "Companion
 formats → A". Rendered by `just short {TICKER}`.
 
 ### 6. Q&A Podcast (`scripts/{TICKER}_qa.json`)
