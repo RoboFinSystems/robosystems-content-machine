@@ -82,6 +82,7 @@ just pipeline PROJECT       # validate -> slice -> voiceover -> assemble (long-f
 just short PROJECT          # 9:16 teaser short (b-roll + music + VO + caption cards)
 just podcast-qa PROJECT     # two-voice Q&A podcast (MP3 for Spotify + MP4 for YouTube)
 just podcast PROJECT        # extract podcast MP3 from the long-form video
+just publish PROJECT        # upload final deliverables to the public S3 artifact store
 ```
 
 | Step | Command | What it does |
@@ -94,6 +95,14 @@ just podcast PROJECT        # extract podcast MP3 from the long-form video
 | **Podcast (Q&A)** | `just podcast-qa PROJECT` | Synthesizes the two-voice conversation → MP3 + MP4 |
 
 Assembly writes `videos/{TICKER}_timestamps.txt` with the actual YouTube chapter times.
+
+### Publishing (S3 artifact store)
+
+`just publish {TICKER}` uploads the final deliverables (long-form, short, podcast MP3/MP4,
+thumbnail, brief, social copy) to `s3://$S3_BUCKET/content/{TICKER}/` and prints public URLs
+(`https://$S3_BUCKET.s3.amazonaws.com/content/{TICKER}/…`) — a durable artifact store, separate
+from posting to YouTube / Spotify / X. A bucket policy grants public read on the **`content/*`
+prefix only**; Shotstack staging assets elsewhere in the bucket stay private.
 
 ### Shared Media Libraries
 
