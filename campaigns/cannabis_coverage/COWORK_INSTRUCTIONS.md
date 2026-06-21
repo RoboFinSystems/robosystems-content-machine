@@ -239,7 +239,9 @@ Cannabis editorial guidance for the script:
   > robosystems dot AI to get started — link in the description."
 - **Thumbnail block** — fill the script's `thumbnail` block (Claude Design builds it; see
   `DESIGN_INSTRUCTIONS.md`): **hero = the adjusted P/E post-280E-relief** (the
-  cognitive-dissonance number); **banner = "INITIATING COVERAGE"**; **secondary = 1–2 of**
+  cognitive-dissonance number); **banner = "INITIATING COVERAGE"** for a new name, or
+  **"COVERAGE UPDATE"** if we've already published on this ticker (check tickers.md / prior
+  videos — then open the hook with "what's changed since we covered it"); **secondary = 1–2 of**
   Revenue, 280E penalty, or FCF yield.
 
 ### 3. X Post (`social/{TICKER}_x_post.txt`)
@@ -250,8 +252,9 @@ numbers (include 280E impact); catalyst sensitivity; risk/caveat; closing takeaw
 
 ### 4. YouTube Description (`social/{TICKER}_youtube_description.txt`)
 Hook (1-2 sentences); links: `https://robosystems.ai` (code LAUNCH for 50% off first month)
-and `https://github.com/RoboFinSystems/robosystems-content-machine`; **timestamps** estimated
-from segment `duration_estimate_seconds` (`0:00 — Description`, accumulate); 6-8 key-finding
+and `https://github.com/RoboFinSystems/robosystems-content-machine`; **timestamps** — draft from
+`duration_estimate_seconds` (`0:00` start, accumulate); after render, finalize from the generated
+`videos/{TICKER}_timestamps.txt` (actual chapter times); 6-8 key-finding
 bullets with numbers; a 2-3 sentence **280E explainer** (many viewers land cold); disclaimer
 ("This is not investment advice. … No paid promotions. No price targets."); hashtags.
 

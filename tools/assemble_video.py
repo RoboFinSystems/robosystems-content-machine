@@ -422,6 +422,7 @@ def build_timeline(project_dir, ticker, assets, production=False):
     video_clips = []
     audio_clips = []
     srt_entries = []      # for subtitle generation
+    chapters = []         # (start, label) YouTube chapter markers from ACTUAL timing
     current_time = SEGMENT_GAP  # tiny lead-in before the first slide
 
     # ── Content slides (each: deck slide PNG + its voiceover) ──
@@ -475,7 +476,19 @@ def build_timeline(project_dir, ticker, assets, production=False):
             "text": seg.get("narration", ""),
         })
         srt_index += 1
+        label = (seg.get("slide") or {}).get("headline") or visual_ref or f"Segment {seg_id}"
+        chapters.append((current_time, label))
         current_time += image_duration + SEGMENT_GAP
+
+    # ── YouTube chapter timestamps (from ACTUAL durations, not estimates) ──
+    def _mmss(t):
+        t = int(round(t))
+        return f"{t // 60}:{t % 60:02d}"
+    chapters_path = os.path.join(project_dir, "videos", f"{ticker}_timestamps.txt")
+    with open(chapters_path, "w") as cf:
+        for i, (t, label) in enumerate(chapters):
+            cf.write(f"{'0:00' if i == 0 else _mmss(t)} — {label}\n")
+    print(f"  Chapters: -> {ticker}_timestamps.txt")
 
     # ── Whisper transcription for accurate subtitle timing (only when subtitles are on) ──
     if subtitles_on:

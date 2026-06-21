@@ -91,8 +91,9 @@ the hook and financial story until there's a genuine insight. Only then move to 
 **Build it from the brief — don't write from scratch.** The hook becomes the opening title
 slide; the financial story becomes chart/callout/dual slides; the bottom line becomes the
 close. Follow the schema, slide kinds, and field rules in `PRODUCTION_CONTRACT.md` exactly.
-Also fill the `thumbnail` block (hero metric + 1–2 secondary metrics) — Claude Design builds
-the YouTube thumbnail from it (see `DESIGN_INSTRUCTIONS.md`).
+Also fill the `thumbnail` block (hero metric, optional banner, 1–2 secondary metrics) — Claude
+Design builds the YouTube thumbnail from it (see `DESIGN_INSTRUCTIONS.md`). Banner: "COVERAGE
+UPDATE" if this name was covered before, else "INITIATING COVERAGE" (or omit).
 
 Editorial guidance for the script:
 - Open with a HOOK (first 3 seconds must grab attention).
@@ -123,8 +124,9 @@ risk/caveat; closing takeaway; relevant `$TICKER` cashtag and hashtags; tag @Rob
 
 ### 4. YouTube Description (`social/{TICKER}_youtube_description.txt`)
 Hook (1-2 sentences); links: `https://robosystems.ai` and
-`https://github.com/RoboFinSystems/robosystems-content-machine`; **timestamps** estimated from
-each segment's `duration_estimate_seconds` (start `0:00`, accumulate down the segments); 6-8
+`https://github.com/RoboFinSystems/robosystems-content-machine`; **timestamps** — draft from
+each segment's `duration_estimate_seconds` (start `0:00`, accumulate); after render, finalize from
+the generated `videos/{TICKER}_timestamps.txt` (actual chapter times); 6-8
 key-finding bullets with specific numbers; a 1-2 sentence plain-English explainer of any key
 metric or term a cold viewer needs; disclaimer ("This is not investment advice. No price
 targets."); relevant `$TICKER` and topic hashtags.

@@ -66,7 +66,7 @@ defines the slides — their count, their order, and the narration timed to each
 
   "thumbnail": {                        // content for the YouTube thumbnail (built in Claude Design)
     "hero": "9x adjusted P/E",          // the one cognitive-dissonance number (huge, centered)
-    "banner": "INITIATING COVERAGE",    // optional top banner (campaign-specific; omit if none)
+    "banner": "INITIATING COVERAGE",    // "INITIATING COVERAGE" for a new name; "COVERAGE UPDATE" if previously covered; omit if none
     "secondary": ["Revenue $1.1B", "280E cost $147M/yr"],  // 1–2 small supporting metrics
     "file": "charts/png/GTBIF_thumbnail.png"  // where the exported PNG lands
   },
@@ -126,8 +126,10 @@ defines the slides — their count, their order, and the narration timed to each
 - `visual_ref` — a short, unique, stable slug (`hook`, `revenue_trend`, `tax_burden`). **It
   is the slide id**: deck slide *i* maps to segment *i*, and the sliced image is named
   `{visual_ref}.png`. Keep them unique and in narration order.
-- `duration_estimate_seconds` — integer estimate. (NOT `duration_seconds`.) Actual timing
-  comes from the voiceover length at assembly; this is only for planning + Short cuts.
+- `duration_estimate_seconds` — integer estimate ≈ **narration characters ÷ 16** (real TTS pace
+  is ~16 chars/sec; under-counting makes draft timestamps ~2× short). (NOT `duration_seconds`.)
+  Actual timing comes from the voiceover at assembly, which also writes
+  `videos/{TICKER}_timestamps.txt` with the real YouTube chapter times.
 - `slide` — the on-screen content (see slide kinds). Put **exact numbers** here; this is
   what the deck renders, so vague data here = vague slides.
 - `deck.slide_count` — set it to the number of segments. **Validation fails if they differ.**
