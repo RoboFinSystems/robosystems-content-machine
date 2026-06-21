@@ -51,9 +51,12 @@ A **separate 16:9 frame — NOT part of the video sequence.** Build it from the 
 - **Readable at tiny sizes** — assume a 1cm-wide preview. Bold, high contrast, minimal words.
 
 ## Export
+Claude Design exports **PDF only** — export *both* as PDF; the pipeline rasterizes them.
 1. **Deck → PDF** (16:9, one slide per page) → save to `deck/{TICKER}_deck.pdf`.
-2. **Thumbnail → PNG** (1280×720 or 1920×1080) → save to `charts/png/{TICKER}_thumbnail.png`.
-3. Then the pipeline takes over: `just pipeline {TICKER}`.
+2. **Thumbnail → PDF** (16:9, single page) → save to `deck/{TICKER}_thumbnail.pdf`.
+   The `slice` step rasterizes it to `charts/png/{TICKER}_thumbnail.png` at 1920×1080 — you
+   don't export a PNG by hand.
+3. Then the pipeline takes over: `just pipeline {TICKER}` (slices the deck **and** the thumbnail).
 
 ## Recommended workflow (repeatable)
 Build a **reusable house-brand "video deck" template** in Claude Design **once** — one

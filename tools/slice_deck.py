@@ -69,6 +69,27 @@ def rasterize(pdf, out_dir, prefix="slide"):
     return sorted(glob.glob(out_prefix + "-*.png")), pages
 
 
+def rasterize_thumbnail(project_dir, ticker):
+    """Rasterize the Claude Design thumbnail PDF -> charts/png/{ticker}_thumbnail.png (1920x1080).
+
+    Claude Design exports PDF only, so the thumbnail is exported as a 16:9 PDF
+    (deck/{ticker}_thumbnail.pdf) and rasterized here — no manual pdftoppm step.
+    """
+    pdf = os.path.join(project_dir, "deck", f"{ticker}_thumbnail.pdf")
+    if not os.path.exists(pdf):
+        print(f"  Thumbnail: no deck/{ticker}_thumbnail.pdf — export it from Claude Design (skipped)")
+        return
+    png_dir = os.path.join(project_dir, "charts", "png")
+    os.makedirs(png_dir, exist_ok=True)
+    out_root = os.path.join(png_dir, f"{ticker}_thumbnail")
+    subprocess.run(
+        ["pdftoppm", "-png", "-singlefile", "-scale-to-x", str(WIDTH), "-scale-to-y", str(HEIGHT),
+         pdf, out_root],
+        check=True,
+    )
+    print(f"  Thumbnail: deck/{ticker}_thumbnail.pdf -> charts/png/{ticker}_thumbnail.png ({WIDTH}x{HEIGHT})")
+
+
 def slice_standalone(pdf, out_dir):
     print(f"Slicing {os.path.basename(pdf)} -> {out_dir}")
     pngs, _ = rasterize(pdf, out_dir)
@@ -114,6 +135,7 @@ def slice_project(project, pdf_override=None):
         print(f"   slide -> {ref}.png")
     os.rmdir(tmp_dir)
     print(f"\nSliced {len(refs)} slides into {png_dir}")
+    rasterize_thumbnail(project_dir, ticker)
 
 
 def main():

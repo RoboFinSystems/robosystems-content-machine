@@ -73,7 +73,7 @@ Generate the hand-off brief, then compose the deck + thumbnail on-brand:
 just deck-brief TICKER   # render the Claude Design hand-off from the script
 ```
 
-Paste the brief into [claude.ai/design](https://claude.ai/design) (on `@robosystems/core`), compose a 16:9 deck and a thumbnail, then export `deck/{TICKER}_deck.pdf` and `charts/png/{TICKER}_thumbnail.png`.
+Paste the brief into [claude.ai/design](https://claude.ai/design) (on `@robosystems/core`), compose a 16:9 deck and thumbnail, then export **both as PDF** (Claude Design exports PDF only) → `deck/{TICKER}_deck.pdf` and `deck/{TICKER}_thumbnail.pdf`. The `slice` step rasterizes the thumbnail PDF to `charts/png/{TICKER}_thumbnail.png` automatically.
 
 ### 4. Production Pipeline
 

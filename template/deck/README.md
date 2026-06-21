@@ -6,7 +6,7 @@ The **Claude Design** stage (Stage 2) lives here.
   into claude.ai/design.
 - `{TICKER}_deck.pdf` — the exported 16:9 deck. `just slice {TICKER}` (and the pipeline)
   rasterize this into per-slide PNGs in `../charts/png/`.
-
-The thumbnail PNG is exported separately to `../charts/png/{TICKER}_thumbnail.png`.
+- `{TICKER}_thumbnail.pdf` — the exported 16:9 thumbnail (Claude Design exports PDF only).
+  `just slice {TICKER}` rasterizes it to `../charts/png/{TICKER}_thumbnail.png` (1920×1080).
 
 See `../DESIGN_INSTRUCTIONS.md` for how to build the deck and thumbnail.

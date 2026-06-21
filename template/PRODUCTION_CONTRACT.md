@@ -26,7 +26,7 @@ scripts/{TICKER}_script.json   ──►  build_deck_brief → deck/{TICKER}_dec
     + per-slide content + thumbnail)      ▼
                                      paste into claude.ai/design (on @robosystems/core)
                                      → compose 16:9 deck  → deck/{TICKER}_deck.pdf
-                                     → compose thumbnail  → charts/png/{TICKER}_thumbnail.png
+                                     → compose thumbnail  → deck/{TICKER}_thumbnail.pdf  → (slice) → charts/png/{TICKER}_thumbnail.png
                                           │
                                           ▼
                                      Pipeline (code)
@@ -192,8 +192,10 @@ last is the close/CTA (no separate intro/outro files in deck mode).
 The thumbnail is **built in Claude Design**, not hand-authored — Cowork authors **no HTML at
 all**. You spec the content in the script's `thumbnail` block (hero metric, optional banner,
 1–2 secondary metrics); Claude Design builds it as a separate 16:9 frame (see
-`DESIGN_INSTRUCTIONS.md`) and exports a PNG to `charts/png/{TICKER}_thumbnail.png`. It is
-*not* part of the video sequence — the pipeline treats it as a publish-only asset.
+`DESIGN_INSTRUCTIONS.md`) and exports it as a **16:9 PDF** to `deck/{TICKER}_thumbnail.pdf`
+(Claude Design exports PDF only); the `slice` step rasterizes that to
+`charts/png/{TICKER}_thumbnail.png` at 1920×1080. It is *not* part of the video sequence — the
+pipeline treats it as a publish-only asset.
 
 ---
 
