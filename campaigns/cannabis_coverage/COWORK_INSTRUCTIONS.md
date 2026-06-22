@@ -256,10 +256,12 @@ Cannabis editorial guidance for the script:
 
 ### 3. X Post (`social/{TICKER}_x_post.txt`)
 Long-form (under 4000 chars): hook framing the coverage angle; 3-5 findings with specific
-numbers (include 280E impact); catalyst sensitivity; risk/caveat; closing takeaway;
-`[YOUTUBE_LINK]`; mention robosystems.ai + the promo line (`New customers get 50% off your first
+numbers (include 280E impact); catalyst sensitivity; risk/caveat; closing takeaway; mention
+robosystems.ai + the promo line (`New customers get 50% off your first
 month with code [PROMO_CODE].`);
-`$TICKER` + `#Cannabis #MSO #280E #Rescheduling`; tag @RoboFinSystems.
+`$TICKER` + `#Cannabis #MSO #280E #Rescheduling`; tag @RoboFinSystems. **Keep the long-form link
+OUT of the body — it goes in the first reply (`x_first_reply`); on X the short is posted as
+native video, and posts carrying an external link get throttled.**
 
 ### 4. YouTube Description (`social/{TICKER}_youtube_description.txt`)
 Hook (1-2 sentences); links: `https://robosystems.ai`
@@ -298,6 +300,7 @@ times, the S3 media links, and flagging any unresolved placeholders). A JSON obj
 - `short_title` — the Short's title/caption. *(omit if no short)*
 - `short_pinned_comment` — the Short's pinned comment; use `[YOUTUBE_LINK]`. *(omit if no short)*
 - `instagram_caption` — IG Reel caption + hashtags, **no clickable links** (point to bio). *(omit if no short)*
+- `x_first_reply` — the X first reply; post the **short** as native video and put the long-form link **here, not in the post body** (X throttles links); use `[YOUTUBE_LINK]`.
 - `linkedin_post` — a LinkedIn-native post (professional; no link in the body).
 - `linkedin_first_comment` — link(s) for the first comment; use `[YOUTUBE_LINK]` + the RoboSystems CTA (+ `[PROMO_CODE]` if a promo runs).
 - `podcast_episode_title` — the Q&A episode title.

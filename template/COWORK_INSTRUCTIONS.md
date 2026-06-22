@@ -132,7 +132,9 @@ Editorial guidance for the script:
 Long-form (under 4000 chars): opening hook; 3-5 key findings with specific numbers; a
 risk/caveat; closing takeaway; a closing RoboSystems CTA (`robosystems.ai`) + the promo line
 (`New customers get 50% off your first month with code [PROMO_CODE].`); relevant `$TICKER`
-cashtag and hashtags; tag @RoboFinSystems.
+cashtag and hashtags; tag @RoboFinSystems. **Keep the long-form link OUT of the body — it goes
+in the first reply (`x_first_reply`); on X the short is posted as native video, and posts
+carrying an external link get throttled.**
 
 ### 4. YouTube Description (`social/{TICKER}_youtube_description.txt`)
 Hook (1-2 sentences); links: `https://robosystems.ai` and
@@ -167,6 +169,7 @@ times, the S3 media links, and flagging any unresolved placeholders). A JSON obj
 - `short_title` — the Short's title/caption. *(omit if no short)*
 - `short_pinned_comment` — the Short's pinned comment; use `[YOUTUBE_LINK]`. *(omit if no short)*
 - `instagram_caption` — IG Reel caption + hashtags, **no clickable links** (point to bio). *(omit if no short)*
+- `x_first_reply` — the X first reply; post the **short** as native video and put the long-form link **here, not in the post body** (X throttles links); use `[YOUTUBE_LINK]`.
 - `linkedin_post` — a LinkedIn-native post (professional; no link in the body).
 - `linkedin_first_comment` — link(s) for the first comment; use `[YOUTUBE_LINK]` + the RoboSystems CTA.
 - `podcast_episode_title` — the Q&A episode title.
