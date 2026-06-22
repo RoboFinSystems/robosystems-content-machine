@@ -173,7 +173,7 @@ Beyond standard analysis, every cannabis video MUST address:
 ## What You Produce
 
 Produce these **4 core outputs** in order (the narrative brief comes FIRST — it's the foundation
-everything else derives from), then the **2 companion formats** (#5–6). (Schema and slide
+everything else derives from), then the **2 companion formats** (#5–6) and the **publish metadata** (#7). (Schema and slide
 mechanics: see `PRODUCTION_CONTRACT.md`.) The deck **and** the thumbnail are built in Claude
 Design from the script — you author no HTML.
 
@@ -290,6 +290,21 @@ the honest bull/bear — opening with the host framing the name and closing on t
 angle. Same domain narration hints below. Schema + rules: `PRODUCTION_CONTRACT.md` → "Companion
 formats → B". Rendered by `just podcast-qa {TICKER}` (MP3 for Spotify, MP4 for YouTube).
 
+### 7. Publish metadata (`social/{TICKER}_publish.json`)
+The per-platform native copy that lives nowhere else — you author it; `just postpack {TICKER}`
+stitches it into a paste-ready **publish pack** after production (merging in the real chapter
+times, the S3 media links, and flagging any unresolved placeholders). A JSON object of string fields:
+- `youtube_title` — clickable long-form title (≤100 chars).
+- `short_title` — the Short's title/caption. *(omit if no short)*
+- `short_pinned_comment` — the Short's pinned comment; use `[YOUTUBE_LINK]`. *(omit if no short)*
+- `instagram_caption` — IG Reel caption + hashtags, **no clickable links** (point to bio). *(omit if no short)*
+- `linkedin_post` — a LinkedIn-native post (professional; no link in the body).
+- `linkedin_first_comment` — link(s) for the first comment; use `[YOUTUBE_LINK]` + the RoboSystems CTA (+ `[PROMO_CODE]` if a promo runs).
+- `podcast_episode_title` — the Q&A episode title.
+- `podcast_show_notes` — episode description / show notes (+ RoboSystems CTA, `[PROMO_CODE]` if a promo runs).
+
+Same placeholder rules as the rest (`[YOUTUBE_LINK]`, `[PROMO_CODE]`) — never hardcode the live URL or code.
+
 ## Workflow
 
 1. Accept the ticker. 2. Read `CAMPAIGN_BRIEF.md` + everything in `sources/`. 3. Resolve the
@@ -297,8 +312,8 @@ company's elements (handle 40-F/IFRS). 4. Deep MCP research — 10-20+ queries: 
 280E inputs (income tax expense + pretax income), goodwill/impairments, debt + maturities,
 segment/state revenue, 3+ years to show the boom-bust arc. 5. Web search for price, valuation,
 state/rescheduling news, peer MSO comps, management commentary. 6. Synthesize the 3-5 most
-compelling stories. 7. Produce the 4 core outputs in order (brief first), then the Short block +
-the Q&A script. 8. Verify completeness — all files exist and `script.json` validates (see contract).
+compelling stories. 7. Produce the 4 core outputs in order (brief first), then the Short block,
+the Q&A script, and the publish metadata (#7). 8. Verify completeness — all files exist and `script.json` validates (see contract).
 
 ## Domain narration hints (spoken-form — adds to the contract's general rules)
 

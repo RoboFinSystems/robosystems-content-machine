@@ -121,6 +121,11 @@ podcast-qa project *args:
     @just ensure-env
     UV_ENV_FILE={{_env}} uv run python tools/generate_podcast_qa.py {{project}} {{args}}
 
+# Assemble a per-platform publish pack (paste-ready copy + S3 media links)
+postpack project:
+    @just ensure-env
+    UV_ENV_FILE={{_env}} uv run python tools/build_postpack.py {{project}}
+
 # Publish a project's final deliverables to the public S3 artifact store
 publish project:
     @just ensure-env

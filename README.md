@@ -83,6 +83,7 @@ just short PROJECT          # 9:16 teaser short (b-roll + music + VO + caption c
 just podcast-qa PROJECT     # two-voice Q&A podcast (MP3 for Spotify + MP4 for YouTube)
 just podcast PROJECT        # extract podcast MP3 from the long-form video
 just publish PROJECT        # upload final deliverables to the public S3 artifact store
+just postpack PROJECT       # assemble the per-platform publish pack (paste-ready copy + S3 links)
 ```
 
 | Step | Command | What it does |

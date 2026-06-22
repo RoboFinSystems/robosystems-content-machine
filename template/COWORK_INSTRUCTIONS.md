@@ -53,7 +53,7 @@ fall back to `read-graph-cypher` searching `ifrs-full:` elements by fact count.
 ## What You Produce
 
 Produce these **4 core outputs** in order (brief FIRST — it's the foundation everything else
-derives from), then the **2 companion formats** (#5–6). (Schema and slide mechanics: see
+derives from), then the **2 companion formats** (#5–6) and the **publish metadata** (#7). (Schema and slide mechanics: see
 `PRODUCTION_CONTRACT.md`.) The deck **and** the thumbnail are built in Claude Design from the
 script — you author no HTML.
 
@@ -159,6 +159,21 @@ deck's beats as dialogue, open with the host framing the name, close on the Robo
 Schema + rules: `PRODUCTION_CONTRACT.md` → "Companion formats → B". Rendered by
 `just podcast-qa {TICKER}` (MP3 for Spotify, MP4 for YouTube).
 
+### 7. Publish metadata (`social/{TICKER}_publish.json`)
+The per-platform native copy that lives nowhere else — you author it; `just postpack {TICKER}`
+stitches it into a paste-ready **publish pack** after production (merging in the real chapter
+times, the S3 media links, and flagging any unresolved placeholders). A JSON object of string fields:
+- `youtube_title` — clickable long-form title (≤100 chars).
+- `short_title` — the Short's title/caption. *(omit if no short)*
+- `short_pinned_comment` — the Short's pinned comment; use `[YOUTUBE_LINK]`. *(omit if no short)*
+- `instagram_caption` — IG Reel caption + hashtags, **no clickable links** (point to bio). *(omit if no short)*
+- `linkedin_post` — a LinkedIn-native post (professional; no link in the body).
+- `linkedin_first_comment` — link(s) for the first comment; use `[YOUTUBE_LINK]` + the RoboSystems CTA.
+- `podcast_episode_title` — the Q&A episode title.
+- `podcast_show_notes` — episode description / show notes (+ RoboSystems CTA).
+
+Same placeholder rules as the rest (`[YOUTUBE_LINK]`, `[PROMO_CODE]`) — never hardcode the live URL or code.
+
 ## Workflow
 
 1. Accept the ticker. 2. Learn the schema (`get-graph-schema`, `get-example-queries`).
@@ -166,7 +181,7 @@ Schema + rules: `PRODUCTION_CONTRACT.md` → "Companion formats → B". Rendered
 across 3+ years, segment breakdowns, derived metrics (margins, growth, FCF, ROE/ROA/ROIC).
 5. Web search for price, valuation ratios, analyst consensus, peer context, recent news.
 6. Synthesize the 3-5 most compelling stories. 7. Produce the 4 core outputs in order (brief
-first), then the Short block + the Q&A script. 8. Verify completeness — all files exist and
+first), then the Short block, the Q&A script, and the publish metadata (#7). 8. Verify completeness — all files exist and
 `script.json` validates (see contract).
 
 ## Important Rules
