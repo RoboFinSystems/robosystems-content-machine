@@ -57,50 +57,71 @@ def _match(title, feed):
     return None
 
 
-def sync(tickers):
+# (publish.json title field, meta.json url field, short label)
+FIELDS = [
+    ("youtube_title", "youtube_url", "long"),
+    ("short_title", "short_youtube_url", "short"),
+    ("podcast_episode_title", "podcast_youtube_url", "podcast"),
+]
+
+
+def sync(tickers, report_only=False):
     bucket = require_env("S3_BUCKET")
     cid = require_env("YT_CHANNEL_ID")
     feed = fetch_feed(cid)
-    print(f"Feed: {len(feed)} recent uploads on channel {cid}\n")
+    print(f"Feed: {len(feed)} recent uploads on channel {cid}")
+    print("  ✓ matched · ✗ title authored but no feed match · — no title\n")
 
+    n_matched = n_missed = 0
+    wrote = False
     for t in tickers:
-        # which titles to match — from the local publish.json
-        pub = {}
         pj = os.path.join(get_project_dir(t), "social", f"{t}_publish.json")
+        pub = {}
         if os.path.exists(pj):
             with open(pj, encoding="utf-8") as f:
                 pub = json.load(f)
 
-        # latest meta.json on S3 is the source of truth we patch
         meta = reindex.s3_get_json(bucket, f"content/{t}/meta.json")
-        if not meta:
-            print(f"  {t}: no content/{t}/meta.json (publish first) — skipped")
+        if meta is None:
+            print(f"  {t:6} — not published (no content/{t}/meta.json)")
             continue
 
-        found = {
-            "youtube_url": _match(pub.get("youtube_title"), feed),
-            "short_youtube_url": _match(pub.get("short_title"), feed),
-            "podcast_youtube_url": _match(pub.get("podcast_episode_title"), feed),
-        }
-        hits = {k: v for k, v in found.items() if v}
-        if not hits:
-            print(f"  {t}: no title matches in the feed yet")
-            continue
+        cells, hits = [], {}
+        for title_key, url_key, label in FIELDS:
+            title = pub.get(title_key)
+            if not title:
+                cells.append(f"{label} —")
+            elif (url := _match(title, feed)):
+                hits[url_key] = url
+                cells.append(f"{label} ✓")
+                n_matched += 1
+            else:
+                cells.append(f"{label} ✗")
+                n_missed += 1
 
-        meta.update(hits)
-        reindex.s3_put_json(bucket, f"content/{t}/meta.json", meta)
-        summary = ", ".join(
-            f"{k.replace('_url', '')}={v.rsplit('/', 1)[-1]}" for k, v in hits.items()
-        )
-        print(f"  {t}: {summary}")
+        if hits and not report_only:
+            meta.update(hits)
+            reindex.s3_put_json(bucket, f"content/{t}/meta.json", meta)
+            wrote = True
 
-    print()
-    reindex.run()
+        ids = " ".join(v.rsplit("/", 1)[-1] for v in hits.values())
+        print(f"  {t:6} {'  '.join(cells):28} {ids}")
+
+    print(f"\n{n_matched} matched, {n_missed} missed")
+    if report_only:
+        print("(--report: dry run — nothing written)")
+    elif wrote:
+        print()
+        reindex.run()
+    else:
+        print("(no new matches to write)")
 
 
 def main():
     ap = argparse.ArgumentParser(description="Capture YouTube URLs into the catalog via the channel RSS feed")
     ap.add_argument("tickers", nargs="*", help="Tickers (default: all published)")
+    ap.add_argument("--report", action="store_true",
+                    help="Dry run: show the match table without writing")
     args = ap.parse_args()
 
     tickers = args.tickers
@@ -109,7 +130,7 @@ def main():
         projects = os.path.join(root, "projects")
         tickers = sorted(d for d in os.listdir(projects)
                          if os.path.isdir(os.path.join(projects, d)) and not d.startswith("."))
-    sync(tickers)
+    sync(tickers, report_only=args.report)
 
 
 if __name__ == "__main__":
