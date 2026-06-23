@@ -35,6 +35,10 @@ new ticker:
 campaign ticker campaign_name:
     ./tools/new_project.sh {{ticker}} {{campaign_name}}
 
+# Re-cover an existing ticker for a new quarter (archives prior outputs -> .history, keeps sources)
+recover ticker campaign_name="":
+    ./tools/new_project.sh {{ticker}} "{{campaign_name}}" --recover
+
 # List all coverage projects
 projects:
     @ls -1 projects/ 2>/dev/null || echo "No projects yet. Run: just new TICKER"
@@ -54,6 +58,8 @@ kickoff project:
     SRC="projects/{{project}}/KICKOFF.md"
     [ -f "$SRC" ] || SRC="template/KICKOFF.md"
     sed "s/{TICKER}/{{project}}/g" "$SRC"
+    PRIOR="projects/{{project}}/sources/_prior_coverage.md"
+    if [ -f "$PRIOR" ]; then printf '\n\n---\n\n'; cat "$PRIOR"; fi
 
 # ─── QA ──────────────────────────────────────────────────────
 

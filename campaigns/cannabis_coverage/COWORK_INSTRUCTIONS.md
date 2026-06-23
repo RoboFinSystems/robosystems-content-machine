@@ -170,6 +170,17 @@ Beyond standard analysis, every cannabis video MUST address:
      what today's price implies the market is pricing in. **Framing: implied value under stated
      assumptions — not a price target, not advice.**
 
+## Continuing coverage (if `sources/_prior_coverage.md` exists)
+
+If `sources/_prior_coverage.md` is present, this is **not a first look — it's the next chapter** in an ongoing, quarterly coverage thread (this campaign is built for multi-quarter arcs). Read that card first, then:
+
+- **Open on the thread.** The brief's Hook and the video's first lines should reference the prior coverage — what we said and the price *then* — and immediately pivot to **what changed this quarter** (new 10-Q, catalyst movement, the effective-tax-rate trend, price move). Don't re-introduce the company from scratch.
+- **Carry the thesis forward.** Explicitly contrast then vs now (e.g. "we covered this at $X in Q1; the quarterly effective tax rate has since fallen to…"). Update every number; keep the continuity.
+- **Stamp the label.** Set `metadata.coverage_label` in `scripts/{TICKER}_script.json` to a human label (e.g. `"Q2 FY2026 update"`). The quarter key (e.g. `2026-Q2`) is derived automatically at publish — you only author the label.
+- Sources accumulate: the new quarter's filing sits alongside the prior ones in `sources/`; the full prior brief is in `.history/`.
+
+If the card is absent, this is **initiating coverage** — introduce the company fresh.
+
 ## What You Produce
 
 Produce these **4 core outputs** in order (the narrative brief comes FIRST — it's the foundation

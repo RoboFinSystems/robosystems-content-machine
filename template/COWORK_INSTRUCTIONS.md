@@ -50,6 +50,17 @@ is the actual value in base units (revenue $23.7B is stored as `23739000000`) �
 high-level tools usually handle this; if `build-fact-grid` returns nothing for revenue/net_income,
 fall back to `read-graph-cypher` searching `ifrs-full:` elements by fact count.
 
+## Continuing coverage (if `sources/_prior_coverage.md` exists)
+
+If `sources/_prior_coverage.md` is present, this is **not a first look — it's the next chapter** in an ongoing, quarterly coverage thread. Read that card first, then:
+
+- **Open on the thread.** The brief's Hook and the video's first lines should reference the prior coverage — what we said and the price/setup *then* — and immediately pivot to **what changed this quarter** (new filing, new catalyst, price move). Don't re-introduce the company from scratch.
+- **Carry the thesis forward.** Explicitly contrast then vs now (e.g. "we covered this at $X last quarter; revenue has since re-accelerated to…"). Update every number; keep the narrative continuity.
+- **Stamp the label.** Set `metadata.coverage_label` in `scripts/{TICKER}_script.json` to a human label for this update (e.g. `"Q2 FY2026 update"`). The quarter key itself (e.g. `2026-Q2`) is derived automatically at publish — you only author the label.
+- Sources accumulate: the new quarter's filing sits alongside the prior ones in `sources/`; the full prior brief is in `.history/`.
+
+If the card is absent, this is **initiating coverage** — introduce the company fresh.
+
 ## What You Produce
 
 Produce these **4 core outputs** in order (brief FIRST — it's the foundation everything else
