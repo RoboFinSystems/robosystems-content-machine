@@ -6,11 +6,14 @@ s3://{S3_BUCKET}/content/{TICKER}/, and emits ONE content/index.json. No databas
 this flat file is the catalog; the portal fetches it to discover everything.
 
 Versioning: the company is the durable entity; each run is a dated report version.
-Each catalog item is the LATEST report (flat content/{T}/ URLs) plus a `history` of
-prior dated versions (content/{T}/archive/{VERSION}/ URLs). Prior versions are
-snapshotted to archive/ by the publish step when a ticker is re-covered, and this
-script rolls the previous "latest" into `history` (merging the prior index so older
-history is never lost).
+  - LATEST report lives at flat content/{T}/ (stable URL → /research/{T}).
+  - prior versions are snapshotted to content/{T}/archive/{YYYY-MM}/ by `just publish`.
+Each version folder is SELF-DESCRIBING via a small meta.json (ticker, title, summary,
+tags, date, version, ...). This script derives the catalog purely from S3: the latest
+from content/{T}/meta.json (falling back to the local project), and `history[]` by
+scanning content/{T}/archive/*/ — so backfilling an old version is just "upload it +
+reindex". Assets are mapped by filename suffix, so legacy names (e.g. TCNNF_final.mp4
+under content/TRLV/archive/) resolve correctly.
 
 Usage:
     uv run python tools/reindex.py
@@ -27,15 +30,22 @@ from helpers import require_env
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PROJECTS = os.path.join(ROOT, "projects")
 
-# catalog asset key -> published filename (templated on ticker)
-ASSETS = {
-    "video":       "{t}_final.mp4",
-    "short":       "{t}_short.mp4",
-    "podcast_mp3": "{t}_qa_podcast.mp3",
-    "podcast_mp4": "{t}_qa_podcast.mp4",
-    "brief":       "{t}_brief.md",
-    "thumbnail":   "{t}_thumbnail.png",
-}
+# filename suffix -> catalog asset key (order matters: _qa_podcast before _podcast)
+SUFFIX_MAP = [
+    ("_final.mp4", "video"),
+    ("_short.mp4", "short"),
+    ("_qa_podcast.mp3", "podcast_mp3"),
+    ("_qa_podcast.mp4", "podcast_mp4"),
+    ("_podcast.mp3", "podcast_mp3"),   # legacy v1 long-form-extracted audio
+    ("_brief.md", "brief"),
+    ("_thumbnail.png", "thumbnail"),
+]
+
+
+def quarter(date_str):
+    """'2026-06-22' -> '2026-Q2' (calendar quarter; coverage cadence is quarterly)."""
+    y, m = int(date_str[:4]), int(date_str[5:7])
+    return f"{y}-Q{(m - 1) // 3 + 1}"
 
 
 def s3_ls(bucket, prefix):
@@ -53,6 +63,16 @@ def s3_ls(bucket, prefix):
     return rows
 
 
+def s3_ls_dirs(bucket, prefix):
+    """Sub-'directory' names (the 'PRE x/' rows) directly under prefix."""
+    r = subprocess.run(["aws", "s3", "ls", f"s3://{bucket}/{prefix}"],
+                       capture_output=True, text=True)
+    if r.returncode != 0:
+        return []
+    return [p.split()[-1].rstrip("/") for p in r.stdout.splitlines()
+            if p.split() and p.split()[0] == "PRE"]
+
+
 def s3_get_json(bucket, key):
     r = subprocess.run(["aws", "s3", "cp", f"s3://{bucket}/{key}", "-"],
                        capture_output=True, text=True)
@@ -65,11 +85,10 @@ def s3_get_json(bucket, key):
 
 
 def s3_put_json(bucket, key, obj):
-    data = json.dumps(obj, indent=2, ensure_ascii=False)
     subprocess.run(
         ["aws", "s3", "cp", "-", f"s3://{bucket}/{key}",
          "--content-type", "application/json; charset=utf-8", "--only-show-errors"],
-        input=data, text=True, check=True,
+        input=json.dumps(obj, indent=2, ensure_ascii=False), text=True, check=True,
     )
 
 
@@ -82,7 +101,8 @@ def _load(path):
 
 
 def project_meta(ticker):
-    """Rich metadata from the local project (title, summary, tags, company, campaign)."""
+    """Rich metadata from the local project (title, summary, tags, company, campaign).
+    Used for a freshly-published latest that has no meta.json yet, and by publish."""
     pdir = os.path.join(PROJECTS, ticker)
     meta = (_load(os.path.join(pdir, "scripts", f"{ticker}_script.json")) or {}).get("metadata", {})
     pub = _load(os.path.join(pdir, "social", f"{ticker}_publish.json"))
@@ -94,63 +114,56 @@ def project_meta(ticker):
         "tags": meta.get("tags") or [],
         "campaign": campaign,
         "campaign_slug": "cannabis_coverage" if "cannabis" in (campaign or "").lower() else None,
+        "coverage_label": meta.get("coverage_label"),
     }
 
 
-def asset_urls(bucket, ticker, present, prefix):
+def map_assets(bucket, names, prefix):
+    """Map a folder's filenames to {asset_key: public_url} by suffix."""
     out = {}
-    for key, fn in ASSETS.items():
-        name = fn.format(t=ticker)
-        if name in present:
-            out[key] = f"https://{bucket}.s3.amazonaws.com/{prefix}{name}"
+    for name in sorted(names):
+        for suf, key in SUFFIX_MAP:
+            if name.endswith(suf) and key not in out:
+                out[key] = f"https://{bucket}.s3.amazonaws.com/{prefix}{name}"
+                break
     return out
 
 
 def run():
     bucket = require_env("S3_BUCKET")
-    prior_by_ticker = {it["ticker"]: it
-                       for it in (s3_get_json(bucket, "content/index.json") or {}).get("items", [])}
-
     tickers = sorted(d for d in os.listdir(PROJECTS)
                      if os.path.isdir(os.path.join(PROJECTS, d)) and not d.startswith("."))
 
     items = []
     for t in tickers:
-        listing = s3_ls(bucket, f"content/{t}/")
+        flat = f"content/{t}/"
+        listing = s3_ls(bucket, flat)
         present = {n for n, _ in listing}
         if f"{t}_final.mp4" not in present:
             continue  # not published — skip
-        date = next((d for n, d in listing if n == f"{t}_final.mp4"), None) \
-            or datetime.date.today().isoformat()
-        version = date[:7]  # YYYY-MM
 
-        item = {
-            "ticker": t,
-            **project_meta(t),
-            "date": date,
-            "version": version,
-            "assets": asset_urls(bucket, t, present, f"content/{t}/"),
-        }
+        meta = s3_get_json(bucket, f"{flat}meta.json")
+        if not meta:  # freshly published before meta.json existed — derive from local
+            date = next((d for n, d in listing if n == f"{t}_final.mp4"), None) \
+                or datetime.date.today().isoformat()
+            meta = {**project_meta(t), "date": date, "version": quarter(date)}
 
-        # roll the prior "latest" into history if it was a different version
-        prev = prior_by_ticker.get(t)
-        history = list(prev.get("history", [])) if prev else []
-        if prev and prev.get("version") and prev["version"] != version:
-            arch = f"content/{t}/archive/{prev['version']}/"
-            history = [{
-                "version": prev["version"],
-                "date": prev.get("date"),
-                "title": prev.get("title"),
-                "assets": {k: f"https://{bucket}.s3.amazonaws.com/{arch}{os.path.basename(u)}"
-                           for k, u in (prev.get("assets") or {}).items()},
-            }] + history
+        item = {"ticker": t, **meta, "assets": map_assets(bucket, present, flat)}
+
+        history = []
+        for ver in sorted(s3_ls_dirs(bucket, f"{flat}archive/"), reverse=True):
+            aprefix = f"{flat}archive/{ver}/"
+            anames = {n for n, _ in s3_ls(bucket, aprefix)}
+            ameta = s3_get_json(bucket, f"{aprefix}meta.json") or {"version": ver}
+            history.append({**ameta, "version": ameta.get("version", ver),
+                            "assets": map_assets(bucket, anames, aprefix)})
         item["history"] = history
         items.append(item)
 
     index = {
         "generated": datetime.datetime.now().isoformat(timespec="seconds"),
         "count": len(items),
-        "items": sorted(items, key=lambda x: x["date"], reverse=True),
+        "items": sorted(items, key=lambda x: x.get("date", ""), reverse=True),
     }
     s3_put_json(bucket, "content/index.json", index)
 
@@ -161,8 +174,9 @@ def run():
 
     print(f"Catalog: {len(items)} item(s) -> s3://{bucket}/content/index.json")
     for it in index["items"]:
-        extra = f"  (+{len(it['history'])} archived)" if it["history"] else ""
-        print(f"  {it['ticker']:6} {it['version']}  {len(it['assets'])} assets{extra}  {it['title'][:46]}")
+        extra = f"  (+{len(it['history'])} archived: {', '.join(h['version'] for h in it['history'])})" \
+            if it["history"] else ""
+        print(f"  {it['ticker']:6} {it.get('version','?')}  {len(it['assets'])} assets{extra}")
     print(f"Local copy: {local_copy}")
     return index
 

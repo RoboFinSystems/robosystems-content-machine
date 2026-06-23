@@ -15,9 +15,11 @@ Usage:
 
 import argparse
 import datetime
+import json
 import os
 import subprocess
 
+import reindex
 from helpers import get_project_dir, require_env
 
 # (path under the project dir, content-type). Whatever exists gets published.
@@ -45,9 +47,9 @@ def snapshot_prior_version(bucket, ticker):
                        if line.split() and line.split()[-1] == f"{ticker}_final.mp4"), None)
     if not prior_date:
         return  # nothing published yet
-    prior_version = prior_date[:7]
-    if prior_version == datetime.date.today().strftime("%Y-%m"):
-        return  # same month — an in-place refresh, not a new version
+    prior_version = reindex.quarter(prior_date)
+    if prior_version == reindex.quarter(datetime.date.today().isoformat()):
+        return  # same quarter — an in-place refresh, not a new version
     dst = f"s3://{bucket}/content/{ticker}/archive/{prior_version}/"
     print(f"  Archiving prior version {prior_version} -> {dst}")
     subprocess.run(["aws", "s3", "cp", f"s3://{bucket}/content/{ticker}/", dst,
@@ -84,13 +86,18 @@ def publish(project):
 
     print(f"\n{len(urls)} artifact(s) published to s3://{bucket}/{prefix}")
 
-    # refresh the research catalog (content/index.json) — best-effort, never fail publish
+    # self-describing version metadata + research catalog refresh (best-effort)
     try:
-        import reindex
+        today = datetime.date.today().isoformat()
+        meta = {"ticker": ticker, **reindex.project_meta(ticker), "date": today, "version": reindex.quarter(today)}
+        subprocess.run(
+            ["aws", "s3", "cp", "-", f"s3://{bucket}/{prefix}meta.json",
+             "--content-type", "application/json; charset=utf-8", "--only-show-errors"],
+            input=json.dumps(meta, indent=2, ensure_ascii=False), text=True)
         print()
         reindex.run()
     except Exception as e:  # noqa: BLE001
-        print(f"  (catalog reindex skipped: {e})")
+        print(f"  (meta/catalog refresh skipped: {e})")
 
     return urls
 
