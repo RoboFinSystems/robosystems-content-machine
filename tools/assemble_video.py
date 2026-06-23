@@ -142,8 +142,10 @@ def check_aws_credentials():
 
 
 def _get_s3_prefix(project_dir):
-    """Derive S3 prefix from the project directory name."""
-    return os.path.basename(project_dir)
+    """S3 prefix for Shotstack render staging. Namespaced under `staging/` (private,
+    read by Shotstack via presigned URLs) and auto-expired by a bucket lifecycle rule,
+    so render scratch never accumulates at the bucket root or mixes with content/."""
+    return f"staging/{os.path.basename(project_dir)}"
 
 
 def build_asset_manifest(project_dir, ticker):
