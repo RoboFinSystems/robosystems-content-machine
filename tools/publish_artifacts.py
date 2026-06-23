@@ -14,6 +14,7 @@ Usage:
 """
 
 import argparse
+import datetime
 import os
 import subprocess
 
@@ -32,12 +33,35 @@ ARTIFACTS = [
 ]
 
 
+def snapshot_prior_version(bucket, ticker):
+    """If a different-month report is already published, copy the current flat files
+    into content/{ticker}/archive/{prior_version}/ before we overwrite them — so
+    re-covering a ticker preserves the prior version instead of smashing it."""
+    r = subprocess.run(["aws", "s3", "ls", f"s3://{bucket}/content/{ticker}/"],
+                       capture_output=True, text=True)
+    if r.returncode != 0:
+        return
+    prior_date = next((line.split()[0] for line in r.stdout.splitlines()
+                       if line.split() and line.split()[-1] == f"{ticker}_final.mp4"), None)
+    if not prior_date:
+        return  # nothing published yet
+    prior_version = prior_date[:7]
+    if prior_version == datetime.date.today().strftime("%Y-%m"):
+        return  # same month — an in-place refresh, not a new version
+    dst = f"s3://{bucket}/content/{ticker}/archive/{prior_version}/"
+    print(f"  Archiving prior version {prior_version} -> {dst}")
+    subprocess.run(["aws", "s3", "cp", f"s3://{bucket}/content/{ticker}/", dst,
+                    "--recursive", "--exclude", "archive/*", "--only-show-errors"])
+
+
 def publish(project):
     bucket = require_env("S3_BUCKET")
     project_dir = get_project_dir(project)
     ticker = project
     prefix = f"content/{ticker}/"
     print(f"Publishing {ticker} -> s3://{bucket}/{prefix}\n")
+
+    snapshot_prior_version(bucket, ticker)
 
     urls = []
     for rel_tmpl, ctype in ARTIFACTS:
@@ -59,6 +83,15 @@ def publish(project):
         urls.append(url)
 
     print(f"\n{len(urls)} artifact(s) published to s3://{bucket}/{prefix}")
+
+    # refresh the research catalog (content/index.json) — best-effort, never fail publish
+    try:
+        import reindex
+        print()
+        reindex.run()
+    except Exception as e:  # noqa: BLE001
+        print(f"  (catalog reindex skipped: {e})")
+
     return urls
 
 

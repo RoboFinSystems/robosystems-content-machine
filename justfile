@@ -131,6 +131,11 @@ publish project:
     @just ensure-env
     UV_ENV_FILE={{_env}} uv run python tools/publish_artifacts.py {{project}}
 
+# Rebuild the research catalog (content/index.json) the /research portal reads
+reindex:
+    @just ensure-env
+    UV_ENV_FILE={{_env}} uv run python tools/reindex.py
+
 # Extract podcast audio (MP3) from final video
 podcast project:
     #!/usr/bin/env bash
