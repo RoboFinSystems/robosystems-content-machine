@@ -126,14 +126,6 @@ def build(project):
             "**Pinned comment** (drops the long-form link):", block(field(pub, "short_pinned_comment", t)),
         ])
 
-    # ── YouTube — Podcast (the Q&A video) ──
-    if urls["podcast_mp4"]:
-        add("YouTube — Podcast", [
-            f"**Video:** {urls['podcast_mp4']}",
-            "**Title:**", block(field(pub, "podcast_episode_title", t)),
-            "**Description:**", block(field(pub, "podcast_show_notes", t)),
-        ])
-
     # ── X — one long-form post + native long-form video; brief as an X Article in the first comment ──
     if x_post:
         # X gets the native video; strip any [YOUTUBE_LINK] line — no external link in the post
@@ -163,10 +155,11 @@ def build(project):
               block(field(pub, "linkedin_first_comment", t))]
     add("LinkedIn", lines)
 
-    # ── Spotify / Podcast (audio only — the video is on YouTube) ──
+    # ── Spotify / Podcast (audio MP3 → Spotify; the connected RSS auto-posts it to YouTube too) ──
     if urls["podcast_mp3"]:
         add("Spotify / Podcast", [
             f"**Audio (MP3 — Spotify / Apple / Amazon):** {urls['podcast_mp3']}",
+            "_Posting to Spotify also publishes the episode to YouTube via the connected RSS feed; then `just sync-youtube` captures its URL._",
             "**Episode title:**", block(field(pub, "podcast_episode_title", t)),
             "**Show notes:**", block(field(pub, "podcast_show_notes", t)),
         ])
@@ -185,8 +178,8 @@ def build(project):
         "## Posting order",
         ("1. **YouTube long-form** → copy the resulting URL\n"
          "2. Replace every `[YOUTUBE_LINK]` below with that URL (Short pinned comment + LinkedIn first comment)\n"
-         "3. Post the rest: YouTube Short, YouTube Podcast, X (native long-form video + brief as an X Article "
-         "in the first comment), LinkedIn (+ first comment), Spotify"),
+         "3. Post the rest: YouTube Short, X (native long-form video + brief as an X Article "
+         "in the first comment), LinkedIn (+ first comment), Spotify (auto-posts to YouTube via RSS)"),
     ]
 
     text = "\n\n".join(head + numbered) + "\n"

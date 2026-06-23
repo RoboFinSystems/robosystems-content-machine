@@ -3,8 +3,11 @@ Generate a two-voice Q&A podcast from a `qa_script` — CNBC-style interviewer +
 
 Reads `scripts/{TICKER}_qa.json`, synthesizes each turn with ElevenLabs (analyst voice =
 ELEVEN_LABS_VOICE_ID, interviewer = ELEVEN_LABS_INTERVIEWER_VOICE_ID or auto-picked), then:
-  - concatenates the turns into `{TICKER}_qa_podcast.mp3`  (Spotify / Apple / Amazon)
-  - muxes a static background image + the audio into `{TICKER}_qa_podcast.mp4`  (YouTube)
+  - concatenates the turns into `{TICKER}_qa_podcast.mp3` (Spotify / Apple / Amazon — and,
+    via the Spotify→YouTube RSS bridge, YouTube too)
+  - (optional, --video) muxes a static background image + the audio into
+    `{TICKER}_qa_podcast.mp4` — only if you want a polished video uploaded to YouTube
+    directly; off by default since the RSS bridge already puts the podcast on YouTube.
 
 Idempotent: per-turn MP3s are reused unless --force.
 
@@ -76,7 +79,7 @@ def find_background(project_dir, ticker):
     return None
 
 
-def generate(project_name, force=False):
+def generate(project_name, force=False, video=False):
     project_dir = get_project_dir(project_name)
     analyst_id = require_env("ELEVEN_LABS_VOICE_ID")
 
@@ -134,35 +137,38 @@ def generate(project_name, force=False):
     dur = ffprobe_duration(mp3_out)
     print(f"  -> {mp3_out}  ({dur/60:.1f} min)")
 
-    # Mux static background image + audio -> 16:9 MP4 for YouTube.
-    bg = find_background(project_dir, ticker)
+    # Optional (--video): mux a static background + audio -> 16:9 MP4. The podcast already
+    # reaches YouTube via the Spotify RSS bridge, so this is only for a polished direct upload.
     mp4_out = os.path.join(videos_dir, f"{ticker}_qa_podcast.mp4")
-    if bg:
+    bg = find_background(project_dir, ticker) if video else None
+    if video and bg:
         vf = ("scale=1920:1080:force_original_aspect_ratio=decrease,"
               "pad=1920:1080:(ow-iw)/2:(oh-ih)/2:color=0x0A1F44,setsar=1")
         cmd = ["ffmpeg", "-y", "-loop", "1", "-i", bg, "-i", mp3_out,
                "-c:v", "libx264", "-tune", "stillimage", "-pix_fmt", "yuv420p",
                "-vf", vf, "-r", "2",
                "-c:a", "aac", "-b:a", "192k", "-shortest", mp4_out]
-        print("  Muxing background + audio -> MP4 ...")
+        print("  Muxing background + audio -> MP4 (--video) ...")
         subprocess.run(cmd, check=True, capture_output=True)
         print(f"  -> {mp4_out}")
-    else:
-        print("  (no background image found — skipped MP4; add charts/png/"
+    elif video:
+        print("  (--video: no background image found — skipped MP4; add charts/png/"
               f"{ticker}_thumbnail.png or _podcast_cover.png)")
 
     print("\nDone.")
-    print(f"  Spotify/Apple/Amazon: {mp3_out}")
-    if bg:
-        print(f"  YouTube:              {mp4_out}")
+    print(f"  Spotify/Apple/Amazon (auto-bridges to YouTube via RSS): {mp3_out}")
+    if video and bg:
+        print(f"  YouTube (direct MP4): {mp4_out}")
 
 
 def main():
     p = argparse.ArgumentParser(description="Generate a two-voice Q&A podcast")
     p.add_argument("project", help="Project name (e.g., TRLV)")
     p.add_argument("--force", action="store_true", help="Regenerate turn audio even if present")
+    p.add_argument("--video", action="store_true",
+                   help="Also mux a static-image MP4 (off by default — the podcast reaches YouTube via the Spotify RSS bridge)")
     args = p.parse_args()
-    generate(args.project, force=args.force)
+    generate(args.project, force=args.force, video=args.video)
 
 
 if __name__ == "__main__":

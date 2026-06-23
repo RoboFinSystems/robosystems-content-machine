@@ -35,7 +35,6 @@ ARTIFACTS = [
     ("videos/{t}_final.mp4", "video/mp4"),
     ("videos/{t}_short.mp4", "video/mp4"),
     ("videos/{t}_qa_podcast.mp3", "audio/mpeg"),
-    ("videos/{t}_qa_podcast.mp4", "video/mp4"),
     ("charts/png/{t}_thumbnail.png", "image/png"),
     ("reports/{t}_brief.md", "text/markdown; charset=utf-8"),
     ("social/{t}_x_post.txt", "text/plain; charset=utf-8"),
