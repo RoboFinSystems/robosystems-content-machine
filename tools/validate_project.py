@@ -6,6 +6,8 @@ Checks:
   - Script JSON uses correct field names for pipeline compatibility
   - Deck contract: slide_count == visual segments, unique/ordered visual_ref, deck + slides present
   - Narration is in spoken form (no raw symbols / bad TTS spacings)
+  - Publish metadata (social/{ticker}_publish.json) has the fields postpack needs
+  - Continuing coverage: a coverage_label when a prior-coverage card is present
 
 Usage:
     uv run python tools/validate_project.py GTBIF
@@ -99,6 +101,14 @@ def check_script_schema(project_dir, ticker):
         error("metadata.ticker missing")
     else:
         ok(f"metadata.ticker: {meta['ticker']}")
+
+    # Continuing coverage: if `just recover` emitted a prior-coverage card, the script
+    # should carry a coverage_label for the version thread (e.g. "Q2 FY2026 update").
+    if os.path.exists(os.path.join(project_dir, "sources", "_prior_coverage.md")):
+        if meta.get("coverage_label"):
+            ok(f"continuing coverage: coverage_label = {meta['coverage_label']}")
+        else:
+            warn("continuing coverage (sources/_prior_coverage.md present) but metadata.coverage_label not set")
 
     # Check segments
     segments = script.get("segments", [])
@@ -341,6 +351,49 @@ def check_companion_formats(project_dir, ticker, script):
         ok(f"qa: {len(turns)} turns, ~{chars // 16 // 60}–{chars // 13 // 60} min")
 
 
+def check_publish_metadata(project_dir, ticker, script):
+    """Validate social/{ticker}_publish.json — the per-platform copy postpack stitches.
+    Missing is a warning (needed to publish, not to render); malformed/incomplete is flagged."""
+    print("\n--- Publish Metadata (social/{ticker}_publish.json) ---".replace("{ticker}", ticker))
+
+    path = os.path.join(project_dir, "social", f"{ticker}_publish.json")
+    if not os.path.exists(path):
+        warn(f"publish.json missing (needed for postpack, not to render): social/{ticker}_publish.json")
+        return None
+
+    try:
+        with open(path) as f:
+            pub = json.load(f)
+    except json.JSONDecodeError as e:
+        error(f"publish.json invalid JSON: {e}")
+        return None
+
+    has_short = bool((script or {}).get("short"))
+    expected = [
+        "youtube_title",
+        "x_first_comment",
+        "linkedin_post",
+        "linkedin_first_comment",
+        "podcast_episode_title",
+        "podcast_show_notes",
+    ]
+    if has_short:
+        expected += ["short_title", "short_pinned_comment"]
+
+    missing = [k for k in expected if not str(pub.get(k) or "").strip()]
+    if missing:
+        warn(f"publish.json missing/empty: {', '.join(missing)}")
+    else:
+        ok(f"publish.json: all {len(expected)} expected fields present")
+
+    # Fields retired in the 2026-06 distribution rework — nudge to drop them.
+    stale = [k for k in ("instagram_caption", "x_first_reply") if k in pub]
+    if stale:
+        warn(f"publish.json has retired fields (Instagram cut; first-reply → x_first_comment): {', '.join(stale)}")
+
+    return pub
+
+
 def try_fix_script(project_dir, ticker, script):
     """Attempt to fix common schema issues in the script JSON."""
     if not script:
@@ -410,6 +463,7 @@ def main():
     check_narration_quality(script)
     check_robosystems_plug(script)
     check_companion_formats(project_dir, ticker, script)
+    check_publish_metadata(project_dir, ticker, script)
 
     if args.fix:
         try_fix_script(project_dir, ticker, script)
