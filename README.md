@@ -9,6 +9,8 @@ Automated content pipeline for financial analysis. Turns a company's SEC filings
 - **On-Brand Decks** — slides are composed in [Claude Design](https://claude.ai/design) from the `@robosystems/core` design system (no hand-authored HTML).
 - **Automated Production** — the pipeline slices the deck, synthesizes voiceover, assembles the video, and produces the short + podcast.
 
+> 🎙️ **Voiceover & music run on [ElevenLabs](https://try.elevenlabs.io/v9z3wzm97gk3).** Setting this up? Signing up through our **referral link** costs you nothing extra and directly supports the project. <sub>Affiliate link.</sub>
+
 ## Quick Start
 
 ```bash
