@@ -142,6 +142,11 @@ reindex:
     @just ensure-env
     UV_ENV_FILE={{_env}} uv run python tools/reindex.py
 
+# Capture YouTube URLs into the catalog via the channel RSS feed (run after uploading)
+sync-youtube *tickers:
+    @just ensure-env
+    UV_ENV_FILE={{_env}} uv run python tools/sync_youtube.py {{tickers}}
+
 # Extract podcast audio (MP3) from final video
 podcast project:
     #!/usr/bin/env bash

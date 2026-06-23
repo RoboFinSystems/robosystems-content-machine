@@ -9,6 +9,14 @@ Public read is granted by a bucket policy scoped to the `content/*` prefix (set 
 Shotstack staging assets elsewhere in the bucket stay private. This is the separate "S3
 artifact" archive — independent of posting to YouTube / Spotify / X.
 
+A bucket-wide CORS rule (also set once) lets the logged-in apps fetch the catalog JSON and
+briefs client-side from the browser (the public site fetches them server-side, so it needs
+no CORS). The content is public, so GET/HEAD is open to all origins:
+    aws s3api put-bucket-cors --bucket "$S3_BUCKET" --cors-configuration '{
+      "CORSRules": [{"AllowedOrigins": ["*"], "AllowedMethods": ["GET", "HEAD"],
+        "AllowedHeaders": ["*"], "ExposeHeaders": ["Content-Length", "Content-Type", "ETag"],
+        "MaxAgeSeconds": 3600}]}'
+
 Usage:
     uv run python tools/publish_artifacts.py TRLV
 """
