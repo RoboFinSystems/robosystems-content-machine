@@ -129,12 +129,14 @@ Editorial guidance for the script:
     > the description."
 
 ### 3. X Post (`social/{TICKER}_x_post.txt`)
-Long-form (under 4000 chars): opening hook; 3-5 key findings with specific numbers; a
-risk/caveat; closing takeaway; a closing RoboSystems CTA (`robosystems.ai`) + the promo line
-(`New customers get 50% off your first month with code [PROMO_CODE].`); relevant `$TICKER`
-cashtag and hashtags; tag @RoboFinSystems. **Keep the long-form link OUT of the body — it goes
-in the first reply (`x_first_reply`); on X the short is posted as native video, and posts
-carrying an external link get throttled.**
+A **single post — NOT a numbered thread** (long-form is fine on X; no "1/ 2/ 3/"). Opening
+hook; 3-5 key findings with specific numbers; a risk/caveat; closing takeaway; a closing
+RoboSystems CTA (`robosystems.ai`) + the promo line (`New customers get 50% off your first
+month with code [PROMO_CODE].`); relevant `$TICKER` cashtag and hashtags; tag @RoboFinSystems.
+**No link in the body.** On X the **full long-form is uploaded as native video**, and the brief
+is published as a native X **Article** whose link goes in the first comment (`x_first_comment`)
+— so there is no YouTube link on X at all (X throttles external links; native video + native
+Article both win reach).
 
 ### 4. YouTube Description (`social/{TICKER}_youtube_description.txt`)
 Hook (1-2 sentences); links: `https://robosystems.ai` and
@@ -147,7 +149,7 @@ metric or term a cold viewer needs; disclaimer ("This is not investment advice. 
 targets."); relevant `$TICKER` and topic hashtags.
 
 ### 5. Short — the `short` block in `scripts/{TICKER}_script.json`
-A **self-contained** 9:16 piece (~20–45s) for YouTube Shorts + Instagram Reels — a complete
+A **self-contained** 9:16 piece (~20–45s) for YouTube Shorts — a complete
 micro-story, NOT a trailer. Write a **fresh standalone script** for the ear (not a slice of the
 main narration): hook, the key numbers, **the company name + ticker** (a brief mystery hook is
 fine, but reveal it), and a payoff that ends on a question or takeaway (long-form link → pinned
@@ -168,8 +170,7 @@ times, the S3 media links, and flagging any unresolved placeholders). A JSON obj
 - `youtube_title` — clickable long-form title (≤100 chars).
 - `short_title` — the Short's title/caption. *(omit if no short)*
 - `short_pinned_comment` — the Short's pinned comment; use `[YOUTUBE_LINK]`. *(omit if no short)*
-- `instagram_caption` — IG Reel caption + hashtags, **no clickable links** (point to bio). *(omit if no short)*
-- `x_first_reply` — the X first reply; post the **short** as native video and put the long-form link **here, not in the post body** (X throttles links); use `[YOUTUBE_LINK]`.
+- `x_first_comment` — the X first comment under the video post; points to the brief published as an X **Article** (use `[X_ARTICLE_LINK]`). The full long-form is uploaded as native video; no YouTube link on X.
 - `linkedin_post` — a LinkedIn-native post (professional; no link in the body).
 - `linkedin_first_comment` — link(s) for the first comment; use `[YOUTUBE_LINK]` + the RoboSystems CTA.
 - `podcast_episode_title` — the Q&A episode title.

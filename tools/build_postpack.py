@@ -4,19 +4,23 @@ platform's exact upload fields plus the public S3 media links. Makes manual nati
 (or a future API push) a copy/paste job.
 
 Combines:
-  - social/{t}_publish.json            (Cowork-authored native copy: titles, LinkedIn, IG, podcast notes)
-  - social/{t}_x_post.txt              (the X post / thread)
+  - social/{t}_publish.json            (Cowork-authored native copy: titles, LinkedIn, podcast notes)
+  - social/{t}_x_post.txt              (the single X post)
   - social/{t}_youtube_description.txt (the YouTube description)
+  - reports/{t}_brief.md               (the written brief — published on X as an X Article)
   - videos/{t}_timestamps.txt          (authoritative YouTube chapters from the render)
   - the published S3 media URLs        (content/{t}/...)
 
 Writes projects/{t}/{t}_publish_pack.md. Degrades gracefully — missing media or unauthored
-fields are flagged inline, never fatal. Sections appear only when their media/content exist
-(e.g. no Short → no Short / Instagram Reel sections).
+fields are flagged inline, never fatal. Sections appear only when their media/content exist.
 
-X handling: the long-form link is pulled OUT of the post body and into a first reply, and the
-short is posted as native video — X throttles posts that carry an external link and rewards
-native autoplay video.
+Platform model (revised after the first posting round):
+  - YouTube gets THREE upload paths: long-form, Short, and the Q&A podcast video (MP4).
+  - X: one long-form post (NOT a thread) + the long-form video uploaded NATIVELY (the native
+    upload is the discovery, so no external link in the post) + the brief published as an
+    X Article and linked in the first comment.
+  - Spotify: the podcast audio (MP3) only — the podcast video lives on YouTube.
+  - Instagram is dropped (wrong audience, strips links; the Short already covers that asset).
 
 Usage:
     uv run python tools/build_postpack.py TRLV
@@ -41,8 +45,9 @@ MEDIA = {
 
 # placeholders we expect the human (or a later step) to resolve before posting
 PLACEHOLDER_HELP = {
-    "[YOUTUBE_LINK]": "paste the long-form URL after you upload to YouTube",
-    "[PROMO_CODE]":   "the live Stripe promo code (e.g. CANNABIS50 / ROBO50)",
+    "[YOUTUBE_LINK]":   "paste the long-form URL after you upload to YouTube",
+    "[X_ARTICLE_LINK]": "the link to the brief once you publish it as an X Article",
+    "[PROMO_CODE]":     "the live Stripe promo code (e.g. CANNABIS50 / ROBO50)",
 }
 
 
@@ -92,90 +97,84 @@ def build(project):
     chapters = read_text(os.path.join(project_dir, f"videos/{t}_timestamps.txt"))
     urls = {k: media_url(bucket, t, project_dir, k) for k in MEDIA}
 
-    sections = []
+    brief_local = os.path.join(project_dir, f"reports/{t}_brief.md")
+    brief_url = (f"https://{bucket}.s3.amazonaws.com/content/{t}/{t}_brief.md"
+                 if os.path.exists(brief_local) else None)
 
-    # ── 1) YouTube long-form ──
+    sections = []  # (title, body) — numbered at the end so skipped sections don't misnumber
+
+    def add(title, lines):
+        sections.append((title, "\n".join(lines)))
+
+    # ── YouTube — long-form ──
     if urls["final"]:
-        s = ["## 1) YouTube — long-form", f"**Video:** {urls['final']}"]
+        lines = [f"**Video:** {urls['final']}"]
         if urls["thumbnail"]:
-            s.append(f"**Thumbnail:** {urls['thumbnail']}")
-        s.append("**Title:**")
-        s.append(block(field(pub, "youtube_title", t)))
-        s.append("**Description:**")
-        s.append(block(yt_desc) if yt_desc else f"_(missing social/{t}_youtube_description.txt)_")
+            lines.append(f"**Thumbnail:** {urls['thumbnail']}")
+        lines += ["**Title:**", block(field(pub, "youtube_title", t)), "**Description:**"]
+        lines.append(block(yt_desc) if yt_desc else f"_(missing social/{t}_youtube_description.txt)_")
         if chapters:
-            s.append("**Chapters (authoritative, from the render — confirm they match the description):**")
-            s.append(block(chapters))
-        sections.append("\n".join(s))
+            lines.append("**Chapters (authoritative, from the render — confirm they match the description):**")
+            lines.append(block(chapters))
+        add("YouTube — long-form", lines)
 
-    # ── 2) YouTube Short ──
+    # ── YouTube — Short ──
     if urls["short"]:
-        sections.append("\n".join([
-            "## 2) YouTube — Short",
+        add("YouTube — Short", [
             f"**Video:** {urls['short']}",
-            "**Title / caption:**",
-            block(field(pub, "short_title", t)),
-            "**Pinned comment** (drops the long-form link):",
-            block(field(pub, "short_pinned_comment", t)),
-        ]))
+            "**Title / caption:**", block(field(pub, "short_title", t)),
+            "**Pinned comment** (drops the long-form link):", block(field(pub, "short_pinned_comment", t)),
+        ])
 
-    # ── 3) Instagram Reel (uses the short) ──
-    if urls["short"]:
-        sections.append("\n".join([
-            "## 3) Instagram — Reel",
-            f"**Video:** {urls['short']}",
-            "**Caption** (no clickable links on IG — point to the bio):",
-            block(field(pub, "instagram_caption", t)),
-        ]))
+    # ── YouTube — Podcast (the Q&A video) ──
+    if urls["podcast_mp4"]:
+        add("YouTube — Podcast", [
+            f"**Video:** {urls['podcast_mp4']}",
+            "**Title:**", block(field(pub, "podcast_episode_title", t)),
+            "**Description:**", block(field(pub, "podcast_show_notes", t)),
+        ])
 
-    # ── 4) X — native video in the post, long-form link in the first reply ──
+    # ── X — one long-form post + native long-form video; brief as an X Article in the first comment ──
     if x_post:
-        # pull any [YOUTUBE_LINK] line out of the body; X throttles posts with external links
-        body_lines, link_line = [], None
-        for line in x_post.splitlines():
-            if "[YOUTUBE_LINK]" in line:
-                link_line = line.strip()
-            else:
-                body_lines.append(line)
+        # X gets the native video; strip any [YOUTUBE_LINK] line — no external link in the post
+        body_lines = [ln for ln in x_post.splitlines() if "[YOUTUBE_LINK]" not in ln]
         x_body = re.sub(r"\n{3,}", "\n\n", "\n".join(body_lines)).strip()
-        x_reply = (pub.get("x_first_reply") or "").strip() or link_line or "Full breakdown ▶️ [YOUTUBE_LINK]"
-        s = ["## 4) X"]
-        if urls["short"]:
-            s.append(f"**Native video** (upload the short — autoplays, beats link suppression): {urls['short']}")
+        lines = []
+        vid = urls["final"] or urls["short"]
+        if vid:
+            lines.append(f"**Native video** (upload the 16:9 long-form — the native upload is the discovery, so keep links out of the post): {vid}")
         elif urls["thumbnail"]:
-            s.append(f"**Image** (no short — attach the thumbnail so it isn't a bare-link post): {urls['thumbnail']}")
-        s.append(f"**Post** ({len(x_body)} chars — no link in the body; single long-form post, or split at the numbered breaks into a thread):")
-        s.append(block(x_body))
-        s.append("**First reply** (the long-form link goes here, NOT the body):")
-        s.append(block(x_reply))
-        sections.append("\n".join(s))
+            lines.append(f"**Image** (attach the thumbnail so it isn't a bare-text post): {urls['thumbnail']}")
+        lines.append(f"**Post** ({len(x_body)} chars — one long-form post, NOT a thread; no external link):")
+        lines.append(block(x_body))
+        lines.append("**First comment** (publish the brief as an X Article, then paste its link in for `[X_ARTICLE_LINK]`):")
+        lines.append(block(field(pub, "x_first_comment", t)))
+        src = f"`projects/{t}/reports/{t}_brief.md`" + (f"  ·  S3 copy: {brief_url}" if brief_url else "")
+        lines.append(f"- Brief to publish as the X Article: {src}")
+        add("X", lines)
 
-    # ── 5) LinkedIn ──
+    # ── LinkedIn ──
     li_video = urls["final"] or urls["short"]
-    s = ["## 5) LinkedIn"]
+    lines = []
     if li_video:
-        s.append(f"**Native video:** {li_video}")
-    s.append("**Post:**")
-    s.append(block(field(pub, "linkedin_post", t)))
-    s.append("**First comment** (link goes here, not the body — beats reach suppression):")
-    s.append(block(field(pub, "linkedin_first_comment", t)))
-    sections.append("\n".join(s))
+        lines.append(f"**Native video:** {li_video}")
+    lines += ["**Post:**", block(field(pub, "linkedin_post", t)),
+              "**First comment** (link goes here, not the body — beats reach suppression):",
+              block(field(pub, "linkedin_first_comment", t))]
+    add("LinkedIn", lines)
 
-    # ── 6) Spotify / Podcast ──
-    if urls["podcast_mp3"] or urls["podcast_mp4"]:
-        s = ["## 6) Spotify / Podcast"]
-        if urls["podcast_mp3"]:
-            s.append(f"**Audio (MP3 — Spotify/Apple):** {urls['podcast_mp3']}")
-        if urls["podcast_mp4"]:
-            s.append(f"**Video (MP4 — YouTube podcast):** {urls['podcast_mp4']}")
-        s.append("**Episode title:**")
-        s.append(block(field(pub, "podcast_episode_title", t)))
-        s.append("**Show notes:**")
-        s.append(block(field(pub, "podcast_show_notes", t)))
-        sections.append("\n".join(s))
+    # ── Spotify / Podcast (audio only — the video is on YouTube) ──
+    if urls["podcast_mp3"]:
+        add("Spotify / Podcast", [
+            f"**Audio (MP3 — Spotify / Apple / Amazon):** {urls['podcast_mp3']}",
+            "**Episode title:**", block(field(pub, "podcast_episode_title", t)),
+            "**Show notes:**", block(field(pub, "podcast_show_notes", t)),
+        ])
 
-    # ── placeholders found anywhere in the assembled sections (incl. synthesized text) ──
-    tokens = sorted(set(re.findall(r"\[[A-Z_]+\]", "\n".join(sections))))
+    numbered = [f"## {i}) {title}\n{body}" for i, (title, body) in enumerate(sections, 1)]
+
+    # ── placeholders found anywhere in the assembled sections ──
+    tokens = sorted(set(re.findall(r"\[[A-Z_]+\]", "\n".join(numbered))))
     fill = [f"- `{tok}` — {PLACEHOLDER_HELP.get(tok, 'fill before posting')}" for tok in tokens]
 
     head = [
@@ -185,11 +184,12 @@ def build(project):
         "\n".join(fill) if fill else "_None — everything resolved._",
         "## Posting order",
         ("1. **YouTube long-form** → copy the resulting URL\n"
-         "2. Replace every `[YOUTUBE_LINK]` below with that URL\n"
-         "3. Post the rest: Short, X (+ first reply), LinkedIn (+ first comment), Instagram, Podcast"),
+         "2. Replace every `[YOUTUBE_LINK]` below with that URL (Short pinned comment + LinkedIn first comment)\n"
+         "3. Post the rest: YouTube Short, YouTube Podcast, X (native long-form video + brief as an X Article "
+         "in the first comment), LinkedIn (+ first comment), Spotify"),
     ]
 
-    text = "\n\n".join(head + sections) + "\n"
+    text = "\n\n".join(head + numbered) + "\n"
     dest = os.path.join(project_dir, f"{t}_publish_pack.md")
     with open(dest, "w", encoding="utf-8") as f:
         f.write(text)
