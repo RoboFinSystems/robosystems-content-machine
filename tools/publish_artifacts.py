@@ -92,7 +92,8 @@ def publish(project):
         meta = {"ticker": ticker, **reindex.project_meta(ticker), "date": today, "version": reindex.quarter(today)}
         subprocess.run(
             ["aws", "s3", "cp", "-", f"s3://{bucket}/{prefix}meta.json",
-             "--content-type", "application/json; charset=utf-8", "--only-show-errors"],
+             "--content-type", "application/json; charset=utf-8",
+             "--cache-control", "public, max-age=60", "--only-show-errors"],
             input=json.dumps(meta, indent=2, ensure_ascii=False), text=True)
         print()
         reindex.run()

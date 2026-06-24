@@ -85,9 +85,13 @@ def s3_get_json(bucket, key):
 
 
 def s3_put_json(bucket, key, obj):
+    # Short max-age: this catalog/meta is rewritten on every publish + sync-youtube, so the
+    # CDN (CachingOptimized, 24h default) must not serve it stale. Media stays on the long
+    # default TTL — it's large, egress-costly, and only changes on a (rare) re-cover.
     subprocess.run(
         ["aws", "s3", "cp", "-", f"s3://{bucket}/{key}",
-         "--content-type", "application/json; charset=utf-8", "--only-show-errors"],
+         "--content-type", "application/json; charset=utf-8",
+         "--cache-control", "public, max-age=60", "--only-show-errors"],
         input=json.dumps(obj, indent=2, ensure_ascii=False), text=True, check=True,
     )
 
