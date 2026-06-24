@@ -37,6 +37,11 @@ assets/broll/*.mov
 assets/music/*.mp3
 assets/music/*.wav
 
+# Blog: track the prose (post.md) + authored cover/social; ignore generated artifacts
+# (narration is regenerable via `just blog-narrate` and lives in S3 after publish)
+blog/*/*_narration.mp3
+blog/*/*_postpack.md
+
 # MacOS
 .DS_Store
 

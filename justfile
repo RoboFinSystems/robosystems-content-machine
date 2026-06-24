@@ -142,6 +142,32 @@ reindex:
     @just ensure-env
     UV_ENV_FILE={{_env}} uv run python tools/reindex.py
 
+# ─── Blog Pipeline (markdown essays → S3 blog/ + blog/index.json) ─────────────
+
+# Scaffold a new blog post: blog/<slug>/post.md from the template
+blog-new slug:
+    @bash tools/new_blog.sh {{slug}}
+
+# Narrate a post via ElevenLabs TTS → blog/<slug>/<slug>_narration.mp3 (optional)
+blog-narrate slug *args:
+    @just ensure-env
+    UV_ENV_FILE={{_env}} uv run python tools/narrate_blog.py {{slug}} {{args}}
+
+# Assemble a paste-ready distribution pack for a post (optional)
+blog-social slug:
+    @just ensure-env
+    UV_ENV_FILE={{_env}} uv run python tools/build_blog_postpack.py {{slug}}
+
+# Publish a post to S3 (blog/<slug>/) + refresh blog/index.json
+blog-publish slug:
+    @just ensure-env
+    UV_ENV_FILE={{_env}} uv run python tools/publish_blog.py {{slug}}
+
+# Rebuild the blog catalog (blog/index.json) the /blog routes read
+blog-reindex:
+    @just ensure-env
+    UV_ENV_FILE={{_env}} uv run python tools/reindex_blog.py
+
 # Capture YouTube URLs into the catalog via the channel RSS feed (run after uploading)
 sync-youtube *tickers:
     @just ensure-env

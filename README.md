@@ -109,6 +109,27 @@ public read on the **`content/*` + `blog/*` prefixes only** (no user data — th
 design); Shotstack staging assets elsewhere stay private. The bucket + CloudFront CDN are managed by
 `cloudformation/content.yaml` (`just infra-deploy` — see Infrastructure below).
 
+### Blog pipeline
+
+A lighter sibling of the research pipeline for markdown essays. A post is one file —
+`blog/<slug>/post.md` (YAML frontmatter + body), authored and **git-versioned in this repo**.
+Narration, cover image, and social copy are all optional and additive; a post with just
+`post.md` publishes cleanly.
+
+```bash
+just blog-new <slug>        # scaffold blog/<slug>/post.md from the template
+just blog-narrate <slug>    # optional: ElevenLabs TTS → <slug>_narration.mp3 (--force to redo)
+just blog-social <slug>     # optional: paste-ready distribution pack (uses <slug>_x_post.txt if present)
+just blog-publish <slug>    # upload blog/<slug>/* to s3://$AWS_S3_BUCKET/blog/<slug>/ + reindex
+just blog-reindex           # rebuild blog/index.json (the catalog the app's /blog routes read)
+```
+
+Narration reuses the research voiceover tooling (the post body is stripped of code/tables and
+chunked for TTS, then concatenated with ffmpeg). `blog-publish` writes a self-describing
+`meta.json` per post and refreshes `blog/index.json` — a versioned contract (`version: 1`) with
+absolute CDN asset URLs, the same consumption shape the `/research` catalog uses. The app
+consumes it via SSG/ISR; publishing or editing a post no longer needs an app redeploy.
+
 ### Shared Media Libraries
 
 The short pulls from reusable, mood/tag-tagged libraries that compound across every ticker:
