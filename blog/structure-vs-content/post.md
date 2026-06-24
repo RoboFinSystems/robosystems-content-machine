@@ -15,7 +15,6 @@ keywords:
     'financial statement comparability',
     'calculation relationships',
   ]
-featured: false
 canonicalUrl: 'https://robosystems.ai/blog/structure-vs-content'
 ---
 

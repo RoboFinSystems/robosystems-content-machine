@@ -49,7 +49,6 @@ def build_item(bucket, slug, present_names):
         "metaDescription": meta.get("metaDescription") or None,
         "tags": meta.get("tags") or [],
         "keywords": meta.get("keywords") or [],
-        "featured": bool(meta.get("featured")),
         "reading_time_minutes": bc.reading_time_minutes(body) if body else None,
         "canonical_url": meta.get("canonicalUrl") or None,
         "assets": assets,
@@ -65,9 +64,8 @@ def run():
             continue  # a folder without a body isn't a publishable post
         posts.append(build_item(bucket, slug, names))
 
-    # newest first, then featured floated to the top (stable two-pass sort)
+    # newest first
     posts.sort(key=lambda p: p["date"], reverse=True)
-    posts.sort(key=lambda p: not p["featured"])
 
     index = {
         "version": 1,
@@ -84,8 +82,7 @@ def run():
 
     print(f"Blog catalog: {len(posts)} post(s) -> s3://{bucket}/blog/index.json")
     for p in posts:
-        flags = [f for f, on in (("featured", p["featured"]),
-                                 ("narrated", "narration_mp3" in p["assets"]),
+        flags = [f for f, on in (("narrated", "narration_mp3" in p["assets"]),
                                  ("cover", "cover" in p["assets"])) if on]
         extra = f"  [{', '.join(flags)}]" if flags else ""
         print(f"  {p['date']}  {p['slug']}{extra}")

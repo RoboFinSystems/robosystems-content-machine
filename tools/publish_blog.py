@@ -83,7 +83,6 @@ def publish(slug, narrate=True):
         "metaDescription": meta.get("metaDescription") or None,
         "tags": meta.get("tags") or [],
         "keywords": meta.get("keywords") or [],
-        "featured": bool(meta.get("featured")),
         "reading_time_minutes": bc.reading_time_minutes(body),
         "canonical_url": meta.get("canonicalUrl") or None,
     }

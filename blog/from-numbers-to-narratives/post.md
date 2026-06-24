@@ -17,7 +17,6 @@ keywords:
     'iXBRL disclosure search',
     'AI financial analysis',
   ]
-featured: true
 canonicalUrl: 'https://robosystems.ai/blog/from-numbers-to-narratives'
 ---
 

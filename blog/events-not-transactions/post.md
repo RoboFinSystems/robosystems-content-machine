@@ -21,7 +21,6 @@ keywords:
     'AI-operable ledger',
     'economic events vs transactions',
   ]
-featured: false
 canonicalUrl: 'https://robosystems.ai/blog/events-not-transactions'
 ---
 

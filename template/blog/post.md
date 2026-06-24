@@ -6,7 +6,6 @@ excerpt: 'One or two sentences that summarize the post — used in listings and 
 metaDescription: 'A focused ~150-160 character description for search engines. Falls back to the excerpt if omitted.'
 tags: ['tag-one', 'tag-two']
 keywords: ['keyword one', 'keyword two', 'keyword three']
-featured: false
 canonicalUrl: 'https://robosystems.ai/blog/{{SLUG}}'
 ---
 

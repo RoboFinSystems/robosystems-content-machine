@@ -14,7 +14,6 @@ keywords:
     'semantic financial reporting',
     'XBRL JSON-LD',
   ]
-featured: true
 canonicalUrl: 'https://robosystems.ai/blog/financial-reports-as-databooks'
 ---
 

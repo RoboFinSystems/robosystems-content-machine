@@ -23,7 +23,6 @@ keywords:
     'knowledge graph platform',
     'AI native architecture',
   ]
-featured: true
 canonicalUrl: 'https://robosystems.ai/blog/the-future-data-stack'
 ---
 

@@ -21,7 +21,6 @@ keywords:
     'XBRL hypercube',
     'fact grid',
   ]
-featured: false
 canonicalUrl: 'https://robosystems.ai/blog/information-blocks'
 ---
 

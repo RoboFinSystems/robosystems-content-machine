@@ -16,7 +16,6 @@ keywords:
     'cost attribution',
     'QuickBooks integration',
   ]
-featured: false
 canonicalUrl: 'https://robosystems.ai/blog/understanding-knowledge-graphs-finance'
 ---
 

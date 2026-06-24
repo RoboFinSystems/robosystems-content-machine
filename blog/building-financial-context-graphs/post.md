@@ -25,7 +25,6 @@ keywords:
     'MCP protocol',
     'XBRL',
   ]
-featured: true
 canonicalUrl: 'https://robosystems.ai/blog/building-financial-context-graphs'
 ---
 

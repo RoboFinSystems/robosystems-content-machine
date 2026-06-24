@@ -14,7 +14,6 @@ keywords:
     'XBRL knowledge graph',
     'cannabis MSO financials',
   ]
-featured: true
 canonicalUrl: 'https://robosystems.ai/blog/open-sec-data-repository'
 ---
 
