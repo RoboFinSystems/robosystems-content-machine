@@ -1,10 +1,11 @@
 """
 Publish a blog post to the public S3 content store + refresh the blog catalog.
 
-Uploads whatever exists in blog/<slug>/ to s3://{AWS_S3_BUCKET}/blog/<slug>/ with correct
-content-types, writes a self-describing meta.json, then rebuilds blog/index.json. A post with
-just post.md publishes cleanly; cover.png, <slug>_narration.mp3, and <slug>_x_post.txt are
-optional and additive.
+Narrates the post if it has no audio yet (default-on — every post ships with the "Listen to
+this story" feature; pass --no-audio to skip), then uploads whatever exists in blog/<slug>/ to
+s3://{AWS_S3_BUCKET}/blog/<slug>/ with correct content-types, writes a self-describing
+meta.json, and rebuilds blog/index.json. A post with just post.md publishes cleanly; cover.png
+and <slug>_x_post.txt are optional and additive.
 
 The bucket + CloudFront CDN are managed by cloudformation/content.yaml (`just infra-deploy`);
 public read covers content/* + blog/*. Public URLs go through AWS_CDN_DOMAIN_URL when set.
@@ -21,6 +22,7 @@ import subprocess
 import sys
 
 import blog_common as bc
+import narrate_blog
 import reindex_blog
 from helpers import asset_url, require_env
 
@@ -33,7 +35,7 @@ ARTIFACTS = [
 ]
 
 
-def publish(slug):
+def publish(slug, narrate=True):
     if not bc.is_valid_slug(slug):
         sys.exit(f"Error: invalid slug '{slug}' (kebab-case expected).")
     bucket = require_env("AWS_S3_BUCKET")
@@ -41,6 +43,16 @@ def publish(slug):
     prefix = f"blog/{slug}/"
     if not os.path.exists(os.path.join(post_dir, "post.md")):
         sys.exit(f"Error: {post_dir}/post.md not found — nothing to publish.")
+
+    # Default-on narration: every post ships with the "Listen to this story" audio (pass
+    # --no-audio to skip). Resilient — a TTS hiccup logs a warning and still publishes the text.
+    if narrate and not os.path.exists(os.path.join(post_dir, f"{slug}_narration.mp3")):
+        print("Narrating (default-on; --no-audio to skip)...\n")
+        try:
+            narrate_blog.narrate(slug)
+        except (SystemExit, Exception) as e:  # noqa: BLE001
+            print(f"  (narration skipped: {e} — publishing text only; re-run later with `just blog-narrate {slug}`)")
+        print()
 
     print(f"Publishing blog/{slug} -> s3://{bucket}/{prefix}\n")
     urls = []
@@ -89,7 +101,10 @@ def publish(slug):
 def main():
     ap = argparse.ArgumentParser(description="Publish a blog post to S3 + reindex")
     ap.add_argument("slug", help="Post slug (the blog/<slug>/ folder name)")
-    publish(ap.parse_args().slug)
+    ap.add_argument("--no-audio", action="store_true",
+                    help="Skip auto-narration; publish text/assets only")
+    args = ap.parse_args()
+    publish(args.slug, narrate=not args.no_audio)
 
 
 if __name__ == "__main__":

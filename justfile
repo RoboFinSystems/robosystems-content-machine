@@ -158,10 +158,10 @@ blog-social slug:
     @just ensure-env
     UV_ENV_FILE={{_env}} uv run python tools/build_blog_postpack.py {{slug}}
 
-# Publish a post to S3 (blog/<slug>/) + refresh blog/index.json
-blog-publish slug:
+# Publish a post to S3 (blog/<slug>/) + refresh blog/index.json (auto-narrates; --no-audio to skip)
+blog-publish slug *args:
     @just ensure-env
-    UV_ENV_FILE={{_env}} uv run python tools/publish_blog.py {{slug}}
+    UV_ENV_FILE={{_env}} uv run python tools/publish_blog.py {{slug}} {{args}}
 
 # Rebuild the blog catalog (blog/index.json) the /blog routes read
 blog-reindex:

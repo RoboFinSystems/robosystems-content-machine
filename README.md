@@ -118,17 +118,20 @@ Narration, cover image, and social copy are all optional and additive; a post wi
 
 ```bash
 just blog-new <slug>        # scaffold blog/<slug>/post.md from the template
-just blog-narrate <slug>    # optional: ElevenLabs TTS → <slug>_narration.mp3 (--force to redo)
+just blog-publish <slug>    # auto-narrate (default-on) + upload blog/<slug>/* to S3 + reindex
+just blog-narrate <slug>    # (re)generate narration on its own; --force to redo
 just blog-social <slug>     # optional: paste-ready distribution pack (uses <slug>_x_post.txt if present)
-just blog-publish <slug>    # upload blog/<slug>/* to s3://$AWS_S3_BUCKET/blog/<slug>/ + reindex
 just blog-reindex           # rebuild blog/index.json (the catalog the app's /blog routes read)
 ```
 
-Narration reuses the research voiceover tooling (the post body is stripped of code/tables and
-chunked for TTS, then concatenated with ffmpeg). `blog-publish` writes a self-describing
-`meta.json` per post and refreshes `blog/index.json` — a versioned contract (`version: 1`) with
-absolute CDN asset URLs, the same consumption shape the `/research` catalog uses. The app
-consumes it via SSG/ISR; publishing or editing a post no longer needs an app redeploy.
+**Every post ships with a "Listen to this story" narration** — `blog-publish` auto-narrates any
+post that has no audio yet (pass `--no-audio` to skip), so the feature stays consistent across
+the whole catalog. Narration reuses the same ElevenLabs path as the research voiceover + Q&A
+podcast (one brand voice; body stripped of code/tables, chunked for TTS, concatenated with
+ffmpeg). `blog-publish` also writes a self-describing `meta.json` and refreshes `blog/index.json`
+— a versioned contract (`version: 1`) with absolute CDN asset URLs, the same consumption shape
+the `/research` catalog uses. The app consumes it via SSG/ISR; publishing or editing a post no
+longer needs an app redeploy.
 
 ### Shared Media Libraries
 
