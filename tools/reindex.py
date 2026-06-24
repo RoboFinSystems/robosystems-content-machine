@@ -2,7 +2,7 @@
 Build the research catalog (content/index.json) that the /research portal reads.
 
 Scans local projects/, includes those whose deliverables are actually published to
-s3://{S3_BUCKET}/content/{TICKER}/, and emits ONE content/index.json. No database —
+s3://{AWS_S3_BUCKET}/content/{TICKER}/, and emits ONE content/index.json. No database —
 this flat file is the catalog; the portal fetches it to discover everything.
 
 Versioning: the company is the durable entity; each run is a dated report version.
@@ -25,7 +25,7 @@ import json
 import os
 import subprocess
 
-from helpers import require_env
+from helpers import asset_url, require_env
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PROJECTS = os.path.join(ROOT, "projects")
@@ -118,19 +118,19 @@ def project_meta(ticker):
     }
 
 
-def map_assets(bucket, names, prefix):
+def map_assets(names, prefix):
     """Map a folder's filenames to {asset_key: public_url} by suffix."""
     out = {}
     for name in sorted(names):
         for suf, key in SUFFIX_MAP:
             if name.endswith(suf) and key not in out:
-                out[key] = f"https://{bucket}.s3.amazonaws.com/{prefix}{name}"
+                out[key] = asset_url(f"{prefix}{name}")
                 break
     return out
 
 
 def run():
-    bucket = require_env("S3_BUCKET")
+    bucket = require_env("AWS_S3_BUCKET")
     tickers = sorted(d for d in os.listdir(PROJECTS)
                      if os.path.isdir(os.path.join(PROJECTS, d)) and not d.startswith("."))
 
@@ -148,7 +148,7 @@ def run():
                 or datetime.date.today().isoformat()
             meta = {**project_meta(t), "date": date, "version": quarter(date)}
 
-        item = {"ticker": t, **meta, "assets": map_assets(bucket, present, flat)}
+        item = {"ticker": t, **meta, "assets": map_assets(present, flat)}
 
         history = []
         for ver in sorted(s3_ls_dirs(bucket, f"{flat}archive/"), reverse=True):
@@ -156,7 +156,7 @@ def run():
             anames = {n for n, _ in s3_ls(bucket, aprefix)}
             ameta = s3_get_json(bucket, f"{aprefix}meta.json") or {"version": ver}
             history.append({**ameta, "version": ameta.get("version", ver),
-                            "assets": map_assets(bucket, anames, aprefix)})
+                            "assets": map_assets(anames, aprefix)})
         item["history"] = history
         items.append(item)
 

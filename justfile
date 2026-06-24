@@ -147,6 +147,28 @@ sync-youtube *tickers:
     @just ensure-env
     UV_ENV_FILE={{_env}} uv run python tools/sync_youtube.py {{tickers}}
 
+# ─── Infrastructure (CloudFormation, deployed locally via CLI — no GHA) ───────
+
+# Validate the content infra template (S3 bucket + CloudFront CDN)
+infra-validate:
+    @just ensure-env
+    @bash tools/deploy_infra.sh validate
+
+# Create/update the content infra stack (creates the new bucket; reads .env)
+infra-deploy:
+    @just ensure-env
+    @bash tools/deploy_infra.sh deploy
+
+# Print the content stack outputs (bucket, CDN url, distribution id)
+infra-outputs:
+    @just ensure-env
+    @bash tools/deploy_infra.sh outputs
+
+# One-time: copy existing published content from the legacy bucket into the new one
+content-migrate from="robosystems-marketing-assets":
+    @just ensure-env
+    @bash tools/migrate_content.sh {{from}}
+
 # Extract podcast audio (MP3) from final video
 podcast project:
     #!/usr/bin/env bash

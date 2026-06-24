@@ -102,10 +102,12 @@ Assembly writes `videos/{TICKER}_timestamps.txt` with the actual YouTube chapter
 ### Publishing (S3 artifact store)
 
 `just publish {TICKER}` uploads the final deliverables (long-form, short, podcast MP3/MP4,
-thumbnail, brief, social copy) to `s3://$S3_BUCKET/content/{TICKER}/` and prints public URLs
-(`https://$S3_BUCKET.s3.amazonaws.com/content/{TICKER}/…`) — a durable artifact store, separate
-from posting to YouTube / Spotify / X. A bucket policy grants public read on the **`content/*`
-prefix only**; Shotstack staging assets elsewhere in the bucket stay private.
+thumbnail, brief, social copy) to `s3://$AWS_S3_BUCKET/content/{TICKER}/` and prints public URLs
+(served via `$AWS_CDN_DOMAIN_URL` when set, else `https://$AWS_S3_BUCKET.s3.amazonaws.com/content/{TICKER}/…`)
+— a durable artifact store, separate from posting to YouTube / Spotify / X. The bucket policy grants
+public read on the **`content/*` + `blog/*` prefixes only** (no user data — the store is public by
+design); Shotstack staging assets elsewhere stay private. The bucket + CloudFront CDN are managed by
+`cloudformation/content.yaml` (`just infra-deploy` — see Infrastructure below).
 
 ### Shared Media Libraries
 
@@ -147,13 +149,32 @@ Configure in `.env` after first run:
 |---------|------|---------|
 | [ElevenLabs](https://try.elevenlabs.io/v9z3wzm97gk3) | `ELEVEN_LABS_API_KEY`, `ELEVEN_LABS_VOICE_ID`, `ELEVEN_LABS_INTERVIEWER_VOICE_ID` | Voiceover (narrator) + Q&A interviewer voice + Music API |
 | [Shotstack](https://shotstack.io/) | `SHOTSTACK_API_KEY`, `SHOTSTACK_OWNER_ID` (+ sandbox keys) | Cloud video assembly |
-| AWS | `AWS_PROFILE`, `S3_BUCKET`, `S3_REGION` | Asset uploads for Shotstack |
+| AWS | `AWS_PROFILE`, `AWS_REGION`, `AWS_S3_BUCKET`, `AWS_CDN_DOMAIN_URL` (optional), `AWS_ROUTE53_HOSTED_ZONE_ID` (optional, auto-resolved) | Asset uploads + CloudFront CDN |
 
 <sub>The ElevenLabs link above is a referral link.</sub>
 
 ### Claude Cowork + Claude Design
 
 Content generation uses [Claude Desktop](https://claude.ai/download) with the [RoboSystems MCP server](https://github.com/RoboFinSystems/robosystems-mcp-client) configured; the deck is composed in [claude.ai/design](https://claude.ai/design) on the `@robosystems/core` design system.
+
+## Infrastructure
+
+The content bucket + CloudFront CDN are defined in `cloudformation/content.yaml` and deployed
+**locally via the AWS CLI** (no GitHub Actions), mirroring the platform repo's `just bootstrap` flow.
+Config comes from `.env` (`AWS_PROFILE`, `AWS_S3_BUCKET`, optional `AWS_CDN_DOMAIN_URL`;
+`AWS_ROUTE53_HOSTED_ZONE_ID` is auto-resolved from the CDN domain).
+
+```bash
+just infra-validate    # validate the template
+just infra-deploy      # create the bucket + CDN stack (+ wait, + print outputs)
+just content-migrate   # copy existing content from the legacy bucket into the new one
+just reindex           # rebuild content/index.json on the new bucket (CDN urls)
+just infra-outputs     # show bucket / CDN url / distribution id
+```
+
+`infra-deploy` creates a **new** bucket (default `robosystems-content`); the legacy
+`robosystems-marketing-assets` bucket is left untouched. After migrating + reindexing, point the apps
+at the CDN (`assets.robosystems.ai`) and retire the old bucket when ready.
 
 ## Resources
 

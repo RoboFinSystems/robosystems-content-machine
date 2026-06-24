@@ -1,0 +1,251 @@
+Description: >-
+  RoboSystems Content - Public content assets bucket + CloudFront CDN.
+  Serves research/blog content (s3://<bucket>/content/* and /blog/*) consumed by the
+  RoboSystems apps and public site via the CDN custom domain. A new extension of the
+  RoboSystems platform; follows cloudformation/s3.yaml's conventions (params, tags, exports).
+#
+# Process deviation from the platform: this stack is deployed LOCALLY via `just infra-deploy`
+# (tools/deploy_infra.sh), not via GitHub Actions — content-machine is operated outside the
+# platform CI/CD. Deploy in us-east-1 (CloudFront ACM cert requirement).
+#
+# Security model: the bucket is PUBLIC-READ on the published prefixes (content/* and blog/*).
+# There is no user data here — the store is public by design and isolated from platform data,
+# so we don't lock it down to OAC-only like s3.yaml's public-data bucket. CloudFront fronts it
+# for the custom domain, TLS, and caching; both the CDN domain and the raw S3 URL resolve.
+# (Shotstack staging assets uploaded under other prefixes stay private.)
+
+Parameters:
+  # Environment
+  Environment:
+    Type: String
+    Description: Environment name (e.g., prod, staging)
+    Default: prod
+    AllowedValues:
+      - prod
+      - staging
+    ConstraintDescription: Must be prod or staging
+
+  # Tagging Configuration
+  ServiceTag:
+    Type: String
+    Description: Service tag for resource identification and billing
+    Default: RoboSystems
+
+  # Content bucket name (explicit; the platform namespaces buckets with the account id, but
+  # this single-environment public store keeps a stable, CDN-fronted name).
+  BucketName:
+    Type: String
+    Description: >-
+      New content bucket created by this stack. The legacy robosystems-marketing-assets
+      bucket is intentionally left untouched.
+    Default: robosystems-content
+
+  # Domain Configuration for Content CDN
+  DomainName:
+    Type: String
+    Description: Domain name for the content CDN (e.g., assets.robosystems.ai). Blank disables custom domain/cert/DNS.
+    Default: ""
+
+  HostedZoneId:
+    Type: String
+    Description: Route53 Hosted Zone ID for DomainName (required when DomainName is set)
+    Default: ""
+
+Conditions:
+  HasCustomDomain: !Not [!Equals [!Ref DomainName, ""]]
+
+Resources:
+  # ============================================================================
+  # CONTENT BUCKET (public-read on published prefixes; fronted by CloudFront)
+  # ============================================================================
+  ContentBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      # ACLs stay blocked; public read is granted via the scoped bucket policy below, not ACLs.
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        IgnorePublicAcls: true
+        BlockPublicPolicy: false
+        RestrictPublicBuckets: false
+      BucketName: !Ref BucketName
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - BucketKeyEnabled: false
+            ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      LifecycleConfiguration:
+        Rules:
+          - Id: TransitionToIntelligentTiering
+            Status: Enabled
+            Transitions:
+              - TransitionInDays: 0
+                StorageClass: INTELLIGENT_TIERING
+      CorsConfiguration:
+        CorsRules:
+          - AllowedOrigins:
+              - "*"
+            AllowedMethods:
+              - GET
+              - HEAD
+            AllowedHeaders:
+              - "*"
+            ExposedHeaders:
+              - Content-Length
+              - Content-Type
+              - ETag
+            MaxAge: 3600
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-${Environment}-content-bucket
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Service
+          Value: !Ref ServiceTag
+        - Key: Component
+          Value: ContentAssets
+        - Key: CreatedBy
+          Value: CloudFormation
+
+  # Public read scoped to published content; deny any non-HTTPS access.
+  # (Shotstack staging assets under other prefixes are not granted here, so they stay private.)
+  ContentBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref ContentBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: PublicReadPublishedContent
+            Effect: Allow
+            Principal: "*"
+            Action: s3:GetObject
+            Resource:
+              - !Sub ${ContentBucket.Arn}/content/*
+              - !Sub ${ContentBucket.Arn}/blog/*
+          - Sid: DenyInsecureTransport
+            Effect: Deny
+            Principal: "*"
+            Action: "s3:*"
+            Resource:
+              - !GetAtt ContentBucket.Arn
+              - !Sub ${ContentBucket.Arn}/*
+            Condition:
+              Bool:
+                "aws:SecureTransport": "false"
+
+  # ============================================================================
+  # CLOUDFRONT CDN
+  # ============================================================================
+  # ACM Certificate for the content CDN (conditional; us-east-1; DNS-validated)
+  ContentCertificate:
+    Type: AWS::CertificateManager::Certificate
+    Condition: HasCustomDomain
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      DomainName: !Ref DomainName
+      DomainValidationOptions:
+        - DomainName: !Ref DomainName
+          HostedZoneId: !Ref HostedZoneId
+      ValidationMethod: DNS
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-${Environment}-content-cert
+        - Key: Environment
+          Value: !Ref Environment
+
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Comment: !Sub Content CDN - ${Environment}
+        Enabled: true
+        HttpVersion: http2
+        PriceClass: PriceClass_100 # US, Canada, Europe (cheapest)
+        Aliases: !If
+          - HasCustomDomain
+          - - !Ref DomainName
+          - !Ref AWS::NoValue
+        ViewerCertificate: !If
+          - HasCustomDomain
+          - AcmCertificateArn: !Ref ContentCertificate
+            SslSupportMethod: sni-only
+            MinimumProtocolVersion: TLSv1.2_2021
+          - CloudFrontDefaultCertificate: true
+        Origins:
+          # Public-read bucket REST endpoint; no OAC needed while objects are public.
+          - Id: S3Origin
+            DomainName: !GetAtt ContentBucket.RegionalDomainName
+            S3OriginConfig:
+              OriginAccessIdentity: ""
+        DefaultCacheBehavior:
+          TargetOriginId: S3Origin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods:
+            - GET
+            - HEAD
+            - OPTIONS
+          CachedMethods:
+            - GET
+            - HEAD
+            - OPTIONS
+          Compress: true
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6 # Managed-CachingOptimized
+          ResponseHeadersPolicyId: 5cc3b908-e619-4b99-88e5-2cf7f45965bd # Managed-CORS-with-preflight
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-${Environment}-content-cdn
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Service
+          Value: !Ref ServiceTag
+        - Key: Component
+          Value: ContentCDN
+
+  # Route53 alias for the content CDN (conditional)
+  ContentDNSRecord:
+    Type: AWS::Route53::RecordSet
+    Condition: HasCustomDomain
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Retain
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Ref DomainName
+      Type: A
+      AliasTarget:
+        DNSName: !GetAtt CloudFrontDistribution.DomainName
+        HostedZoneId: Z2FDTNDATAQYW2 # CloudFront's fixed hosted zone id
+        EvaluateTargetHealth: false
+
+Outputs:
+  ContentBucketName:
+    Description: Name of the content assets bucket
+    Value: !Ref ContentBucket
+    Export:
+      Name: !Sub ${AWS::StackName}-${Environment}-ContentBucketName
+
+  ContentBucketArn:
+    Description: ARN of the content assets bucket
+    Value: !GetAtt ContentBucket.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-${Environment}-ContentBucketArn
+
+  ContentCDNURL:
+    Description: Public base URL for the content CDN (use for AWS_CDN_DOMAIN_URL)
+    Value: !If
+      - HasCustomDomain
+      - !Sub https://${DomainName}
+      - !Sub https://${CloudFrontDistribution.DomainName}
+    Export:
+      Name: !Sub ${AWS::StackName}-${Environment}-ContentCDNURL
+
+  CloudFrontDistributionId:
+    Description: CloudFront distribution ID (for cache invalidations)
+    Value: !Ref CloudFrontDistribution
+    Export:
+      Name: !Sub ${AWS::StackName}-${Environment}-CloudFrontDistributionId

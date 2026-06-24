@@ -32,7 +32,7 @@ import json
 import os
 import re
 
-from helpers import get_project_dir
+from helpers import asset_url, get_project_dir
 
 # key -> (path under project dir, S3 object name) ; both templated on the ticker {t}
 MEDIA = {
@@ -58,13 +58,13 @@ def read_text(path):
     return None
 
 
-def media_url(bucket, ticker, project_dir, key):
-    """Public S3 URL for a media artifact, or None if the local file doesn't exist."""
+def media_url(ticker, project_dir, key):
+    """Public URL for a media artifact, or None if the local file doesn't exist."""
     rel, name = MEDIA[key]
     rel, name = rel.format(t=ticker), name.format(t=ticker)
     if not os.path.exists(os.path.join(project_dir, rel)):
         return None
-    return f"https://{bucket}.s3.amazonaws.com/content/{ticker}/{name}"
+    return asset_url(f"content/{ticker}/{name}")
 
 
 def field(pub, key, ticker):
@@ -83,7 +83,6 @@ def block(text):
 def build(project):
     project_dir = get_project_dir(project)
     t = project
-    bucket = os.environ.get("S3_BUCKET", "robosystems-marketing-assets")
     today = datetime.date.today().isoformat()
 
     pub = {}
@@ -95,10 +94,10 @@ def build(project):
     x_post = read_text(os.path.join(project_dir, f"social/{t}_x_post.txt"))
     yt_desc = read_text(os.path.join(project_dir, f"social/{t}_youtube_description.txt"))
     chapters = read_text(os.path.join(project_dir, f"videos/{t}_timestamps.txt"))
-    urls = {k: media_url(bucket, t, project_dir, k) for k in MEDIA}
+    urls = {k: media_url(t, project_dir, k) for k in MEDIA}
 
     brief_local = os.path.join(project_dir, f"reports/{t}_brief.md")
-    brief_url = (f"https://{bucket}.s3.amazonaws.com/content/{t}/{t}_brief.md"
+    brief_url = (asset_url(f"content/{t}/{t}_brief.md")
                  if os.path.exists(brief_local) else None)
 
     sections = []  # (title, body) — numbered at the end so skipped sections don't misnumber

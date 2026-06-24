@@ -2,20 +2,13 @@
 Publish a project's final deliverables to the public S3 artifact store.
 
 Uploads the finished media (+ brief and social copy) to
-  s3://{S3_BUCKET}/content/{TICKER}/
-with correct content-types, and prints the public URLs.
+  s3://{AWS_S3_BUCKET}/content/{TICKER}/
+with correct content-types, and prints the public URLs (via AWS_CDN_DOMAIN_URL when set).
 
-Public read is granted by a bucket policy scoped to the `content/*` prefix (set once); the
-Shotstack staging assets elsewhere in the bucket stay private. This is the separate "S3
-artifact" archive — independent of posting to YouTube / Spotify / X.
-
-A bucket-wide CORS rule (also set once) lets the logged-in apps fetch the catalog JSON and
-briefs client-side from the browser (the public site fetches them server-side, so it needs
-no CORS). The content is public, so GET/HEAD is open to all origins:
-    aws s3api put-bucket-cors --bucket "$S3_BUCKET" --cors-configuration '{
-      "CORSRules": [{"AllowedOrigins": ["*"], "AllowedMethods": ["GET", "HEAD"],
-        "AllowedHeaders": ["*"], "ExposeHeaders": ["Content-Length", "Content-Type", "ETag"],
-        "MaxAgeSeconds": 3600}]}'
+The bucket itself — public-read policy on `content/*` (+ `blog/*`), the GET/HEAD CORS rule,
+and the CloudFront CDN — is now managed by cloudformation/content.yaml (`just infra-deploy`),
+not by ad-hoc CLI. The Shotstack staging assets elsewhere in the bucket stay private. This is
+the separate "S3 artifact" archive — independent of posting to YouTube / Spotify / X.
 
 Usage:
     uv run python tools/publish_artifacts.py TRLV
@@ -28,7 +21,7 @@ import os
 import subprocess
 
 import reindex
-from helpers import get_project_dir, require_env
+from helpers import asset_url, get_project_dir, require_env
 
 # (path under the project dir, content-type). Whatever exists gets published.
 ARTIFACTS = [
@@ -64,7 +57,7 @@ def snapshot_prior_version(bucket, ticker):
 
 
 def publish(project):
-    bucket = require_env("S3_BUCKET")
+    bucket = require_env("AWS_S3_BUCKET")
     project_dir = get_project_dir(project)
     ticker = project
     prefix = f"content/{ticker}/"
@@ -87,7 +80,7 @@ def publish(project):
         if r.returncode != 0:
             print(f"  FAILED: {name}")
             continue
-        url = f"https://{bucket}.s3.amazonaws.com/{key}"
+        url = asset_url(key)
         print(f"  {url}  ({os.path.getsize(local) / 1e6:.1f} MB)")
         urls.append(url)
 

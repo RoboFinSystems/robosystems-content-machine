@@ -25,3 +25,21 @@ def require_env(key):
     print(f"Error: {key} not set. Check your .env file.")
     sys.exit(1)
   return val
+
+
+def cdn_base():
+  """Public base URL that published assets are served from.
+
+  Prefers the CloudFront custom domain (AWS_CDN_DOMAIN_URL, e.g.
+  "https://assets.robosystems.ai"); falls back to the raw S3 endpoint (the bucket is
+  public-read) so URLs still resolve before the content CDN stack is deployed.
+  """
+  cdn = os.environ.get("AWS_CDN_DOMAIN_URL", "").strip().rstrip("/")
+  if cdn:
+    return cdn
+  return f"https://{require_env('AWS_S3_BUCKET')}.s3.amazonaws.com"
+
+
+def asset_url(key):
+  """Public URL for an object key in the content bucket (e.g. "content/AAPL/x.mp4")."""
+  return f"{cdn_base()}/{key.lstrip('/')}"

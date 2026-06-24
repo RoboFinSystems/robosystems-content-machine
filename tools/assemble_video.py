@@ -31,8 +31,8 @@ import urllib.error
 
 from helpers import get_project_dir, require_env
 
-S3_BUCKET = require_env("S3_BUCKET")
-S3_REGION = os.environ.get("S3_REGION", "us-east-1")
+S3_BUCKET = require_env("AWS_S3_BUCKET")
+S3_REGION = os.environ.get("AWS_REGION", "us-east-1")
 EDIT_BASE = None  # Set in main() from CLI arg
 _SHOTSTACK_API_KEY = None  # Set in main() based on environment
 

@@ -66,7 +66,7 @@ FIELDS = [
 
 
 def sync(tickers, report_only=False):
-    bucket = require_env("S3_BUCKET")
+    bucket = require_env("AWS_S3_BUCKET")
     cid = require_env("YT_CHANNEL_ID")
     feed = fetch_feed(cid)
     print(f"Feed: {len(feed)} recent uploads on channel {cid}")
