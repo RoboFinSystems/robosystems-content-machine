@@ -2,10 +2,11 @@
 Publish a blog post to the public S3 content store + refresh the blog catalog.
 
 Narrates the post if it has no audio yet (default-on — every post ships with the "Listen to
-this story" feature; pass --no-audio to skip), then uploads whatever exists in blog/<slug>/ to
-s3://{AWS_S3_BUCKET}/blog/<slug>/ with correct content-types, writes a self-describing
-meta.json, and rebuilds blog/index.json. A post with just post.md publishes cleanly; cover.png
-and <slug>_x_post.txt are optional and additive.
+this story" feature; pass --no-audio to skip), then publishes to s3://{AWS_S3_BUCKET}/blog/<slug>/:
+the post body as render-ready markdown (frontmatter stripped — the full post.md stays in git as
+the source of truth), plus any cover.png / <slug>_narration.mp3 / <slug>_x_post.txt, plus a
+self-describing meta.json, then rebuilds blog/index.json. A post with just post.md publishes
+cleanly; the sidecars are optional and additive.
 
 The bucket + CloudFront CDN are managed by cloudformation/content.yaml (`just infra-deploy`);
 public read covers content/* + blog/*. Public URLs go through AWS_CDN_DOMAIN_URL when set.
@@ -26,9 +27,9 @@ import narrate_blog
 import reindex_blog
 from helpers import asset_url, require_env
 
-# (filename template under blog/<slug>/, content-type). Whatever exists gets published.
+# Optional sidecar artifacts (filename template under blog/<slug>/, content-type). The body
+# (post.md) is handled separately so we can strip frontmatter before upload.
 ARTIFACTS = [
-    ("post.md", "text/markdown; charset=utf-8"),
     ("cover.png", "image/png"),
     ("{slug}_narration.mp3", "audio/mpeg"),
     ("{slug}_x_post.txt", "text/plain; charset=utf-8"),
@@ -55,7 +56,22 @@ def publish(slug, narrate=True):
         print()
 
     print(f"Publishing blog/{slug} -> s3://{bucket}/{prefix}\n")
+    meta, body = bc.parse_post(slug)
     urls = []
+
+    # Body: upload frontmatter-stripped markdown so the app renders assets.body directly (no
+    # client-side parsing — all metadata lives in index.json / meta.json). The full post.md
+    # with frontmatter stays in git as the source of truth.
+    body_key = prefix + "post.md"
+    r = subprocess.run(["aws", "s3", "cp", "-", f"s3://{bucket}/{body_key}",
+                        "--content-type", "text/markdown; charset=utf-8", "--only-show-errors"],
+                       input=body if body.endswith("\n") else body + "\n", text=True)
+    if r.returncode == 0:
+        print(f"  {asset_url(body_key)}  (body)")
+        urls.append(asset_url(body_key))
+    else:
+        print("  FAILED: post.md (body)")
+
     for name_tmpl, ctype in ARTIFACTS:
         name = name_tmpl.format(slug=slug)
         local = os.path.join(post_dir, name)
@@ -73,7 +89,6 @@ def publish(slug, narrate=True):
 
     # Self-describing post metadata (mirrors research meta.json); reindex prefers the local
     # post.md but this keeps each S3 folder independently describable.
-    meta, body = bc.parse_post(slug)
     meta_obj = {
         "slug": slug,
         "title": str(meta.get("title") or slug).strip(),
