@@ -1,8 +1,4 @@
-Description: >-
-  RoboSystems Content - Public content assets bucket + CloudFront CDN.
-  Serves research/blog content (s3://<bucket>/content/* and /blog/*) consumed by the
-  RoboSystems apps and public site via the CDN custom domain. A new extension of the
-  RoboSystems platform; follows cloudformation/s3.yaml's conventions (params, tags, exports).
+Description: RoboSystems Content - S3 + CoudFront CDN
 #
 # Process deviation from the platform: this stack is deployed LOCALLY via `just infra-deploy`
 # (tools/deploy_infra.sh), not via GitHub Actions — content-machine is operated outside the
@@ -35,24 +31,27 @@ Parameters:
   # this single-environment public store keeps a stable, CDN-fronted name).
   BucketName:
     Type: String
-    Description: >-
-      New content bucket created by this stack. The legacy robosystems-marketing-assets
-      bucket is intentionally left untouched.
+    Description: New content bucket created by this stack. The legacy
+      robosystems-marketing-assets bucket is intentionally left untouched.
     Default: robosystems-content
 
   # Domain Configuration for Content CDN
   DomainName:
     Type: String
-    Description: Domain name for the content CDN (e.g., assets.robosystems.ai). Blank disables custom domain/cert/DNS.
-    Default: ""
+    Description: Domain name for the content CDN (e.g., assets.robosystems.ai).
+      Blank disables custom domain/cert/DNS.
+    Default: ''
 
   HostedZoneId:
     Type: String
     Description: Route53 Hosted Zone ID for DomainName (required when DomainName is set)
-    Default: ""
+    Default: ''
 
 Conditions:
-  HasCustomDomain: !Not [!Equals [!Ref DomainName, ""]]
+  HasCustomDomain: !Not
+    - !Equals
+      - !Ref DomainName
+      - ''
 
 Resources:
   # ============================================================================
@@ -88,12 +87,12 @@ Resources:
       CorsConfiguration:
         CorsRules:
           - AllowedOrigins:
-              - "*"
+              - '*'
             AllowedMethods:
               - GET
               - HEAD
             AllowedHeaders:
-              - "*"
+              - '*'
             ExposedHeaders:
               - Content-Length
               - Content-Type
@@ -118,25 +117,25 @@ Resources:
     Properties:
       Bucket: !Ref ContentBucket
       PolicyDocument:
-        Version: "2012-10-17"
+        Version: '2012-10-17'
         Statement:
           - Sid: PublicReadPublishedContent
             Effect: Allow
-            Principal: "*"
+            Principal: '*'
             Action: s3:GetObject
             Resource:
               - !Sub ${ContentBucket.Arn}/content/*
               - !Sub ${ContentBucket.Arn}/blog/*
           - Sid: DenyInsecureTransport
             Effect: Deny
-            Principal: "*"
-            Action: "s3:*"
+            Principal: '*'
+            Action: s3:*
             Resource:
               - !GetAtt ContentBucket.Arn
               - !Sub ${ContentBucket.Arn}/*
             Condition:
               Bool:
-                "aws:SecureTransport": "false"
+                aws:SecureTransport: 'false'
 
   # ============================================================================
   # CLOUDFRONT CDN
@@ -182,7 +181,7 @@ Resources:
           - Id: S3Origin
             DomainName: !GetAtt ContentBucket.RegionalDomainName
             S3OriginConfig:
-              OriginAccessIdentity: ""
+              OriginAccessIdentity: ''
         DefaultCacheBehavior:
           TargetOriginId: S3Origin
           ViewerProtocolPolicy: redirect-to-https
