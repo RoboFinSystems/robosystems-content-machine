@@ -136,7 +136,8 @@ def map_assets(names, prefix):
 def run():
     bucket = require_env("AWS_S3_BUCKET")
     tickers = sorted(d for d in os.listdir(PROJECTS)
-                     if os.path.isdir(os.path.join(PROJECTS, d)) and not d.startswith("."))
+                     if os.path.isdir(os.path.join(PROJECTS, d))
+                     and not d.startswith(".") and d != "archive")  # archive/ = retired tickers, not a ticker
 
     items = []
     for t in tickers:

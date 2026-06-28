@@ -129,7 +129,8 @@ def main():
         root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         projects = os.path.join(root, "projects")
         tickers = sorted(d for d in os.listdir(projects)
-                         if os.path.isdir(os.path.join(projects, d)) and not d.startswith("."))
+                         if os.path.isdir(os.path.join(projects, d))
+                         and not d.startswith(".") and d != "archive")  # archive/ = retired tickers
     sync(tickers, report_only=args.report)
 
 
