@@ -4,7 +4,7 @@ platform's exact upload fields plus the public S3 media links. Makes manual nati
 (or a future API push) a copy/paste job.
 
 Combines:
-  - social/{t}_publish.json            (Cowork-authored native copy: titles, LinkedIn, podcast notes)
+  - social/{t}_publish.json            (Cowork-authored native copy: titles, podcast notes)
   - social/{t}_x_post.txt              (the single X post)
   - social/{t}_youtube_description.txt (the YouTube description)
   - reports/{t}_brief.md               (the written brief — published on X as an X Article)
@@ -14,13 +14,15 @@ Combines:
 Writes projects/{t}/{t}_publish_pack.md. Degrades gracefully — missing media or unauthored
 fields are flagged inline, never fatal. Sections appear only when their media/content exist.
 
-Platform model (revised after the first posting round):
-  - YouTube gets THREE upload paths: long-form, Short, and the Q&A podcast video (MP4).
-  - X: one long-form post (NOT a thread) + the long-form video uploaded NATIVELY (the native
-    upload is the discovery, so no external link in the post) + the brief published as an
-    X Article and linked in the first comment.
-  - Spotify: the podcast audio (MP3) only — the podcast video lives on YouTube.
-  - Instagram is dropped (wrong audience, strips links; the Short already covers that asset).
+Platform model (X-first; research lane):
+  - X is the engine: one long-form post (NOT a thread) + the long-form video uploaded NATIVELY
+    (the native upload is the discovery, so no external link in the post) + the brief published as
+    an X Article and linked in the first comment. The 9:16 Short ALSO posts as a separate native
+    X video — a second cashtag at-bat, on a different day.
+  - YouTube + Spotify are byproducts (presence, not optimization): long-form + Short to YouTube;
+    podcast MP3 to Spotify, which auto-mirrors the episode to YouTube via the connected RSS.
+  - LinkedIn is NOT used for research — it's reserved for the technical/blog lane (build_blog_postpack.py).
+  - Instagram is dropped (wrong audience, strips links).
 
 Usage:
     uv run python tools/build_postpack.py TRLV
@@ -144,15 +146,14 @@ def build(project):
         lines.append(f"- Brief to publish as the X Article: {src}")
         add("X", lines)
 
-    # ── LinkedIn ──
-    li_video = urls["final"] or urls["short"]
-    lines = []
-    if li_video:
-        lines.append(f"**Native video:** {li_video}")
-    lines += ["**Post:**", block(field(pub, "linkedin_post", t)),
-              "**First comment** (link goes here, not the body — beats reach suppression):",
-              block(field(pub, "linkedin_first_comment", t))]
-    add("LinkedIn", lines)
+    # ── X — Short clip (second at-bat: the 9:16 Short as a standalone native X post) ──
+    if urls["short"]:
+        add("X — Short (post on a DIFFERENT day from the main post — a second cashtag at-bat)", [
+            f"**Native video** (upload the 9:16 Short as its own post, NOT a reply): {urls['short']}",
+            "**Caption:**", block(field(pub, "short_title", t)),
+            f"_Standalone native-video post so the Short gets its own run in For You + the ${t} cashtag "
+            f"feed. Keep ${t} in the caption; no external link in the body._",
+        ])
 
     # ── Spotify / Podcast (audio MP3 → Spotify; the connected RSS auto-posts it to YouTube too) ──
     if urls["podcast_mp3"]:
@@ -176,9 +177,11 @@ def build(project):
         "\n".join(fill) if fill else "_None — everything resolved._",
         "## Posting order",
         ("1. **YouTube long-form** → copy the resulting URL\n"
-         "2. Replace every `[YOUTUBE_LINK]` below with that URL (Short pinned comment + LinkedIn first comment)\n"
-         "3. Post the rest: YouTube Short, X (native long-form video + brief as an X Article "
-         "in the first comment), LinkedIn (+ first comment), Spotify (auto-posts to YouTube via RSS)"),
+         "2. Replace every `[YOUTUBE_LINK]` below with that URL (the Short's pinned comment)\n"
+         "3. Post the rest: YouTube Short, X (native long-form video + brief as an X Article in the "
+         "first comment), Spotify (auto-posts to YouTube via RSS)\n"
+         "4. On a later day: the **X — Short** post — a second cashtag at-bat.\n"
+         "_LinkedIn is reserved for the technical/blog lane; research analysis doesn't post there._"),
     ]
 
     text = "\n\n".join(head + numbered) + "\n"

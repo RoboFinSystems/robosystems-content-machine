@@ -312,10 +312,10 @@ times, the S3 media links, and flagging any unresolved placeholders). A JSON obj
 - `short_title` — the Short's title/caption. *(omit if no short)*
 - `short_pinned_comment` — the Short's pinned comment; use `[YOUTUBE_LINK]`. *(omit if no short)*
 - `x_first_comment` — the X first comment under the video post; points to the brief published as an X **Article** (use `[X_ARTICLE_LINK]`). The full long-form is uploaded as native video; no YouTube link on X.
-- `linkedin_post` — a LinkedIn-native post (professional; no link in the body).
-- `linkedin_first_comment` — link(s) for the first comment; use `[YOUTUBE_LINK]` + the RoboSystems CTA (+ `[PROMO_CODE]` if a promo runs).
 - `podcast_episode_title` — the Q&A episode title.
 - `podcast_show_notes` — episode description / show notes (+ RoboSystems CTA, `[PROMO_CODE]` if a promo runs).
+
+_No LinkedIn for research — LinkedIn is the technical/blog lane, not a research channel. The 9:16 Short also posts as a **separate native X video** (a second cashtag at-bat); the postpack adds that section automatically from `short_title`._
 
 Same placeholder rules as the rest (`[YOUTUBE_LINK]`, `[PROMO_CODE]`) — never hardcode the live URL or code.
 
