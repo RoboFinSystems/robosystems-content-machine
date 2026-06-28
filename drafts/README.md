@@ -30,6 +30,13 @@ Some pieces are deliberately single-platform and never become a blog post — e.
 short LinkedIn posts) or the launch X/Reddit/HN posts in `archive/`. Draft them here, post them natively.
 Don't force a blog canonical onto these.
 
+## Draft campaigns (`campaigns/`)
+
+`drafts/campaigns/<vertical>.md` holds **draft research-coverage plans** (the verticals — ai-capex,
+glp1-obesity, oil-gas, …). They graduate to an active `campaigns/<vertical>/` folder when you commit to
+running that vertical — the research-lane parallel to a technical draft graduating to `blog/`. Engineering
+specs are NOT here: those stay in `local/specs/` (they're about the machine, not content).
+
 ## Conventions
 
 - **One idea, sibling cuts:** `medium-<topic>.md` / `linkedin-<topic>.md` / `x-<topic>.md` are platform-native
@@ -43,11 +50,13 @@ Don't force a blog canonical onto these.
 - **Don't publish directly from `drafts/`** — it's pre-canonical. Promote to `blog/<slug>/` (path 1) or post
   natively (path 2).
 
-## What's here (migrated 2026-06-28 from robosystems/local/RoboSystems/content/)
+## What's here
 
-- `medium-content-machine.md` · `linkedin-content-machine.md` · `x-content-machine.md` — "The Coverage
-  Machine," one idea / three cuts (build-in-public; the SEC→video machine itself). High-value, publish-ready.
-- `medium-provenance.md` · `medium-graph-native-close.md` · `medium-real-data-dogfood.md` — standalone essays.
+- `medium-provenance.md` · `medium-graph-native-close.md` · `medium-real-data-dogfood.md` — standalone essays (WIP).
 - `linkedin.md` — 6 copy-paste short LinkedIn posts (standalone queue).
 - `BACKLOG.md` — the living queue.
-- `archive/` — 26 prior pieces (posted + unposted).
+- `campaigns/` — draft coverage plans (7 verticals) → graduate to `campaigns/{name}/`.
+- `archive/` — prior posted/unposted pieces (historical reference).
+
+_The Coverage Machine trio that seeded `drafts/` graduated to `blog/the-coverage-machine/` and published
+2026-06-28; its source drafts were deleted (git is the archive)._
