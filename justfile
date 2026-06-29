@@ -51,15 +51,9 @@ campaigns:
 open project:
     open projects/{{project}}
 
-# Print the Cowork cold-start prompt for a project (ready to paste into Cowork)
+# Print the Cowork cold-start prompt for a project (also copies it to the clipboard, ready to paste into Cowork)
 kickoff project:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    SRC="projects/{{project}}/KICKOFF.md"
-    [ -f "$SRC" ] || SRC="template/KICKOFF.md"
-    sed "s/{TICKER}/{{project}}/g" "$SRC"
-    PRIOR="projects/{{project}}/sources/_prior_coverage.md"
-    if [ -f "$PRIOR" ]; then printf '\n\n---\n\n'; cat "$PRIOR"; fi
+    @./tools/kickoff.sh {{project}}
 
 # ─── QA ──────────────────────────────────────────────────────
 
@@ -197,22 +191,7 @@ content-migrate from="robosystems-marketing-assets":
 
 # Extract podcast audio (MP3) from final video
 podcast project:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    VIDEO=$(ls projects/{{project}}/videos/*_final.mp4 2>/dev/null | head -1)
-    if [ -z "$VIDEO" ]; then
-        echo "No final video found. Run the pipeline first."
-        exit 1
-    fi
-    TICKER="{{project}}"
-    OUTPUT="projects/{{project}}/videos/${TICKER}_podcast.mp3"
-    echo "Extracting audio: $VIDEO → $OUTPUT"
-    ffmpeg -i "$VIDEO" -vn -acodec libmp3lame -q:a 2 -y "$OUTPUT" 2>/dev/null
-    DURATION=$(ffprobe -v quiet -show_entries format=duration -of csv=p=0 "$OUTPUT" | cut -d. -f1)
-    MINS=$((DURATION / 60))
-    SECS=$((DURATION % 60))
-    SIZE=$(du -h "$OUTPUT" | cut -f1)
-    echo "Done: $OUTPUT ($SIZE, ${MINS}m${SECS}s)"
+    @./tools/extract_podcast.sh {{project}}
 
 # ─── Utilities ────────────────────────────────────────────────
 
