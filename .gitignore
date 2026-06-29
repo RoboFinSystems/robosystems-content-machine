@@ -60,3 +60,6 @@ CLAUDE.local.md
 
 # Ruff cache
 .ruff_cache/
+
+# Obsidian vault
+.obsidian/
