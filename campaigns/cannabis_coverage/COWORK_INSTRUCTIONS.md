@@ -76,7 +76,7 @@ source. The audience can verify everything — that's the point.
 
 ## RoboSystems MCP — Research Tools
 
-Use the RoboSystems MCP for SEC filing data, and web search for current price/valuation/news.
+Use the RoboSystems MCP for SEC filing data — **the numbers AND the narrative** — and web search only for current price/valuation/news. There are **two co-equal pillars**: the **structured-financial** tools (the numbers) and **`search-documents` + `get-document-section`** (the filing prose). Do NOT stop at the numbers. The qualitative spine of the brief — the **280E / uncertain-tax-position dispute** language, **legal proceedings** (IRS audits, lawsuits), **subsequent events** (reverse splits, uplistings, acquisitions), **MD&A** risk framing, and management's stated catalysts — lives in the document text, and `search-documents` is the only tool that retrieves it. Pull every qualitative claim from the filing via `search-documents`, not from the web or memory — that's what makes a claim filing-grade. **Rule of thumb: if you're about to assert a qualitative fact you didn't read in a filing (or an attributed source), search the documents for it first.**
 
 **Start with the high-level tools — they handle XBRL element variation across companies:**
 
@@ -92,13 +92,14 @@ Use the RoboSystems MCP for SEC filing data, and web search for current price/va
 | `build-fact-grid` | Specific metrics across years/companies via `canonical_concepts` (e.g. "revenue", "net_income") — no XBRL names needed. Best for trends + cross-company comps. `entity` accepts ticker, CIK, or name. |
 | `resolve-element` | Map a concept → the company's exact XBRL qname (for custom Cypher). |
 | `read-graph-cypher` | Run Cypher — for segment breakdowns and anything the high-level tools can't do. |
-| `search-documents` → `get-document-section` | Find + read disclosure narrative (debt maturities, tax notes, MD&A, risk factors). Filter by `entity` and `section`. |
+| `search-documents` → `get-document-section` | **The narrative pillar — run it for every name, not as an afterthought.** Full-text search the filings for the qualitative spine: uncertain-tax-position / 280E dispute language, legal proceedings (IRS audits, lawsuits), subsequent events (splits, uplistings, acquisitions), MD&A risk framing, debt-maturity schedule, brand/segment color. Filter by `entity` and `section`; cite the filing, not the web. |
 | `get-example-queries` / `get-graph-schema` | Run FIRST on a new session — confirms working Cypher patterns and the canonical-concept vocabulary. |
 
 Typical flow: `get-example-queries` to confirm patterns → `financial-statement-analysis` for each
 statement → `build-fact-grid` for targeted metrics and multi-year trends → `resolve-element` +
-`read-graph-cypher` for segment/state breakdowns → `search-documents` + `get-document-section`
-for the debt maturity schedule and tax notes.
+`read-graph-cypher` for segment/state breakdowns → **`search-documents` + `get-document-section`
+throughout** for the qualitative spine (tax-dispute language, legal proceedings, subsequent events,
+MD&A, debt maturities). Numbers and narrative are co-equal — not numbers-then-maybe-prose.
 
 ```
 financial-statement-analysis {ticker:"TCNNF", statement_type:"income_statement", period_type:"annual"}
