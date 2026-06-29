@@ -372,8 +372,6 @@ def check_publish_metadata(project_dir, ticker, script):
     expected = [
         "youtube_title",
         "x_first_comment",
-        "linkedin_post",
-        "linkedin_first_comment",
         "podcast_episode_title",
         "podcast_show_notes",
     ]
@@ -387,9 +385,11 @@ def check_publish_metadata(project_dir, ticker, script):
         ok(f"publish.json: all {len(expected)} expected fields present")
 
     # Fields retired in the 2026-06 distribution rework — nudge to drop them.
-    stale = [k for k in ("instagram_caption", "x_first_reply") if k in pub]
+    # (LinkedIn is reserved for the technical/blog lane; research analysis doesn't post there.)
+    stale = [k for k in ("instagram_caption", "x_first_reply",
+                         "linkedin_post", "linkedin_first_comment") if k in pub]
     if stale:
-        warn(f"publish.json has retired fields (Instagram cut; first-reply → x_first_comment): {', '.join(stale)}")
+        warn(f"publish.json has retired fields (Instagram cut; LinkedIn → technical lane; first-reply → x_first_comment): {', '.join(stale)}")
 
     return pub
 

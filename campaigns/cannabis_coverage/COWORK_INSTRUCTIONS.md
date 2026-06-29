@@ -270,7 +270,7 @@ A **single post — NOT a numbered thread** (long-form is fine on X; no "1/ 2/ 3
 the coverage angle; 3-5 findings with specific numbers (include 280E impact); catalyst
 sensitivity; risk/caveat; closing takeaway; mention robosystems.ai + the promo line
 (`New customers get 50% off your first month with code [PROMO_CODE].`);
-`$TICKER` **+ the sector-ETF anchor `$MSOS`** (every US MSO we cover is a top $MSOS holding — confirm weight in `sources/universe_holdings.csv`; `$MSOX` (2x) optional as a 2nd, never more than 2 cashtags) + `#Cannabis #MSO #280E #Rescheduling`; tag @RoboFinSystems. **No link in the body.**
+`$TICKER` **+ the sector anchor `$MSOS`** (the cannabis-sector cashtag — tag it on **every** US cannabis name we cover, regardless of the name's weight in the fund. The point is discovery, not holdings: a thin-volume microcap's own `$TICKER` feed is dead, so the `$MSOS` feed *is* the channel — that's where cannabis-sector investors actually look. `$MSOX` (2x) optional as a 2nd; never more than 2 cashtags) + `#Cannabis #MSO #280E #Rescheduling`; tag @RoboFinSystems. **No link in the body.** **Cashtag hygiene:** put the cashtags on the closing line, space-separated (`$MRMD $MSOS …`); **never glue a `$`-cashtag inside parens** like `($MRMD)` — X only linkifies AND indexes a cashtag when a space (or start-of-post/@) precedes it, so a leading paren silently kills both the link and the cashtag-feed discovery. For a parenthetical in prose, use the bare ticker `(MRMD)` without the `$`.
 On X the **full long-form is uploaded as native video**, and the brief is published as a native
 X **Article** whose link goes in the first comment (`x_first_comment`) — no YouTube link on X
 (X throttles external links; native video + native Article both win reach).
