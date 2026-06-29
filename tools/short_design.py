@@ -24,6 +24,7 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FONT_DIR = os.path.join(ROOT, "assets", "fonts")
+BRAND_DIR = os.path.join(ROOT, "assets", "brand")
 
 W, H = 1080, 1920
 
@@ -182,9 +183,24 @@ def _gradient():
     return col.resize((W, H))
 
 
+@lru_cache(maxsize=8)
+def _mark(height, color):
+    """The RoboSystems mark (assets/brand/robosystems_mark.png — white glyph on transparent),
+    scaled to `height` and tinted `color`. None if the asset is missing (chrome degrades to text)."""
+    path = os.path.join(BRAND_DIR, "robosystems_mark.png")
+    if not os.path.exists(path):
+        return None
+    m = Image.open(path).convert("RGBA")
+    w = max(1, round(height * m.width / m.height))
+    m = m.resize((w, height), Image.LANCZOS)
+    tint = Image.new("RGBA", m.size, color + (0,))
+    tint.putalpha(m.split()[3])
+    return tint
+
+
 @lru_cache(maxsize=1)
 def ground():
-    """Navy gradient + a faint teal hero glow + the persistent ROBOSYSTEMS wordmark."""
+    """Navy gradient + a faint teal hero glow + the persistent brand lockup (mark + wordmark)."""
     img = _gradient().convert("RGBA")
     # faint teal glow behind the hero band (depth, on-brand)
     glow = Image.new("RGBA", (W, H), (0, 0, 0, 0))
@@ -192,10 +208,15 @@ def ground():
         [W * 0.5 - 560, HERO_MID - 460, W * 0.5 + 560, HERO_MID + 460], fill=TEAL + (22,))
     glow = glow.filter(ImageFilter.GaussianBlur(170))
     img = Image.alpha_composite(img, glow).convert("RGB")
-    # top wordmark chrome
+    # top brand lockup: the mark above the wordmark
+    mark = _mark(58, CHROME)
+    wy = 92
+    if mark is not None:
+        img.paste(mark, ((W - mark.width) // 2, 30), mark)
+        wy = 30 + mark.height + 16
     d = ImageDraw.Draw(img, "RGBA")
-    draw_tracked(d, "ROBOSYSTEMS", font("Orbitron", "Bold", 30), W / 2, 78, CHROME + (255,),
-                 tracking=10)
+    draw_tracked(d, "ROBOSYSTEMS", font("Orbitron", "Bold", 26), W / 2, wy, CHROME + (255,),
+                 tracking=9)
     return img
 
 
