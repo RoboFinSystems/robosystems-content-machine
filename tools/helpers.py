@@ -61,3 +61,46 @@ def normalize_for_tts(text):
   for pattern, replacement in _TTS_SUBSTITUTIONS:
     text = pattern.sub(replacement, text)
   return text
+
+
+# ─── Promo code resolution ───────────────────────────────────────────────────
+# Social copy + briefs carry a literal "[PROMO_CODE]" placeholder so the real
+# Stripe code is never committed to the repo. Distribution outputs must resolve it
+# before going public — the published brief especially, which is auto-uploaded to
+# the portal with NO human fill-in gate (unlike the social copy you paste by hand).
+# Real codes live in .env (gitignored): PROMO_CODE_CANNABIS / PROMO_CODE_DEFAULT,
+# or PROMO_CODE to force one. No code configured -> the promo sentence is dropped,
+# so a raw placeholder never leaks to production either way.
+def resolve_promo_code(campaign=None):
+  """Live promo code for distribution outputs, read from .env. Cannabis campaign
+  -> PROMO_CODE_CANNABIS, else PROMO_CODE_DEFAULT; PROMO_CODE overrides both.
+  Returns None when nothing is configured (no promo running)."""
+  override = os.environ.get("PROMO_CODE", "").strip()
+  if override:
+    return override
+  key = "PROMO_CODE_CANNABIS" if "cannabis" in (campaign or "").lower() else "PROMO_CODE_DEFAULT"
+  return os.environ.get(key, "").strip() or None
+
+
+def apply_promo_code(text, code):
+  """Resolve [PROMO_CODE] in distribution text. With a code -> substitute; with
+  none -> drop the sentence carrying the placeholder so nothing leaks to production."""
+  if not text or "[PROMO_CODE]" not in text:
+    return text
+  if code:
+    return text.replace("[PROMO_CODE]", code)
+  text = re.sub(r"\s*[^.\n]*\[PROMO_CODE\][^.\n]*\.", "", text)
+  return text.replace("[PROMO_CODE]", "")
+
+
+def strip_angle_brackets(text):
+  """YouTube and X reject `<` / `>` (parsed as HTML tags) — pasting copy that contains
+  them errors out. In finance copy they're always comparison operators, so spell them
+  out: '<1x' -> 'under 1x', '>$740M' -> 'over $740M', capitalizing at a sentence start.
+  A safety net — authored copy should avoid `< >` outright (see COWORK instructions)."""
+  if not text or ("<" not in text and ">" not in text):
+    return text
+  out = re.sub(r"<\s*", "under ", text)
+  out = re.sub(r">\s*", "over ", out)
+  # a comparison promoted to sentence-initial should be capitalized
+  return re.sub(r"(^|[.!?]\s+)(under|over)\b", lambda m: m.group(1) + m.group(2).capitalize(), out)

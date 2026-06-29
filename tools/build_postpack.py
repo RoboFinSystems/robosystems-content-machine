@@ -34,7 +34,8 @@ import json
 import os
 import re
 
-from helpers import asset_url, get_project_dir
+import reindex
+from helpers import apply_promo_code, asset_url, get_project_dir, resolve_promo_code, strip_angle_brackets
 
 # key -> (path under project dir, S3 object name) ; both templated on the ticker {t}
 MEDIA = {
@@ -82,6 +83,37 @@ def block(text):
     return f"```\n{text}\n```"
 
 
+def finalize_chapters(yt_desc, chapters_text):
+    """Replace the hand-drafted chapters block in the YouTube description with the
+    authoritative chapters from the render (correct times + the real segment list)
+    and drop any '(draft — finalized after render)' label. Cowork estimates chapter
+    times before the render; only the render knows the real ones, so the description
+    must be finalized here or it ships wrong timestamps. Returns paste-ready text."""
+    if not yt_desc:
+        return yt_desc
+    # authoritative lines from timestamps.txt: "0:00 — Title" -> "0:00 Title"
+    auth = []
+    for ln in (chapters_text or "").splitlines():
+        m = re.match(r"^\s*(\d+:\d{2})\s*[—–-]?\s*(.*)$", ln)
+        if m:
+            auth.append(f"{m.group(1)} {m.group(2)}".rstrip())
+    if not auth:
+        return yt_desc  # nothing authoritative to inject; leave as-authored
+    new_block = "⏱️ Chapters:\n" + "\n".join(auth)
+
+    lines = yt_desc.splitlines()
+    ts = re.compile(r"^\s*\d+:\d{2}\b")
+    start = next((i for i, ln in enumerate(lines)
+                  if re.search(r"chapters", ln, re.I) and not ts.match(ln)
+                  and i + 1 < len(lines) and ts.match(lines[i + 1])), None)
+    if start is None:
+        return yt_desc.rstrip() + "\n\n" + new_block  # no block authored -> append
+    end = start + 1
+    while end < len(lines) and ts.match(lines[end]):
+        end += 1
+    return "\n".join(lines[:start] + new_block.splitlines() + lines[end:])
+
+
 def build(project):
     project_dir = get_project_dir(project)
     t = project
@@ -112,11 +144,11 @@ def build(project):
         lines = [f"**Video:** {urls['final']}"]
         if urls["thumbnail"]:
             lines.append(f"**Thumbnail:** {urls['thumbnail']}")
+        # Finalize the draft chapter block against the render before pasting, so the
+        # description carries the REAL timestamps (and no "draft" label) inline.
+        final_desc = finalize_chapters(yt_desc, chapters) if yt_desc else yt_desc
         lines += ["**Title:**", block(field(pub, "youtube_title", t)), "**Description:**"]
-        lines.append(block(yt_desc) if yt_desc else f"_(missing social/{t}_youtube_description.txt)_")
-        if chapters:
-            lines.append("**Chapters (authoritative, from the render — confirm they match the description):**")
-            lines.append(block(chapters))
+        lines.append(block(final_desc) if final_desc else f"_(missing social/{t}_youtube_description.txt)_")
         add("YouTube — long-form", lines)
 
     # ── YouTube — Short ──
@@ -142,8 +174,16 @@ def build(project):
         lines.append(block(x_body))
         lines.append("**First comment** (publish the brief as an X Article, then paste its link in for `[X_ARTICLE_LINK]`):")
         lines.append(block(field(pub, "x_first_comment", t)))
-        src = f"`projects/{t}/reports/{t}_brief.md`" + (f"  ·  S3 copy: {brief_url}" if brief_url else "")
-        lines.append(f"- Brief to publish as the X Article: {src}")
+        # Embed the brief itself, finalized (the end-of-build pass resolves [PROMO_CODE]
+        # + angle brackets here too) — so you paste the X Article from the pack, never the
+        # raw local source (which keeps the placeholder by design).
+        brief_text = read_text(brief_local)
+        if brief_text:
+            ref = f" (published copy: {brief_url})" if brief_url else ""
+            lines.append(f"**Brief — paste this as the X Article**{ref}:")
+            lines.append(block(brief_text))
+        elif brief_url:
+            lines.append(f"- Brief to publish as the X Article: {brief_url}")
         add("X", lines)
 
     # ── X — Short clip (second at-bat: the 9:16 Short as a standalone native X post) ──
@@ -165,6 +205,11 @@ def build(project):
         ])
 
     numbered = [f"## {i}) {title}\n{body}" for i, (title, body) in enumerate(sections, 1)]
+
+    # Resolve [PROMO_CODE] now (campaign-derived, known at build time) so the pack is
+    # paste-ready; only the post-hoc links ([YOUTUBE_LINK]/[X_ARTICLE_LINK]) stay open.
+    promo = resolve_promo_code((reindex.project_meta(t) or {}).get("campaign"))
+    numbered = [strip_angle_brackets(apply_promo_code(s, promo)) for s in numbered]
 
     # ── placeholders found anywhere in the assembled sections ──
     tokens = sorted(set(re.findall(r"\[[A-Z_]+\]", "\n".join(numbered))))

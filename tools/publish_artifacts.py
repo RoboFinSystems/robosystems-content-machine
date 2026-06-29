@@ -21,7 +21,7 @@ import os
 import subprocess
 
 import reindex
-from helpers import asset_url, get_project_dir, require_env
+from helpers import apply_promo_code, asset_url, get_project_dir, require_env, resolve_promo_code, strip_angle_brackets
 
 # (path under the project dir, content-type). Whatever exists gets published.
 ARTIFACTS = [
@@ -65,6 +65,11 @@ def publish(project):
 
     snapshot_prior_version(bucket, ticker)
 
+    # Resolve [PROMO_CODE] in text artifacts before they go public — the brief is
+    # uploaded straight to the portal with no human fill-in step, so an unresolved
+    # placeholder would render literally on /research.
+    promo = resolve_promo_code((reindex.project_meta(ticker) or {}).get("campaign"))
+
     urls = []
     for rel_tmpl, ctype in ARTIFACTS:
         rel = rel_tmpl.format(t=ticker)
@@ -73,15 +78,24 @@ def publish(project):
             continue
         name = os.path.basename(rel)
         key = prefix + name
-        r = subprocess.run(
-            ["aws", "s3", "cp", local, f"s3://{bucket}/{key}",
-             "--content-type", ctype, "--only-show-errors"],
-        )
+        if ctype.startswith("text/"):
+            with open(local, encoding="utf-8") as fh:
+                body = strip_angle_brackets(apply_promo_code(fh.read(), promo))
+            r = subprocess.run(
+                ["aws", "s3", "cp", "-", f"s3://{bucket}/{key}",
+                 "--content-type", ctype, "--only-show-errors"],
+                input=body, text=True)
+            size = len(body.encode("utf-8"))
+        else:
+            r = subprocess.run(
+                ["aws", "s3", "cp", local, f"s3://{bucket}/{key}",
+                 "--content-type", ctype, "--only-show-errors"])
+            size = os.path.getsize(local)
         if r.returncode != 0:
             print(f"  FAILED: {name}")
             continue
         url = asset_url(key)
-        print(f"  {url}  ({os.path.getsize(local) / 1e6:.1f} MB)")
+        print(f"  {url}  ({size / 1e6:.1f} MB)")
         urls.append(url)
 
     print(f"\n{len(urls)} artifact(s) published to s3://{bucket}/{prefix}")
