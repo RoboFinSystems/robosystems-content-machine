@@ -4,6 +4,8 @@ Generate the Claude Design hand-off brief from a video script.
 Reads scripts/{TICKER}_script.json and renders deck/{TICKER}_deck_brief.md — a clean,
 per-slide spec you paste into claude.ai/design to build the deck. Deriving it from the
 script (rather than hand-writing it) keeps the hand-off in sync with the source of truth.
+In project mode it also copies the full hand-off (DESIGN_INSTRUCTIONS.md + the brief) to
+the macOS clipboard, paste-ready into Claude Design (mirrors `just kickoff`).
 
 Usage:
     uv run python tools/build_deck_brief.py GTBIF
@@ -14,6 +16,8 @@ Usage:
 import argparse
 import json
 import os
+import shutil
+import subprocess
 import sys
 
 from helpers import get_project_dir
@@ -170,6 +174,7 @@ def main():
     args = ap.parse_args()
 
     if args.script:
+        project_dir = None
         with open(args.script) as f:
             script = json.load(f)
         out_path = args.out or os.path.splitext(args.script)[0].replace("_script", "") + "_deck_brief.md"
@@ -192,6 +197,24 @@ def main():
         f.write(brief)
     n = len([s for s in script.get("segments", []) if s.get("type") == "visual"])
     print(f"Wrote deck brief ({n} slides) -> {out_path}")
+    copy_design_handoff(project_dir, brief)
+
+
+def copy_design_handoff(project_dir, brief):
+    """Copy the full Design hand-off — DESIGN_INSTRUCTIONS.md + the deck brief — to the
+    macOS clipboard so it's paste-ready into Claude Design (mirrors `just kickoff`).
+    No-op when pbcopy is unavailable; the brief file is always written regardless."""
+    pbcopy = shutil.which("pbcopy")
+    if not pbcopy:
+        return
+    payload, what = brief, "deck brief"
+    di = os.path.join(project_dir, "DESIGN_INSTRUCTIONS.md") if project_dir else None
+    if di and os.path.exists(di):
+        with open(di, encoding="utf-8") as f:
+            payload = f.read().rstrip() + "\n\n---\n\n" + brief
+        what = "DESIGN_INSTRUCTIONS.md + deck brief"
+    subprocess.run([pbcopy], input=payload.encode("utf-8"), check=False)
+    print(f"\033[32m✓ Copied to clipboard ({len(payload):,} chars: {what}) — paste into Claude Design.\033[0m")
 
 
 if __name__ == "__main__":

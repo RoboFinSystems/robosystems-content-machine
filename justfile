@@ -69,7 +69,7 @@ validate-fix project:
 
 # ─── Pipeline Steps ──────────────────────────────────────────
 
-# Generate the Claude Design hand-off brief from the script (deck mode)
+# Generate the Claude Design hand-off brief from the script (deck mode); also copies DESIGN_INSTRUCTIONS + brief to the clipboard
 deck-brief project:
     @just ensure-env
     UV_ENV_FILE={{_env}} uv run python tools/build_deck_brief.py {{project}}
