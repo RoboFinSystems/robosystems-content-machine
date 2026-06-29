@@ -480,12 +480,18 @@ def build_timeline(project_dir, ticker, assets, production=False):
         print(f"  Seg {seg_id} ({slide_type}): {audio_duration:.1f}s")
 
         if chart_info:
-            video_clips.append({
+            # The first visible slide starts at frame 0 (absorbing the lead-in gap) with
+            # NO fade-in — otherwise frame 0 is black and becomes the X/feed poster, since
+            # X has no custom-thumbnail option for native video. Later slides keep the fade.
+            is_first_clip = not video_clips
+            clip = {
                 "asset": {"type": "image", "src": chart_info["url"]},
-                "start": round(current_time, 2),
-                "length": round(image_duration, 2),
-                "transition": {"in": "fade"},
-            })
+                "start": 0.0 if is_first_clip else round(current_time, 2),
+                "length": round(current_time + image_duration if is_first_clip else image_duration, 2),
+            }
+            if not is_first_clip:
+                clip["transition"] = {"in": "fade"}
+            video_clips.append(clip)
 
         audio_clips.append({
             "asset": {
