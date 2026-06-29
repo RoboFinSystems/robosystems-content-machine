@@ -15,7 +15,7 @@ import time
 import urllib.request
 import urllib.error
 
-from helpers import get_project_dir, require_env
+from helpers import get_project_dir, require_env, normalize_for_tts
 
 API_BASE = "https://api.elevenlabs.io/v1"
 
@@ -61,7 +61,13 @@ def api_request(path, data=None, method="POST"):
 
 
 def generate_audio(voice_id, text, output_path):
-    """Generate speech audio for a text segment."""
+    """Generate speech audio for a text segment.
+
+    Text is run through normalize_for_tts() so mispronounced terms (e.g. EBITDA)
+    are respelled phonetically for the audio only — the source script is unchanged.
+    All three TTS paths (voiceover, podcast, short) call this, so the fix is global.
+    """
+    text = normalize_for_tts(text)
     data = {
         "text": text,
         "model_id": "eleven_turbo_v2_5",

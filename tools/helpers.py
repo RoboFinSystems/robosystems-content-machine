@@ -6,6 +6,7 @@ and shell scripts. These are just convenience functions.
 """
 
 import os
+import re
 import sys
 
 
@@ -43,3 +44,20 @@ def cdn_base():
 def asset_url(key):
   """Public URL for an object key in the content bucket (e.g. "content/AAPL/x.mp4")."""
   return f"{cdn_base()}/{key.lstrip('/')}"
+
+
+# ─── TTS text normalization ──────────────────────────────────────────────────
+# ElevenLabs mispronounces some finance terms when fed verbatim. We respell them
+# ONLY for the spoken audio — slides, briefs, and on-screen text keep the real
+# spelling. Applied centrally in generate_audio(), so voiceover + podcast + short
+# all inherit it. Add new (pattern, replacement) pairs here as they surface.
+_TTS_SUBSTITUTIONS = [
+  (re.compile(r"\bEBITDA\b", re.IGNORECASE), "Ebit-dah"),  # else read letter-by-letter
+]
+
+
+def normalize_for_tts(text):
+  """Respell mispronounced terms before sending text to the TTS API."""
+  for pattern, replacement in _TTS_SUBSTITUTIONS:
+    text = pattern.sub(replacement, text)
+  return text
