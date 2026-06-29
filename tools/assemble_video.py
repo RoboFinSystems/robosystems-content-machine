@@ -148,18 +148,43 @@ def _get_s3_prefix(project_dir):
     return f"staging/{os.path.basename(project_dir)}"
 
 
+def _any_newer_than(directory, suffix, ref_path):
+    """True if any `*suffix` file in `directory` is newer than `ref_path` — i.e. the
+    cache at `ref_path` is stale because a source asset was regenerated after it
+    (e.g. a re-voice or a re-slice). Guards against shipping a stale render."""
+    if not os.path.isdir(directory) or not os.path.exists(ref_path):
+        return False
+    ref_mtime = os.path.getmtime(ref_path)
+    for f in os.listdir(directory):
+        if f.endswith(suffix):
+            try:
+                if os.path.getmtime(os.path.join(directory, f)) > ref_mtime:
+                    return True
+            except OSError:
+                continue
+    return False
+
+
 def build_asset_manifest(project_dir, ticker):
     """Upload local assets to S3 and build manifest with presigned URLs."""
     manifest_path = os.path.join(project_dir, "videos", "shotstack_assets.json")
+    audio_dir = os.path.join(project_dir, "videos", "audio")
+    png_dir = os.path.join(project_dir, "charts", "png")
 
-    # Reuse a cached manifest only while its presigned URLs are still valid.
+    # Reuse a cached manifest only while its presigned URLs are still valid AND no
+    # source asset (re-voiced audio / re-sliced PNG) is newer than the cache.
     if os.path.exists(manifest_path):
         with open(manifest_path) as f:
             existing = json.load(f)
         created = existing.get("_created", 0)
-        if time.time() - created < (S3_URL_TTL - 600):  # 10-min safety buffer
+        fresh = time.time() - created < (S3_URL_TTL - 600)  # 10-min safety buffer
+        stale = (_any_newer_than(audio_dir, "_voiceover.mp3", manifest_path)
+                 or _any_newer_than(png_dir, ".png", manifest_path))
+        if fresh and not stale:
             print(f"Using cached manifest ({len(existing) - 1} assets, still fresh)")
             return existing
+        if stale:
+            print("Source audio/slides changed since last upload — re-uploading.")
 
     s3_prefix = _get_s3_prefix(project_dir)
     assets = {"_created": time.time()}
@@ -214,8 +239,10 @@ def build_asset_manifest(project_dir, ticker):
 def get_media_durations(project_dir):
     """Get actual voiceover durations (seg_id -> seconds) from cache or via ffprobe."""
     durations_path = os.path.join(project_dir, "videos", "media_durations.json")
+    audio_dir = os.path.join(project_dir, "videos", "audio")
 
-    if os.path.exists(durations_path):
+    # Use the cache only if no voiceover mp3 is newer than it (else re-probe after a re-voice).
+    if os.path.exists(durations_path) and not _any_newer_than(audio_dir, ".mp3", durations_path):
         with open(durations_path) as f:
             return json.load(f).get("audio", {})
 
