@@ -1,93 +1,47 @@
 """
-Assemble a 9:16 teaser Short from the `short` block in scripts/{TICKER}_script.json.
+Assemble a footage-free 9:16 teaser Short from the `short` block in scripts/{TICKER}_script.json.
 
-Layers (bottom -> top):
-  1. B-roll bed   — clips resolved from assets/broll/manifest.json, scaled/cropped to 1080x1920.
-  2. Music        — a track from assets/music/, ducked low under the VO, with fades.
-  3. Voiceover    — ElevenLabs, the analyst voice (a dedicated short hook, not a slice of the full VO).
-  4. Caption cards — curated PNG overlays (Space Grotesk), timed to VO beats. Stand alone sound-off.
+The hero of every frame is a number or a thesis — NOT b-roll. Each caption card becomes a
+full 1080x1920 designed beat (navy ground, teal accent, Space Grotesk) rendered with motion
+(count-up numbers, slam-ins, staggered facts), classified by content (see short_design.py).
+This replaces the old shared-b-roll renderer, whose clips were a common pool — so every
+ticker's Short came out looking the same. Now each Short is the company's own data.
+
+Layers:
+  1. Frames   — short_design.render_frame() per beat; rendered to PNG sequences + held stills.
+  2. Music    — a track from assets/music/, ducked low under the VO, with fades (kept: energy).
+  3. Voiceover — ElevenLabs analyst voice (a dedicated short hook, not a slice of the full VO).
 
 Output: videos/{TICKER}_short.mp4 (1080x1920, H.264/AAC). Rendered locally with ffmpeg (free).
-
-Requires Pillow for the cards — run via:  uv run --with pillow python tools/assemble_short.py TRLV
+Run via:  uv run --with pillow python tools/assemble_short.py TRLV
 """
 
 import argparse
 import json
-import math
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
 
 from helpers import get_project_dir, require_env
 from generate_voiceover_audio import generate_audio
+from short_design import W, H, render_frame, classify_card, lerp
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-BROLL_DIR = os.path.join(ROOT, "assets", "broll")
 MUSIC_DIR = os.path.join(ROOT, "assets", "music")
 
-W, H = 1080, 1920
 FPS = 30
-MUSIC_VOL = 0.15
+ENTRANCE = 0.5         # seconds of entrance animation per beat
+MUSIC_VOL = 0.12
 VO_VOL = 1.5
-VO_DELAY = 0.3          # seconds before VO starts
-TAIL = 0.8             # seconds of runtime past the end of VO
-CARD_HOLD = 4.2        # seconds each card stays on screen
-
-NAVY = (10, 31, 68, 235)
-ACCENT = (0, 209, 178)  # teal underline
-WHITE = (255, 255, 255, 255)
-
-FONT_CANDIDATES = [
-    os.path.expanduser("~/Library/Fonts/SpaceGrotesk-VariableFont_wght.ttf"),
-    "/System/Library/Fonts/Supplemental/Arial Bold.ttf",
-    "/System/Library/Fonts/Helvetica.ttc",
-]
+VO_DELAY = 0.3         # seconds before VO starts
+TAIL = 0.8            # seconds of runtime past the end of VO
 
 
 def load_manifest(path):
     with open(path) as f:
         return {item["id"]: item for item in json.load(f)}
-
-
-def select_broll(short, manifest):
-    """Choose the clip pool: explicit `broll` ids > `broll_theme` tag match > all clips."""
-    refs = short.get("broll")
-    if isinstance(refs, list) and refs:
-        missing = [i for i in refs if i not in manifest]
-        if missing:
-            sys.exit(f"short.broll ids not in manifest: {', '.join(missing)}")
-        return [manifest[i] for i in refs]
-    items = list(manifest.values())
-    theme = short.get("broll_theme")
-    if theme:
-        want = set(theme)
-        matched = [it for it in items if want & set(it.get("tags", []))]
-        # most-relevant first (stable sort: ties keep manifest order)
-        matched.sort(key=lambda it: len(want & set(it.get("tags", []))), reverse=True)
-        if not matched:
-            print(f"  WARN: broll_theme {sorted(want)} matched no clips — using all")
-        return matched or items
-    return items
-
-
-def build_sequence(pool, runtime):
-    """Sequence full-length clips to cover runtime; rotate the pool each pass so order varies
-    and nothing repeats back-to-back; trim only the final clip to fit."""
-    if not pool:
-        sys.exit("No b-roll clips available (empty manifest).")
-    seq, total, p = [], 0.0, 0
-    while total < runtime - 0.05 and p < 100:
-        rot = pool[p % len(pool):] + pool[:p % len(pool)]
-        for it in rot:
-            if total >= runtime - 0.05:
-                break
-            use = min(it["duration"], runtime - total)
-            seq.append((os.path.join(BROLL_DIR, it["file"]), round(use, 3)))
-            total += use
-        p += 1
-    return seq
 
 
 def select_music(short, manifest):
@@ -122,68 +76,17 @@ def ffprobe_duration(path):
         return 0.0
 
 
-def _font(size):
-    from PIL import ImageFont
-    for path in FONT_CANDIDATES:
-        if os.path.exists(path):
-            font = ImageFont.truetype(path, size)
-            try:
-                font.set_variation_by_axes([700])  # bold weight on the variable font
-            except Exception:
-                pass
-            return font
-    return ImageFont.load_default()
-
-
-def _wrap(draw, text, font, max_w):
-    words, lines, cur = text.split(), [], ""
-    for w in words:
-        trial = (cur + " " + w).strip()
-        if draw.textlength(trial, font=font) <= max_w:
-            cur = trial
-        else:
-            if cur:
-                lines.append(cur)
-            cur = w
-    if cur:
-        lines.append(cur)
-    return lines
-
-
-def render_card(text, out_path):
-    """Full-canvas transparent PNG with a centered lower-third caption card."""
-    from PIL import Image, ImageDraw
-    img = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    draw = ImageDraw.Draw(img)
-    font = _font(76)
-    max_text_w = W - 200
-    lines = _wrap(draw, text, font, max_text_w)
-
-    line_h = font.getbbox("Ag")[3] - font.getbbox("Ag")[1]
-    gap = 18
-    text_h = len(lines) * line_h + (len(lines) - 1) * gap
-    text_w = max(draw.textlength(ln, font=font) for ln in lines)
-
-    pad_x, pad_y = 56, 44
-    box_w = text_w + 2 * pad_x
-    box_h = text_h + 2 * pad_y
-    box_x = (W - box_w) / 2
-    box_y = H * 0.62  # lower third
-
-    draw.rounded_rectangle(
-        [box_x, box_y, box_x + box_w, box_y + box_h], radius=28, fill=NAVY)
-    # accent underline
-    draw.rounded_rectangle(
-        [box_x + pad_x, box_y + box_h - 10, box_x + pad_x + min(140, text_w),
-         box_y + box_h - 4], radius=3, fill=ACCENT)
-
-    y = box_y + pad_y
-    for ln in lines:
-        lw = draw.textlength(ln, font=font)
-        draw.text(((W - lw) / 2, y), ln, font=font, fill=WHITE)
-        y += line_h + gap
-
-    img.save(out_path)
+def plan_beats(cards, runtime):
+    """Turn timed cards into [start, end) beats. The first beat starts at t=0 (so the very
+    first frame — the feed poster — is a solid branded hook, never black); each later card
+    starts at its `at_seconds`, kept strictly increasing and inside the runtime."""
+    starts = [0.0]
+    for c in cards[1:]:
+        s = float(c.get("at_seconds", starts[-1] + 1.0))
+        s = min(max(s, starts[-1] + 0.4), runtime - 0.4)   # monotonic, min gap, in-bounds
+        starts.append(max(s, starts[-1] + 0.05))
+    ends = starts[1:] + [runtime]
+    return list(zip(starts, ends))
 
 
 def assemble(project_name, production=False, force=False, music_override=None):
@@ -201,8 +104,11 @@ def assemble(project_name, production=False, force=False, music_override=None):
     short = script.get("short")
     if not short:
         sys.exit("No `short` block in the script. Add one (see template/PRODUCTION_CONTRACT.md).")
+    cards = short.get("cards") or []
+    if not cards:
+        sys.exit("short.cards is empty — caption beats are what the deck renders.")
     if music_override:
-        short = {**short, "music": music_override}  # explicit override wins over music_mood
+        short = {**short, "music": music_override}
 
     # --- 1. Voiceover for the short hook ---
     vo_dir = os.path.join(project_dir, "videos", "short_audio")
@@ -215,100 +121,82 @@ def assemble(project_name, production=False, force=False, music_override=None):
     else:
         print("  VO... SKIP (exists)")
     vo_dur = ffprobe_duration(vo_path)
-    runtime = max(float(short.get("duration_target_seconds", 0)), vo_dur + VO_DELAY + TAIL)
-    runtime = round(runtime, 2)
+    runtime = round(max(float(short.get("duration_target_seconds", 0)), vo_dur + VO_DELAY + TAIL), 2)
     print(f"  VO {vo_dur:.1f}s -> runtime {runtime:.1f}s")
 
-    # --- 2. Resolve b-roll: select a pool, then sequence full-length clips to cover runtime ---
-    broll_manifest = load_manifest(os.path.join(BROLL_DIR, "manifest.json"))
-    pool = select_broll(short, broll_manifest)
-    seq = build_sequence(pool, runtime)   # list of (file_path, use_seconds)
-    n_slots = len(seq)
-    names = list(dict.fromkeys(os.path.splitext(os.path.basename(f))[0] for f, _ in seq))
-    print(f"  B-roll: {n_slots} clip(s) from a pool of {len(pool)} — {', '.join(names)}")
-
-    # --- 3. Music: explicit id > music_mood match > first track ---
+    # --- 2. Music: explicit id > music_mood match > first track ---
     music_manifest = load_manifest(os.path.join(MUSIC_DIR, "manifest.json"))
     music_entry = select_music(short, music_manifest)
     music_path = os.path.join(MUSIC_DIR, music_entry["file"])
     print(f"  Music: {music_entry['id']}")
 
-    # --- 4. Caption cards -> PNGs ---
-    tmpdir = tempfile.mkdtemp(prefix=f"{ticker}_short_")
-    cards = short.get("cards", [])
-    card_files = []
-    for j, c in enumerate(cards):
-        p = os.path.join(tmpdir, f"card_{j}.png")
-        render_card(c["text"], p)
-        card_files.append((p, float(c["at_seconds"])))
+    # --- 3. Render each beat to a PNG entrance sequence + a held still ---
+    n = len(cards)
+    beats = plan_beats(cards, runtime)
+    tmp = tempfile.mkdtemp(prefix=f"{ticker}_short_")
+    inputs, vstreams, idx = [], [], 0
+    print("  Rendering frames:")
+    try:
+        for i, (start, end) in enumerate(beats):
+            kind, payload = classify_card(cards[i]["text"], i, n)
+            dur = max(1 / FPS, end - start)
+            total = max(1, round(dur * FPS))
+            e_frames = min(total, max(1, round(ENTRANCE * FPS)))
+            hold = total - e_frames
+            t0 = 0.75 if i == 0 else 0.0     # open mid-entrance so the poster frame reads
+            for fr in range(e_frames):
+                t = lerp(t0, 1.0, (fr + 1) / e_frames)
+                render_frame(kind, payload, t).save(os.path.join(tmp, f"b{i}_e_{fr:04d}.png"))
+            inputs += ["-framerate", str(FPS), "-i", os.path.join(tmp, f"b{i}_e_%04d.png")]
+            vstreams.append(idx); idx += 1
+            if hold > 0:
+                render_frame(kind, payload, 1.0).save(os.path.join(tmp, f"b{i}_s.png"))
+                inputs += ["-loop", "1", "-framerate", str(FPS), "-t", f"{hold / FPS:.3f}",
+                           "-i", os.path.join(tmp, f"b{i}_s.png")]
+                vstreams.append(idx); idx += 1
+            print(f"    {i+1}/{n}  [{kind:9}] {start:5.1f}-{end:4.1f}s  {cards[i]['text']!r}")
 
-    # --- Build the ffmpeg graph ---
-    inputs = []
-    for (sf, _) in seq:
-        inputs += ["-i", sf]                 # 0 .. n_slots-1
-    inputs += ["-i", music_path]             # idx_music
-    inputs += ["-i", vo_path]                # idx_vo
-    idx_music = n_slots
-    idx_vo = n_slots + 1
-    for (p, _) in card_files:
-        # Bound each looped image to the runtime (with an explicit framerate) so the
-        # infinite image stream can't stall/deadlock the filtergraph.
-        inputs += ["-loop", "1", "-framerate", str(FPS), "-t", f"{runtime:.2f}", "-i", p]
-    idx_card_base = n_slots + 2
+        inputs += ["-i", music_path]; idx_music = idx; idx += 1
+        inputs += ["-i", vo_path];    idx_vo = idx; idx += 1
 
-    parts = []
-    for k, (_, dur) in enumerate(seq):
+        # --- 4. ffmpeg: concat the beat streams, mix ducked music + VO ---
+        parts = [f"[{k}:v]fps={FPS},format=yuv420p,setsar=1[v{k}]" for k in vstreams]
+        parts.append("".join(f"[v{k}]" for k in vstreams) +
+                     f"concat=n={len(vstreams)}:v=1:a=0[bed]")
         parts.append(
-            f"[{k}:v]trim=0:{dur:.3f},setpts=PTS-STARTPTS,"
-            f"scale={W}:{H}:force_original_aspect_ratio=increase,"
-            f"crop={W}:{H},fps={FPS},setsar=1,format=yuv420p[v{k}]")
-    concat = "".join(f"[v{k}]" for k in range(n_slots)) + \
-        f"concat=n={n_slots}:v=1:a=0[bed]"
-    parts.append(concat)
-
-    cur = "bed"
-    for j, (_, at) in enumerate(card_files):
-        end = min(at + CARD_HOLD, runtime)
-        ov = f"ov{j}"
+            f"[{idx_music}:a]atrim=0:{runtime:.2f},asetpts=PTS-STARTPTS,"
+            f"afade=t=in:st=0:d=1,afade=t=out:st={max(0, runtime-1.2):.2f}:d=1.2,"
+            f"volume={MUSIC_VOL}[mus]")
         parts.append(
-            f"[{cur}][{idx_card_base + j}:v]overlay=0:0:"
-            f"enable='between(t,{at:.2f},{end:.2f})'[{ov}]")
-        cur = ov
-    video_label = cur
+            f"[{idx_vo}:a]adelay={int(VO_DELAY*1000)}|{int(VO_DELAY*1000)},volume={VO_VOL}[voa]")
+        parts.append("[mus][voa]amix=inputs=2:duration=longest:normalize=0[aout]")
+        filtergraph = ";".join(parts)
 
-    parts.append(
-        f"[{idx_music}:a]atrim=0:{runtime:.2f},asetpts=PTS-STARTPTS,"
-        f"afade=t=in:st=0:d=1,afade=t=out:st={max(0, runtime-1.2):.2f}:d=1.2,"
-        f"volume={MUSIC_VOL}[mus]")
-    parts.append(
-        f"[{idx_vo}:a]adelay={int(VO_DELAY*1000)}|{int(VO_DELAY*1000)},"
-        f"volume={VO_VOL}[voa]")
-    parts.append("[mus][voa]amix=inputs=2:duration=longest:normalize=0[aout]")
+        out_dir = os.path.join(project_dir, "videos")
+        suffix = f"_{music_override}" if music_override else ""
+        out_path = os.path.join(out_dir, f"{ticker}_short{suffix}.mp4")
+        cmd = ["ffmpeg", "-y", *inputs,
+               "-filter_complex", filtergraph,
+               "-map", "[bed]", "-map", "[aout]",
+               "-t", f"{runtime:.2f}",
+               "-r", str(FPS), "-c:v", "libx264", "-pix_fmt", "yuv420p",
+               "-crf", "18" if production else "23", "-preset", "medium",
+               "-c:a", "aac", "-b:a", "192k", out_path]
+        print("  Encoding 9:16 short with ffmpeg ...")
+        res = subprocess.run(cmd, capture_output=True, text=True)
+        if res.returncode != 0:
+            print(res.stderr[-2500:])
+            sys.exit("  -> ffmpeg FAILED")
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
 
-    filtergraph = ";".join(parts)
-
-    out_dir = os.path.join(project_dir, "videos")
-    suffix = f"_{music_override}" if music_override else ""
-    out_path = os.path.join(out_dir, f"{ticker}_short{suffix}.mp4")
-    cmd = ["ffmpeg", "-y", *inputs,
-           "-filter_complex", filtergraph,
-           "-map", f"[{video_label}]", "-map", "[aout]",
-           "-t", f"{runtime:.2f}",
-           "-r", str(FPS), "-c:v", "libx264", "-pix_fmt", "yuv420p",
-           "-crf", "18" if production else "23", "-preset", "medium",
-           "-c:a", "aac", "-b:a", "192k", out_path]
-    print("  Rendering 9:16 short with ffmpeg ...")
-    res = subprocess.run(cmd, capture_output=True, text=True)
-    if res.returncode != 0:
-        print(res.stderr[-2000:])
-        sys.exit("  -> ffmpeg FAILED")
     dur = ffprobe_duration(out_path)
     size_mb = os.path.getsize(out_path) / 1e6
     print(f"\nDone. {out_path}  ({dur:.1f}s, {size_mb:.1f} MB, {W}x{H})")
 
 
 def main():
-    p = argparse.ArgumentParser(description="Assemble a 9:16 teaser Short")
+    p = argparse.ArgumentParser(description="Assemble a footage-free 9:16 teaser Short")
     p.add_argument("project", help="Project name (e.g., TRLV)")
     p.add_argument("--production", action="store_true", help="Higher quality (crf 18)")
     p.add_argument("--force", action="store_true", help="Regenerate the short VO")
