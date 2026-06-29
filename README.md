@@ -214,6 +214,19 @@ at the CDN (`assets.robosystems.ai`) and retire the old bucket when ready.
 - [Projects](https://github.com/orgs/RoboFinSystems/projects)
 - [Discussions](https://github.com/orgs/RoboFinSystems/discussions)
 
+## Acknowledgements
+
+Backed by an **[ElevenLabs Grant](https://elevenlabs.io/startup-grants)** — the credits power the voiceover, Q&A interviewer voice, and music generation behind every video this pipeline produces.
+
+<a href="https://elevenlabs.io/startup-grants">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://eleven-public-cdn.elevenlabs.io/payloadcms/cy7rxce8uki-IIElevenLabsGrants%201.webp">
+    <img alt="ElevenLabs Grants" src="https://eleven-public-cdn.elevenlabs.io/payloadcms/pwsc4vchsqt-ElevenLabsGrants.webp" width="250">
+  </picture>
+</a>
+
+<sub>Using ElevenLabs yourself? Our [referral link](https://try.elevenlabs.io/v9z3wzm97gk3) costs you nothing extra and supports the project.</sub>
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

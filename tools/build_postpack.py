@@ -131,6 +131,7 @@ def build(project):
     urls = {k: media_url(t, project_dir, k) for k in MEDIA}
 
     brief_local = os.path.join(project_dir, f"reports/{t}_brief.md")
+    brief_text = read_text(brief_local)
     brief_url = (asset_url(f"content/{t}/{t}_brief.md")
                  if os.path.exists(brief_local) else None)
 
@@ -174,14 +175,15 @@ def build(project):
         lines.append(block(x_body))
         lines.append("**First comment** (publish the brief as an X Article, then paste its link in for `[X_ARTICLE_LINK]`):")
         lines.append(block(field(pub, "x_first_comment", t)))
-        # Embed the brief itself, finalized (the end-of-build pass resolves [PROMO_CODE]
-        # + angle brackets here too) — so you paste the X Article from the pack, never the
-        # raw local source (which keeps the placeholder by design).
-        brief_text = read_text(brief_local)
+        # The brief is left as RAW markdown — NOT in a code block — so a markdown preview
+        # renders it: highlight the rendered brief and paste straight into the X Article
+        # (rich-text editor, not markdown). The end-of-build pass still resolves
+        # [PROMO_CODE] + angle brackets here. (The local source keeps the placeholder.)
         if brief_text:
-            ref = f" (published copy: {brief_url})" if brief_url else ""
-            lines.append(f"**Brief — paste this as the X Article**{ref}:")
-            lines.append(block(brief_text))
+            ref = f" · published copy: {brief_url}" if brief_url else ""
+            lines.append(f"**Brief — highlight the rendered brief below + paste as the X Article**{ref}:")
+            lines.append("")
+            lines.append(brief_text)
         elif brief_url:
             lines.append(f"- Brief to publish as the X Article: {brief_url}")
         add("X", lines)
