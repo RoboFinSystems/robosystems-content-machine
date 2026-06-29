@@ -143,7 +143,7 @@ Editorial guidance for the script:
 A **single post — NOT a numbered thread** (long-form is fine on X; no "1/ 2/ 3/"). Opening
 hook; 3-5 key findings with specific numbers; a risk/caveat; closing takeaway; a closing
 RoboSystems CTA (`robosystems.ai`) + the promo line (`New customers get 50% off your first
-month with code [PROMO_CODE].`); relevant `$TICKER` cashtag and hashtags; tag @RoboFinSystems.
+month with code [PROMO_CODE].`); relevant `$TICKER` cashtag **+ 1–2 ETF cashtags where the ticker is a _major_ holding** (extra cashtag-feed reach — tag a sector/thematic ETF the name is a top holding of; skip if it's only a minor weight in a broad fund, and never more than 2 cashtags total) and topic hashtags; tag @RoboFinSystems.
 **No link in the body.** On X the **full long-form is uploaded as native video**, and the brief
 is published as a native X **Article** whose link goes in the first comment (`x_first_comment`)
 — so there is no YouTube link on X at all (X throttles external links; native video + native

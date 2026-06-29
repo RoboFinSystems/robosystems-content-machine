@@ -270,7 +270,7 @@ A **single post — NOT a numbered thread** (long-form is fine on X; no "1/ 2/ 3
 the coverage angle; 3-5 findings with specific numbers (include 280E impact); catalyst
 sensitivity; risk/caveat; closing takeaway; mention robosystems.ai + the promo line
 (`New customers get 50% off your first month with code [PROMO_CODE].`);
-`$TICKER` + `#Cannabis #MSO #280E #Rescheduling`; tag @RoboFinSystems. **No link in the body.**
+`$TICKER` **+ the sector-ETF anchor `$MSOS`** (every US MSO we cover is a top $MSOS holding — confirm weight in `sources/universe_holdings.csv`; `$MSOX` (2x) optional as a 2nd, never more than 2 cashtags) + `#Cannabis #MSO #280E #Rescheduling`; tag @RoboFinSystems. **No link in the body.**
 On X the **full long-form is uploaded as native video**, and the brief is published as a native
 X **Article** whose link goes in the first comment (`x_first_comment`) — no YouTube link on X
 (X throttles external links; native video + native Article both win reach).
