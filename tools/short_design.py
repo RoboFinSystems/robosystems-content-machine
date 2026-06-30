@@ -198,6 +198,18 @@ def _mark(height, color):
     return tint
 
 
+@lru_cache(maxsize=4)
+def _claude_burst(height):
+    """The Claude sunburst (assets/brand/claude.png — orange on transparent), scaled to `height`.
+    Co-brand mark for any card whose text names Claude. None if the asset is missing."""
+    path = os.path.join(BRAND_DIR, "claude.png")
+    if not os.path.exists(path):
+        return None
+    m = Image.open(path).convert("RGBA")
+    w = max(1, round(height * m.width / m.height))
+    return m.resize((w, height), Image.LANCZOS)
+
+
 @lru_cache(maxsize=1)
 def ground():
     """Navy gradient + a faint teal hero glow + the persistent brand lockup (mark + wordmark)."""
@@ -267,8 +279,15 @@ def _f_hook(base, p, t):
 def _f_headline(base, p, t):
     layer, d = _new_layer()
     f, lines = fit(d, p["text"].upper(), "SpaceGrotesk", "Bold", TEXT_W, 140, 64, 4)
-    top = HERO_MID - _block_height(f, len(lines)) // 2
-    _block(d, lines, f, top, WHITE)
+    bh = _block_height(f, len(lines))
+    burst = _claude_burst(170) if "CLAUDE" in p["text"].upper() else None
+    if burst is not None:
+        gap = 48
+        gtop = HERO_MID - (burst.height + gap + bh) // 2
+        layer.paste(burst, ((W - burst.width) // 2, gtop), burst)
+        _block(d, lines, f, gtop + burst.height + gap, WHITE)
+    else:
+        _block(d, lines, f, HERO_MID - bh // 2, WHITE)
     _slam(base, layer, t)
 
 

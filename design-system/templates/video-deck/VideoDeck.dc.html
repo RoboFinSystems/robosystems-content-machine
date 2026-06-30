@@ -98,9 +98,13 @@
 
   <!-- ============ SLIDE 7 · TITLE / CTA ============ -->
   <section data-screen-label="Slide 07 — CTA" style="position:relative; width:1280px; height:720px; flex:none; overflow:hidden; border-radius:14px; box-shadow:0 30px 80px -30px rgba(0,0,0,0.8); background:radial-gradient(110% 90% at 50% 120%, rgba(59,122,245,0.20), transparent 60%), #0a0e1a; padding:88px 100px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;">
-    <x-import component-from-global-scope="RoboSystemsContentDesignSystem_746ae7.BrandMark" size="{{ 72 }}" style="color:#fff" hint-size="72px,72px"></x-import>
-    <h1 style="font-family:'Orbitron',sans-serif; font-weight:800; font-size:72px; line-height:1.04; color:#f4f7fb; margin:36px 0 0;">Built with RoboSystems</h1>
-    <p style="font-size:26px; color:#c3ccdb; margin:24px 0 40px; max-width:30ch;">Structured SEC filing data for every public company.</p>
+    <div style="display:flex; align-items:center; gap:30px; margin-bottom:4px;">
+      <x-import component-from-global-scope="RoboSystemsContentDesignSystem_746ae7.BrandMark" size="{{ 72 }}" style="color:#fff" hint-size="72px,72px"></x-import>
+      <span style="font-family:'Orbitron',sans-serif; font-weight:300; font-size:44px; color:#5a6783;">+</span>
+      <x-import component-from-global-scope="RoboSystemsContentDesignSystem_746ae7.ClaudeMark" size="{{ 72 }}" hint-size="72px,72px"></x-import>
+    </div>
+    <h1 style="font-family:'Orbitron',sans-serif; font-weight:800; font-size:64px; line-height:1.04; color:#f4f7fb; margin:32px 0 0;">Built with Claude + RoboSystems</h1>
+    <p style="font-size:26px; color:#c3ccdb; margin:24px 0 40px; max-width:34ch;">Claude Opus, grounded in the SEC filings via RoboSystems.</p>
     <x-import component-from-global-scope="RoboSystemsContentDesignSystem_746ae7.Button" size="lg" hint-size="240px,56px">robosystems.ai</x-import>
     <p style="position:absolute; bottom:48px; font-family:'JetBrains Mono',monospace; font-size:14px; color:#5a6783;">Not investment advice · No price targets · Every number from the filings</p>
   </section>
