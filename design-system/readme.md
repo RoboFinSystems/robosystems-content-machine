@@ -31,7 +31,7 @@ access, but they are recorded here so you (or a teammate who does) can go deeper
   Key reads: `template/DESIGN_INSTRUCTIONS.md` (how decks + thumbnails are built),
   `template/PRODUCTION_CONTRACT.md` (the script → deck → video contract, TTS rules, slide
   kinds), `blog/*/post.md` (published essays), and `projects/<TICKER>/deck/*_deck_brief.md`
-  (real per-video briefs, e.g. `GTBIF`).
+  (real per-video briefs, one per covered ticker).
 - **GitHub:** [RoboFinSystems/robosystems-content-machine](https://github.com/RoboFinSystems/robosystems-content-machine)
   — the open pipeline (MIT). Explore it to understand how these artifacts are produced and
   assembled. Related: [RoboSystems platform](https://github.com/RoboFinSystems/robosystems),
@@ -68,15 +68,17 @@ share one brand voice:
 **1. Research / video / social (punchy, declarative).**
 - **Hooks are confrontational and specific.** Real openers: *"Every Financial System Today Is
   Built on a Lie."* · *"We covered it. Here's what changed."* · *"Nobody covers this $1.2B company."*
-- **The number is the protagonist.** Lead with the cognitive-dissonance figure (a 76% tax
-  rate, an 8x adjusted P/E, $92M/yr penalty), then explain it. Never bury the metric.
+- **The number is the protagonist.** Lead with the cognitive-dissonance figure (a 44%
+  effective tax rate, a 9x adjusted P/E, a $40M one-time charge), then explain it. Never bury
+  the metric.
 - **Honest framing, always.** Bull case *and* bear case. Explicit disclaimers: *"Not investment
   advice. No price targets. Every number from the filings."* — this is non-negotiable and part
   of the brand's credibility.
-- **Person:** "we" for RoboSystems' own conviction ("We covered Green Thumb at $6.67"); "you"
+- **Person:** "we" for RoboSystems' own conviction ("We covered it before the re-rating"); "you"
   to challenge the reader ("try answering it. You'll need data from five systems").
 - **Casing:** Title Case or Sentence case for headlines; **eyebrow labels are UPPERCASE**
-  (`COVERAGE UPDATE`, `01 / THE PAIN`). Tickers always `$GTBIF` / `NYSE: TRLV`.
+  (`COVERAGE UPDATE`, `01 / THE PAIN`). Tickers always cashtag or exchange-qualified
+  (`$EXCO` / `NYSE: EXCO`).
 - **Em-dashes and colons** drive the rhythm. Short sentences. Then a longer one that lands the
   point. Bulleted metric stacks (`• FY2025 revenue $1.18B (+3.4%)`).
 

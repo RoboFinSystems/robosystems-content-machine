@@ -7,7 +7,7 @@
 </head>
 <body>
 <x-dc>
-<!-- @template name="Video Deck" description="The reusable house research deck — one slide of each kind (title, metric cards, bar chart, callout, dual/compare, CTA) on the dark RoboSystems stage. Duplicate, paste a deck brief, fill in." -->
+<!-- @template name="Video Deck" description="The reusable house research deck — one slide of each kind (title, metric cards, bar chart, callout, dual/compare, CTA) on the dark RoboSystems stage. Duplicate, paste a deck brief, fill in. Example content is a fictional placeholder (Example Corp / EXCO)." -->
 <helmet>
 <script src="./ds-base.js"></script>
 <style>
@@ -21,12 +21,12 @@
   <section data-screen-label="Slide 01 — Hook" style="position:relative; width:1280px; height:720px; flex:none; overflow:hidden; border-radius:14px; box-shadow:0 30px 80px -30px rgba(0,0,0,0.8); background:radial-gradient(120% 90% at 50% -10%, rgba(59,122,245,0.18), transparent 60%), #0a0e1a; padding:88px 100px; display:flex; flex-direction:column;">
     <x-import component-from-global-scope="RoboSystemsContentDesignSystem_746ae7.Eyebrow" index="1" label="The Setup" hint-size="200px,20px"></x-import>
     <h1 style="font-family:'Orbitron',sans-serif; font-weight:800; font-size:92px; line-height:1.02; letter-spacing:-0.01em; color:#f4f7fb; margin:28px 0 0; max-width:18ch;">We covered it. Here's what changed.</h1>
-    <p style="font-size:26px; color:#8593aa; margin:28px 0 0; font-weight:500;">Green Thumb (GTBIF) — Coverage Update</p>
+    <p style="font-size:26px; color:#8593aa; margin:28px 0 0; font-weight:500;">Example Corp (EXCO) — Coverage Update</p>
     <div style="margin-top:36px;">
       <x-import component-from-global-scope="RoboSystemsContentDesignSystem_746ae7.Badge" tone="accent" solid="{{ true }}" hint-size="180px,28px">Coverage Update</x-import>
     </div>
     <div style="margin-top:auto;">
-      <x-import component-from-global-scope="RoboSystemsContentDesignSystem_746ae7.SourceFooter" source="RoboSystems SEC graph · web, Jun 2026" hint-size="100%,40px"></x-import>
+      <x-import component-from-global-scope="RoboSystemsContentDesignSystem_746ae7.SourceFooter" source="RoboSystems SEC graph · web, [MONTH YEAR]" hint-size="100%,40px"></x-import>
     </div>
   </section>
 
@@ -34,17 +34,17 @@
   <section data-screen-label="Slide 02 — Metric cards" style="position:relative; width:1280px; height:720px; flex:none; overflow:hidden; border-radius:14px; box-shadow:0 30px 80px -30px rgba(0,0,0,0.8); background:#0a0e1a; padding:80px 100px; display:flex; flex-direction:column;">
     <x-import component-from-global-scope="RoboSystemsContentDesignSystem_746ae7.Eyebrow" index="2" label="At A Glance" hint-size="200px,20px"></x-import>
     <h2 style="font-family:'Orbitron',sans-serif; font-weight:700; font-size:52px; line-height:1.05; color:#f4f7fb; margin:18px 0 6px;">What's changed since v1</h2>
-    <p style="font-size:22px; color:#8593aa; margin:0 0 40px;">Green Thumb at a glance · Q1 FY2026 10-Q</p>
+    <p style="font-size:22px; color:#8593aa; margin:0 0 40px;">Example Corp at a glance · Q1 FY2026 10-Q</p>
     <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:20px;">
-      <x-import component-from-global-scope="RoboSystemsContentDesignSystem_746ae7.MetricCard" label="Q1 FY2026 Revenue" value="$300.2M" change="+7.4% YoY" change-tone="positive" hint-size="100%,170px"></x-import>
-      <x-import component-from-global-scope="RoboSystemsContentDesignSystem_746ae7.MetricCard" label="Stock Price" value="~$7.30" change="+10% since v1" change-tone="positive" hint-size="100%,170px"></x-import>
-      <x-import component-from-global-scope="RoboSystemsContentDesignSystem_746ae7.MetricCard" label="Stores / States" value="113 / 14" change="RISE retail" change-tone="neutral" hint-size="100%,170px"></x-import>
-      <x-import component-from-global-scope="RoboSystemsContentDesignSystem_746ae7.MetricCard" label="Profitability" value="Only profitable MSO" change="consistently GAAP+" change-tone="positive" hint-size="100%,170px"></x-import>
-      <x-import component-from-global-scope="RoboSystemsContentDesignSystem_746ae7.MetricCard" label="Catalyst that fired" value="Schedule III" change="medical only — barely helps" change-tone="warning" highlight="{{ true }}" hint-size="100%,170px"></x-import>
-      <x-import component-from-global-scope="RoboSystemsContentDesignSystem_746ae7.MetricCard" label="Net cash" value="$344.5M" change="least levered Tier 1" change-tone="neutral" hint-size="100%,170px"></x-import>
+      <x-import component-from-global-scope="RoboSystemsContentDesignSystem_746ae7.MetricCard" label="Q1 FY2026 Revenue" value="$295.0M" change="+9.2% YoY" change-tone="positive" hint-size="100%,170px"></x-import>
+      <x-import component-from-global-scope="RoboSystemsContentDesignSystem_746ae7.MetricCard" label="Stock Price" value="$18.40" change="+12% since v1" change-tone="positive" hint-size="100%,170px"></x-import>
+      <x-import component-from-global-scope="RoboSystemsContentDesignSystem_746ae7.MetricCard" label="Segments / Markets" value="4 / 11" change="expanding" change-tone="neutral" hint-size="100%,170px"></x-import>
+      <x-import component-from-global-scope="RoboSystemsContentDesignSystem_746ae7.MetricCard" label="Profitability" value="GAAP profitable" change="4 yrs running" change-tone="positive" hint-size="100%,170px"></x-import>
+      <x-import component-from-global-scope="RoboSystemsContentDesignSystem_746ae7.MetricCard" label="Catalyst" value="Contract win" change="ramps FY2027" change-tone="warning" highlight="{{ true }}" hint-size="100%,170px"></x-import>
+      <x-import component-from-global-scope="RoboSystemsContentDesignSystem_746ae7.MetricCard" label="Net cash" value="$210.0M" change="low leverage" change-tone="neutral" hint-size="100%,170px"></x-import>
     </div>
     <div style="margin-top:auto;">
-      <x-import component-from-global-scope="RoboSystemsContentDesignSystem_746ae7.SourceFooter" source="GTBIF Q1 FY2026 10-Q · RoboSystems" hint-size="100%,40px"></x-import>
+      <x-import component-from-global-scope="RoboSystemsContentDesignSystem_746ae7.SourceFooter" source="EXCO Q1 FY2026 10-Q · RoboSystems" hint-size="100%,40px"></x-import>
     </div>
   </section>
 
@@ -52,7 +52,7 @@
   <section data-screen-label="Slide 03 — Bar chart" style="position:relative; width:1280px; height:720px; flex:none; overflow:hidden; border-radius:14px; box-shadow:0 30px 80px -30px rgba(0,0,0,0.8); background:#0a0e1a; padding:80px 100px; display:flex; flex-direction:column;">
     <x-import component-from-global-scope="RoboSystemsContentDesignSystem_746ae7.Eyebrow" index="3" label="The Top Line" hint-size="200px,20px"></x-import>
     <h2 style="font-family:'Orbitron',sans-serif; font-weight:700; font-size:52px; line-height:1.05; color:#f4f7fb; margin:18px 0 6px;">Revenue, FY2021–FY2025</h2>
-    <p style="font-size:22px; color:#8593aa; margin:0 0 48px;">Annual, USD · Q1 FY2026: $300.2M (+7.4% YoY)</p>
+    <p style="font-size:22px; color:#8593aa; margin:0 0 48px;">Annual, USD · Q1 FY2026: $295.0M (+9.2% YoY)</p>
     <div style="flex:1; display:flex; align-items:flex-end; padding-bottom:8px;">
       <x-import component-from-global-scope="RoboSystemsContentDesignSystem_746ae7.BarChart" data="{{ revData }}" highlight="FY2025" format="{{ fmtB }}" height="{{ 300 }}" style="width:100%" hint-size="100%,300px"></x-import>
     </div>
@@ -62,10 +62,10 @@
   </section>
 
   <!-- ============ SLIDE 4 · CALLOUT ============ -->
-  <section data-screen-label="Slide 04 — Callout" style="position:relative; width:1280px; height:720px; flex:none; overflow:hidden; border-radius:14px; box-shadow:0 30px 80px -30px rgba(0,0,0,0.8); background:radial-gradient(90% 80% at 50% 50%, rgba(249,128,128,0.10), transparent 60%), #0a0e1a; padding:80px 100px; display:flex; flex-direction:column;">
+  <section data-screen-label="Slide 04 — Callout" style="position:relative; width:1280px; height:720px; flex:none; overflow:hidden; border-radius:14px; box-shadow:0 30px 80px -30px rgba(0,0,0,0.8); background:radial-gradient(90% 80% at 50% 50%, rgba(255,138,76,0.10), transparent 60%), #0a0e1a; padding:80px 100px; display:flex; flex-direction:column;">
     <x-import component-from-global-scope="RoboSystemsContentDesignSystem_746ae7.Eyebrow" index="4" label="The Number" hint-size="200px,20px"></x-import>
     <div style="flex:1; display:flex; align-items:center; justify-content:center;">
-      <x-import component-from-global-scope="RoboSystemsContentDesignSystem_746ae7.Callout" value="76%" label="Q1 FY2026 effective tax rate" context="Medical-only Schedule III does almost nothing for an adult-use operator. Tax $48.1M on $63.1M pretax." tone="warning" hint-size="700px,400px"></x-import>
+      <x-import component-from-global-scope="RoboSystemsContentDesignSystem_746ae7.Callout" value="44%" label="Q1 FY2026 effective tax rate" context="An above-peer tax drag on an otherwise profitable quarter — worth understanding before you model EPS." tone="warning" hint-size="700px,400px"></x-import>
     </div>
     <div>
       <x-import component-from-global-scope="RoboSystemsContentDesignSystem_746ae7.SourceFooter" source="SEC 10-Q Q1 FY2026 · RoboSystems" hint-size="100%,40px"></x-import>
@@ -79,7 +79,7 @@
     <p style="font-size:22px; color:#8593aa; margin:0 0 44px;">Not a recommendation</p>
     <x-import component-from-global-scope="RoboSystemsContentDesignSystem_746ae7.ComparisonTable" left="{{ bull }}" right="{{ bear }}" hint-size="100%,320px"></x-import>
     <div style="margin-top:auto;">
-      <x-import component-from-global-scope="RoboSystemsContentDesignSystem_746ae7.SourceFooter" source="SEC filings; web, Jun 2026 · RoboSystems" hint-size="100%,40px"></x-import>
+      <x-import component-from-global-scope="RoboSystemsContentDesignSystem_746ae7.SourceFooter" source="SEC filings; web, [MONTH YEAR] · RoboSystems" hint-size="100%,40px"></x-import>
     </div>
   </section>
 
@@ -98,30 +98,31 @@
 class Component extends DCLogic {
   renderVals() {
     return {
+      // Placeholder example data — replace with the per-ticker deck brief.
       revData: {
-        FY2021: 893560000,
-        FY2022: 1017375000,
-        FY2023: 1054553000,
-        FY2024: 1137141000,
-        FY2025: 1175295000,
+        FY2021: 620000000,
+        FY2022: 742000000,
+        FY2023: 835000000,
+        FY2024: 940000000,
+        FY2025: 1040000000,
       },
       fmtB: (v) => '$' + (Number(v) / 1e9).toFixed(2) + 'B',
       bull: {
         title: 'Bull case',
         points: [
-          'Only consistently profitable MSO',
-          'Net cash; a buyer, not a target',
-          '+$92M/yr earnings if 280E lifts broadly',
-          'Best beverage play into the hemp ban',
+          'Consistently GAAP profitable',
+          'Net cash; flexible balance sheet',
+          'New contract expands the addressable market',
+          'Pricing power in the core segment',
         ],
       },
       bear: {
         title: 'Bear case',
         points: [
-          'Broad hearing only starts Jun 29, 2026',
-          'Partial order under D.C. Circuit stay',
-          'Gross margin compressing; Illinois pricing down',
-          'Named in Ohio AG antitrust suit (9 MSOs)',
+          'Catalyst benefit is FY2027-weighted',
+          'Top-three customer concentration',
+          'Margin pressure in one segment',
+          'Valuation prices in the win',
         ],
       },
     };

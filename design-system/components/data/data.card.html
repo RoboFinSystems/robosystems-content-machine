@@ -23,20 +23,20 @@
       return (
         <>
           <div className="grid3">
-            <MetricCard label="Q1 Revenue" value="$300.2M" change="+7.4% YoY" changeTone="positive" />
-            <MetricCard label="Effective tax" value="76%" change="280E in force" changeTone="negative" highlight />
-            <MetricCard label="Net cash" value="$344.5M" change="least levered" changeTone="neutral" />
+            <MetricCard label="Q1 Revenue" value="$295.0M" change="+9.2% YoY" changeTone="positive" />
+            <MetricCard label="Effective tax" value="44%" change="above-peer drag" changeTone="negative" highlight />
+            <MetricCard label="Net cash" value="$210.0M" change="low leverage" changeTone="neutral" />
           </div>
-          <Callout label="Annual cost of 280E" value="$92M" context="Income tax exceeded operating income." tone="negative" align="left" />
+          <Callout label="One-time charge, FY2025" value="$40M" context="A non-recurring item that masked the underlying margin." tone="negative" align="left" />
           <BarChart
-            data={{ FY22: 1017, FY23: 1054, FY24: 1137, FY25: 1175 }}
+            data={{ FY22: 742, FY23: 835, FY24: 940, FY25: 1040 }}
             highlight="FY25"
             format={(v) => '$' + (v/1000).toFixed(2) + 'B'}
             height={150}
           />
           <ComparisonTable
-            left={{ title: 'Bull', points: ['Only profitable MSO', 'Net cash'] }}
-            right={{ title: 'Bear', points: ['Hearing Jun 29', 'Margins compressing'] }}
+            left={{ title: 'Bull', points: ['Consistently GAAP profitable', 'Net cash'] }}
+            right={{ title: 'Bear', points: ['Catalyst is FY2027-weighted', 'Margins compressing'] }}
             style={{ gridColumn: '1 / -1' }}
           />
         </>

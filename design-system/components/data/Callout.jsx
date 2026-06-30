@@ -8,7 +8,7 @@ const TONES = {
 };
 
 /**
- * Callout — one enormous number that tells the story (e.g. "76%"), with a
+ * Callout — one enormous number that tells the story (e.g. "44%"), with a
  * label above and a context line below. The single-figure slide kind.
  */
 export function Callout({ value, label, context, tone = 'neutral', align = 'center', style, ...rest }) {
