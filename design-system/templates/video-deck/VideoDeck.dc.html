@@ -13,6 +13,30 @@
 <style>
   @keyframes vdRise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
   body { margin: 0; }
+
+  /* ── PDF / print path (screen render is untouched; applies only when printing) ── */
+  @page { size: 1280px 720px; margin: 0; }
+  @media print {
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    html, body { margin: 0 !important; padding: 0 !important; background: #0a0e1a !important; height: auto !important; }
+    #dc-root, .sc-host { display: block !important; height: auto !important; min-height: 0 !important; transform: none !important; background: none !important; }
+    .sc-host > div { display: block !important; padding: 0 !important; gap: 0 !important; margin: 0 !important; min-height: 0 !important; background: none !important; }
+    section {
+      box-sizing: border-box !important;
+      width: 1280px !important; height: 720px !important; flex: none !important;
+      margin: 0 !important; border-radius: 0 !important; box-shadow: none !important;
+      overflow: hidden !important;
+      break-after: page; page-break-after: always; break-inside: avoid; page-break-inside: avoid;
+    }
+    section:last-child { break-after: auto; page-break-after: auto; }
+    /* keep dense (13–14 row) tables inside the 720px frame */
+    section table td, section table th { padding-top: 5px !important; padding-bottom: 5px !important; }
+    *, *::before, *::after {
+      animation-delay: -99s !important; animation-duration: .001s !important;
+      animation-iteration-count: 1 !important; animation-fill-mode: both !important;
+      animation-play-state: running !important; transition-duration: 0s !important;
+    }
+  }
 </style>
 </helmet>
 <div style="background:#04060d; padding:48px 0; display:flex; flex-direction:column; align-items:center; gap:48px; font-family:'Space Grotesk',system-ui,sans-serif; min-height:100vh;">
