@@ -32,7 +32,7 @@ export function SourceFooter({ source, brand = true, brandLabel = 'RoboSystems',
       </span>
       {brand && (
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--space-2)', color: 'var(--text-muted)' }}>
-          <BrandMark size={18} />
+          <BrandMark size={18} style={{ color: 'var(--text-muted)' }} />
           <span
             style={{
               fontFamily: 'var(--font-display)',

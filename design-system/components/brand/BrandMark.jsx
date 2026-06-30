@@ -2,8 +2,8 @@ import React from 'react';
 
 /**
  * BrandMark — the RoboSystems glyph (graph-node trio over a ledger/∞ form)
- * as inline SVG, so it inherits `color` via currentColor. Use white on the
- * dark stage, navy (var(--blue-800)) on light.
+ * as inline SVG, tinted via currentColor. Defaults to white for the dark
+ * stage; pass style={{ color: 'var(--blue-800)' }} to override on light.
  */
 export function BrandMark({ size = 32, title = 'RoboSystems', style, ...rest }) {
   return (
@@ -16,7 +16,7 @@ export function BrandMark({ size = 32, title = 'RoboSystems', style, ...rest }) 
       clipRule="evenodd"
       role="img"
       aria-label={title}
-      style={{ display: 'block', flex: 'none', ...style }}
+      style={{ display: 'block', flex: 'none', color: '#fff', ...style }}
       {...rest}
     >
       <g transform="matrix(2.49868,0,0,2.59811,-751.016,-1032.21)">
