@@ -1,0 +1,155 @@
+{
+  "plugins": [
+    "react",
+    "import"
+  ],
+  "rules": {
+    "react/forbid-elements": [
+      "warn",
+      {
+        "forbid": []
+      }
+    ],
+    "no-restricted-imports": [
+      "warn",
+      {
+        "patterns": [
+          {
+            "group": [
+              "components/brand/**",
+              "components/controls/**",
+              "components/data/**"
+            ],
+            "message": "Import design-system components from 'index.js', not component internals."
+          }
+        ]
+      }
+    ],
+    "no-restricted-syntax": [
+      "warn",
+      {
+        "selector": "Literal[value=/#[0-9a-fA-F]{3,8}\\b/]",
+        "message": "Raw hex color — use a design-system color token via var()."
+      },
+      {
+        "selector": "Literal[value=/\\b\\d+px\\b/]",
+        "message": "Raw px value — use a design-system spacing token via var()."
+      },
+      {
+        "selector": "Literal[value=/font-family\\s*:\\s*(?!['\\\"]?(?:Space Grotesk|Orbitron|JetBrains Mono))/i]",
+        "message": "Font not provided by the design system. Available: Space Grotesk, Orbitron, JetBrains Mono."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Badge'] > JSXAttribute > JSXIdentifier[name!=/^(?:tone|solid|key|ref|className|style|children)$/]",
+        "message": "<Badge> doesn't accept that prop. Declared props: tone, solid."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='BarChart'] > JSXAttribute > JSXIdentifier[name!=/^(?:data|highlight|format|height|key|ref|className|style|children)$/]",
+        "message": "<BarChart> doesn't accept that prop. Declared props: data, highlight, format, height."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='BrandMark'] > JSXAttribute > JSXIdentifier[name!=/^(?:size|title|key|ref|className|style|children)$/]",
+        "message": "<BrandMark> doesn't accept that prop. Declared props: size, title."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Button'] > JSXAttribute > JSXIdentifier[name!=/^(?:variant|size|as|href|key|ref|className|style|children)$/]",
+        "message": "<Button> doesn't accept that prop. Declared props: variant, size, as, href."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Button'] > JSXAttribute[name.name='variant'] > Literal[value!=/^(?:primary|secondary|ghost)$/]",
+        "message": "<Button> variant must be one of 'primary' | 'secondary' | 'ghost'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Button'] > JSXAttribute[name.name='size'] > Literal[value!=/^(?:sm|md|lg)$/]",
+        "message": "<Button> size must be one of 'sm' | 'md' | 'lg'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Callout'] > JSXAttribute > JSXIdentifier[name!=/^(?:value|label|context|tone|align|key|ref|className|style|children)$/]",
+        "message": "<Callout> doesn't accept that prop. Declared props: value, label, context, tone, align."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Callout'] > JSXAttribute[name.name='align'] > Literal[value!=/^(?:center|left)$/]",
+        "message": "<Callout> align must be one of 'center' | 'left'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='ComparisonColumn'] > JSXAttribute > JSXIdentifier[name!=/^(?:title|points|key|ref|className|style|children)$/]",
+        "message": "<ComparisonColumn> doesn't accept that prop. Declared props: title, points."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Eyebrow'] > JSXAttribute > JSXIdentifier[name!=/^(?:index|label|accent|key|ref|className|style|children)$/]",
+        "message": "<Eyebrow> doesn't accept that prop. Declared props: index, label, accent."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='MetricCard'] > JSXAttribute > JSXIdentifier[name!=/^(?:label|value|change|changeTone|highlight|key|ref|className|style|children)$/]",
+        "message": "<MetricCard> doesn't accept that prop. Declared props: label, value, change, changeTone, highlight."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='SourceFooter'] > JSXAttribute > JSXIdentifier[name!=/^(?:source|brand|brandLabel|key|ref|className|style|children)$/]",
+        "message": "<SourceFooter> doesn't accept that prop. Declared props: source, brand, brandLabel."
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": [
+        "**/index.js"
+      ],
+      "rules": {
+        "no-restricted-imports": "off"
+      }
+    }
+  ],
+  "x-omelette": {
+    "components": {
+      "Badge": { "replaces": [] },
+      "BarChart": { "replaces": [] },
+      "BrandMark": { "replaces": [] },
+      "Button": { "replaces": [] },
+      "Callout": { "replaces": [] },
+      "ComparisonColumn": { "replaces": [] },
+      "Eyebrow": { "replaces": [] },
+      "MetricCard": { "replaces": [] },
+      "SourceFooter": { "replaces": [] }
+    },
+    "tokens": [
+      "--accent", "--accent-graph", "--accent-hover", "--accent-press",
+      "--amber-300", "--amber-400", "--amber-500", "--amber-600",
+      "--bg-grid", "--bg-grid-size", "--bg-stage-glow", "--bg-stage-graph",
+      "--blue-100", "--blue-200", "--blue-300", "--blue-400", "--blue-50",
+      "--blue-500", "--blue-600", "--blue-700", "--blue-800", "--blue-900", "--blue-950",
+      "--border-hairline", "--border-strong", "--container-report",
+      "--data-negative", "--data-neutral", "--data-positive", "--data-warning",
+      "--dur-base", "--dur-fast", "--dur-reveal", "--dur-slow",
+      "--ease-in-out", "--ease-out", "--ease-standard",
+      "--eyebrow-accent", "--eyebrow-color",
+      "--font-body", "--font-display", "--font-mono",
+      "--fw-black", "--fw-bold", "--fw-extrabold", "--fw-light", "--fw-medium", "--fw-regular", "--fw-semibold",
+      "--glow-accent", "--glow-graph",
+      "--gray-100", "--gray-200", "--gray-300", "--gray-400", "--gray-50",
+      "--gray-500", "--gray-600", "--gray-700", "--gray-800", "--gray-900", "--gray-950",
+      "--green-300", "--green-400", "--green-500", "--green-600", "--hairline",
+      "--ink-600", "--ink-700", "--ink-800", "--ink-850", "--ink-900", "--ink-950",
+      "--leading-normal", "--leading-relaxed", "--leading-snug", "--leading-tight",
+      "--measure-narrow", "--measure-prose",
+      "--primary-100", "--primary-200", "--primary-300", "--primary-400", "--primary-50",
+      "--primary-500", "--primary-600", "--primary-700", "--primary-800", "--primary-900", "--primary-950",
+      "--radius-2xl", "--radius-lg", "--radius-md", "--radius-pill", "--radius-sm", "--radius-xl", "--radius-xs",
+      "--red-300", "--red-400", "--red-500", "--red-600",
+      "--ring-accent", "--ring-inset",
+      "--shadow-card", "--shadow-lg", "--shadow-light-lg", "--shadow-light-md", "--shadow-light-sm", "--shadow-md", "--shadow-sm",
+      "--short-h", "--short-pad-x", "--short-w", "--slide-h", "--slide-pad-x", "--slide-pad-y", "--slide-w",
+      "--space-0", "--space-1", "--space-10", "--space-12", "--space-16", "--space-2", "--space-20", "--space-24",
+      "--space-3", "--space-32", "--space-4", "--space-5", "--space-6", "--space-8",
+      "--stage-bg", "--stage-bg-deep", "--surface-card", "--surface-panel", "--surface-raised",
+      "--teal-300", "--teal-400", "--teal-graph", "--teal-tint", "--terminal-green",
+      "--text-2xl", "--text-2xs", "--text-3xl", "--text-4xl", "--text-5xl", "--text-6xl", "--text-7xl", "--text-8xl",
+      "--text-base", "--text-body", "--text-faint", "--text-lg", "--text-muted", "--text-primary", "--text-sm", "--text-xl", "--text-xs",
+      "--tracking-display", "--tracking-eyebrow", "--tracking-mono", "--tracking-tight", "--tracking-wide"
+    ],
+    "fontFamilies": [
+      "JetBrains Mono",
+      "Orbitron",
+      "Space Grotesk"
+    ]
+  }
+}

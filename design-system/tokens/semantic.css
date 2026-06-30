@@ -1,0 +1,71 @@
+/* ============================================================
+   RoboSystems Content — Semantic Tokens
+   Role-based aliases that content templates should reference
+   instead of raw palette values. Dark-first (the deck/video stage),
+   with a [data-surface="light"] scope for blog + report pages.
+   ============================================================ */
+:root {
+  /* ---- Dark stage (default: decks, thumbnails, video frames, shorts) ---- */
+  --stage-bg:        var(--ink-900);
+  --stage-bg-deep:   var(--ink-950);
+  --surface-panel:   var(--ink-850);
+  --surface-card:    var(--ink-800);
+  --surface-raised:  #182238;
+
+  --border-hairline: var(--ink-700);
+  --border-strong:   var(--ink-600);
+
+  --text-primary:    #f4f7fb;   /* headlines, primary copy on dark */
+  --text-body:       #c3ccdb;   /* body copy on dark */
+  --text-muted:      #8593aa;   /* captions, source footers */
+  --text-faint:      #5a6783;   /* eyebrow numerals, watermark */
+
+  --accent:          var(--blue-500);   /* the brand emphasis color */
+  --accent-hover:    var(--blue-400);
+  --accent-press:    var(--blue-600);
+  --accent-graph:    var(--teal-graph); /* structure / graph accent */
+
+  /* Data signals (on dark stage) */
+  --data-positive:   var(--green-400);
+  --data-negative:   var(--red-400);
+  --data-neutral:    var(--blue-400);
+  --data-warning:    var(--amber-400);
+
+  /* Eyebrow label (e.g. "01 / THE PAIN") */
+  --eyebrow-color:   var(--text-faint);
+  --eyebrow-accent:  var(--accent);
+
+  /* Glows / emphasis halos used behind hero numbers */
+  --glow-accent:     0 0 80px -20px rgba(59, 122, 245, 0.55); /* @kind shadow */
+  --glow-graph:      0 0 80px -20px rgba(0, 212, 170, 0.45); /* @kind shadow */
+}
+
+/* ---- Light surface (blog posts, written reports, light social cards) ---- */
+[data-surface="light"] {
+  --stage-bg:        #ffffff;
+  --stage-bg-deep:   var(--gray-50);
+  --surface-panel:   var(--gray-50);
+  --surface-card:    #ffffff;
+  --surface-raised:  #ffffff;
+
+  --border-hairline: var(--gray-200);
+  --border-strong:   var(--gray-300);
+
+  --text-primary:    var(--blue-800);  /* navy ink for headings */
+  --text-body:       var(--gray-700);
+  --text-muted:      var(--gray-500);
+  --text-faint:      var(--gray-400);
+
+  --accent:          var(--blue-600);
+  --accent-hover:    var(--blue-500);
+  --accent-press:    var(--blue-700);
+
+  --data-positive:   var(--green-500);
+  --data-negative:   var(--red-600);
+  --data-neutral:    var(--blue-600);
+  --data-warning:    var(--amber-600);
+
+  --eyebrow-color:   var(--gray-400);
+  --glow-accent:     none; /* @kind shadow */
+  --glow-graph:      none; /* @kind shadow */
+}

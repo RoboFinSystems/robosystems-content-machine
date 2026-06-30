@@ -1,0 +1,45 @@
+<!-- @dsCard group="Components" viewport="700x300" name="Brand — Eyebrow, Badge, Mark, Footer" subtitle="Wayfinding + attribution primitives for slides" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../../styles.css" />
+<script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>
+  body { margin: 0; background: var(--bg-stage-glow); font-family: var(--font-body); padding: 28px 32px; min-height: 300px; box-sizing: border-box; }
+  #root { display: flex; flex-direction: column; gap: 22px; }
+  .pair { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const NS = window.RoboSystemsContentDesignSystem_746ae7;
+    const { Eyebrow, Badge, BrandMark, SourceFooter } = NS;
+    function Demo() {
+      return (
+        <>
+          <Eyebrow index={1} label="The Pain" />
+          <div className="pair">
+            <Badge tone="accent" solid>Coverage Update</Badge>
+            <Badge tone="warning">280E</Badge>
+            <Badge tone="positive">+7.4% YoY</Badge>
+            <Badge tone="negative">76% Tax</Badge>
+            <Badge tone="graph">Knowledge Graph</Badge>
+          </div>
+          <div className="pair" style={{ gap: 16 }}>
+            <BrandMark size={40} style={{ color: '#fff' }} />
+            <BrandMark size={28} style={{ color: 'var(--accent)' }} />
+            <BrandMark size={28} style={{ color: 'var(--teal-graph)' }} />
+          </div>
+          <SourceFooter source="SEC 10-K, FY2025 · RoboSystems" />
+        </>
+      );
+    }
+    ReactDOM.createRoot(document.getElementById('root')).render(<Demo />);
+  </script>
+</body>
+</html>

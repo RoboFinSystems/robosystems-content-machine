@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<!-- @template name="Blog Post" description="Long-form research essay on the light surface — kicker, big Orbitron title, lead, author meta, prose body with a pull-quote and a built-with-RoboSystems CTA. The manifesto voice." -->
+<helmet>
+<script src="./ds-base.js"></script>
+<style> body { margin: 0; } </style>
+</helmet>
+<div data-surface="light" style="background:#ffffff; min-height:100vh; font-family:'Space Grotesk',system-ui,sans-serif; color:#374151;">
+
+  <!-- Header band -->
+  <header style="border-bottom:1px solid #e5e7eb; padding:22px 40px; display:flex; align-items:center; justify-content:space-between;">
+    <div style="display:flex; align-items:center; gap:12px; color:#1b3a57;">
+      <x-import component-from-global-scope="RoboSystemsContentDesignSystem_746ae7.BrandMark" size="{{ 30 }}" style="color:#1b3a57" hint-size="30px,30px"></x-import>
+      <span style="font-family:'Orbitron',sans-serif; font-weight:700; font-size:18px;">RoboSystems</span>
+    </div>
+    <span style="font-family:'Orbitron',sans-serif; font-size:13px; letter-spacing:0.14em; text-transform:uppercase; color:#9ca3af;">Blog</span>
+  </header>
+
+  <article style="max-width:760px; margin:0 auto; padding:72px 32px 96px;">
+    <div style="font-family:'Orbitron',sans-serif; font-weight:600; font-size:13px; letter-spacing:0.2em; text-transform:uppercase; color:#2563eb;">Manifesto</div>
+    <h1 style="font-family:'Orbitron',sans-serif; font-weight:800; font-size:56px; line-height:1.06; letter-spacing:-0.01em; color:#1b3a57; margin:18px 0 0;">The Financial Knowledge Graph Manifesto</h1>
+    <p style="font-size:22px; line-height:1.5; color:#4b5563; margin:24px 0 0; font-weight:500;">Why the future of business intelligence lies not in isolated metrics, but in the rich, interconnected relationships between financial outcomes and the operations that drive them.</p>
+
+    <div style="display:flex; align-items:center; gap:14px; margin:32px 0 0; padding-bottom:32px; border-bottom:1px solid #e5e7eb;">
+      <div style="width:44px; height:44px; border-radius:50%; background:#1b3a57; color:#fff; display:flex; align-items:center; justify-content:center; font-family:'Orbitron',sans-serif; font-weight:700; font-size:16px;">JF</div>
+      <div>
+        <div style="font-weight:600; color:#1f2937; font-size:15px;">Joey French</div>
+        <div style="font-family:'JetBrains Mono',monospace; font-size:13px; color:#9ca3af;">Sep 1, 2025 · 6 min read</div>
+      </div>
+    </div>
+
+    <h2 style="font-family:'Orbitron',sans-serif; font-weight:700; font-size:30px; color:#1b3a57; margin:48px 0 16px;">Every financial system is built on a lie</h2>
+    <p style="font-size:18px; line-height:1.75; margin:0 0 20px;">The lie is this: that rows and columns can capture the reality of business. Think about your last invoice. In your accounting system, it's row #47291 in a transactions table. But that invoice is actually the intersection of a dozen stories — a salesperson closing a deal, a warehouse shipping product, a customer solving a problem.</p>
+    <p style="font-size:18px; line-height:1.75; margin:0 0 20px;">We force these living relationships into rigid tables, then wonder why our financial insights feel dead on arrival. This isn't a technology problem. It's a philosophy problem.</p>
+
+    <blockquote style="margin:36px 0; padding:4px 0 4px 24px; border-left:4px solid #00d4aa; font-size:24px; line-height:1.45; font-style:italic; font-weight:500; color:#1b3a57;">Money doesn't move in tables. It flows through networks.</blockquote>
+
+    <h2 style="font-family:'Orbitron',sans-serif; font-weight:700; font-size:30px; color:#1b3a57; margin:48px 0 16px;">The intelligence hidden in connections</h2>
+    <p style="font-size:18px; line-height:1.75; margin:0 0 20px;">Traditional BI asks: <em>"What happened?"</em> Knowledge graphs reveal: <em>"Why did it happen, and what happens next?"</em> When you model finance as a graph rather than tables, the complexity doesn't disappear — it becomes navigable. One query traverses the entire network, calculating true unit profitability in milliseconds, not months.</p>
+
+    <!-- Built-with callout -->
+    <div style="margin:48px 0 0; background:#f9fafb; border:1px solid #e5e7eb; border-radius:14px; padding:28px 32px; display:flex; align-items:center; justify-content:space-between; gap:24px;">
+      <div>
+        <div style="font-family:'Orbitron',sans-serif; font-weight:700; font-size:18px; color:#1b3a57;">Built with RoboSystems</div>
+        <div style="font-size:15px; color:#6b7280; margin-top:4px;">Structured SEC filing data for every public company.</div>
+      </div>
+      <x-import component-from-global-scope="RoboSystemsContentDesignSystem_746ae7.Button" as="a" href="https://robosystems.ai" hint-size="170px,48px">robosystems.ai</x-import>
+    </div>
+  </article>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

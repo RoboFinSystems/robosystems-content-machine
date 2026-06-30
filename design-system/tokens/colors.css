@@ -1,0 +1,82 @@
+/* ============================================================
+   RoboSystems Content — Color Tokens
+   Source of truth: robosystems-app globals.css @theme override +
+   .ds-compiled.css Flowbite palette. RoboSystems = blue.
+   This is a CONTENT system: dark-first (decks, video, thumbnails)
+   with a light surface for blog/reports.
+   ============================================================ */
+:root {
+  /* ---- Brand blue (marketing primary scale — the house brand) ---- */
+  --blue-50:  #eff6ff;
+  --blue-100: #dbeafe;
+  --blue-200: #bfdbfe;
+  --blue-300: #93bbfd;
+  --blue-400: #6098fa;
+  --blue-500: #3b7af5;   /* primary brand blue */
+  --blue-600: #2563eb;   /* hover / pressed brand blue */
+  --blue-700: #1d4ed8;
+  --blue-800: #1b3a57;   /* deep navy (brand ink) */
+  --blue-900: #1e3a8a;
+  --blue-950: #172e47;   /* darkest navy */
+
+  /* Primary aliases (RoboSystems house brand) */
+  --primary-50:  var(--blue-50);
+  --primary-100: var(--blue-100);
+  --primary-200: var(--blue-200);
+  --primary-300: var(--blue-300);
+  --primary-400: var(--blue-400);
+  --primary-500: var(--blue-500);
+  --primary-600: var(--blue-600);
+  --primary-700: var(--blue-700);
+  --primary-800: var(--blue-800);
+  --primary-900: var(--blue-900);
+  --primary-950: var(--blue-950);
+
+  /* ---- Neutral gray ramp (Flowbite/Tailwind) ---- */
+  --gray-50:  #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
+  --gray-900: #111827;
+  --gray-950: #030712;
+
+  /* ---- Dark navy stage ramp (deck / video / thumbnail backgrounds) ---- *
+   * Cooler + bluer than pure gray; this is the signature content canvas.  */
+  --ink-950: #060912;   /* near-black, slide base */
+  --ink-900: #0a0e1a;   /* primary slide background */
+  --ink-850: #0e1424;   /* raised slide panel */
+  --ink-800: #131b30;   /* card surface on dark */
+  --ink-700: #1c2942;   /* hairline / border on dark */
+  --ink-600: #2a3a59;   /* stronger divider */
+
+  /* ---- Data / semantic signal colors ---- *
+   * Green = positive, Red = negative, brand blue = neutral/current,
+   * Amber = warning/caution. Pulled from the Flowbite ramp.            */
+  --green-300: #84e1bc;
+  --green-400: #31c48d;   /* positive (on dark) */
+  --green-500: #0e9f6e;   /* positive (on light) */
+  --green-600: #057a55;
+  --red-300:   #f8b4b4;
+  --red-400:   #f98080;   /* negative (on dark) */
+  --red-500:   #f05252;
+  --red-600:   #e02424;   /* negative (on light) */
+  --amber-300: #fdba8c;
+  --amber-400: #ff8a4c;   /* warning (on dark) */
+  --amber-500: #ff5a1f;
+  --amber-600: #d03801;
+
+  /* ---- Teal accent (knowledge-graph / "structure" accent) ---- *
+   * Used sparingly: code, links in prose, graph-edge highlights.   */
+  --teal-300:  #7edce2;
+  --teal-400:  #16bdca;
+  --teal-graph: #00d4aa;  /* the signature graph teal */
+  --teal-tint:  #e6fffa;  /* light teal wash (light surfaces) */
+
+  /* Terminal / "machine" green (console, captions cursor) */
+  --terminal-green: #22c55e;
+}

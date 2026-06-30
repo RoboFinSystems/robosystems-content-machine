@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<!-- @template name="Social Card" description="A 1080×1080 stat card for X / LinkedIn — eyebrow, one hero stat with context, ticker, RoboSystems mark, and the standing 'not investment advice' disclaimer. Pairs with the X post copy." -->
+<helmet>
+<script src="./ds-base.js"></script>
+<style> body { margin: 0; } </style>
+</helmet>
+<div style="background:#04060d; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:48px; font-family:'Space Grotesk',system-ui,sans-serif;">
+  <section data-screen-label="Social card" style="position:relative; width:840px; height:840px; overflow:hidden; border-radius:18px; box-shadow:0 30px 90px -30px rgba(0,0,0,0.85); background:radial-gradient(90% 70% at 18% 12%, rgba(0,212,170,0.14), transparent 55%), radial-gradient(90% 70% at 100% 100%, rgba(59,122,245,0.18), transparent 55%), #0a0e1a; display:flex; flex-direction:column; padding:72px;">
+
+    <div style="display:flex; align-items:center; justify-content:space-between;">
+      <x-import component-from-global-scope="RoboSystemsContentDesignSystem_746ae7.Eyebrow" label="The Distortion" hint-size="260px,22px"></x-import>
+      <span style="font-family:'JetBrains Mono',monospace; font-size:22px; font-weight:600; color:#c3ccdb;">$GTBIF</span>
+    </div>
+
+    <div style="flex:1; display:flex; flex-direction:column; justify-content:center;">
+      <span style="font-family:'Orbitron',sans-serif; font-weight:600; font-size:24px; letter-spacing:0.04em; text-transform:uppercase; color:#8593aa;">Income tax &gt; operating income</span>
+      <span style="font-family:'Orbitron',sans-serif; font-weight:900; font-size:150px; line-height:0.9; letter-spacing:-0.03em; color:#f98080; text-shadow:0 0 80px rgba(249,128,128,0.45); margin-top:16px;">$147M</span>
+      <p style="font-size:26px; line-height:1.45; color:#c3ccdb; margin:28px 0 0; max-width:30ch;">Section 280E taxes gross profit, not net — so Green Thumb's tax bill was <strong style="color:#f4f7fb;">bigger than its $138M operating income.</strong></p>
+    </div>
+
+    <div style="display:flex; align-items:flex-end; justify-content:space-between; border-top:1px solid #1c2942; padding-top:28px;">
+      <span style="font-family:'JetBrains Mono',monospace; font-size:15px; color:#5a6783; max-width:34ch; line-height:1.5;">Not investment advice. Every number from SEC filings.</span>
+      <div style="display:flex; align-items:center; gap:12px; color:#fff;">
+        <x-import component-from-global-scope="RoboSystemsContentDesignSystem_746ae7.BrandMark" size="{{ 38 }}" style="color:#fff" hint-size="38px,38px"></x-import>
+        <span style="font-family:'Orbitron',sans-serif; font-weight:700; font-size:22px;">RoboSystems</span>
+      </div>
+    </div>
+
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

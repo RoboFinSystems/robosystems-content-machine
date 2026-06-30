@@ -1,0 +1,42 @@
+/* ============================================================
+   RoboSystems Content — Effects: shadows, borders, motion, grid
+   ============================================================ */
+:root {
+  /* ---- Elevation (dark stage) — shadows are deep + soft, never harsh ---- */
+  --shadow-sm:  0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md:  0 8px 24px -8px rgba(0, 0, 0, 0.55);
+  --shadow-lg:  0 24px 60px -20px rgba(0, 0, 0, 0.65);
+  --shadow-card: 0 18px 50px -24px rgba(0, 0, 0, 0.7);
+
+  /* Light-surface elevation (blog/report cards) */
+  --shadow-light-sm: 0 1px 2px rgba(16, 24, 40, 0.06);
+  --shadow-light-md: 0 6px 20px -8px rgba(16, 24, 40, 0.12);
+  --shadow-light-lg: 0 20px 48px -16px rgba(16, 24, 40, 0.18);
+
+  /* ---- Inset hairline (the "etched panel" look on dark cards) ---- */
+  --ring-inset: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  --ring-accent: 0 0 0 1px rgba(59, 122, 245, 0.4);
+
+  /* ---- Motion — restrained, confident. No bounce on content. ---- */
+  --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);   /* @kind other */
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1); /* @kind other */
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1); /* @kind other */
+  --dur-fast:    140ms; /* @kind other */
+  --dur-base:    240ms; /* @kind other */
+  --dur-slow:    420ms; /* @kind other */
+  --dur-reveal:  640ms;   /* @kind other */
+
+  /* ---- Signature backgrounds ---- */
+  /* Subtle radial brand glow anchored top-center of a slide */
+  --bg-stage-glow:
+    radial-gradient(120% 90% at 50% -10%, rgba(59, 122, 245, 0.16), transparent 60%),
+    var(--stage-bg);
+  /* Graph-teal corner wash for "structure" slides */
+  --bg-stage-graph:
+    radial-gradient(90% 70% at 100% 0%, rgba(0, 212, 170, 0.12), transparent 55%),
+    var(--stage-bg);
+  /* Hairline dot/grid lattice (knowledge-graph texture) */
+  --bg-grid:
+    radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  --bg-grid-size: 32px 32px;
+}

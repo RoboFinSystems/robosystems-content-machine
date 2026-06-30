@@ -1,0 +1,49 @@
+/* ============================================================
+   RoboSystems Content — Typography Tokens
+   Orbitron  → display headings, eyebrow labels, big numbers
+   Space Grotesk → body, UI, captions, tabular data
+   JetBrains Mono → code, tickers, query snippets
+   ============================================================ */
+:root {
+  /* ---- Font families ---- */
+  --font-display: 'Orbitron', 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --font-body:    'Space Grotesk', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono:    'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  /* ---- Weights ---- */
+  --fw-light:     300; /* @kind font */
+  --fw-regular:   400; /* @kind font */
+  --fw-medium:    500; /* @kind font */
+  --fw-semibold:  600; /* @kind font */
+  --fw-bold:      700; /* @kind font */
+  --fw-extrabold: 800; /* @kind font */
+  --fw-black:     900; /* @kind font */
+
+  /* ---- Type scale (rem) — tuned for both screen + 1080p slide use ---- */
+  --text-2xs:  0.6875rem;  /* 11px — micro labels, watermark */
+  --text-xs:   0.75rem;    /* 12px — source footer */
+  --text-sm:   0.875rem;   /* 14px — caption, meta */
+  --text-base: 1rem;       /* 16px — UI body */
+  --text-lg:   1.125rem;   /* 18px — lead body */
+  --text-xl:   1.375rem;   /* 22px — sub-lead */
+  --text-2xl:  1.75rem;    /* 28px — card heading */
+  --text-3xl:  2.25rem;    /* 36px — slide subhead */
+  --text-4xl:  3rem;       /* 48px — section heading */
+  --text-5xl:  4rem;       /* 64px — slide headline */
+  --text-6xl:  5.5rem;     /* 88px — hero headline */
+  --text-7xl:  7.5rem;     /* 120px — callout big number */
+  --text-8xl:  10rem;      /* 160px — thumbnail hero metric */
+
+  /* ---- Line heights ---- */
+  --leading-tight:   1.05;   /* display headlines @kind other */
+  --leading-snug:    1.2;    /* subheads @kind other */
+  --leading-normal:  1.5;    /* body @kind other */
+  --leading-relaxed: 1.7;    /* long-form prose @kind other */
+
+  /* ---- Letter spacing ---- */
+  --tracking-eyebrow: 0.22em;  /* eyebrow labels — wide, Orbitron */
+  --tracking-display: -0.01em; /* big Orbitron headlines tighten slightly */
+  --tracking-tight:   -0.02em;
+  --tracking-wide:    0.04em;
+  --tracking-mono:    0.02em;  /* tickers, code */
+}

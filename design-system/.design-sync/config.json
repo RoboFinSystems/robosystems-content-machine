@@ -1,0 +1,8 @@
+{
+  "projectId": "746ae7a4-52ee-439f-a87a-523dbee2f73c",
+  "projectName": "RoboSystems Content Design System",
+  "localDir": ".",
+  "bootstrappedFrom": "claude.ai/design (project was authored there; no prior local source repo)",
+  "bootstrappedAt": "2026-06-30",
+  "note": "This repo's design-system/ is now the SOURCE OF TRUTH. Claude Design project 746ae7a4 is the render target. Edit tokens/components/templates here; push back with DesignSync (finalize_plan + write_files against projectId). See NOTES.md for what was/wasn't mirrored."
+}
