@@ -30,8 +30,16 @@ TARGET_RATIO = WIDTH / HEIGHT
 
 
 def _require_poppler():
-    if not which("pdftoppm") or not which("pdfinfo"):
+    if not all(which(t) for t in ("pdftoppm", "pdfinfo", "pdftotext")):
         sys.exit("ERROR: poppler not found. Install it (macOS: brew install poppler).")
+
+
+def _page_is_blank(pdf, page_no):
+    """True if a page has no extractable text — a blank separator page some PDF
+    exports insert between slides. Real slides always carry headline/label text."""
+    out = subprocess.run(["pdftotext", "-f", str(page_no), "-l", str(page_no), pdf, "-"],
+                         capture_output=True, text=True)
+    return not out.stdout.strip()
 
 
 def _pdfinfo(pdf):
@@ -123,6 +131,18 @@ def slice_project(project, pdf_override=None):
     png_dir = os.path.join(project_dir, "charts", "png")
     tmp_dir = os.path.join(png_dir, "_deck_tmp")
     pngs, pages = rasterize(pdf, tmp_dir)
+
+    # Some Claude Design PDF exports interleave a blank separator page after each
+    # slide (no @page/print rules in the deck template). Drop text-less pages so the
+    # real slides map 1:1 to the script's segments.
+    if pages != len(visual):
+        kept = [p for i, p in enumerate(pngs, start=1) if not _page_is_blank(pdf, i)]
+        if len(kept) == len(visual):
+            for p in pngs:
+                if p not in kept:
+                    os.remove(p)
+            print(f"  Dropped {pages - len(kept)} blank separator page(s) from the export")
+            pngs, pages = kept, len(kept)
 
     if pages != len(visual):
         # leave tmp for inspection
