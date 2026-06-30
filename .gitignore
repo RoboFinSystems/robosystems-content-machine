@@ -41,6 +41,10 @@ assets/broll/*.mp4
 assets/broll/*.mov
 assets/music/*.mp3
 assets/music/*.wav
+assets/backgrounds/*.png
+assets/backgrounds/*.jpg
+assets/backgrounds/*.jpeg
+assets/backgrounds/*.webp
 
 # Blog: track the prose (post.md) + authored cover/social; ignore generated artifacts
 # (narration is regenerable via `just blog-narrate` and lives in S3 after publish)
