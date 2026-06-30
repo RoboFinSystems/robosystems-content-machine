@@ -25,10 +25,10 @@ venv/
 # Project outputs (generated per-project)
 projects/*/
 
-# Drafts — WIP staging: track only the README (folder + purpose versioned); ignore the
-# churny WIP content (scratch; pieces graduate to blog/ or post natively)
-drafts/*
-!drafts/README.md
+# Drafts — WIP staging + editorial layer: fully ignored (kept private, like the design-doc
+# vault). Holds the thought-leadership campaign (brief/calendar/ideas) + churny WIP content;
+# pieces graduate to blog/ or post natively. Nothing here is versioned in the public repo.
+drafts/
 
 # Campaign shared sources (may contain third-party data)
 campaigns/*/sources/
