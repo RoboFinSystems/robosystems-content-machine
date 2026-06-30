@@ -298,6 +298,12 @@ reads wrong.)*
 
 ## Universal rules
 
+- **The brief is render-safe plain markdown.** The research portal renders the published brief
+  with ReactMarkdown + remark-gfm — GFM tables, headings, lists, bold/italic, and links render,
+  but **YAML frontmatter and raw HTML (`<sub>`, `<br>`, etc.) do NOT** (frontmatter shows as a
+  garbled block; raw HTML vanishes). Start the brief with a `# Heading`, write footnotes/fine-print
+  as *italic* markdown lines (never `<sub>`), and include **no frontmatter** — the catalog takes
+  its metadata from `script.json` + `publish.json`, not the brief.
 - **Never fabricate numbers.** Every figure comes from the MCP filing data or an attributed
   web source. If a metric is missing, note the gap and attribute the fallback.
 - **Data on the slide must match the narration.** If the voice says "1.2 billion," the
