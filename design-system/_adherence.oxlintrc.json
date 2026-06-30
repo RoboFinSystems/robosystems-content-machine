@@ -48,6 +48,10 @@
         "message": "<BarChart> doesn't accept that prop. Declared props: data, highlight, format, height."
       },
       {
+        "selector": "JSXOpeningElement[name.name='LineChart'] > JSXAttribute > JSXIdentifier[name!=/^(?:data|highlight|format|height|key|ref|className|style|children)$/]",
+        "message": "<LineChart> doesn't accept that prop. Declared props: data, highlight, format, height."
+      },
+      {
         "selector": "JSXOpeningElement[name.name='BrandMark'] > JSXAttribute > JSXIdentifier[name!=/^(?:size|title|key|ref|className|style|children)$/]",
         "message": "<BrandMark> doesn't accept that prop. Declared props: size, title."
       },
@@ -108,6 +112,7 @@
       "Callout": { "replaces": [] },
       "ComparisonColumn": { "replaces": [] },
       "Eyebrow": { "replaces": [] },
+      "LineChart": { "replaces": [] },
       "MetricCard": { "replaces": [] },
       "SourceFooter": { "replaces": [] }
     },

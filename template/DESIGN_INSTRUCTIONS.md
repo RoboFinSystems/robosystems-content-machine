@@ -42,7 +42,7 @@ thumbnail on the brand design system and export them. You decide layout and styl
 | Brief `kind` | Render with | Notes |
 |---|---|---|
 | `title` | Title/CTA slide layout | Big headline, eyebrow label, lots of negative space. Little/no data. The hook and the close. |
-| `chart` | `BarChart` / `ComparisonTable` / `MetricCard` (per `chart_type`: bar / table / metric_cards) | Green = positive, red = negative, brand blue = neutral/current. Emphasize the `highlight`. |
+| `chart` | `BarChart` / `LineChart` / `ComparisonTable` / `MetricCard` (per `chart_type`: bar / line / table / metric_cards) | Green = positive, red = negative, brand blue = neutral/current. Emphasize the `highlight`. **`line`** = a trend over time (single or multi-series margins/trajectories); **`bar`** = discrete-period comparison. |
 | `callout` | `Callout` | One enormous number (the `headline`), label above, context line below. Color by `tone` (positive/negative/neutral/warning). |
 | `dual` | Split layout (narrative bullets left, `MetricCard` stack right); use the **bull-vs-bear** variant when the brief frames two sides. |
 

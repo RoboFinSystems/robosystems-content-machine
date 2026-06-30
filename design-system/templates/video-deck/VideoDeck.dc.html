@@ -7,7 +7,7 @@
 </head>
 <body>
 <x-dc>
-<!-- @template name="Video Deck" description="The reusable house research deck — one slide of each kind (title, metric cards, bar chart, callout, dual/compare, CTA) on the dark RoboSystems stage. Duplicate, paste a deck brief, fill in. Example content is a fictional placeholder (Example Corp / EXCO)." -->
+<!-- @template name="Video Deck" description="The reusable house research deck — one slide of each kind (title, metric cards, bar chart, line chart, callout, dual/compare, CTA) on the dark RoboSystems stage. Duplicate, paste a deck brief, fill in. Example content is a fictional placeholder (Example Corp / EXCO)." -->
 <helmet>
 <script src="./ds-base.js"></script>
 <style>
@@ -61,9 +61,22 @@
     </div>
   </section>
 
-  <!-- ============ SLIDE 4 · CALLOUT ============ -->
-  <section data-screen-label="Slide 04 — Callout" style="position:relative; width:1280px; height:720px; flex:none; overflow:hidden; border-radius:14px; box-shadow:0 30px 80px -30px rgba(0,0,0,0.8); background:radial-gradient(90% 80% at 50% 50%, rgba(255,138,76,0.10), transparent 60%), #0a0e1a; padding:80px 100px; display:flex; flex-direction:column;">
-    <x-import component-from-global-scope="RoboSystemsContentDesignSystem_746ae7.Eyebrow" index="4" label="The Number" hint-size="200px,20px"></x-import>
+  <!-- ============ SLIDE 4 · CHART / LINE (multi-series) ============ -->
+  <section data-screen-label="Slide 04 — Line chart" style="position:relative; width:1280px; height:720px; flex:none; overflow:hidden; border-radius:14px; box-shadow:0 30px 80px -30px rgba(0,0,0,0.8); background:#0a0e1a; padding:80px 100px; display:flex; flex-direction:column;">
+    <x-import component-from-global-scope="RoboSystemsContentDesignSystem_746ae7.Eyebrow" index="4" label="The Trend" hint-size="200px,20px"></x-import>
+    <h2 style="font-family:'Orbitron',sans-serif; font-weight:700; font-size:52px; line-height:1.05; color:#f4f7fb; margin:18px 0 6px;">Margins, FY2022–FY2025</h2>
+    <p style="font-size:22px; color:#8593aa; margin:0 0 48px;">Gross vs. net — net margin compounding as the mix shifts</p>
+    <div style="flex:1; display:flex; align-items:stretch; padding-bottom:8px;">
+      <x-import component-from-global-scope="RoboSystemsContentDesignSystem_746ae7.LineChart" data="{{ margins }}" highlight="Net margin" format="{{ fmtPct }}" height="{{ 300 }}" style="width:100%" hint-size="100%,300px"></x-import>
+    </div>
+    <div style="margin-top:24px;">
+      <x-import component-from-global-scope="RoboSystemsContentDesignSystem_746ae7.SourceFooter" source="SEC 10-K FY2022–FY2025 · RoboSystems" hint-size="100%,40px"></x-import>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 5 · CALLOUT ============ -->
+  <section data-screen-label="Slide 05 — Callout" style="position:relative; width:1280px; height:720px; flex:none; overflow:hidden; border-radius:14px; box-shadow:0 30px 80px -30px rgba(0,0,0,0.8); background:radial-gradient(90% 80% at 50% 50%, rgba(255,138,76,0.10), transparent 60%), #0a0e1a; padding:80px 100px; display:flex; flex-direction:column;">
+    <x-import component-from-global-scope="RoboSystemsContentDesignSystem_746ae7.Eyebrow" index="5" label="The Number" hint-size="200px,20px"></x-import>
     <div style="flex:1; display:flex; align-items:center; justify-content:center;">
       <x-import component-from-global-scope="RoboSystemsContentDesignSystem_746ae7.Callout" value="44%" label="Q1 FY2026 effective tax rate" context="An above-peer tax drag on an otherwise profitable quarter — worth understanding before you model EPS." tone="warning" hint-size="700px,400px"></x-import>
     </div>
@@ -72,9 +85,9 @@
     </div>
   </section>
 
-  <!-- ============ SLIDE 5 · DUAL / COMPARE ============ -->
-  <section data-screen-label="Slide 05 — Bull vs Bear" style="position:relative; width:1280px; height:720px; flex:none; overflow:hidden; border-radius:14px; box-shadow:0 30px 80px -30px rgba(0,0,0,0.8); background:#0a0e1a; padding:80px 100px; display:flex; flex-direction:column;">
-    <x-import component-from-global-scope="RoboSystemsContentDesignSystem_746ae7.Eyebrow" index="5" label="The Framework" hint-size="200px,20px"></x-import>
+  <!-- ============ SLIDE 6 · DUAL / COMPARE ============ -->
+  <section data-screen-label="Slide 06 — Bull vs Bear" style="position:relative; width:1280px; height:720px; flex:none; overflow:hidden; border-radius:14px; box-shadow:0 30px 80px -30px rgba(0,0,0,0.8); background:#0a0e1a; padding:80px 100px; display:flex; flex-direction:column;">
+    <x-import component-from-global-scope="RoboSystemsContentDesignSystem_746ae7.Eyebrow" index="6" label="The Framework" hint-size="200px,20px"></x-import>
     <h2 style="font-family:'Orbitron',sans-serif; font-weight:700; font-size:52px; line-height:1.05; color:#f4f7fb; margin:18px 0 6px;">Bull vs bear</h2>
     <p style="font-size:22px; color:#8593aa; margin:0 0 44px;">Not a recommendation</p>
     <x-import component-from-global-scope="RoboSystemsContentDesignSystem_746ae7.ComparisonTable" left="{{ bull }}" right="{{ bear }}" hint-size="100%,320px"></x-import>
@@ -83,8 +96,8 @@
     </div>
   </section>
 
-  <!-- ============ SLIDE 6 · TITLE / CTA ============ -->
-  <section data-screen-label="Slide 06 — CTA" style="position:relative; width:1280px; height:720px; flex:none; overflow:hidden; border-radius:14px; box-shadow:0 30px 80px -30px rgba(0,0,0,0.8); background:radial-gradient(110% 90% at 50% 120%, rgba(59,122,245,0.20), transparent 60%), #0a0e1a; padding:88px 100px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;">
+  <!-- ============ SLIDE 7 · TITLE / CTA ============ -->
+  <section data-screen-label="Slide 07 — CTA" style="position:relative; width:1280px; height:720px; flex:none; overflow:hidden; border-radius:14px; box-shadow:0 30px 80px -30px rgba(0,0,0,0.8); background:radial-gradient(110% 90% at 50% 120%, rgba(59,122,245,0.20), transparent 60%), #0a0e1a; padding:88px 100px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;">
     <x-import component-from-global-scope="RoboSystemsContentDesignSystem_746ae7.BrandMark" size="{{ 72 }}" style="color:#fff" hint-size="72px,72px"></x-import>
     <h1 style="font-family:'Orbitron',sans-serif; font-weight:800; font-size:72px; line-height:1.04; color:#f4f7fb; margin:36px 0 0;">Built with RoboSystems</h1>
     <p style="font-size:26px; color:#c3ccdb; margin:24px 0 40px; max-width:30ch;">Structured SEC filing data for every public company.</p>
@@ -107,6 +120,13 @@ class Component extends DCLogic {
         FY2025: 1040000000,
       },
       fmtB: (v) => '$' + (Number(v) / 1e9).toFixed(2) + 'B',
+      margins: {
+        series: {
+          'Gross margin': { FY2022: 49, FY2023: 50, FY2024: 52, FY2025: 51 },
+          'Net margin': { FY2022: 8, FY2023: 11, FY2024: 14, FY2025: 16 },
+        },
+      },
+      fmtPct: (v) => v + '%',
       bull: {
         title: 'Bull case',
         points: [

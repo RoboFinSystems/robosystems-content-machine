@@ -1,4 +1,4 @@
-<!-- @dsCard group="Components" viewport="700x430" name="Data — Metric, Callout, Bar, Compare" subtitle="The research-slide data primitives" -->
+<!-- @dsCard group="Components" viewport="700x620" name="Data — Metric, Callout, Bar, Line, Compare" subtitle="The research-slide data primitives" -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -18,7 +18,7 @@
   <div id="root"></div>
   <script type="text/babel">
     const NS = window.RoboSystemsContentDesignSystem_746ae7;
-    const { MetricCard, Callout, BarChart, ComparisonTable } = NS;
+    const { MetricCard, Callout, BarChart, LineChart, ComparisonTable } = NS;
     function Demo() {
       return (
         <>
@@ -33,6 +33,16 @@
             highlight="FY25"
             format={(v) => '$' + (v/1000).toFixed(2) + 'B'}
             height={150}
+          />
+          <LineChart
+            data={{ series: {
+              'Gross margin': { FY22: 49, FY23: 50, FY24: 52, FY25: 51 },
+              'Net margin':   { FY22: 8,  FY23: 11, FY24: 14, FY25: 13 },
+            } }}
+            highlight="Net margin"
+            format={(v) => v + '%'}
+            height={150}
+            style={{ gridColumn: '1 / -1' }}
           />
           <ComparisonTable
             left={{ title: 'Bull', points: ['Consistently GAAP profitable', 'Net cash'] }}
