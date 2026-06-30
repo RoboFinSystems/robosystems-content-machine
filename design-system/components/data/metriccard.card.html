@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../../styles.css" />
+<script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>
+  body { margin: 0; background: var(--bg-stage-glow); font-family: var(--font-body); padding: 26px 30px; box-sizing: border-box; }
+  #root { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+</style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { MetricCard } = window.RoboSystemsContentDesignSystem_746ae7;
+    function Demo() {
+      return (
+        <>
+          <MetricCard label="Q1 Revenue" value="$295.0M" change="+9.2% YoY" changeTone="positive" />
+          <MetricCard label="Effective tax" value="44%" change="above-peer drag" changeTone="negative" highlight />
+          <MetricCard label="Net cash" value="$210.0M" change="low leverage" changeTone="neutral" />
+        </>
+      );
+    }
+    ReactDOM.createRoot(document.getElementById('root')).render(<Demo />);
+  </script>
+</body>
+</html>
