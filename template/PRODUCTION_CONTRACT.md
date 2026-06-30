@@ -24,7 +24,7 @@ You (Cowork)                          Claude Design (DESIGN_INSTRUCTIONS.md)
 scripts/{TICKER}_script.json   ──►  build_deck_brief → deck/{TICKER}_deck_brief.md
    (source of truth: narration            │
     + per-slide content + thumbnail)      ▼
-                                     paste into claude.ai/design (on @robosystems/core)
+                                     paste into claude.ai/design (RoboSystems Content Design System)
                                      → compose 16:9 deck  → deck/{TICKER}_deck.pdf
                                      → compose thumbnail  → deck/{TICKER}_thumbnail.pdf  → (slice) → charts/png/{TICKER}_thumbnail.png
                                           │
@@ -174,8 +174,9 @@ You don't do these steps, but understanding them tells you what a good script en
 
 1. **`build_deck_brief.py`** renders `deck/{TICKER}_deck_brief.md` from your script — one
    section per slide (kind, headline, the data as a table, narration as speaker context),
-   with a header pinning: *use the `@robosystems/core` design system, RoboSystems house
-   brand, dark 16:9, produce exactly N slides in this order.*
+   with a header pinning: *build in the **RoboSystems Content Design System** project (start
+   from its `video-deck` template), RoboSystems house brand, dark 16:9, produce exactly N
+   slides in this order.*
 2. A human pastes that brief into **claude.ai/design** and the deck is composed on-brand.
 3. The deck is exported to `deck/{TICKER}_deck.pdf` (or per-slide PNGs).
 4. **`slice_deck.py`** turns it into `charts/png/{visual_ref}.png`, one per slide.

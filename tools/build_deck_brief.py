@@ -86,14 +86,15 @@ def build_brief(script):
     n = len(segments)
 
     L = [f"# {company} ({ticker}) — Video Deck Brief", ""]
-    L.append(f"> Build a **16:9 presentation deck** using the **@robosystems/core** design "
-             f"system — **{HOUSE_BRAND}**. Dark theme; every slide **1920×1080**.")
+    L.append(f"> Build a **16:9 presentation deck** in the **RoboSystems Content Design System** "
+             f"Claude Design project — **{HOUSE_BRAND}**. Start from its **`video-deck`** template "
+             f"(duplicate + fill). Dark theme; every slide **1920×1080**.")
     L.append(f"> Produce **exactly {n} slides**, one per section below, **in this order**. "
              f"Slide kinds used: title / chart / callout / dual.")
     L.append("> Keep every on-screen number EXACTLY as given. Narration is speaker context "
              "(it is *not* shown on the slide).")
-    L.append("> Also build the **thumbnail** (separate frame, spec'd at the end). Full "
-             "conventions: `DESIGN_INSTRUCTIONS.md`.")
+    L.append("> Also build the **thumbnail** (separate frame, spec'd at the end) from the "
+             "**`thumbnail`** template. Full conventions: `DESIGN_INSTRUCTIONS.md`.")
     L.append("")
     if meta.get("filing_type"):
         L.append(f"**Filing:** {meta.get('filing_type')} · {meta.get('filing_date','')}  ")
