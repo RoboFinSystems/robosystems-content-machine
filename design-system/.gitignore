@@ -1,0 +1,8 @@
+# Build toolchain
+node_modules/
+
+# Generated build artifacts — regenerate with `npm run build` (or `just design-build`).
+# The Claude Design project holds the live copies; these are reproduced from source.
+_ds_bundle.js
+_ds_bundle.css
+_ds_manifest.json

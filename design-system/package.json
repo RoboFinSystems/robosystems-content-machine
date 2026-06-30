@@ -1,0 +1,14 @@
+{
+  "name": "@robosystems/content-design-system",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "description": "RoboSystems Content Design System — git source of truth for the Claude Design project 746ae7a4. `npm run build` regenerates _ds_bundle.js from the component sources so component edits round-trip.",
+  "scripts": {
+    "build": "node scripts/build.mjs"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.25.0",
+    "@babel/preset-react": "^7.24.0"
+  }
+}
