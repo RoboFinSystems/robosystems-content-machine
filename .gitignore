@@ -46,10 +46,10 @@ assets/backgrounds/*.jpg
 assets/backgrounds/*.jpeg
 assets/backgrounds/*.webp
 
-# Blog: track the prose (post.md) + authored cover/social; ignore generated artifacts
-# (narration is regenerable via `just blog-narrate` and lives in S3 after publish)
-blog/*/*_narration.mp3
-blog/*/*_postpack.md
+# Blog: ONLY the prose (post.md) is versioned. Everything else in a post folder —
+# social copy, narration mp3, postpack, cover — stays local (and lives on S3 after publish).
+blog/*/*
+!blog/*/post.md
 
 # MacOS
 .DS_Store
