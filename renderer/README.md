@@ -11,12 +11,20 @@ package to `design-system/`. It does the two jobs the Python pipeline can't:
    research shorts, 16:9 demo cutaways). This replaced the retired Pillow
    caption-card renderer: one brand source for both the deck and the short.
 
-**Tool vs. product:** this package is the generalized, committed *tool*. The
-per-episode scene specs are *products* — they live in the repo-root
-**`showcase/<company>/`** (gitignored, authored via Claude Code; company folders
-match the backend demo slugs, e.g. `coffee_roaster`, `saas_startup`), and render
-outputs land in `renderer/out/` (gitignored). Nothing under `renderer/` except the
-tool itself is committed.
+**Tool vs. product:** this package is the generalized, committed *tool*. Everything
+per-episode is a *product* and lives together under the repo-root
+**`showcase/<company>/`** (gitignored, authored via Claude Code; folders match the
+backend demo slugs, e.g. `coffee_roaster`, `saas_startup`):
+
+```
+showcase/coffee_roaster/
+  driftline.demo.json      # spec
+  captures/*.png           # UI stills from `capture`
+  renders/*.mp4            # rendered output
+```
+
+Outputs self-locate next to their spec, so nothing under `renderer/` is written to
+or committed except the tool itself.
 
 **Division of labour:** this package emits the *silent visual layer only*. The
 Python pipeline stays the orchestrator and owns **audio** (ElevenLabs VO +
@@ -51,7 +59,8 @@ Scenes → routes (the demo beats):
 | `statements` | `/ledger/statements` | 3 — financial statements |
 | `reports` | `/reports` | 3 — the materialized report |
 
-Stills land in `renderer/out/capture/<key>.png` (2× device scale).
+Stills land in `showcase/<company>/captures/<key>.png` (2× device scale) — via the
+`just render-capture <config> <company> <entity>` recipe.
 
 Flags: `--base-url`, `--email`/`--password` (instead of `--config`),
 `--theme dark|light|auto` (default `dark`), `--entity <name-prefix>` (e.g.
@@ -65,9 +74,10 @@ just render-short showcase/coffee_roaster/driftline.short.json   # 9:16 research
 just render-short showcase/coffee_roaster/driftline.demo.json     # 16:9 demo cutaway
 ```
 
-Specs live in the repo-root `showcase/<company>/` (gitignored products). Output:
-`renderer/out/<slug>.mp4` — silent, H.264, `yuv420p`. Add `--keep-frames`
-to retain the PNG frames.
+Specs live in the repo-root `showcase/<company>/` (gitignored products). Output
+self-locates to `showcase/<company>/renders/<slug>.mp4` — silent, H.264, `yuv420p`.
+`image` scenes read `/cap/*.png` from `showcase/<company>/captures/`. Add
+`--keep-frames` to retain the PNG frames.
 
 ### Spec format
 

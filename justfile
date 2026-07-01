@@ -204,10 +204,11 @@ render-setup:
     cd renderer && npm install --no-audit --no-fund --silent && npx playwright install chromium
 
 # Capture the live RoboLedger UI (headless login → demo screens → dark-theme stills).
-# Needs the UI running (default localhost:3001) + creds. entity = name prefix (e.g. Driftline).
-# Stills land in renderer/out/capture/ (regenerable; gitignored).
-render-capture config entity="" scenes="home,transactions,close,statements,reports":
-    node renderer/src/cli.mjs capture --config {{config}} --scenes {{scenes}} {{ if entity != "" { "--entity '" + entity + "'" } else { "" } }}
+# Needs the UI running (default localhost:3001) + creds. company = showcase slug (e.g. coffee_roaster);
+# entity = UI name prefix (e.g. Driftline). Stills → showcase/<company>/captures/ (gitignored product).
+# e.g. just render-capture <config> coffee_roaster Driftline
+render-capture config company entity="" scenes="home,transactions,close,statements,reports":
+    node renderer/src/cli.mjs capture --config {{config}} --scenes {{scenes}} --out showcase/{{company}}/captures {{ if entity != "" { "--entity '" + entity + "'" } else { "" } }}
 
 # Render a scene spec (a per-episode product in showcase/<company>/, gitignored) to a silent mp4.
 # Mux VO/music downstream in the Python short path. e.g. just render-short showcase/coffee_roaster/driftline.demo.json

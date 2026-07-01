@@ -241,12 +241,16 @@ function buildHtml(spec) {
 
 export async function short(args) {
   if (!args.spec) throw new Error('short requires --spec <file.json>');
-  const spec = JSON.parse(await readFile(path.resolve(args.spec), 'utf8'));
+  const specPath = path.resolve(args.spec);
+  const spec = JSON.parse(await readFile(specPath, 'utf8'));
+  const specDir = path.dirname(specPath); // outputs colocate with the spec (showcase/<company>/)
   const W = spec.width || 1080;
   const H = spec.height || 1920;
   const fps = spec.fps || 30;
 
-  const outDir = args.out ? path.resolve(args.out) : path.join(rendererRoot, 'out');
+  // Products live next to the spec: renders/ for the mp4, captures/ for the `image` scene stills.
+  const outDir = args.out ? path.resolve(args.out) : path.join(specDir, 'renders');
+  const capturesDir = args.assets ? path.resolve(args.assets) : path.join(specDir, 'captures');
   const framesDir = path.join(outDir, 'frames');
   const outFile = path.join(outDir, `${spec.slug || 'short'}.mp4`);
   await rm(framesDir, { recursive: true, force: true });
@@ -257,7 +261,7 @@ export async function short(args) {
     mounts: {
       '/ds/': dsDir,
       '/brand/': brandDir,
-      '/cap/': path.join(rendererRoot, 'out', 'capture'), // UI capture stills for `image` scenes
+      '/cap/': capturesDir, // UI capture stills for `image` scenes (showcase/<company>/captures)
       '/react/': path.join(rendererRoot, 'node_modules/react/umd'),
       '/react-dom/': path.join(rendererRoot, 'node_modules/react-dom/umd'),
     },
