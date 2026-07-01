@@ -1,0 +1,20 @@
+{
+  "name": "@robosystems/content-renderer",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Playwright-based local renderer for the content machine. `capture`: drive the live RoboLedger UI (headless login → named scenes) → stills/clips for the showcase demo. `short`: mount design-system components → frame-accurate 9:16 motion → mp4. Consumes @robosystems/content-design-system; audio (VO/music) stays in the Python pipeline.",
+  "bin": {
+    "rs-render": "src/cli.mjs"
+  },
+  "scripts": {
+    "capture": "node src/cli.mjs capture",
+    "short": "node src/cli.mjs short",
+    "browser": "playwright install chromium"
+  },
+  "dependencies": {
+    "playwright": "^1.48.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  }
+}

@@ -2,18 +2,22 @@
 Assemble a footage-free 9:16 teaser Short from the `short` block in scripts/{TICKER}_script.json.
 
 The hero of every frame is a number or a thesis — NOT b-roll. Each caption card becomes a
-full 1080x1920 designed beat (navy ground, teal accent, Space Grotesk) rendered with motion
-(count-up numbers, slam-ins, staggered facts), classified by content (see short_design.py).
-This replaces the old shared-b-roll renderer, whose clips were a common pool — so every
-ticker's Short came out looking the same. Now each Short is the company's own data.
+full 1080x1920 designed beat (navy ground, teal accent, Space Grotesk) with motion (count-up
+numbers, slam-ins, staggered facts), classified by content (short_classify.classify_card).
+
+Visuals are rendered by the Playwright renderer (`renderer/`, brand="research"), which mounts
+the design-system fonts/primitives in a headless browser — one brand source, shared with the
+deck and the showcase series. This replaced the Pillow renderer (short_design.py). Python stays
+the orchestrator and owns audio: it generates the VO, picks the music, sets the beat timing,
+and muxes the ducked music + VO onto the renderer's silent visual bed.
 
 Layers:
-  1. Frames   — short_design.render_frame() per beat; rendered to PNG sequences + held stills.
-  2. Music    — a track from assets/music/, ducked low under the VO, with fades (kept: energy).
+  1. Visual   — renderer/ turns the classified cards → a silent 1080x1920 mp4 (motion bed).
+  2. Music    — a track from assets/music/, ducked low under the VO, with fades.
   3. Voiceover — ElevenLabs analyst voice (a dedicated short hook, not a slice of the full VO).
 
-Output: videos/{TICKER}_short.mp4 (1080x1920, H.264/AAC). Rendered locally with ffmpeg (free).
-Run via:  uv run --with pillow python tools/assemble_short.py TRLV
+Output: videos/{TICKER}_short.mp4 (1080x1920, H.264/AAC). Rendered locally (free).
+Run via:  uv run python tools/assemble_short.py TRLV     (needs `just render-setup` once)
 """
 
 import argparse
@@ -26,13 +30,14 @@ import tempfile
 
 from helpers import get_project_dir, require_env
 from generate_voiceover_audio import generate_audio
-from short_design import W, H, render_frame, classify_card, lerp
+from short_classify import classify_card
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MUSIC_DIR = os.path.join(ROOT, "assets", "music")
+RENDERER_CLI = os.path.join(ROOT, "renderer", "src", "cli.mjs")
 
+W, H = 1080, 1920
 FPS = 30
-ENTRANCE = 0.5         # seconds of entrance animation per beat
 MUSIC_VOL = 0.12
 VO_VOL = 1.5
 VO_DELAY = 0.3         # seconds before VO starts
@@ -89,6 +94,25 @@ def plan_beats(cards, runtime):
     return list(zip(starts, ends))
 
 
+def card_to_scene(kind, payload, dur_ms):
+    """Map a (classify_card archetype, payload) to a renderer scene. `hero`/`stat` are
+    renamed to bignum/statpair so they don't collide with the showcase-series scene kinds."""
+    base = {"durationMs": dur_ms}
+    if kind == "hero":
+        return {**base, "kind": "bignum", "number": payload["number"], "label": payload.get("label", "")}
+    if kind == "stat":
+        return {**base, "kind": "statpair", "a": payload["a"], "b": payload["b"]}
+    if kind == "identity":
+        return {**base, "kind": "identity", "company": payload["company"],
+                "exchange": payload["exchange"], "ticker": payload["ticker"]}
+    if kind == "cta":
+        return {**base, "kind": "cta", "line": payload["line"],
+                "secondary": payload.get("secondary", ""), "handle": payload.get("handle", "")}
+    if kind in ("alert", "hook", "headline", "question"):
+        return {**base, "kind": kind, "text": payload["text"]}
+    return {**base, "kind": "headline", "text": payload.get("text", "")}
+
+
 def assemble(project_name, production=False, force=False, music_override=None):
     project_dir = get_project_dir(project_name)
     analyst_id = require_env("ELEVEN_LABS_VOICE_ID")
@@ -106,7 +130,7 @@ def assemble(project_name, production=False, force=False, music_override=None):
         sys.exit("No `short` block in the script. Add one (see template/PRODUCTION_CONTRACT.md).")
     cards = short.get("cards") or []
     if not cards:
-        sys.exit("short.cards is empty — caption beats are what the deck renders.")
+        sys.exit("short.cards is empty — caption beats are what the short renders.")
     if music_override:
         short = {**short, "music": music_override}
 
@@ -130,59 +154,58 @@ def assemble(project_name, production=False, force=False, music_override=None):
     music_path = os.path.join(MUSIC_DIR, music_entry["file"])
     print(f"  Music: {music_entry['id']}")
 
-    # --- 3. Render each beat to a PNG entrance sequence + a held still ---
+    # --- 3. Classify each card → a renderer scene; render the silent visual bed ---
     n = len(cards)
     beats = plan_beats(cards, runtime)
+    scenes = []
+    print("  Beats:")
+    for i, (start, end) in enumerate(beats):
+        kind, payload = classify_card(cards[i]["text"], i, n)
+        scenes.append(card_to_scene(kind, payload, round((end - start) * 1000)))
+        print(f"    {i+1}/{n}  [{kind:9}] {start:5.1f}-{end:4.1f}s  {cards[i]['text']!r}")
+
+    spec = {"slug": f"{ticker}_short", "brand": "research",
+            "width": W, "height": H, "fps": FPS, "scenes": scenes}
+
     tmp = tempfile.mkdtemp(prefix=f"{ticker}_short_")
-    inputs, vstreams, idx = [], [], 0
-    print("  Rendering frames:")
     try:
-        for i, (start, end) in enumerate(beats):
-            kind, payload = classify_card(cards[i]["text"], i, n)
-            dur = max(1 / FPS, end - start)
-            total = max(1, round(dur * FPS))
-            e_frames = min(total, max(1, round(ENTRANCE * FPS)))
-            hold = total - e_frames
-            t0 = 0.75 if i == 0 else 0.0     # open mid-entrance so the poster frame reads
-            for fr in range(e_frames):
-                t = lerp(t0, 1.0, (fr + 1) / e_frames)
-                render_frame(kind, payload, t).save(os.path.join(tmp, f"b{i}_e_{fr:04d}.png"))
-            inputs += ["-framerate", str(FPS), "-i", os.path.join(tmp, f"b{i}_e_%04d.png")]
-            vstreams.append(idx); idx += 1
-            if hold > 0:
-                render_frame(kind, payload, 1.0).save(os.path.join(tmp, f"b{i}_s.png"))
-                inputs += ["-loop", "1", "-framerate", str(FPS), "-t", f"{hold / FPS:.3f}",
-                           "-i", os.path.join(tmp, f"b{i}_s.png")]
-                vstreams.append(idx); idx += 1
-            print(f"    {i+1}/{n}  [{kind:9}] {start:5.1f}-{end:4.1f}s  {cards[i]['text']!r}")
+        spec_path = os.path.join(tmp, "spec.json")
+        with open(spec_path, "w") as f:
+            json.dump(spec, f)
 
-        inputs += ["-i", music_path]; idx_music = idx; idx += 1
-        inputs += ["-i", vo_path];    idx_vo = idx; idx += 1
+        print("  Rendering visual bed (Playwright) ...")
+        res = subprocess.run(
+            ["node", RENDERER_CLI, "short", "--spec", spec_path, "--out", tmp],
+            capture_output=True, text=True,
+        )
+        if res.returncode != 0:
+            print(res.stdout[-1500:]); print(res.stderr[-2000:])
+            sys.exit("  -> renderer FAILED (did you run `just render-setup`?)")
+        print("   ", res.stdout.strip().splitlines()[-1] if res.stdout.strip() else "(rendered)")
 
-        # --- 4. ffmpeg: concat the beat streams, mix ducked music + VO ---
-        parts = [f"[{k}:v]fps={FPS},format=yuv420p,setsar=1[v{k}]" for k in vstreams]
-        parts.append("".join(f"[v{k}]" for k in vstreams) +
-                     f"concat=n={len(vstreams)}:v=1:a=0[bed]")
-        parts.append(
-            f"[{idx_music}:a]atrim=0:{runtime:.2f},asetpts=PTS-STARTPTS,"
-            f"afade=t=in:st=0:d=1,afade=t=out:st={max(0, runtime-1.2):.2f}:d=1.2,"
-            f"volume={MUSIC_VOL}[mus]")
-        parts.append(
-            f"[{idx_vo}:a]adelay={int(VO_DELAY*1000)}|{int(VO_DELAY*1000)},volume={VO_VOL}[voa]")
-        parts.append("[mus][voa]amix=inputs=2:duration=longest:normalize=0[aout]")
-        filtergraph = ";".join(parts)
+        visual = os.path.join(tmp, f"{ticker}_short.mp4")
+        if not os.path.exists(visual):
+            sys.exit(f"  -> renderer produced no {visual}")
+        vdur = ffprobe_duration(visual)
 
+        # --- 4. ffmpeg: mux ducked music + VO onto the visual bed ---
+        parts = [
+            f"[1:a]atrim=0:{vdur:.2f},asetpts=PTS-STARTPTS,"
+            f"afade=t=in:st=0:d=1,afade=t=out:st={max(0, vdur-1.2):.2f}:d=1.2,"
+            f"volume={MUSIC_VOL}[mus]",
+            f"[2:a]adelay={int(VO_DELAY*1000)}|{int(VO_DELAY*1000)},volume={VO_VOL}[voa]",
+            "[mus][voa]amix=inputs=2:duration=longest:normalize=0[aout]",
+        ]
         out_dir = os.path.join(project_dir, "videos")
         suffix = f"_{music_override}" if music_override else ""
         out_path = os.path.join(out_dir, f"{ticker}_short{suffix}.mp4")
-        cmd = ["ffmpeg", "-y", *inputs,
-               "-filter_complex", filtergraph,
-               "-map", "[bed]", "-map", "[aout]",
-               "-t", f"{runtime:.2f}",
+        cmd = ["ffmpeg", "-y", "-i", visual, "-i", music_path, "-i", vo_path,
+               "-filter_complex", ";".join(parts),
+               "-map", "0:v", "-map", "[aout]", "-t", f"{vdur:.2f}",
                "-r", str(FPS), "-c:v", "libx264", "-pix_fmt", "yuv420p",
                "-crf", "18" if production else "23", "-preset", "medium",
                "-c:a", "aac", "-b:a", "192k", out_path]
-        print("  Encoding 9:16 short with ffmpeg ...")
+        print("  Muxing audio ...")
         res = subprocess.run(cmd, capture_output=True, text=True)
         if res.returncode != 0:
             print(res.stderr[-2500:])

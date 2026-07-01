@@ -67,3 +67,8 @@ CLAUDE.local.md
 
 # Obsidian vault
 .obsidian/
+
+# Showcase = per-episode demo products (scene specs, captures, renders) authored via
+# Claude Code. Company folders match the backend demo slugs (e.g. coffee_roaster,
+# saas_startup). Products, not tooling — gitignored; only renderer/ (the tool) is committed.
+showcase/

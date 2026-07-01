@@ -114,7 +114,7 @@ music prompt *args:
 # Assemble a 9:16 teaser Short (b-roll + ducked music + VO + caption cards)
 short project *args:
     @just ensure-env
-    UV_ENV_FILE={{_env}} uv run --with pillow python tools/assemble_short.py {{project}} {{args}}
+    UV_ENV_FILE={{_env}} uv run python tools/assemble_short.py {{project}} {{args}}
 
 # Generate a two-voice Q&A podcast (MP3 for Spotify + MP4 for YouTube)
 podcast-qa project *args:
@@ -196,6 +196,23 @@ content-migrate from="robosystems-marketing-assets":
 # DesignSync / the /design-sync skill. Tokens, CSS, and templates push as-is — no build.
 design-build:
     cd design-system && npm install --no-audit --no-fund --silent && npm run build
+
+# ─── Renderer (renderer/ — Playwright: UI capture + 9:16 motion) ──────────────
+
+# Install the renderer's Node deps + the Playwright Chromium browser (run once).
+render-setup:
+    cd renderer && npm install --no-audit --no-fund --silent && npx playwright install chromium
+
+# Capture the live RoboLedger UI (headless login → demo screens → dark-theme stills).
+# Needs the UI running (default localhost:3001) + creds. entity = name prefix (e.g. Driftline).
+# Stills land in renderer/out/capture/ (regenerable; gitignored).
+render-capture config entity="" scenes="home,transactions,close,statements,reports":
+    node renderer/src/cli.mjs capture --config {{config}} --scenes {{scenes}} {{ if entity != "" { "--entity '" + entity + "'" } else { "" } }}
+
+# Render a scene spec (a per-episode product in showcase/<company>/, gitignored) to a silent mp4.
+# Mux VO/music downstream in the Python short path. e.g. just render-short showcase/coffee_roaster/driftline.demo.json
+render-short spec:
+    node renderer/src/cli.mjs short --spec {{spec}}
 
 # Extract podcast audio (MP3) from final video
 podcast project:
