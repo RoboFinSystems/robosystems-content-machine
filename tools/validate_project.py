@@ -285,30 +285,12 @@ def check_companion_formats(project_dir, ticker, script):
     else:
         if not short.get("narration"):
             error("short: missing narration")
-        items = _load_manifest_items(os.path.join("assets", "broll", "manifest.json"))
-        broll_ids = {it["id"] for it in items} if items else None
-        refs = short.get("broll")
-        theme = short.get("broll_theme")
-        if isinstance(refs, list) and refs:
-            if broll_ids is None:
-                warn("short: broll manifest not found — can't verify ids")
-            else:
-                bad = [r for r in refs if r not in broll_ids]
-                if bad:
-                    error(f"short: broll ids not in manifest: {', '.join(bad)}")
-                else:
-                    ok(f"short: {len(refs)} broll ids resolve")
-        elif theme:
-            if items is None:
-                warn("short: broll manifest not found — can't verify broll_theme")
-            else:
-                matched = [it for it in items if set(theme) & set(it.get("tags", []))]
-                if matched:
-                    ok(f"short: broll_theme matches {len(matched)} clip(s)")
-                else:
-                    error(f"short: broll_theme {theme} matches no clip tags")
-        else:
-            warn("short: no broll/broll_theme — will use ALL clips in the manifest")
+        # The short is rendered FOOTAGE-FREE: assemble_short.py builds data-frames from
+        # `cards` (number/thesis beats), not b-roll clips. `broll`/`broll_theme` are legacy
+        # fields the renderer no longer consumes — kept optional in the schema, not validated
+        # (they need not resolve against the b-roll library; e.g. a defense theme is fine).
+        if short.get("broll") or short.get("broll_theme"):
+            ok("short: footage-free renderer — broll/broll_theme present but ignored")
         music_items = _load_manifest_items(os.path.join("assets", "music", "manifest.json"))
         music_ids = {it["id"] for it in music_items} if music_items else None
         m = short.get("music")
