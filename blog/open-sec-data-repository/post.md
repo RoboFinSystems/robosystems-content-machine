@@ -43,13 +43,12 @@ The SEC shared repository takes that work off the table. Every XBRL filing is pa
 - The **calculation relationships**—how line items roll up into subtotals and subtotals into totals—are preserved as edges, not flattened away.
 - The full filing narrative is indexed for **full-text search**, so the numbers and the words that explain them live in the same place.
 
-And it's queryable three ways, depending on who's asking:
+And it's queryable two ways, depending on who's asking:
 
-| Surface     | For                                          | Example question                                                                  |
-| ----------- | -------------------------------------------- | --------------------------------------------------------------------------------- |
-| **Cypher**  | Analysts who want graph traversal            | "Compare `us-gaap:Revenues` across these 8 companies for the last 4 fiscal years" |
-| **GraphQL** | Developers who want a typed, stable contract | A dashboard pulling a fixed set of metrics                                        |
-| **MCP**     | AI agents                                    | "Pull NVIDIA's segment revenue and explain the year-over-year shift"              |
+| Surface    | For                               | Example question                                                                  |
+| ---------- | --------------------------------- | --------------------------------------------------------------------------------- |
+| **Cypher** | Analysts who want graph traversal | "Compare `us-gaap:Revenues` across these 8 companies for the last 4 fiscal years" |
+| **MCP**    | AI agents                         | "Pull NVIDIA's segment revenue and explain the year-over-year shift"              |
 
 That last one matters more than it looks. Because the repository speaks MCP, an AI assistant can query SEC data _directly_—not summarize a stale article about a company, but pull the actual filed numbers and reason over them. That's the difference between an AI that sounds informed and one that is.
 
