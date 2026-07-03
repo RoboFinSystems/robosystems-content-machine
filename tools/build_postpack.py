@@ -24,11 +24,6 @@ Platform model (X-first; research lane):
   - LinkedIn is NOT used for research — it's reserved for the technical/blog lane (build_blog_postpack.py).
   - Instagram is dropped (wrong audience, strips links).
 
-The pack leads with a ✋ manual checklist (the native uploads Buffer/X can't do: long-form video,
-the X Article, first comments, pinned comment, Spotify) and a 🤖 note for what `/buffer-draft`
-queues (the 9:16 Short). The resolved copy + media URLs live under "Reference" — the paste source
-for the manual steps and what the Buffer skill reads.
-
 Usage:
     uv run python tools/build_postpack.py TRLV
 """
@@ -195,7 +190,7 @@ def build(project):
 
     # ── X — Short clip (second at-bat: the 9:16 Short as a standalone native X post) ──
     if urls["short"]:
-        add("X — Short (queued via /buffer-draft — a second cashtag at-bat, a different day)", [
+        add("X — Short (post on a DIFFERENT day from the main post — a second cashtag at-bat)", [
             f"**Native video** (upload the 9:16 Short as its own post, NOT a reply): {urls['short']}",
             "**Caption:**", block(field(pub, "short_title", t)),
             f"_Standalone native-video post so the Short gets its own run in For You + the ${t} cashtag "
@@ -222,45 +217,18 @@ def build(project):
     tokens = sorted(set(re.findall(r"\[[A-Z_]+\]", "\n".join(numbered))))
     fill = [f"- `{tok}` — {PLACEHOLDER_HELP.get(tok, 'fill before posting')}" for tok in tokens]
 
-    # ── ✋ manual checklist: only the steps a scheduler (Buffer) can't do ──
-    manual = []
-    if urls["final"]:
-        manual.append("**YouTube — long-form** — upload the video, paste the title/description, set the "
-                      "thumbnail, confirm the chapters, then **copy the URL** (that's your `[YOUTUBE_LINK]`).")
-        manual.append("**X — main post** — upload the 16:9 long-form NATIVELY and paste the post body. "
-                      "No external link — the native upload is the discovery.")
-    if brief_text or brief_url:
-        manual.append("**X — Article** — publish the brief as an X Article, then paste its link into the "
-                      "first comment (`[X_ARTICLE_LINK]`).")
-    if urls["short"]:
-        manual.append("**X — Short pinned comment** — once the long-form is live on YouTube, paste "
-                      "`[YOUTUBE_LINK]` into the Short's pinned comment.")
-    if urls["podcast_mp3"]:
-        manual.append("**Spotify** — upload the podcast MP3 (episode title + show notes below). It "
-                      "auto-mirrors to YouTube via the connected RSS.")
-    manual.append(f"`just sync-youtube {t}` — capture the YouTube URLs into meta.json.")
-    manual_block = "\n".join(f"{i}. {s}" for i, s in enumerate(manual, 1))
-
-    # ── 🤖 what /buffer-draft queues for you ──
-    buffer_lines = []
-    if urls["short"]:
-        buffer_lines.append("**X — Short** (9:16 native video + caption) → lands as a Buffer draft; "
-                            "you post it from Buffer, in coordination with the manual steps above.")
-    buffer_block = ("\n".join(f"- {s}" for s in buffer_lines)
-                    if buffer_lines else "_Nothing queueable yet (no Short rendered)._")
-
     head = [
         f"# {t} — Publish Pack",
-        (f"_Generated {today}. ✋ = you post it (native uploads Buffer can't do). "
-         f"🤖 = `/buffer-draft {t}` queues it. Resolved copy + media URLs are under Reference below._"),
-        "## ✋ Do manually — in order",
-        manual_block,
-        f"## 🤖 Queued via Buffer — `/buffer-draft {t}`",
-        buffer_block,
+        f"_Generated {today}. Media = public S3. Paste-ready; fill any placeholders first._",
         "## ⚠️ Fill before posting",
         "\n".join(fill) if fill else "_None — everything resolved._",
-        "---\n## Reference — resolved copy & media\n"
-        "_Paste source for the steps above; also what `/buffer-draft` reads._",
+        "## Posting order",
+        ("1. **YouTube long-form** → copy the resulting URL\n"
+         "2. Replace every `[YOUTUBE_LINK]` below with that URL (the Short's pinned comment)\n"
+         "3. Post the rest: YouTube Short, X (native long-form video + brief as an X Article in the "
+         "first comment), Spotify (auto-posts to YouTube via RSS)\n"
+         "4. On a later day: the **X — Short** post — a second cashtag at-bat.\n"
+         "_LinkedIn is reserved for the technical/blog lane; research analysis doesn't post there._"),
     ]
 
     text = "\n\n".join(head + numbered) + "\n"
