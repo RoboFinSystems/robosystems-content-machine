@@ -153,7 +153,10 @@ Article both win reach).
 ### 4. YouTube Description (`social/{TICKER}_youtube_description.txt`)
 Hook (1-2 sentences); links: `https://robosystems.ai` and
 `https://github.com/RoboFinSystems/robosystems-content-machine`; a `🎟️ New customers: 50% off
-your first month with code [PROMO_CODE]` line under the links; **timestamps** — draft from
+your first month with code [PROMO_CODE]` line under the links; a voice-credit line
+`Voiceover by ElevenLabs: https://try.elevenlabs.io/v9z3wzm97gk3` with a following
+`Disclosure: the ElevenLabs link is a referral link.` note (the video narration is ElevenLabs);
+**timestamps** — draft from
 each segment's `duration_estimate_seconds` (start `0:00`, accumulate); after render, finalize from
 the generated `videos/{TICKER}_timestamps.txt` (actual chapter times); 6-8
 key-finding bullets with specific numbers; a 1-2 sentence plain-English explainer of any key
@@ -184,7 +187,7 @@ times, the S3 media links, and flagging any unresolved placeholders). A JSON obj
 - `short_pinned_comment` — the Short's pinned comment; use `[YOUTUBE_LINK]`. *(omit if no short)*
 - `x_first_comment` — the X first comment under the video post; points to the brief published as an X **Article** (use `[X_ARTICLE_LINK]`). The full long-form is uploaded as native video; no YouTube link on X.
 - `podcast_episode_title` — the Q&A episode title.
-- `podcast_show_notes` — episode description / show notes (+ RoboSystems CTA).
+- `podcast_show_notes` — episode description / show notes (+ RoboSystems CTA, plus a one-line voice credit `Voiceover by ElevenLabs: https://try.elevenlabs.io/v9z3wzm97gk3` and a `Disclosure: referral link.` note, since the two-voice audio is ElevenLabs).
 
 _No LinkedIn for research — LinkedIn is the technical/blog lane, not a research channel. The 9:16 Short also posts as a **separate native X video** (a second cashtag at-bat); the postpack adds that section automatically from `short_title`._
 
