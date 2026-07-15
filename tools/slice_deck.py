@@ -21,7 +21,7 @@ import json
 import os
 import subprocess
 import sys
-from shutil import which
+from shutil import copyfile, which
 
 from helpers import get_project_dir
 
@@ -77,25 +77,65 @@ def rasterize(pdf, out_dir, prefix="slide"):
     return sorted(glob.glob(out_prefix + "-*.png")), pages
 
 
-def rasterize_thumbnail(project_dir, ticker):
-    """Rasterize the Claude Design thumbnail PDF -> charts/png/{ticker}_thumbnail.png (1920x1080).
+def _png_size(path):
+    """(width, height) read from a PNG's IHDR chunk — dependency-free. None if not a PNG."""
+    with open(path, "rb") as fh:
+        head = fh.read(24)
+    if head[:8] != b"\x89PNG\r\n\x1a\n":
+        return None
+    return int.from_bytes(head[16:20], "big"), int.from_bytes(head[20:24], "big")
 
-    Claude Design exports PDF only, so the thumbnail is exported as a 16:9 PDF
-    (deck/{ticker}_thumbnail.pdf) and rasterized here — no manual pdftoppm step.
+
+def _normalize_png_thumbnail(src, out):
+    """Write a 1920x1080 thumbnail from a source PNG. **Center-crops** to 16:9 (never
+    distorts) when the source isn't 16:9 — Claude Design's PNG export can come out a few
+    percent off. Uses ffmpeg; copies as-is (with a warning) if ffmpeg is unavailable."""
+    note = ""
+    size = _png_size(src)
+    if size:
+        w, h = size
+        ratio = w / h
+        if abs(ratio - TARGET_RATIO) >= 0.02:
+            note = (f"  [source {w}x{h}, ratio {ratio:.3f} is NOT 16:9 — center-cropped to fit; "
+                    f"eyeball that the hero metric isn't clipped]")
+    if which("ffmpeg"):
+        # scale to cover, then center-crop to exactly WIDTHxHEIGHT — preserves aspect, no squish
+        vf = f"scale={WIDTH}:{HEIGHT}:force_original_aspect_ratio=increase,crop={WIDTH}:{HEIGHT}"
+        subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", src, "-vf", vf, out], check=True)
+    else:
+        copyfile(src, out)
+        note += "  [ffmpeg not found — copied as-is, NOT resized; install ffmpeg to normalize]"
+    print(f"  Thumbnail: deck/{os.path.basename(src)} -> "
+          f"charts/png/{os.path.basename(out)} ({WIDTH}x{HEIGHT}){note}")
+
+
+def rasterize_thumbnail(project_dir, ticker):
+    """Produce charts/png/{ticker}_thumbnail.png (1920x1080) from whatever Claude Design
+    exported. Two supported inputs, in priority order:
+      1. deck/{ticker}_thumbnail.pdf  — rasterized (the original 16:9-PDF path)
+      2. deck/{ticker}_thumbnail.png  — center-cropped to 16:9 (fallback for when
+         Design's PDF export misbehaves and PNG is the reliable export)
     """
-    pdf = os.path.join(project_dir, "deck", f"{ticker}_thumbnail.pdf")
-    if not os.path.exists(pdf):
-        print(f"  Thumbnail: no deck/{ticker}_thumbnail.pdf — export it from Claude Design (skipped)")
-        return
+    deck_dir = os.path.join(project_dir, "deck")
     png_dir = os.path.join(project_dir, "charts", "png")
     os.makedirs(png_dir, exist_ok=True)
-    out_root = os.path.join(png_dir, f"{ticker}_thumbnail")
-    subprocess.run(
-        ["pdftoppm", "-png", "-singlefile", "-scale-to-x", str(WIDTH), "-scale-to-y", str(HEIGHT),
-         pdf, out_root],
-        check=True,
-    )
-    print(f"  Thumbnail: deck/{ticker}_thumbnail.pdf -> charts/png/{ticker}_thumbnail.png ({WIDTH}x{HEIGHT})")
+    out = os.path.join(png_dir, f"{ticker}_thumbnail.png")
+
+    pdf = os.path.join(deck_dir, f"{ticker}_thumbnail.pdf")
+    png = os.path.join(deck_dir, f"{ticker}_thumbnail.png")
+
+    if os.path.exists(pdf):
+        subprocess.run(
+            ["pdftoppm", "-png", "-singlefile", "-scale-to-x", str(WIDTH), "-scale-to-y", str(HEIGHT),
+             pdf, os.path.join(png_dir, f"{ticker}_thumbnail")],
+            check=True,
+        )
+        print(f"  Thumbnail: deck/{ticker}_thumbnail.pdf -> charts/png/{ticker}_thumbnail.png ({WIDTH}x{HEIGHT})")
+    elif os.path.exists(png):
+        _normalize_png_thumbnail(png, out)
+    else:
+        print(f"  Thumbnail: no deck/{ticker}_thumbnail.pdf or deck/{ticker}_thumbnail.png "
+              f"— export it from Claude Design (skipped)")
 
 
 def slice_standalone(pdf, out_dir):

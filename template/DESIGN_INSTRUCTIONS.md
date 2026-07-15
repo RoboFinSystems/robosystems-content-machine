@@ -82,11 +82,15 @@ A **separate 16:9 frame — NOT part of the video sequence.** Start from the des
 - **Readable at tiny sizes** — assume a 1cm-wide preview. Bold, high contrast, minimal words.
 
 ## Export
-Claude Design exports **PDF only** — export *both* as PDF; the pipeline rasterizes them.
-1. **Deck → PDF** (16:9, one slide per page) → save to `deck/{TICKER}_deck.pdf`.
-2. **Thumbnail → PDF** (16:9, single page) → save to `deck/{TICKER}_thumbnail.pdf`.
-   The `slice` step rasterizes it to `charts/png/{TICKER}_thumbnail.png` at 1920×1080 — you
-   don't export a PNG by hand.
+Export the deck as **PDF** and the thumbnail as **PNG**; the pipeline rasterizes and normalizes them.
+1. **Deck -> PDF** (16:9, one slide per page) -> save to `deck/{TICKER}_deck.pdf`.
+   If Claude Design's direct PDF export routes through the macOS print dialog and mangles the
+   layout, export to **PPTX** instead, then use PowerPoint's **Export -> PDF** (widescreen 16:9
+   is 960x540 pt, which is correct). The `slice` step force-scales each page to 1920x1080.
+2. **Thumbnail -> PNG** -> save to `deck/{TICKER}_thumbnail.png`. The single-frame PDF export
+   tends to misbehave, so PNG is the reliable path. The `slice` step center-crops it to 16:9 and
+   writes `charts/png/{TICKER}_thumbnail.png` at 1920x1080 (a clean `deck/{TICKER}_thumbnail.pdf`
+   still works if you have one).
 3. Then the pipeline takes over: `just pipeline {TICKER}` (slices the deck **and** the thumbnail).
 
 ## Recommended workflow (repeatable)
