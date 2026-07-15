@@ -81,8 +81,11 @@ A **separate 16:9 frame — NOT part of the video sequence.** Start from the des
 - Ticker + company name, RoboSystems mark.
 - **Readable at tiny sizes** — assume a 1cm-wide preview. Bold, high contrast, minimal words.
 
-## Export
-Export the deck as **PDF** and the thumbnail as **PNG**; the pipeline rasterizes and normalizes them.
+## Export + hand off (operator step, not the design agent)
+The design agent's job ends once the deck and thumbnail exist in the Claude Design canvas. It
+cannot write into this repo or run PowerPoint. Everything below is a **manual step the operator
+does** in the Design UI and the shell; the pipeline then takes over. Export the deck as **PDF**
+and the thumbnail as **PNG**.
 1. **Deck -> PDF** (16:9, one slide per page) -> save to `deck/{TICKER}_deck.pdf`.
    If Claude Design's direct PDF export routes through the macOS print dialog and mangles the
    layout, export to **PPTX** instead, then use PowerPoint's **Export -> PDF** (widescreen 16:9

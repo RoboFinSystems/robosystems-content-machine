@@ -212,7 +212,7 @@ def build_brief(script):
         L.append("---")
 
     L.append("")
-    L.append("### After you build it")
+    L.append("### After the deck is built (operator: export it, then run the pipeline)")
     L.append(f"1. Export the **deck** as PDF (16:9, one slide/page) → `deck/{ticker}_deck.pdf`. "
              f"If Design's PDF export mangles the layout, export PPTX → PowerPoint → PDF instead.")
     L.append(f"2. Export the **thumbnail** as PNG → `deck/{ticker}_thumbnail.png` "
