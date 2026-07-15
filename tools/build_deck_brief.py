@@ -43,6 +43,51 @@ def _md_table(columns, rows):
     return "\n".join(out)
 
 
+# A bar series reads as visually flat when its smallest value is at least this
+# fraction of its largest — a zero-baseline chart then shows near-level bars.
+# Calibrated against real briefs: PEP revenue (0.85) flags; JEF net revenue (0.53),
+# PEP P/E gap (0.62), and JEF IB (0.63) do not. Tune here.
+NARROW_RANGE_RATIO = 0.70
+
+
+def _numeric_values(data):
+    """Numeric leaf values of a bar/line `data` map (booleans and non-numbers skipped)."""
+    return [v for v in (data or {}).values()
+            if isinstance(v, (int, float)) and not isinstance(v, bool)]
+
+
+def chart_render_hint(chart_type, data):
+    """Deterministic rendering guidance for a bar/line slide, derived from the data
+    itself so the deck renderer never has to eyeball the scale. Flags negative series
+    and visually-flat (narrow-range) series. Returns markdown, or None when N/A."""
+    if chart_type not in ("bar", "line"):
+        return None
+    vals = _numeric_values(data)
+    if len(vals) < 2:
+        return None
+    lo, hi = min(vals), max(vals)
+    L = ["**Chart rendering (auto-derived — do not eyeball the scale):**"]
+    if lo < 0:
+        L.append("- Series has **negative values**: render on a signed axis with a visible "
+                 "**zero line** — positive bars above, negatives **below zero in signal red**. "
+                 "Never a floor stub or an absolute-value bar.")
+    if chart_type == "bar" and lo >= 0:
+        ratio = (lo / hi) if hi else 1.0
+        if ratio >= NARROW_RANGE_RATIO:
+            L.append(f"- **Narrow range** — the smallest value is {round(ratio * 100)}% of the "
+                     "largest, so zero-baseline bars read nearly flat. Prefer an **honest reframe** "
+                     "that shows the shape (plot the period-over-period change, or a labeled-axis "
+                     "line) over a bar race. If you truncate the baseline, the **axis break must be "
+                     "visibly marked** and **every bar labeled with its verbatim value**.")
+        else:
+            L.append("- **Zero baseline**; bar height strictly proportional to value "
+                     "(height = value ÷ max × plot area). Equal bar widths and gaps.")
+    elif chart_type == "line":
+        L.append("- **Fit the y-axis to the data** (a trend line needs no forced zero); **even "
+                 "x-spacing**, true slopes between points, and label the axis or the emphasized point.")
+    return "\n".join(L)
+
+
 def render_data(slide):
     """Render a slide's `data` (and bullets) into markdown, faithful to its shape."""
     out = []
@@ -118,11 +163,18 @@ def build_brief(script):
             L.append(f"**{label}:** {slide['headline']}")
         if slide.get("subhead"):
             L.append(f"**Subhead:** {slide['subhead']}")
+        if slide.get("visual_takeaway"):
+            L.append(f"**Visual takeaway:** {slide['visual_takeaway']}")
 
         body = render_data(slide)
         if body:
             L.append("")
             L.append(body)
+
+        hint = chart_render_hint(ct, slide.get("data"))
+        if hint:
+            L.append("")
+            L.append(hint)
 
         extras = []
         if slide.get("highlight"):

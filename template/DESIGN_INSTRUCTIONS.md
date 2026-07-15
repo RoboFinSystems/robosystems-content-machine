@@ -49,6 +49,28 @@ thumbnail on the brand design system and export them. You decide layout and styl
 - Keep every on-screen number **exactly** as the brief gives it. The slide and the narration
   are one unit — if the brief's narration says "1.2 billion," the slide shows that number.
 
+### Charts show the shape, not just the values
+A chart that's technically correct but rhetorically dead is a failed slide. Dumping numbers
+into a component is how you get six near-level bars, or a negative value flattened to a stub.
+The brief carries an auto-derived **"Chart rendering"** note on each bar/line slide — obey it.
+
+- **Every chart slide has a `Visual takeaway`** (one sentence: what the viewer should grasp at
+  a glance). Design the chart so that takeaway is unmistakable. If the brief omits it, infer it
+  from the headline + narration before you draw.
+- **Bars are quantitative, not decorative.** Common **zero baseline**, height strictly
+  proportional to value (`height = value ÷ max × plot`), equal widths and gaps. A bar taller
+  than a bigger number is a bug, not a style choice.
+- **Negative values render below a zero axis in signal red** — never a floor stub, never an
+  absolute-value bar.
+- **Narrow-range series** (smallest value within ~70% of the largest — revenue that only
+  drifts) read as flat on a zero baseline. Prefer an **honest reframe** — plot the
+  period-over-period change, or a labeled-axis line — that actually shows the shape. A truncated
+  baseline is a last resort, allowed only when the **axis break is visibly marked and every bar
+  is labeled with its verbatim value**. An unmarked truncation is a misleading chart, which this
+  brand does not ship.
+- **Line charts** get a y-axis fit to the data (no forced zero), even x-spacing, and true
+  slopes. A trend must read as a trend.
+
 ## The thumbnail
 A **separate 16:9 frame — NOT part of the video sequence.** Start from the design system's
 **`templates/thumbnail/`** template and fill it from the brief's **Thumbnail** section:

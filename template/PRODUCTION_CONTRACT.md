@@ -104,6 +104,7 @@ defines the slides — their count, their order, and the narration timed to each
         "data": { "FY2022": 1017375000, "FY2023": 1054553000,
                   "FY2024": 1090000000, "FY2025": 1200000000 },
         "highlight": "FY2025",
+        "visual_takeaway": "growth surged FY22 to FY23, then flattened; last three bars read nearly level",
         "source": "SEC 10-K, FY2025"
       }
     }
@@ -152,7 +153,7 @@ Vary the kinds for rhythm — never run many `chart` slides back to back. A good
 | `visual_type` | Use for | `slide` fields to fill |
 |---|---|---|
 | `title` | The hook, section breaks, the closing line. Big text, little/no data. | `headline` (required), `subhead`, optional one `highlight` stat |
-| `chart` | A data visualization. | `headline`, `chart_type` (`bar`/`line`/`table`/`metric_cards`), `data` (the numbers/rows), `highlight`, `source` |
+| `chart` | A data visualization. | `headline`, `chart_type` (`bar`/`line`/`table`/`metric_cards`), `data` (the numbers/rows), `highlight`, `visual_takeaway` (one line: what the chart must make obvious), `source` |
 | `callout` | One big number that tells the story ("280E cost: $147M / year"). | `headline` (the big value), `subhead` (label above), `slide.data.context` (line below), optional `tone`: `positive`/`negative`/`neutral`/`warning` |
 | `dual` | "What this means" — explanation + supporting data side by side. | `headline`, `bullets` (left, 2-4 short points), `data` (right, compact metrics/rows), `source` |
 
@@ -161,6 +162,12 @@ Vary the kinds for rhythm — never run many `chart` slides back to back. A good
   multi-series, `{ "series": { "Gross margin": {...}, "Net margin": {...} } }`.
 - `table`: `{ "columns": ["Metric","FY2024","FY2025"], "rows": [["Revenue","$1.09B","$1.20B"], …] }`.
 - `metric_cards`: a map of label → `{ "value": "$1.20B", "change": "+10% YoY" }`.
+
+**`visual_takeaway`** (chart slides) — one sentence naming what the viewer should see at a
+glance ("up five years straight," "one segment negative," "flat until the last bar"). The deck
+renderer designs the chart around it; the deck-brief generator additionally flags narrow-range
+and negative series automatically, so a flat series gets an honest reframe and negatives get a
+zero axis.
 
 Put raw numbers in base units where you have them (revenue $1.2B = `1200000000`) **and** a
 display form in `headline`/`highlight` if the phrasing matters. Claude Design formats for
