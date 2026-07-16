@@ -1,9 +1,10 @@
-# Avatar Short - recipe (validated POC, parked)
+# Avatar Short - the canonical short (`just short TICKER`)
 
-A repeatable recipe for a 9:16 talking-head short: a HeyGen avatar (in our ElevenLabs voice)
-keyed out of green and composited over a branded backdrop, with brand chrome + captions on top.
-Every piece below was proven in a POC on 2026-07-16. **Not wired into the pipeline** - shorts are
-disabled (see `PRODUCTION_CONTRACT.md`). This doc exists so we can rebuild/run it later.
+The 9:16 short is a HeyGen studio avatar (our ElevenLabs voice) keyed out of green and composited
+over a gpt-image-2 backdrop, with brand chrome + word-synced captions. Fully headless from the brief.
+**Shipped 2026-07-16 as `tools/gen_avatar_short.py` (`just short TICKER`); it replaced the retired
+motion-card renderer** (`assemble_short.py`/`short_classify.py`, deleted). This doc is the reference
+for how the chain works and how to run/extend the individual pieces (POC scripts below).
 
 ## Why (the strategic frame)
 Shorts are **top-of-funnel discovery**, not the product. They exist to get reach and nudge the
@@ -61,17 +62,18 @@ Keys the green, composites backdrop + avatar + overlay, keeps the avatar audio:
 Core filter: `chromakey=0x00FF00:0.13:0.06,despill=type=green` then two overlays. The `despill`
 kills green fringing on hair/edges - important.
 
-## What's proven vs. still TODO
-Proven: stock avatar gestures naturally (no frozen body); green-screen + local composite gives full
-control; ElevenLabs voice via HeyGen keeps the voice on-brand; gpt-image-2 honors the safe-zone with
-the right prompt and beats a flat brand card on richness; the whole chain composites cleanly.
+## Status: BUILT (`just short TICKER` = tools/gen_avatar_short.py)
+Both former TODOs shipped 2026-07-16:
+1. **Animated word-synced captions** - whisper-1 word timings -> Pillow renders a caption frame
+   sequence (the spoken word highlighted) -> overlaid as an animated track in the composite.
+2. **The renderer** - `tools/gen_avatar_short.py` wires the whole chain: brief -> gpt-5 script ->
+   HeyGen avatar (green) -> whisper -> gpt-image-2 backdrop -> Pillow brand overlay + captions ->
+   ffmpeg key + composite -> `videos/{T}_short.mp4`. Run: `just short TICKER` (add `--test` for a
+   free watermarked HeyGen render). Needs Pillow (added as a dep).
 
-**TODO for production (the two unbuilt pieces):**
-1. **Animated word-synced captions** - the POC caption is a single static line. Real version:
-   transcribe the VO (e.g. Whisper), time each word, burn in word-by-word highlights. **This is the
-   single biggest retention lever and the main unproven build.**
-2. **The renderer** - glue the chain into a tool (`just short-avatar TICKER`): short script ->
-   ElevenLabs/HeyGen -> key -> backdrop -> captions -> 9:16 MP4. Optionally dynamic backdrops per beat.
+Remaining polish (not blockers): keep the gpt-5 script ~30s (currently can run long), dynamic
+backdrops per beat, avatar/look choice, and captions are chunk-of-3 with a per-word highlight.
+The standalone POC scripts below still work for one-off experiments.
 
 ## Related capabilities (already shipped this session)
 - `just thumbnails TICKER` - `tools/gen_thumbnails.py`, gpt-image-2 thumbnails from the brief (the

@@ -26,6 +26,7 @@ from helpers import apply_promo_code, asset_url, get_project_dir, require_env, r
 # (path under the project dir, content-type). Whatever exists gets published.
 ARTIFACTS = [
     ("videos/{t}_final.mp4", "video/mp4"),
+    ("videos/{t}_short.mp4", "video/mp4"),          # 9:16 avatar short (just short)
     ("videos/{t}_qa_podcast.mp3", "audio/mpeg"),
     ("charts/png/{t}_thumbnail.png", "image/png"),          # 16:9 — YouTube + website card
     ("charts/png/{t}_thumbnail_x.png", "image/png"),        # 5:2 — X

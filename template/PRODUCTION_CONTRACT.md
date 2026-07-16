@@ -201,40 +201,13 @@ From the *same* research, the pipeline produces two more deliverables. Author th
 `COWORK_INSTRUCTIONS.md` asks for them. Both reuse the analyst (narrator) voice for brand
 continuity and follow the **same spoken-form TTS rules** below.
 
-### A. Short — the `short` block (inside `scripts/{TICKER}_script.json`)
+### A. Short — auto-generated 9:16 avatar video (`just short {TICKER}`)
 
-> **⚠️ SHORTS ARE CURRENTLY DISABLED — do NOT author a `short` block.** The quality isn't there
-> yet (avatars are being evaluated). Skip this section. The schema below is kept for when it's
-> re-enabled; the renderer, publish, and postpack all self-disable when there's no short.
-
-A **self-contained** 9:16 piece (~20–45s) for **YouTube Shorts + Instagram Reels** — a complete
-micro-story (hook → the numbers → a payoff), NOT a trailer. It drives to the long-form via the
-*pinned comment*, never by withholding the point. Rendered by `just short {TICKER}` (b-roll bed +
-ducked music + ElevenLabs VO + caption cards — all local ffmpeg).
-
-```jsonc
-"short": {
-  "duration_target_seconds": 30,
-  "narration": "Self-contained ~20–45s story for the ear (NOT a slice of the main VO). Name the company; land the payoff; end on a question.",
-  "broll": ["wide_low_angle", "canopy_push", "macro_detail"],       // explicit ids in play order, OR omit and use:
-  // "broll_theme": ["cultivation", "city", "macro"],               // auto-pick clips whose tags match (most-relevant first)
-  "music": "tech_corporate",                                        // explicit id, OR omit and use "music_mood": ["uplifting","corporate"] to auto-pick
-  "cards": [                                                        // curated overlays — must stand alone for muted viewers
-    { "text": "$1.2B revenue, 60% margins", "at_seconds": 2.0 },
-    { "text": "TAXED AT 228%",             "at_seconds": 13.0 },
-    { "text": "TRULIEVE — NYSE: TRLV",     "at_seconds": 17.5 },  // name + ticker reveal
-    { "text": "WHAT DOES IT BUY FIRST?",   "at_seconds": 41.5 }   // payoff, not "go to YouTube"
-  ]
-}
-```
-
-- `narration` — a fresh, standalone script for the ear (no "as you can see here"); tell a complete micro-story, don't just tease. Budget ~20–45s — the voice runs ~14–15 chars/sec (slower than the ÷16 draft estimate), so ~600 chars ≈ ~43s. Spoken-form rules apply.
-- `broll` / `broll_theme` — either an explicit ordered list of clip `id`s, OR omit `broll` and set `broll_theme` (a list of tags) to auto-select matching clips from `assets/broll/manifest.json` (most-relevant first); with neither, all clips are used. The renderer plays clips at **full length**, rotates the order each pass so nothing repeats back-to-back, and trims only the last clip to fit the runtime. (Clips are produced manually in ElevenLabs Studio / Veo and dropped into the library — there is no video-generation API.)
-- `music` / `music_mood` — an explicit track `id`, OR omit it and set `music_mood` (a list of mood tags) to auto-pick the best-matching track from `assets/music/manifest.json` (most mood overlaps wins; ties → first); with neither, the first track is used.
-- `cards` — 4–8 curated text overlays (the hook + hero stats + the ticker reveal), timed to VO beats via `at_seconds`. Keep them short and punchy; ~80% of Shorts play muted, so the cards must carry the story alone. (Card text is *rendered*, not spoken — the `$ % x` ban does not apply here.) `at_seconds` are estimates — re-time them to the actual VO after the first render (the spoken pace rarely matches the guess).
-- **Name the company + show the ticker.** A brief anonymous mystery hook is fine, but the Short MUST name the company in the VO and show the ticker on a card (e.g. a `TRULIEVE — NYSE: TRLV` reveal card) — viewers can't act on a name they never heard.
-- **Resolve, don't withhold.** A Short is self-contained content, not a trailer. Land the actual payoff and end on a provocative question or takeaway; the long-form link goes in the **pinned comment / caption**, NOT on a card.
-- This supersedes the legacy `short_version` (segment-id list); you can omit `short_version`.
+**You author NO `short` block.** The short is produced headless from the brief by
+`tools/gen_avatar_short.py`: gpt-5 writes a tight ~30s hook, a HeyGen studio avatar reads it in our
+ElevenLabs voice, keyed over a gpt-image-2 backdrop, with word-synced captions -> a 9:16
+`videos/{TICKER}_short.mp4`. Full recipe: `docs/avatar-short/README.md`. Your only short-related job
+is the **posting copy** in the publish metadata (`short_title`, `short_pinned_comment`, see #7).
 
 ### B. Q&A podcast — `scripts/{TICKER}_qa.json`
 

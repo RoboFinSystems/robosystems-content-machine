@@ -6,3 +6,6 @@ requires-python = ">=3.13"
 authors = [
     {name = "RFS LLC"},
 ]
+dependencies = [
+    "pillow>=12.3.0",
+]

@@ -162,9 +162,10 @@ key-finding bullets with specific numbers; a 1-2 sentence plain-English explaine
 metric or term a cold viewer needs; disclaimer ("This is not investment advice. No price
 targets."); relevant `$TICKER` and topic hashtags.
 
-### 5. Short — DISABLED (skip)
-**Shorts are currently disabled: do not author a `short` block.** Quality isn't there yet
-(avatars are being evaluated). This will be re-enabled later; for now, skip it.
+### 5. Short — auto-generated (no authoring)
+The 9:16 short is produced headless from the brief by `just short {TICKER}` (HeyGen avatar in our
+voice + gpt-image backdrop + word-synced captions). **Do not author a `short` block.** Your only
+short-related job is its posting copy in the publish metadata (`short_title`, `short_pinned_comment`, #7).
 
 ### 6. Q&A Podcast (`scripts/{TICKER}_qa.json`)
 A CNBC-style two-voice conversation (host + analyst), ~5–8 min, written for audio. Cover the
@@ -177,8 +178,8 @@ The per-platform native copy that lives nowhere else — you author it; `just po
 stitches it into a paste-ready **publish pack** after production (merging in the real chapter
 times, the S3 media links, and flagging any unresolved placeholders). A JSON object of string fields:
 - `youtube_title` — clickable long-form title (≤100 chars).
-- `short_title` — the Short's title/caption. *(omit if no short)*
-- `short_pinned_comment` — the Short's pinned comment; use `[YOUTUBE_LINK]`. *(omit if no short)*
+- `short_title` — the Short's title/caption.
+- `short_pinned_comment` — the Short's pinned comment; use `[YOUTUBE_LINK]`.
 - `x_first_comment` — the X first comment under the video post; points to the brief published as an X **Article** (use `[X_ARTICLE_LINK]`). The full long-form is uploaded as native video; no YouTube link on X.
 - `podcast_episode_title` — the Q&A episode title.
 - `podcast_show_notes` — episode description / show notes (+ RoboSystems CTA, plus a one-line voice credit `Voiceover by ElevenLabs: https://try.elevenlabs.io/v9z3wzm97gk3` and a `Disclosure: referral link.` note, since the two-voice audio is ElevenLabs).
