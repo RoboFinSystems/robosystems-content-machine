@@ -80,10 +80,11 @@ in Claude Design.** Keep this session focused on the deck.
 The design agent's job ends once the deck exists in the Claude Design canvas. It cannot write
 into this repo or run PowerPoint. Everything below is a **manual step the operator does** in the
 Design UI and the shell; the pipeline then takes over.
-1. **Deck -> PDF** (16:9, one slide per page) -> save to `deck/{TICKER}_deck.pdf`.
-   If Claude Design's direct PDF export routes through the macOS print dialog and mangles the
-   layout, export to **PPTX** instead, then use PowerPoint's **Export -> PDF** (widescreen 16:9
-   is 960x540 pt, which is correct). The `slice` step force-scales each page to 1920x1080.
+1. **Deck -> PPTX** (16:9 widescreen = 960x540 pt, one slide per page) -> save to
+   `deck/{TICKER}_deck.pptx`. This is the **canonical export**. `just slice {TICKER}` converts it
+   to PDF automatically via PowerPoint's native renderer (verified byte-identical to a manual
+   "Best for printing" export), then force-scales each page to 1920x1080. A pre-exported
+   `deck/{TICKER}_deck.pdf` also works if you prefer to export PDF yourself.
 2. **Thumbnails** are made in ChatGPT (see above) and dropped into `assets/` (`yt.png`, `x.png`,
    `spot.png`); the `slice` step ingests them into `charts/png/`.
 3. Then the pipeline takes over: `just pipeline {TICKER}` (slices the deck + ingests thumbnails).

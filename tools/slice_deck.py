@@ -1,9 +1,12 @@
 """
-Slice a Claude Design deck export (PDF) into per-slide 1920x1080 PNGs.
+Slice a Claude Design deck export into per-slide 1920x1080 PNGs.
 
-Claude Design exports a deck as a 16:9 PDF, one slide per page. This rasterizes each
-page to a 1920x1080 PNG named by the script's visual_ref (the join key the assemble
-step uses). Replaces the old per-HTML screenshot step in deck mode.
+Claude Design's canonical export is now a 16:9 **PPTX**, one slide per page. slice converts
+it to PDF on the fly via PowerPoint's native renderer (tools/pptx_to_pdf.applescript — the
+same Quartz engine as a manual "Best for printing" export, verified byte-identical) whenever
+a sibling PPTX is present and newer than the PDF, then rasterizes each page to a 1920x1080
+PNG named by the script's visual_ref (the join key the assemble step uses). A pre-exported
+PDF still works — auto-conversion only fires when a PPTX exists.
 
 Usage:
     # Project mode — reads scripts/{TICKER}_script.json, names PNGs {visual_ref}.png
@@ -12,7 +15,7 @@ Usage:
     # Standalone — slice any PDF to slide-NN.png in an output dir
     uv run python tools/slice_deck.py --pdf path/to/deck.pdf --out path/to/dir
 
-Requires: poppler (pdftoppm, pdfinfo).
+Requires: poppler (pdftoppm, pdfinfo). PPTX->PDF auto-conversion needs macOS + Microsoft PowerPoint.
 """
 
 import argparse
@@ -167,6 +170,44 @@ def _thumbnail_as_first_slide(project_dir, ticker, first_ref, png_dir):
         print("  Opening slide: no thumbnail found — kept the deck hook slide")
 
 
+def _ensure_pdf_from_pptx(pdf_path):
+    """Claude Design's canonical export is a PPTX. If a sibling {name}.pptx exists and is newer
+    than {name}.pdf (or the PDF is missing), render it to PDF via PowerPoint's native engine
+    (tools/pptx_to_pdf.applescript) — verified byte-identical to a manual "Best for printing"
+    export. Defensive: only fires when the PPTX is present; if macOS/osascript/PowerPoint aren't
+    available it leaves any existing PDF in place and only hard-fails when there's no PDF at all."""
+    pptx = os.path.splitext(pdf_path)[0] + ".pptx"
+    if not os.path.exists(pptx):
+        return
+    have_pdf = os.path.exists(pdf_path)
+    if have_pdf and os.path.getmtime(pdf_path) >= os.path.getmtime(pptx):
+        return  # PDF already up to date with the PPTX
+
+    reason = "no PDF yet" if not have_pdf else "PPTX is newer"
+    if sys.platform != "darwin" or not which("osascript") or \
+            not os.path.exists("/Applications/Microsoft PowerPoint.app"):
+        note = "needs macOS + Microsoft PowerPoint"
+        if have_pdf:
+            print(f"  PPTX present ({reason}) but auto-convert {note} — using existing PDF")
+            return
+        sys.exit(f"ERROR: {os.path.basename(pptx)} found but no PDF, and auto-convert {note}.\n"
+                 f"  Open the PPTX in PowerPoint and export the PDF to {os.path.basename(pdf_path)}.")
+
+    applescript = os.path.join(os.path.dirname(os.path.abspath(__file__)), "pptx_to_pdf.applescript")
+    print(f"  Converting {os.path.basename(pptx)} -> {os.path.basename(pdf_path)} via PowerPoint ({reason})")
+    try:
+        subprocess.run(["osascript", applescript, os.path.abspath(pptx), os.path.abspath(pdf_path)],
+                       check=True, capture_output=True, text=True, timeout=180)
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as e:
+        detail = (getattr(e, "stderr", "") or getattr(e, "stdout", "") or str(e)).strip()
+        if have_pdf:
+            print(f"  WARN: PowerPoint conversion failed ({detail}) — falling back to the existing PDF")
+            return
+        sys.exit(f"ERROR: PowerPoint PPTX->PDF conversion failed and no PDF exists:\n  {detail}\n"
+                 f"  First run prompts for macOS automation permission — approve it, then re-run "
+                 f"(or export the PDF manually from PowerPoint).")
+
+
 def slice_standalone(pdf, out_dir):
     print(f"Slicing {os.path.basename(pdf)} -> {out_dir}")
     pngs, _ = rasterize(pdf, out_dir)
@@ -193,9 +234,11 @@ def slice_project(project, pdf_override=None, keep_hook=False):
 
     source = (script.get("deck") or {}).get("source") or f"deck/{ticker}_deck.pdf"
     pdf = pdf_override or os.path.join(project_dir, source)
+    if pdf_override is None:
+        _ensure_pdf_from_pptx(pdf)  # Claude Design's canonical export is PPTX — convert if newer
     if not os.path.exists(pdf):
         sys.exit(f"ERROR: deck not found: {pdf}\n"
-                 f"  Build the deck in Claude Design, export PDF, and save it there.")
+                 f"  Build the deck in Claude Design and save the PPTX (or PDF) export there.")
 
     png_dir = os.path.join(project_dir, "charts", "png")
     tmp_dir = os.path.join(png_dir, "_deck_tmp")

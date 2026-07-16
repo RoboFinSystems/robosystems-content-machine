@@ -238,10 +238,14 @@ def check_deck_contract(project_dir, script):
         warn("deck.slide_count not set (set it to the number of visual segments)")
 
     source = deck.get("source")
-    if source and os.path.exists(os.path.join(project_dir, source)):
+    src_path = os.path.join(project_dir, source) if source else None
+    pptx_path = os.path.splitext(src_path)[0] + ".pptx" if src_path else None
+    if src_path and os.path.exists(src_path):
         ok(f"deck source present: {source}")
+    elif pptx_path and os.path.exists(pptx_path):
+        ok(f"deck PPTX present ({os.path.relpath(pptx_path, project_dir)}) — converts to PDF on slice")
     elif source:
-        warn(f"deck not built yet: {source} — build it in Claude Design, export PDF there")
+        warn(f"deck not built yet: {source} — export the PPTX from Claude Design (auto-converts on slice)")
     else:
         warn("deck.source not set (e.g. deck/TICKER_deck.pdf)")
 

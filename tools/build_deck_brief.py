@@ -195,8 +195,9 @@ def build_brief(script):
 
     L.append("")
     L.append("### After the deck is built (operator: export deck, drop in thumbnails, run pipeline)")
-    L.append(f"1. Export the **deck** as PDF (16:9, one slide/page) → `deck/{ticker}_deck.pdf`. "
-             f"If Design's PDF export mangles the layout, export PPTX → PowerPoint → PDF instead.")
+    L.append(f"1. Export the **deck** as PPTX (16:9, one slide/page) → `deck/{ticker}_deck.pptx`. "
+             f"`just slice` converts it to PDF automatically via PowerPoint (byte-identical to a "
+             f"manual export); a pre-exported `deck/{ticker}_deck.pdf` also works.")
     L.append(f"2. **Thumbnails** are made in ChatGPT from this brief (not in Claude Design). Drop the "
              f"exports into `assets/`: `yt.png` (16:9 → YouTube + website), `x.png` (5:2 → X), "
              f"`spot.png` (1:1 → Spotify). The pipeline ingests them.")
