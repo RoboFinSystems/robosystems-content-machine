@@ -104,13 +104,20 @@ def transcribe(mp3):
 
 
 # ---------- HeyGen ----------
-def heygen(narration, test):
-    key = env("HEYGEN_API_KEY")
-    hdr = {"X-Api-Key": key}
-    avatar = env("HEYGEN_AVATAR_LOOK_ID") or env("HEYGEN_AVATAR_ID")
+def avatar_looks():
+    """HEYGEN_AVATAR_LOOK_ID may be a comma-separated pool of look ids (for the Q&A short: analyst
+    first, host second). Returns the list; falls back to the avatar-group uuid."""
+    raw = env("HEYGEN_AVATAR_LOOK_ID") or env("HEYGEN_AVATAR_ID") or ""
+    return [x.strip() for x in raw.split(",") if x.strip()]
+
+
+def heygen(narration, test, avatar=None, voice=None):
+    hdr = {"X-Api-Key": env("HEYGEN_API_KEY")}
+    avatar = avatar or (avatar_looks() or [None])[0]
+    voice = voice or env("HEYGEN_VOICE_ID")
     payload = {"video_inputs": [{
         "character": {"type": "avatar", "avatar_id": avatar, "avatar_style": "normal"},
-        "voice": {"type": "text", "input_text": narration, "voice_id": env("HEYGEN_VOICE_ID")},
+        "voice": {"type": "text", "input_text": narration, "voice_id": voice},
         "background": {"type": "color", "value": "#00FF00"}}],
         "dimension": {"width": W, "height": H}, "test": test}
     gen = _http("https://api.heygen.com/v2/video/generate", hdr, payload)
