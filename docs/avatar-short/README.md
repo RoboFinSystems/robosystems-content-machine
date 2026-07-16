@@ -75,6 +75,31 @@ Remaining polish (not blockers): keep the gpt-5 script ~30s (currently can run l
 backdrops per beat, avatar/look choice, and captions are chunk-of-3 with a per-word highlight.
 The standalone POC scripts below still work for one-off experiments.
 
+## Q&A two-avatar short (planned - one env var away)
+A two-person "podcast clip": the punchiest exchange from `scripts/{T}_qa.json` rendered as two
+avatars cutting back and forth (host asks, analyst answers). Often stronger than a single talking
+head - the back-and-forth is its own pattern-break, and the Q&A script already exists.
+
+**Env - analyst side is done; only the host voice is missing:**
+- `HEYGEN_AVATAR_LOOK_ID` - analyst look pool (done; random look per render)
+- `HEYGEN_AVATAR_LOOK_ID2` - host look pool (done; random look per render)
+- `HEYGEN_VOICE_ID` - analyst voice (done)
+- `HEYGEN_INTERVIEWER_VOICE_ID` - **TO ADD**: a HeyGen voice pointing at `ELEVEN_LABS_INTERVIEWER_VOICE_ID`
+
+**Build (extends `gen_avatar_short.py` -> `just short {T} --qa`):**
+1. gpt-5 picks the single punchiest ~40-50s exchange (2-4 turns) from `qa.json`, or take the opening Q+A.
+2. Per turn: `heygen(text, avatar=<random pick from the speaker's pool>, voice=<speaker voice>)` on
+   green - analyst turns use `avatar_looks("HEYGEN_AVATAR_LOOK_ID")` + `HEYGEN_VOICE_ID`; host turns
+   use `avatar_looks("HEYGEN_AVATAR_LOOK_ID2")` + `HEYGEN_INTERVIEWER_VOICE_ID`. (`heygen()` already
+   takes per-call `avatar`/`voice`, and `avatar_looks(var)` already reads either pool.)
+3. Per turn: whisper -> caption frames; add a small `HOST` / `ANALYST` label.
+4. Composite each turn (keyed avatar over the shared gpt-image backdrop + brand + captions), then
+   **concat the turns in order** -> `videos/{T}_short.mp4` (supersedes the single-avatar short, or
+   lives alongside as `{T}_short_qa.mp4`).
+
+**Cost** ~$1-2 (same total avatar-seconds; a little more per-turn render overhead). Layout default:
+cut-between full-frame; split-screen is an option. Not built yet - build + test once the host voice is wired.
+
 ## Related capabilities (already shipped this session)
 - `just thumbnails TICKER` - `tools/gen_thumbnails.py`, gpt-image-2 thumbnails from the brief (the
   clear, kept win). Same OpenAI key/pattern used here for the backdrop.
