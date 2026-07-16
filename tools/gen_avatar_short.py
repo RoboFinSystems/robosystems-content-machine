@@ -11,7 +11,7 @@ Usage:
 Needs HEYGEN_API_KEY, HEYGEN_AVATAR_LOOK_ID, HEYGEN_VOICE_ID, OPENAI_API_KEY in .env.
 See docs/avatar-short/README.md for the recipe this automates.
 """
-import argparse, base64, json, os, subprocess, sys, time, urllib.error, urllib.request
+import argparse, base64, json, os, random, subprocess, sys, time, urllib.error, urllib.request
 from PIL import Image, ImageDraw, ImageFont
 from helpers import get_project_dir
 
@@ -104,16 +104,17 @@ def transcribe(mp3):
 
 
 # ---------- HeyGen ----------
-def avatar_looks():
-    """HEYGEN_AVATAR_LOOK_ID may be a comma-separated pool of look ids (for the Q&A short: analyst
-    first, host second). Returns the list; falls back to the avatar-group uuid."""
-    raw = env("HEYGEN_AVATAR_LOOK_ID") or env("HEYGEN_AVATAR_ID") or ""
+def avatar_looks(var="HEYGEN_AVATAR_LOOK_ID"):
+    """A comma-separated pool of HeyGen look ids for one speaker. `HEYGEN_AVATAR_LOOK_ID` is the
+    single-short presenter / Q&A analyst pool; `HEYGEN_AVATAR_LOOK_ID2` is the Q&A host pool. One is
+    picked at random per render for variety. Falls back to the avatar-group uuid for the primary pool."""
+    raw = env(var) or (env("HEYGEN_AVATAR_ID") if var == "HEYGEN_AVATAR_LOOK_ID" else "") or ""
     return [x.strip() for x in raw.split(",") if x.strip()]
 
 
 def heygen(narration, test, avatar=None, voice=None):
     hdr = {"X-Api-Key": env("HEYGEN_API_KEY")}
-    avatar = avatar or (avatar_looks() or [None])[0]
+    avatar = avatar or random.choice(avatar_looks() or [env("HEYGEN_AVATAR_ID")])
     voice = voice or env("HEYGEN_VOICE_ID")
     payload = {"video_inputs": [{
         "character": {"type": "avatar", "avatar_id": avatar, "avatar_style": "normal"},
@@ -246,9 +247,11 @@ def main():
     print(f"  hook: {el['hook_headline']!r}")
     print(f"  narration ({len(el['narration'])} chars): {el['narration'][:90]}...")
 
-    print("  rendering HeyGen avatar (green) ...", flush=True)
+    looks = avatar_looks() or [env("HEYGEN_AVATAR_ID")]
+    avatar = random.choice(looks)
+    print(f"  rendering HeyGen avatar (green) — look {avatar} (random of {len(looks)}) ...", flush=True)
     avatar_mp4 = os.path.join(work, "avatar_green.mp4")
-    open(avatar_mp4, "wb").write(heygen(el["narration"], args.test))
+    open(avatar_mp4, "wb").write(heygen(el["narration"], args.test, avatar=avatar))
 
     print("  transcribing for captions ...", flush=True)
     mp3 = os.path.join(work, "vo.mp3")
