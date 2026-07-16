@@ -79,6 +79,11 @@ slice project:
     @just ensure-env
     UV_ENV_FILE={{_env}} uv run python tools/slice_deck.py {{project}}
 
+# Generate the 3 platform thumbnails via OpenAI (brief -> gpt-image-2 -> assets/{yt,x,spot}.png)
+thumbnails project *args:
+    @just ensure-env
+    UV_ENV_FILE={{_env}} uv run python tools/gen_thumbnails.py {{project}} {{args}}
+
 # Generate voiceover audio via ElevenLabs
 voiceover project:
     @just ensure-env
