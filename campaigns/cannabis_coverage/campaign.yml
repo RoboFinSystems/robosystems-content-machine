@@ -1,0 +1,49 @@
+# Industry-classification key for this campaign.
+#
+# A campaign is keyed to ONE node in the industry taxonomy. The campaign's
+# coverage universe is the set of SEC-registered entities that classify into
+# that node. See ../../classifications/README.md for the full model.
+
+# The key is a ticker-form identity, registered in ../../classifications/keys.csv
+# (the aggregate-key registry). It indexes projects/CANNABIS/ exactly the way a
+# company ticker indexes its project - sectors and industries are all just keys.
+key: CANNABIS
+
+# Resolution into the taxonomy (../../classifications/industry-classification.csv).
+# "Cannabis" is a Consumer Goods subsector with no category breakout, so the
+# leaf terminates at the subsector.
+sector: Consumer Goods
+subsector: Cannabis
+category: null
+
+# How the universe is built from classification.
+coverage:
+  # Cover plant-touching operators that classify AS Consumer Goods > Cannabis
+  # (cultivation, processing, branded product, dispensary retail of cannabis).
+  structural: true
+
+  # Cannabis-THEMED companies that classify into OTHER nodes: a cannabis REIT is
+  # Real Estate, a cannabis lender is Financials > Lending, an MSO ETF is a fund,
+  # a hydroponics retailer is ancillary. Surface these as `adjacent` in the
+  # universe, do NOT auto-cover them.
+  include_adjacent: false
+
+  # A member is coverage-ready only if it is in the SEC knowledge graph WITH
+  # loaded XBRL reports. Names that are in EDGAR but have no loaded XBRL (some
+  # 40-F / foreign filers) are surfaced as `blocked`, not dropped - the coverage
+  # gap is the finding.
+  require_sec_reports: true
+
+# This campaign is an AGGREGATE report: it rolls up the member companies' individual
+# coverage into one Cannabis-subsector review (the working example is projects/CANNABIS).
+# See "Aggregation levels" in ../../classifications/README.md.
+aggregation:
+  level: industry            # company | industry | sector
+  # An industry report rolls up its universe.json members (the companies classified
+  # into this node). A sector-level campaign (e.g. Consumer Goods) would instead roll
+  # up its child industry reports.
+  rollup_from: members
+  # Only members whose individual coverage is publishable contribute their brief;
+  # BLOCKED / STALE names land on the watchlist ("revisit on uplist") instead.
+  rollup_when: [DONE, READY]
+  rolls_up_to: CONSUMER   # the parent SECTOR key (Consumer Goods) in keys.csv

@@ -1,0 +1,253 @@
+{
+  "key": "CANNABIS",
+  "resolved": "Consumer Goods > Cannabis",
+  "generated_at": "2026-07-15",
+  "method": "cowork-classify v1 (crosswalk floor + recall override + SEC-graph verification)",
+  "_seed_note": "SEED. Classification fields are Claude recall. CIKs are authoritative (SEC EDGAR company_tickers.json, fetched 2026-07-15). Covered members' sec/coverage fields are real (from sources/tickers.md). Discovered + adjacent members have sec.in_graph = null: the Cowork classify session must verify graph membership + loaded XBRL reports per COWORK_INSTRUCTIONS_CLASSIFY.md before these are trusted.",
+  "members": [
+    {
+      "cik": "0001795139", "ticker": "GTBIF", "name": "Green Thumb Industries",
+      "sector": "Consumer Goods", "subsector": "Cannabis", "category": null,
+      "is_primary": true, "secondary": null, "confidence": 0.99, "method": "recall",
+      "sec": { "in_graph": true, "filing_type": "10-K", "fiscal_years": ["2022","2023","2024","2025"], "has_xbrl_facts": true },
+      "coverage": { "covered": true, "status": "DONE", "source": "known" },
+      "notes": "SIC-style codes point at drug/ag sectors; overridden to Cannabis by recall. Video published."
+    },
+    {
+      "cik": "0001754195", "ticker": "TCNNF", "name": "Trulieve Cannabis",
+      "sector": "Consumer Goods", "subsector": "Cannabis", "category": null,
+      "is_primary": true, "secondary": null, "confidence": 0.99, "method": "recall",
+      "sec": { "in_graph": true, "filing_type": "10-K", "fiscal_years": ["2022","2023","2024","2025"], "has_xbrl_facts": true },
+      "coverage": { "covered": true, "status": "DONE", "source": "known" },
+      "notes": "Uplisted to NYSE (TRLV) Jun 2026; graph still carries legacy TCNNF. Key by CIK."
+    },
+    {
+      "cik": "0001848416", "ticker": "VRNO", "name": "Verano Holdings",
+      "sector": "Consumer Goods", "subsector": "Cannabis", "category": null,
+      "is_primary": true, "secondary": null, "confidence": 0.99, "method": "recall",
+      "sec": { "in_graph": true, "filing_type": "10-K", "fiscal_years": ["2021","2022","2023","2024"], "has_xbrl_facts": true },
+      "coverage": { "covered": true, "status": "READY", "source": "known" },
+      "notes": ""
+    },
+    {
+      "cik": "0001778129", "ticker": "TSNDF", "name": "TerrAscend",
+      "sector": "Consumer Goods", "subsector": "Cannabis", "category": null,
+      "is_primary": true, "secondary": null, "confidence": 0.99, "method": "recall",
+      "sec": { "in_graph": true, "filing_type": "10-K", "fiscal_years": ["2021","2022","2023","2024"], "has_xbrl_facts": true },
+      "coverage": { "covered": true, "status": "READY", "source": "known" },
+      "notes": ""
+    },
+    {
+      "cik": "0001756390", "ticker": "AAWH", "name": "Ascend Wellness Holdings",
+      "sector": "Consumer Goods", "subsector": "Cannabis", "category": null,
+      "is_primary": true, "secondary": null, "confidence": 0.99, "method": "recall",
+      "sec": { "in_graph": true, "filing_type": "10-K", "fiscal_years": ["2021","2022","2023","2024"], "has_xbrl_facts": true },
+      "coverage": { "covered": true, "status": "READY", "source": "known" },
+      "notes": ""
+    },
+    {
+      "cik": "0001776738", "ticker": "CBSTF", "name": "Cannabist Company (fka Columbia Care)",
+      "sector": "Consumer Goods", "subsector": "Cannabis", "category": null,
+      "is_primary": true, "secondary": null, "confidence": 0.98, "method": "recall",
+      "sec": { "in_graph": true, "filing_type": "10-K", "fiscal_years": ["2021","2022","2023","2024"], "has_xbrl_facts": true },
+      "coverage": { "covered": true, "status": "READY", "source": "known" },
+      "notes": "In CCAA wind-down / Chapter 15; assets being sold off."
+    },
+    {
+      "cik": "0001522767", "ticker": "MRMD", "name": "MariMed",
+      "sector": "Consumer Goods", "subsector": "Cannabis", "category": null,
+      "is_primary": true, "secondary": null, "confidence": 0.98, "method": "recall",
+      "sec": { "in_graph": true, "filing_type": "10-K", "fiscal_years": ["2022","2023","2024"], "has_xbrl_facts": true },
+      "coverage": { "covered": true, "status": "READY", "source": "known" },
+      "notes": ""
+    },
+    {
+      "cik": "0001813452", "ticker": "PLNH", "name": "Planet 13 Holdings",
+      "sector": "Consumer Goods", "subsector": "Cannabis", "category": null,
+      "is_primary": true, "secondary": null, "confidence": 0.98, "method": "recall",
+      "sec": { "in_graph": true, "filing_type": "10-K", "fiscal_years": ["2022","2023","2024"], "has_xbrl_facts": true },
+      "coverage": { "covered": true, "status": "READY", "source": "known" },
+      "notes": ""
+    },
+    {
+      "cik": "0001909747", "ticker": "JUSHF", "name": "Jushi Holdings",
+      "sector": "Consumer Goods", "subsector": "Cannabis", "category": null,
+      "is_primary": true, "secondary": null, "confidence": 0.98, "method": "recall",
+      "sec": { "in_graph": true, "filing_type": "10-K", "fiscal_years": ["2021","2022","2023","2024"], "has_xbrl_facts": true },
+      "coverage": { "covered": true, "status": "READY", "source": "known" },
+      "notes": ""
+    },
+    {
+      "cik": "0001463000", "ticker": "GRUSF", "name": "Grown Rogue International",
+      "sector": "Consumer Goods", "subsector": "Cannabis", "category": null,
+      "is_primary": true, "secondary": null, "confidence": 0.95, "method": "recall",
+      "sec": { "in_graph": true, "filing_type": "20-F", "fiscal_years": ["2021","2022","2023","2024"], "has_xbrl_facts": true },
+      "coverage": { "covered": true, "status": "READY", "source": "known" },
+      "notes": "Micro-cap; changed FY end (Oct to Dec)."
+    },
+    {
+      "cik": "0000831609", "ticker": "CXXIF", "name": "C21 Investments",
+      "sector": "Consumer Goods", "subsector": "Cannabis", "category": null,
+      "is_primary": true, "secondary": null, "confidence": 0.94, "method": "recall",
+      "sec": { "in_graph": true, "filing_type": "20-F", "fiscal_years": ["2023","2024","2025"], "has_xbrl_facts": true },
+      "coverage": { "covered": true, "status": "READY", "source": "known" },
+      "notes": "Non-standard FY; micro-cap."
+    },
+    {
+      "cik": "0001756770", "ticker": "CURLF", "name": "Curaleaf Holdings",
+      "sector": "Consumer Goods", "subsector": "Cannabis", "category": null,
+      "is_primary": true, "secondary": null, "confidence": 0.99, "method": "recall",
+      "sec": { "in_graph": true, "filing_type": "40-F", "fiscal_years": ["2022","2023"], "has_xbrl_facts": true },
+      "coverage": { "covered": false, "status": "BLOCKED", "source": "known" },
+      "notes": "Largest MSO by revenue. 40-F XBRL not loaded for FY2024/2025 - coverage blocked on data."
+    },
+    {
+      "cik": "0001832928", "ticker": "CRLBF", "name": "Cresco Labs",
+      "sector": "Consumer Goods", "subsector": "Cannabis", "category": null,
+      "is_primary": true, "secondary": null, "confidence": 0.99, "method": "recall",
+      "sec": { "in_graph": true, "filing_type": "40-F", "fiscal_years": ["2022","2023"], "has_xbrl_facts": true },
+      "coverage": { "covered": false, "status": "BLOCKED", "source": "known" },
+      "notes": "40-F XBRL not loaded for FY2024 - coverage blocked on data."
+    },
+    {
+      "cik": "0001848731", "ticker": "GLASF", "name": "Glass House Brands",
+      "sector": "Consumer Goods", "subsector": "Cannabis", "category": null,
+      "is_primary": true, "secondary": null, "confidence": 0.98, "method": "recall",
+      "sec": { "in_graph": true, "filing_type": "40-F", "fiscal_years": [], "has_xbrl_facts": false },
+      "coverage": { "covered": false, "status": "BLOCKED", "source": "known" },
+      "notes": "Zero XBRL facts loaded (40-F / IFRS filer). Applied to NYSE Jun 2026."
+    },
+    {
+      "cik": "0001771706", "ticker": "VREOF", "name": "Vireo Growth",
+      "sector": "Consumer Goods", "subsector": "Cannabis", "category": null,
+      "is_primary": true, "secondary": null, "confidence": 0.97, "method": "recall",
+      "sec": { "in_graph": true, "filing_type": "10-K", "fiscal_years": ["2022","2023"], "has_xbrl_facts": true },
+      "coverage": { "covered": false, "status": "STALE", "source": "known" },
+      "notes": "FY2024 10-K filed but not loaded - needs data refresh. Aggressive consolidator (Fluent acq pending)."
+    },
+    {
+      "cik": "0001737927", "ticker": "CGC", "name": "Canopy Growth",
+      "sector": "Consumer Goods", "subsector": "Cannabis", "category": null,
+      "is_primary": true, "secondary": null, "confidence": 0.98, "method": "recall",
+      "sec": { "in_graph": null, "filing_type": null, "fiscal_years": null, "has_xbrl_facts": null },
+      "coverage": { "covered": false, "status": "DISCOVERED", "source": "discovered" },
+      "notes": "Canadian LP. Priority discovery. CIK from EDGAR; verify loaded XBRL in the SEC graph."
+    },
+    {
+      "cik": "0001683541", "ticker": "ACB", "name": "Aurora Cannabis",
+      "sector": "Consumer Goods", "subsector": "Cannabis", "category": null,
+      "is_primary": true, "secondary": null, "confidence": 0.98, "method": "recall",
+      "sec": { "in_graph": null, "filing_type": null, "fiscal_years": null, "has_xbrl_facts": null },
+      "coverage": { "covered": false, "status": "DISCOVERED", "source": "discovered" },
+      "notes": "Canadian LP; files 40-F - likely a BLOCKED-on-XBRL candidate. Verify loaded XBRL in the graph."
+    },
+    {
+      "cik": "0001656472", "ticker": "CRON", "name": "Cronos Group",
+      "sector": "Consumer Goods", "subsector": "Cannabis", "category": null,
+      "is_primary": true, "secondary": null, "confidence": 0.97, "method": "recall",
+      "sec": { "in_graph": null, "filing_type": null, "fiscal_years": null, "has_xbrl_facts": null },
+      "coverage": { "covered": false, "status": "DISCOVERED", "source": "discovered" },
+      "notes": "Canadian LP; files 10-K (US domestic filer). Good coverage-ready candidate. Verify loaded XBRL in the graph."
+    },
+    {
+      "cik": "0001731348", "ticker": "TLRY", "name": "Tilray Brands",
+      "sector": "Consumer Goods", "subsector": "Cannabis", "category": null,
+      "is_primary": true,
+      "secondary": { "sector": "Consumer Goods", "subsector": "Beverages", "category": null },
+      "confidence": 0.96, "method": "recall",
+      "sec": { "in_graph": null, "filing_type": null, "fiscal_years": null, "has_xbrl_facts": null },
+      "coverage": { "covered": false, "status": "DISCOVERED", "source": "discovered" },
+      "notes": "Files 10-K (Delaware). Multi-industry: leading cannabis LP + large craft-beer / hemp-beverage business (secondary Beverages)."
+    },
+    {
+      "cik": "0001766600", "ticker": "SNDL", "name": "SNDL Inc",
+      "sector": "Consumer Goods", "subsector": "Cannabis", "category": null,
+      "is_primary": true,
+      "secondary": { "sector": "Services", "subsector": "Retail", "category": "Grocery" },
+      "confidence": 0.9, "method": "recall",
+      "sec": { "in_graph": null, "filing_type": null, "fiscal_years": null, "has_xbrl_facts": null },
+      "coverage": { "covered": false, "status": "DISCOVERED", "source": "discovered" },
+      "notes": "Cannabis + large Canadian liquor/cannabis retail (Nova/Alcanna) - secondary retail."
+    },
+    {
+      "cik": "0001584549", "ticker": "VFF", "name": "Village Farms International",
+      "sector": "Consumer Goods", "subsector": "Cannabis", "category": null,
+      "is_primary": true,
+      "secondary": { "sector": "Consumer Goods", "subsector": "Farm Products", "category": null },
+      "confidence": 0.85, "method": "recall",
+      "sec": { "in_graph": null, "filing_type": null, "fiscal_years": null, "has_xbrl_facts": null },
+      "coverage": { "covered": false, "status": "DISCOVERED", "source": "discovered" },
+      "notes": "Cannabis + legacy greenhouse produce business (secondary Farm Products). Files 10-K."
+    },
+    {
+      "cik": "0001620737", "ticker": "OGI", "name": "OrganiGram Global (fka OrganiGram Holdings)",
+      "sector": "Consumer Goods", "subsector": "Cannabis", "category": null,
+      "is_primary": true, "secondary": null, "confidence": 0.95, "method": "recall",
+      "sec": { "in_graph": null, "filing_type": null, "fiscal_years": null, "has_xbrl_facts": null },
+      "coverage": { "covered": false, "status": "DISCOVERED", "source": "discovered" },
+      "notes": "Canadian LP. EDGAR legal name changed to OrganiGram Global; CIK stable. Verify loaded XBRL in the graph."
+    }
+  ],
+  "adjacent": [
+    {
+      "cik": "0001677576", "ticker": "IIPR", "name": "Innovative Industrial Properties",
+      "sector": "Real Estate", "subsector": "Diversified", "category": null,
+      "theme": "cannabis", "confidence": 0.96,
+      "reason": "Cannabis-focused REIT - landlord to operators, not plant-touching. Classifies as Real Estate."
+    },
+    {
+      "cik": "0001822523", "ticker": "AFCG", "name": "Advanced Flower Capital (fka AFC Gamma)",
+      "sector": "Financials", "subsector": "Lending", "category": "Commercial",
+      "theme": "cannabis", "confidence": 0.92,
+      "reason": "Cannabis-sector lender (mortgage/commercial credit), not an operator. EDGAR name changed from AFC Gamma; CIK stable. Classifies as Financials > Lending."
+    },
+    {
+      "cik": "0001604868", "ticker": "GRWG", "name": "GrowGeneration",
+      "sector": "Services", "subsector": "Retail", "category": "Home Improvement",
+      "theme": "cannabis", "confidence": 0.88,
+      "reason": "Hydroponics / cultivation-supply retailer - ancillary, sells to growers. Not plant-touching."
+    },
+    {
+      "cik": "0001750155", "ticker": "CWBHF", "name": "Charlotte's Web Holdings",
+      "sector": "Consumer Goods", "subsector": "Personal Products", "category": null,
+      "theme": "cannabis", "confidence": 0.8,
+      "reason": "Hemp-derived CBD wellness, not marijuana. Sits closer to Personal Products than the Cannabis subsector; flag for a coverage-policy call."
+    },
+    {
+      "cik": "0001816590", "ticker": "CMPS", "name": "Compass Pathways",
+      "sector": "Health Care", "subsector": "Biotechnology", "category": null,
+      "theme": "psychedelics", "confidence": 0.95,
+      "reason": "Psilocybin therapeutics biotech - psychedelics, NOT cannabis. The anti-over-tag example."
+    }
+  ],
+  "funds": [
+    {
+      "cik": "0001408970", "series": "AdvisorShares Trust", "ticker": "MSOS",
+      "name": "AdvisorShares Pure US Cannabis ETF",
+      "taxonomy": "etf", "asset_class": "Equities", "sector": "Industries", "subsector": "Cannabis", "category": null,
+      "confidence": 0.99, "role": "benchmark",
+      "notes": "The US-MSO sector ETF and this campaign's channel cashtag ($MSOS). Trust CIK shared with MSOX/YOLO - key by ticker + SEC seriesId. Reference entity, not a coverage target (no operating XBRL)."
+    },
+    {
+      "cik": "0001408970", "series": "AdvisorShares Trust", "ticker": "MSOX",
+      "name": "AdvisorShares MSOS 2x Daily ETF",
+      "taxonomy": "etf", "asset_class": "Alternatives", "sector": "Leveraged & Inverse", "subsector": "Index Leveraged", "category": null,
+      "confidence": 0.95, "role": "benchmark_leveraged",
+      "notes": "2x-leveraged sibling of MSOS. Structure wins over theme: classifies under Alternatives > Leveraged & Inverse, NOT Equities > Industries > Cannabis - exactly the distinction the ETF taxonomy captures and the industry taxonomy cannot."
+    },
+    {
+      "cik": "0001408970", "series": "AdvisorShares Trust", "ticker": "YOLO",
+      "name": "AdvisorShares Pure Cannabis ETF",
+      "taxonomy": "etf", "asset_class": "Equities", "sector": "Industries", "subsector": "Cannabis", "category": null,
+      "confidence": 0.97, "role": "benchmark",
+      "notes": "Global (incl. Canadian LP) cannabis mandate, vs MSOS's US-only. Same trust CIK, distinct seriesId."
+    },
+    {
+      "cik": "0001633061", "series": "Amplify ETF Trust", "ticker": "CNBS",
+      "name": "Amplify Seymour Cannabis ETF",
+      "taxonomy": "etf", "asset_class": "Equities", "sector": "Industries", "subsector": "Cannabis", "category": null,
+      "confidence": 0.9, "role": "benchmark",
+      "notes": "Actively managed cannabis ETF. Verify current fund name/status via SEC seriesId - fund lineups churn."
+    }
+  ]
+}

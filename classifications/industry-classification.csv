@@ -1,0 +1,189 @@
+﻿Sector,Subsector,Category
+Consumer Goods,Automobile,Manufacturers
+Consumer Goods,Automobile,Parts
+Consumer Goods,Beverages,Brewery
+Consumer Goods,Beverages,Soft Drinks
+Consumer Goods,Beverages,Wine & Spirits
+Consumer Goods,Cannabis,
+Consumer Goods,Equipment,Business
+Consumer Goods,Equipment,Electronic
+Consumer Goods,Farm Products,
+Consumer Goods,Food Products,
+Consumer Goods,Home Furnishings,
+Consumer Goods,Household Products,
+Consumer Goods,Luxury Goods,
+Consumer Goods,Packaging & Containers,
+Consumer Goods,Paper Products,
+Consumer Goods,Personal Products,
+Consumer Goods,Recreational Vehicles,
+Consumer Goods,Sporting Goods,
+Consumer Goods,Textiles,Apparel
+Consumer Goods,Textiles,Footwear
+Consumer Goods,Tobacco Products,
+Consumer Goods,Toys,
+Energy,Infrastructure,LNG & Terminals
+Energy,Infrastructure,Pipelines
+Energy,Infrastructure,Storage
+Energy,Production,Exploration
+Energy,Production,Majors
+Energy,Production,Refining
+Energy,Production,Royalty
+Energy,Renewables,Biofuels
+Energy,Renewables,Diversified
+Energy,Renewables,Hydrogen
+Energy,Renewables,Solar
+Energy,Renewables,Wind
+Financials,Asset Management,
+Financials,BDC,
+Financials,Banks,Domestic
+Financials,Banks,Foreign
+Financials,Banks,Savings & Thrifts
+Financials,Brokerage,
+Financials,Closed-End Funds,
+Financials,Digital Assets,Exchanges & Brokers
+Financials,Digital Assets,Infrastructure
+Financials,Digital Assets,Miners
+Financials,Digital Assets,Treasury Companies
+Financials,Holding Companies,
+Financials,Insurance,Accident & Health
+Financials,Insurance,Brokers
+Financials,Insurance,Life
+Financials,Insurance,Property & Casualty
+Financials,Insurance,Reinsurance
+Financials,Insurance,Title & Surety
+Financials,Lending,Commercial
+Financials,Lending,Consumer
+Financials,Lending,Mortgage
+Financials,Patent & IP Licensing,
+Financials,Shell Companies & SPACs,
+Financials,Structured Finance,
+Health Care,Animal Health,
+Health Care,Biotechnology,
+Health Care,Contract Research,
+Health Care,Diagnostics,
+Health Care,Drug Manufacturers,Generic
+Health Care,Drug Manufacturers,Major
+Health Care,Drug Manufacturers,Specialty
+Health Care,Health Care Plans,
+Health Care,Health Care Technology,
+Health Care,Hospitals,
+Health Care,Medical Equipment,
+Health Care,Medical Laboratories,
+Health Care,Specialized Services,
+Industrials,Aerospace & Defense,Commercial Aerospace
+Industrials,Aerospace & Defense,Defense
+Industrials,Aerospace & Defense,Defense Technology & Drones
+Industrials,Aerospace & Defense,Space
+Industrials,Building Materials,
+Industrials,Conglomerates,
+Industrials,Electrical Equipment,
+Industrials,General Contractors,
+Industrials,Lumber Production,
+Industrials,Machinery,Agricultural
+Industrials,Machinery,Construction & Mining
+Industrials,Machinery,Industrial
+Industrials,Machinery,Trucks
+Industrials,Rubber & Plastics,
+Industrials,Semiconductors,Communications
+Industrials,Semiconductors,Diversified
+Industrials,Semiconductors,Equipment
+Industrials,Semiconductors,Foundry
+Industrials,Semiconductors,Memory
+Industrials,Tools,
+Industrials,Waste Management,
+Materials,Base Metals Royalty,
+Materials,Chemicals,Agricultural
+Materials,Chemicals,Diversified
+Materials,Chemicals,Specialty
+Materials,Industrial Metals & Minerals,Aluminum
+Materials,Industrial Metals & Minerals,Coal
+Materials,Industrial Metals & Minerals,Copper
+Materials,Industrial Metals & Minerals,Diversified
+Materials,Industrial Metals & Minerals,Lithium
+Materials,Industrial Metals & Minerals,Minerals
+Materials,Industrial Metals & Minerals,Nickel
+Materials,Industrial Metals & Minerals,Rare Earths
+Materials,Industrial Metals & Minerals,Steel
+Materials,Industrial Metals & Minerals,Uranium
+Materials,Mining,Explorer
+Materials,Mining,Junior Developer
+Materials,Mining,Junior Producer
+Materials,Mining,Large Producer
+Materials,Mining,Mid-Tier Producer
+Materials,Mining,Project Generator
+Materials,Precious Metals,Gold
+Materials,Precious Metals,Palladium
+Materials,Precious Metals,Platinum
+Materials,Precious Metals,Silver
+Materials,Precious Metals Royalty,Large-Tier
+Materials,Precious Metals Royalty,Mid-Tier
+Materials,Precious Metals Royalty,Small-Tier
+Real Estate,Cell Towers,
+Real Estate,Data Centers,
+Real Estate,Diversified,
+Real Estate,Health Care,
+Real Estate,Hotels,
+Real Estate,Hotels,Casino
+Real Estate,Industrial,
+Real Estate,Mortgage,
+Real Estate,Office,
+Real Estate,Residential,
+Real Estate,Retail,
+Real Estate,Self-Storage,
+Real Estate,Specialty,
+Real Estate,Timberland,
+Services,Airlines,
+Services,Business Services,Consulting
+Services,Business Services,Rental & Leasing
+Services,Business Services,Specialty
+Services,Business Services,Staffing
+Services,Business Services,Technical
+Services,Communications,Advertising
+Services,Communications,Carriers
+Services,Communications,Media & Broadcasting
+Services,Communications,Social & Search
+Services,Educational,
+Services,Energy,
+Services,Entertainment,Film & Studios
+Services,Entertainment,Streaming
+Services,Entertainment,Video Games
+Services,Financial,Exchanges
+Services,Financial,Information
+Services,Financial,Payments
+Services,Gaming & Casinos,
+Services,Information Technology,Cloud Infrastructure
+Services,Information Technology,Cybersecurity
+Services,Information Technology,IT Services
+Services,Leisure,Cruise Lines
+Services,Leisure,Recreation & Fitness
+Services,Real Estate,Development
+Services,Real Estate,Management
+Services,Real Estate,Residential Construction
+Services,Retail,Apparel
+Services,Retail,Automotive
+Services,Retail,Discount
+Services,Retail,Electronics
+Services,Retail,Grocery
+Services,Retail,Home Improvement
+Services,Retail,Internet
+Services,Retail,Luxury
+Services,Retail,Pharmacy
+Services,Retail,Restaurants
+Services,Software,Business
+Services,Software,Diversified
+Services,Software,Entertainment
+Services,Software,Travel
+Services,Transportation,Delivery
+Services,Transportation,Logistics
+Services,Transportation,Railroads
+Services,Transportation,Shipping
+Services,Transportation,Trucking
+Services,Wholesale,Food Products
+Services,Wholesale,Health Care
+Services,Wholesale,Industrial
+Utilities,Diversified,
+Utilities,Electric,
+Utilities,Gas,
+Utilities,Independent Power Producers,
+Utilities,Renewable,
+Utilities,Water,
