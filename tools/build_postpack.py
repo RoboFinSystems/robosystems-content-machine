@@ -17,10 +17,10 @@ fields are flagged inline, never fatal. Sections appear only when their media/co
 Platform model (X-first; research lane):
   - X is the engine: one long-form post (NOT a thread) + the long-form video uploaded NATIVELY
     (the native upload is the discovery, so no external link in the post) + the brief published as
-    an X Article and linked in the first comment. The 9:16 Short ALSO posts as a separate native
-    X video — a second cashtag at-bat, on a different day.
-  - YouTube + Spotify are byproducts (presence, not optimization): long-form + Short to YouTube;
-    podcast MP3 to Spotify, which auto-mirrors the episode to YouTube via the connected RSS.
+    an X Article and linked in the first comment. Shorts are NOT posted to X: the main post's
+    cashtags already give X strong organic discovery, so shorts are reserved to drive YouTube.
+  - YouTube: long-form + BOTH shorts (hook short -> the long-form, Q&A short -> the podcast).
+  - Spotify: podcast MP3, which auto-mirrors the episode to YouTube via the connected RSS.
   - LinkedIn is NOT used for research — it's reserved for the technical/blog lane (build_blog_postpack.py).
   - Instagram is dropped (wrong audience, strips links).
 
@@ -224,23 +224,6 @@ def build(project):
     if yt_short_lines:
         add("YouTube Shorts", yt_short_lines)
 
-    # ── Shorts (both types) - native X video (each its own post, on its own day) ──
-    x_short_lines = []
-    for mkey, label, tkey, ckey, dest in SHORTS:
-        if not urls.get(mkey):
-            continue
-        x_short_lines += [
-            f"### {label}",
-            f"**Native video** (upload the 9:16 Short as its own post, NOT a reply): {urls[mkey]}",
-            "**Caption:**", block(field(pub, tkey, t)), "",
-        ]
-    if x_short_lines:
-        x_short_lines.append(
-            f"_Post each Short as a standalone native-video post on its OWN day (apart from the main post "
-            f"and from each other) - each gets its own run in For You + the ${t} cashtag feed. Keep ${t} in "
-            f"the caption; no external link in the body._")
-        add("X Shorts (native, spread across days)", x_short_lines)
-
     numbered = [f"## {i}) {title}\n{body}" for i, (title, body) in enumerate(sections, 1)]
 
     # Resolve [PROMO_CODE] now (campaign-derived, known at build time) so the pack is
@@ -262,9 +245,10 @@ def build(project):
          "2. **X**: publish the brief as an X **Article FIRST** → copy its URL into `[X_ARTICLE_LINK]`, "
          "then post the main tweet (native video + the Article link)\n"
          "3. **Spotify** podcast (auto-posts to YouTube via RSS) → copy the episode URL into `[PODCAST_LINK]`\n"
-         "4. **Shorts**, once their targets are live - the **hook short** links to the long-form "
-         "(`[YOUTUBE_LINK]`), the **Q&A short** links to the podcast (`[PODCAST_LINK]`). Post each on its "
-         "own day, to YouTube Shorts + as a native X video.\n"
+         "4. **Shorts** (**YouTube only** - reserved to drive YouTube; X gets discovery from the main "
+         "post's cashtags), once their targets are live: the **hook short** links to the long-form "
+         "(`[YOUTUBE_LINK]`), the **Q&A short** links to the podcast (`[PODCAST_LINK]`). Post each to "
+         "YouTube Shorts on its own day.\n"
          "_LinkedIn is reserved for the technical/blog lane; research analysis doesn't post there._"),
     ]
 

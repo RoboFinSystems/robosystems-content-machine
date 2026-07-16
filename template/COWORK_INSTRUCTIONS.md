@@ -205,7 +205,7 @@ times, the S3 media links, and flagging any unresolved placeholders). A JSON obj
 - `podcast_episode_title` — the Q&A episode title.
 - `podcast_show_notes` — episode description / show notes (+ RoboSystems CTA, plus a one-line voice credit `Voiceover by ElevenLabs: https://try.elevenlabs.io/v9z3wzm97gk3` and a `Disclosure: referral link.` note, since the two-voice audio is ElevenLabs).
 
-_No LinkedIn for research — LinkedIn is the technical/blog lane, not a research channel. The 9:16 Short also posts as a **separate native X video** (a second cashtag at-bat); the postpack adds that section automatically from `short_title`._
+_No LinkedIn for research - LinkedIn is the technical/blog lane, not a research channel. Shorts post to **YouTube only** (both the hook short and the Q&A short); they're not posted to X, since the main post's cashtags already carry X discovery._
 
 Same placeholder rules as the rest (`[YOUTUBE_LINK]`, `[PROMO_CODE]`) — never hardcode the live URL or code.
 
