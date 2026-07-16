@@ -66,8 +66,8 @@ If the card is absent, this is **initiating coverage** — introduce the company
 
 Produce these **4 core outputs** in order (brief FIRST — it's the foundation everything else
 derives from), then the **2 companion formats** (#5–6) and the **publish metadata** (#7). (Schema and slide mechanics: see
-`PRODUCTION_CONTRACT.md`.) The deck **and** the thumbnail are built in Claude Design from the
-script — you author no HTML.
+`PRODUCTION_CONTRACT.md`.) The deck is built in Claude Design from the script; the thumbnails
+are made in ChatGPT from the brief. You author no HTML.
 
 **Promo code (optional placeholder).** Where copy invites sign-up, add the offer line
 `New customers get 50% off your first month with code [PROMO_CODE].` Keep `[PROMO_CODE]` as a
@@ -113,13 +113,12 @@ the hook and financial story until there's a genuine insight. Only then move to 
 **Build it from the brief — don't write from scratch.** The hook becomes the opening title
 slide; the financial story becomes chart/callout/dual slides; the bottom line becomes the
 close. Follow the schema, slide kinds, and field rules in `PRODUCTION_CONTRACT.md` exactly.
-Also fill the `thumbnail` block (hero metric, optional banner, 1–2 secondary metrics) — Claude
-Design builds the YouTube thumbnail from it (see `DESIGN_INSTRUCTIONS.md`). Banner: "COVERAGE
-UPDATE" if this name was covered before, else "INITIATING COVERAGE" (or omit).
+Do **not** author a `thumbnail` block; thumbnails are made in ChatGPT from the brief (see
+`DESIGN_INSTRUCTIONS.md`).
 
 Editorial guidance for the script:
 - Open with a HOOK (first 3 seconds must grab attention).
-- Long-form target 3-5 min (~800-1200 words narration); Short 45-60s.
+- Long-form target 3-5 min (~800-1200 words narration).
 - Vary slide kinds for rhythm — don't stack chart slides. Title → chart → chart → callout →
   dual → chart → callout → title (close).
 - Every claim references a specific filing number; the slide's `data` shows that exact number.
@@ -163,14 +162,9 @@ key-finding bullets with specific numbers; a 1-2 sentence plain-English explaine
 metric or term a cold viewer needs; disclaimer ("This is not investment advice. No price
 targets."); relevant `$TICKER` and topic hashtags.
 
-### 5. Short — the `short` block in `scripts/{TICKER}_script.json`
-A **self-contained** 9:16 piece (~20–45s) for YouTube Shorts — a complete
-micro-story, NOT a trailer. Write a **fresh standalone script** for the ear (not a slice of the
-main narration): hook, the key numbers, **the company name + ticker** (a brief mystery hook is
-fine, but reveal it), and a payoff that ends on a question or takeaway (long-form link → pinned
-comment, not a card). Pick b-roll `id`s from `assets/broll/manifest.json` (or set a `broll_theme`
-of tags to auto-pick by theme), and write 4–8 caption cards that stand alone for muted viewers. Schema + rules: `PRODUCTION_CONTRACT.md` → "Companion
-formats → A". Rendered by `just short {TICKER}`.
+### 5. Short — DISABLED (skip)
+**Shorts are currently disabled: do not author a `short` block.** Quality isn't there yet
+(avatars are being evaluated). This will be re-enabled later; for now, skip it.
 
 ### 6. Q&A Podcast (`scripts/{TICKER}_qa.json`)
 A CNBC-style two-voice conversation (host + analyst), ~5–8 min, written for audio. Cover the

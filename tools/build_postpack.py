@@ -43,7 +43,9 @@ MEDIA = {
     "short":       ("videos/{t}_short.mp4",         "{t}_short.mp4"),
     "podcast_mp3": ("videos/{t}_qa_podcast.mp3",    "{t}_qa_podcast.mp3"),
     "podcast_mp4": ("videos/{t}_qa_podcast.mp4",    "{t}_qa_podcast.mp4"),
-    "thumbnail":   ("charts/png/{t}_thumbnail.png", "{t}_thumbnail.png"),
+    "thumbnail":    ("charts/png/{t}_thumbnail.png",        "{t}_thumbnail.png"),         # 16:9 YouTube + website
+    "thumbnail_x":  ("charts/png/{t}_thumbnail_x.png",      "{t}_thumbnail_x.png"),       # 5:2 X
+    "thumbnail_sq": ("charts/png/{t}_thumbnail_square.png", "{t}_thumbnail_square.png"),  # 1:1 Spotify
 }
 
 # placeholders we expect the human (or a later step) to resolve before posting
@@ -169,8 +171,11 @@ def build(project):
         vid = urls["final"] or urls["short"]
         if vid:
             lines.append(f"**Native video** (upload the 16:9 long-form — the native upload is the discovery, so keep links out of the post): {vid}")
-        elif urls["thumbnail"]:
-            lines.append(f"**Image** (attach the thumbnail so it isn't a bare-text post): {urls['thumbnail']}")
+        elif urls.get("thumbnail_x") or urls["thumbnail"]:
+            img = urls.get("thumbnail_x") or urls["thumbnail"]
+            lines.append(f"**Image** (attach the 5:2 X thumbnail so it isn't a bare-text post): {img}")
+        if urls.get("thumbnail_x"):
+            lines.append(f"**X thumbnail (5:2)** — use as the X Article header image: {urls['thumbnail_x']}")
         lines.append(f"**Post** ({len(x_body)} chars — one long-form post, NOT a thread; no external link):")
         lines.append(block(x_body))
         lines.append("**First comment** (publish the brief as an X Article, then paste its link in for `[X_ARTICLE_LINK]`):")
@@ -199,8 +204,10 @@ def build(project):
 
     # ── Spotify / Podcast (audio MP3 → Spotify; the connected RSS auto-posts it to YouTube too) ──
     if urls["podcast_mp3"]:
+        cover = [f"**Cover art (1:1, ≥1400px):** {urls['thumbnail_sq']}"] if urls.get("thumbnail_sq") else []
         add("Spotify / Podcast", [
             f"**Audio (MP3 — Spotify / Apple / Amazon):** {urls['podcast_mp3']}",
+            *cover,
             "_Posting to Spotify also publishes the episode to YouTube via the connected RSS feed; then `just sync-youtube` captures its URL._",
             "**Episode title:**", block(field(pub, "podcast_episode_title", t)),
             "**Show notes:**", block(field(pub, "podcast_show_notes", t)),

@@ -23,10 +23,10 @@ You (Cowork)                          Claude Design (DESIGN_INSTRUCTIONS.md)
 ─────────────                         ─────────────────────────
 scripts/{TICKER}_script.json   ──►  build_deck_brief → deck/{TICKER}_deck_brief.md
    (source of truth: narration            │
-    + per-slide content + thumbnail)      ▼
+    + per-slide content)                  ▼
                                      paste into claude.ai/design (RoboSystems Content Design System)
                                      → compose 16:9 deck  → deck/{TICKER}_deck.pdf
-                                     → compose thumbnail  → deck/{TICKER}_thumbnail.pdf  → (slice) → charts/png/{TICKER}_thumbnail.png
+                                     (thumbnails: made in ChatGPT → dropped in assets/ → (slice) → charts/png/{TICKER}_thumbnail.png)
                                           │
                                           ▼
                                      Pipeline (code)
@@ -55,20 +55,12 @@ defines the slides — their count, their order, and the narration timed to each
     "video_title": "Short, engaging YouTube title (under 70 chars)",
     "video_description": "YouTube description (2-3 sentences, keywords)",
     "tags": ["tag1", "tag2"],
-    "thumbnail_text": "Bold text for thumbnail (2-4 words)",
     "campaign": "Optional campaign name"
   },
 
   "deck": {
     "slide_count": 12,                  // MUST equal the number of segments below
     "source": "deck/GTBIF_deck.pdf"     // filled in after the deck is built/exported
-  },
-
-  "thumbnail": {                        // content for the YouTube thumbnail (built in Claude Design)
-    "hero": "9x adjusted P/E",          // the one cognitive-dissonance number (huge, centered)
-    "banner": "INITIATING COVERAGE",    // "INITIATING COVERAGE" for a new name; "COVERAGE UPDATE" if previously covered; omit if none
-    "secondary": ["Revenue $1.1B", "280E cost $147M/yr"],  // 1–2 small supporting metrics
-    "file": "charts/png/GTBIF_thumbnail.png"  // where the exported PNG lands
   },
 
   "segments": [
@@ -134,9 +126,8 @@ defines the slides — their count, their order, and the narration timed to each
 - `slide` — the on-screen content (see slide kinds). Put **exact numbers** here; this is
   what the deck renders, so vague data here = vague slides.
 - `deck.slide_count` — set it to the number of segments. **Validation fails if they differ.**
-- `thumbnail` — content for the YouTube thumbnail (hero metric + optional banner + 1–2
-  secondary metrics). Built in Claude Design (see `DESIGN_INSTRUCTIONS.md`), exported to
-  `thumbnail.file`. You spec the content here; you do **not** author any thumbnail HTML.
+- Thumbnails are made in ChatGPT from the brief, **not authored here** — no `thumbnail` block.
+  See `DESIGN_INSTRUCTIONS.md`.
 
 ### Mapping rule
 
@@ -195,15 +186,12 @@ last is the close/CTA (no separate intro/outro files in deck mode).
 
 ---
 
-## Thumbnail (`charts/png/{TICKER}_thumbnail.png`)
+## Thumbnails (made in ChatGPT, not authored here)
 
-The thumbnail is **built in Claude Design**, not hand-authored — Cowork authors **no HTML at
-all**. You spec the content in the script's `thumbnail` block (hero metric, optional banner,
-1–2 secondary metrics); Claude Design builds it as a separate 16:9 frame (see
-`DESIGN_INSTRUCTIONS.md`) and exports it as a **16:9 PDF** to `deck/{TICKER}_thumbnail.pdf`
-(Claude Design exports PDF only); the `slice` step rasterizes that to
-`charts/png/{TICKER}_thumbnail.png` at 1920×1080. It is *not* part of the video sequence — the
-pipeline treats it as a publish-only asset.
+Thumbnails are generated in **ChatGPT** from the brief (better output than we build) and dropped
+into `assets/` per platform: `yt.png` (16:9 → YouTube + website), `x.png` (5:2 → X), `spot.png`
+(1:1 → Spotify). The `slice` step ingests them into `charts/png/`. Cowork authors **no thumbnail
+block** — the brief is the source. They are publish-only assets, not part of the video sequence.
 
 ---
 
@@ -214,6 +202,10 @@ From the *same* research, the pipeline produces two more deliverables. Author th
 continuity and follow the **same spoken-form TTS rules** below.
 
 ### A. Short — the `short` block (inside `scripts/{TICKER}_script.json`)
+
+> **⚠️ SHORTS ARE CURRENTLY DISABLED — do NOT author a `short` block.** The quality isn't there
+> yet (avatars are being evaluated). Skip this section. The schema below is kept for when it's
+> re-enabled; the renderer, publish, and postpack all self-disable when there's no short.
 
 A **self-contained** 9:16 piece (~20–45s) for **YouTube Shorts + Instagram Reels** — a complete
 micro-story (hook → the numbers → a payoff), NOT a trailer. It drives to the long-form via the

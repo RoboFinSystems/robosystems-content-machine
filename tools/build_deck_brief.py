@@ -137,9 +137,7 @@ def build_brief(script):
     L.append(f"> Produce **exactly {n} slides**, one per section below, **in this order**. "
              f"Slide kinds used: title / chart / callout / dual.")
     L.append("> Keep every on-screen number EXACTLY as given. Narration is speaker context "
-             "(it is *not* shown on the slide).")
-    L.append("> Also build the **thumbnail** (separate frame, spec'd at the end) from the "
-             "**`thumbnail`** template. Full conventions: `DESIGN_INSTRUCTIONS.md`.")
+             "(it is *not* shown on the slide). Full conventions: `DESIGN_INSTRUCTIONS.md`.")
     L.append("")
     if meta.get("filing_type"):
         L.append(f"**Filing:** {meta.get('filing_type')} · {meta.get('filing_date','')}  ")
@@ -195,29 +193,14 @@ def build_brief(script):
         L.append("")
         L.append("---")
 
-    # Thumbnail — a separate 16:9 frame, not part of the video sequence.
-    thumb = script.get("thumbnail") or {}
-    if thumb:
-        L.append("")
-        L.append("## Thumbnail — separate 16:9 frame, NOT in the video sequence")
-        if thumb.get("hero"):
-            L.append(f"- **Hero metric (huge, centered):** {thumb['hero']}")
-        if thumb.get("banner"):
-            L.append(f"- **Banner:** {thumb['banner']}")
-        secondary = thumb.get("secondary") or []
-        if secondary:
-            L.append(f"- **Secondary metrics:** {', '.join(str(s) for s in secondary)}")
-        L.append(f"- Ticker + company ({company}) + RoboSystems logo. Bold; readable at tiny sizes.")
-        L.append("")
-        L.append("---")
-
     L.append("")
-    L.append("### After the deck is built (operator: export it, then run the pipeline)")
+    L.append("### After the deck is built (operator: export deck, drop in thumbnails, run pipeline)")
     L.append(f"1. Export the **deck** as PDF (16:9, one slide/page) → `deck/{ticker}_deck.pdf`. "
              f"If Design's PDF export mangles the layout, export PPTX → PowerPoint → PDF instead.")
-    L.append(f"2. Export the **thumbnail** as PNG → `deck/{ticker}_thumbnail.png` "
-             f"(the slice step center-crops it to 1920x1080).")
-    L.append(f"3. Run `just pipeline {ticker}` (slices the deck, voices it, renders the video).")
+    L.append(f"2. **Thumbnails** are made in ChatGPT from this brief (not in Claude Design). Drop the "
+             f"exports into `assets/`: `yt.png` (16:9 → YouTube + website), `x.png` (5:2 → X), "
+             f"`spot.png` (1:1 → Spotify). The pipeline ingests them.")
+    L.append(f"3. Run `just pipeline {ticker}` (slices the deck, ingests thumbnails, voices it, renders).")
     return "\n".join(L) + "\n"
 
 

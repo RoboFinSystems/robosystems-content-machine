@@ -57,7 +57,7 @@ def check_required_files(project_dir, ticker):
         report_path = report_md  # will show as missing
 
     required = {"Script": f"scripts/{ticker}_script.json"}
-    # Publish artifacts — needed to ship, not to render. Thumbnail is a Claude Design PNG.
+    # Publish artifacts — needed to ship, not to render. Thumbnail is made in ChatGPT (assets/).
     recommended = {
         "Report/Brief": report_path,
         "X Post": f"social/{ticker}_x_post.txt",
@@ -252,10 +252,8 @@ def check_deck_contract(project_dir, script):
     else:
         warn(f"{len(missing)} slide(s) not sliced yet — run the slice step: {', '.join(missing[:5])}")
 
-    if script.get("thumbnail"):
-        ok("thumbnail block present")
-    else:
-        warn("no thumbnail block — add one so Claude Design can build the thumbnail")
+    # Thumbnail comes from ChatGPT (assets/ yt/x/spot.png), not a script block; the canonical
+    # 16:9 charts/png/{ticker}_thumbnail.png is checked with the publish artifacts above.
 
 
 def _load_manifest_ids(rel_path):

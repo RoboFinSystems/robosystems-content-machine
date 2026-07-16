@@ -26,9 +26,10 @@ from helpers import apply_promo_code, asset_url, get_project_dir, require_env, r
 # (path under the project dir, content-type). Whatever exists gets published.
 ARTIFACTS = [
     ("videos/{t}_final.mp4", "video/mp4"),
-    ("videos/{t}_short.mp4", "video/mp4"),
     ("videos/{t}_qa_podcast.mp3", "audio/mpeg"),
-    ("charts/png/{t}_thumbnail.png", "image/png"),
+    ("charts/png/{t}_thumbnail.png", "image/png"),          # 16:9 — YouTube + website card
+    ("charts/png/{t}_thumbnail_x.png", "image/png"),        # 5:2 — X
+    ("charts/png/{t}_thumbnail_square.png", "image/png"),   # 1:1 — Spotify
     ("reports/{t}_brief.md", "text/markdown; charset=utf-8"),
     ("social/{t}_x_post.txt", "text/plain; charset=utf-8"),
     ("social/{t}_youtube_description.txt", "text/plain; charset=utf-8"),

@@ -1,18 +1,18 @@
-# Design Instructions — Building the Deck + Thumbnail in Claude Design
+# Design Instructions — Building the Deck in Claude Design
 
 This is the **Stage 2** spec. The pipeline has three stages:
 
 1. **Cowork** → research + `script.json` + brief + social (see `COWORK_INSTRUCTIONS.md` + `PRODUCTION_CONTRACT.md`)
-2. **Claude Design** → the on-brand deck + thumbnail (← *this file*)
+2. **Claude Design** → the on-brand deck (← *this file*)
 3. **Code** → slice + voiceover + mux + ship (the pipeline)
 
-You build the **visuals**. Cowork hands you a generated brief; you compose the deck and the
-thumbnail on the brand design system and export them. You decide layout and styling; you do
-**not** invent data — every number comes from the brief.
+You build the **deck**. Cowork hands you a generated brief; you compose the deck on the brand
+design system and export it. You decide layout and styling; you do **not** invent data; every
+number comes from the brief. (Thumbnails are made separately in ChatGPT, not here.)
 
 ## Inputs
 - **`deck/{TICKER}_deck_brief.md`** — the per-project content (generated from the script by
-  `build_deck_brief.py`). One section per slide + a thumbnail section. **Numbers are exact —
+  `build_deck_brief.py`). One section per slide. **Numbers are exact —
   reproduce them verbatim.**
 - **The "RoboSystems Content Design System" Claude Design project** — this is the source of
   brand truth for content. **Point the design task at this project** (not the base
@@ -71,39 +71,31 @@ The brief carries an auto-derived **"Chart rendering"** note on each bar/line sl
 - **Line charts** get a y-axis fit to the data (no forced zero), even x-spacing, and true
   slopes. A trend must read as a trend.
 
-## The thumbnail
-A **separate 16:9 frame — NOT part of the video sequence.** Start from the design system's
-**`templates/thumbnail/`** template and fill it from the brief's **Thumbnail** section:
-- **Hero metric** — the one cognitive-dissonance number, huge and centered (e.g. an adjusted
-  P/E, an implied re-rating). This is the click driver.
-- **Banner** (optional, per brief) — e.g. a campaign tag, top corner.
-- **1–2 secondary metrics** — small, supporting.
-- Ticker + company name, RoboSystems mark.
-- **Readable at tiny sizes** — assume a 1cm-wide preview. Bold, high contrast, minimal words.
+## Thumbnails (made in ChatGPT, not here)
+Thumbnails are generated in ChatGPT from the brief (better output than we build) and dropped
+into `assets/` as `yt.png` (16:9), `x.png` (5:2), `spot.png` (1:1). **Do not build a thumbnail
+in Claude Design.** Keep this session focused on the deck.
 
 ## Export + hand off (operator step, not the design agent)
-The design agent's job ends once the deck and thumbnail exist in the Claude Design canvas. It
-cannot write into this repo or run PowerPoint. Everything below is a **manual step the operator
-does** in the Design UI and the shell; the pipeline then takes over. Export the deck as **PDF**
-and the thumbnail as **PNG**.
+The design agent's job ends once the deck exists in the Claude Design canvas. It cannot write
+into this repo or run PowerPoint. Everything below is a **manual step the operator does** in the
+Design UI and the shell; the pipeline then takes over.
 1. **Deck -> PDF** (16:9, one slide per page) -> save to `deck/{TICKER}_deck.pdf`.
    If Claude Design's direct PDF export routes through the macOS print dialog and mangles the
    layout, export to **PPTX** instead, then use PowerPoint's **Export -> PDF** (widescreen 16:9
    is 960x540 pt, which is correct). The `slice` step force-scales each page to 1920x1080.
-2. **Thumbnail -> PNG** -> save to `deck/{TICKER}_thumbnail.png`. The single-frame PDF export
-   tends to misbehave, so PNG is the reliable path. The `slice` step center-crops it to 16:9 and
-   writes `charts/png/{TICKER}_thumbnail.png` at 1920x1080 (a clean `deck/{TICKER}_thumbnail.pdf`
-   still works if you have one).
-3. Then the pipeline takes over: `just pipeline {TICKER}` (slices the deck **and** the thumbnail).
+2. **Thumbnails** are made in ChatGPT (see above) and dropped into `assets/` (`yt.png`, `x.png`,
+   `spot.png`); the `slice` step ingests them into `charts/png/`.
+3. Then the pipeline takes over: `just pipeline {TICKER}` (slices the deck + ingests thumbnails).
 
 ## Recommended workflow (repeatable)
 The durable conventions now live in the **content design system**, not in a hand-built file.
 For each new video: open the **"RoboSystems Content Design System"** project, **duplicate the
-`video-deck` and `thumbnail` templates, paste the per-project brief, and fill it in.** The
+`video-deck` template, paste the per-project brief, and fill it in.** The
 per-project paste stays small; the brand stays consistent because every deck is built from the
 same templates + components.
 
 ## Quality bar
 - On-brand, consistent across slides, legible at video scale.
 - Numbers verbatim from the brief; no invented data.
-- N slides, in order; first = hook, last = CTA; thumbnail exported separately.
+- N slides, in order; first = hook, last = CTA.

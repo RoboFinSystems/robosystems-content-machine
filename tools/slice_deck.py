@@ -105,37 +105,54 @@ def _normalize_png_thumbnail(src, out):
     else:
         copyfile(src, out)
         note += "  [ffmpeg not found — copied as-is, NOT resized; install ffmpeg to normalize]"
-    print(f"  Thumbnail: deck/{os.path.basename(src)} -> "
+    src_rel = f"{os.path.basename(os.path.dirname(src))}/{os.path.basename(src)}"
+    print(f"  Thumbnail: {src_rel} -> "
           f"charts/png/{os.path.basename(out)} ({WIDTH}x{HEIGHT}){note}")
 
 
-def rasterize_thumbnail(project_dir, ticker):
-    """Produce charts/png/{ticker}_thumbnail.png (1920x1080) from whatever Claude Design
-    exported. Two supported inputs, in priority order:
-      1. deck/{ticker}_thumbnail.pdf  — rasterized (the original 16:9-PDF path)
-      2. deck/{ticker}_thumbnail.png  — center-cropped to 16:9 (fallback for when
-         Design's PDF export misbehaves and PNG is the reliable export)
-    """
-    deck_dir = os.path.join(project_dir, "deck")
+# Thumbnails are made in ChatGPT (fed the brief.md — better output than we build) and dropped
+# into assets/ per platform. slice ingests them into charts/png/. Claude Design builds ONLY the
+# deck now. The 16:9 canonical is normalized to 1920x1080; the platform variants (X 5:2, Spotify
+# 1:1) are copied verbatim since their aspect is deliberate.
+#   (assets/ source, charts/png/ output template, is_canonical, label)
+THUMBNAIL_SOURCES = [
+    ("yt.png",   "{t}_thumbnail.png",        True,  "16:9 · YouTube + website"),
+    ("x.png",    "{t}_thumbnail_x.png",      False, "5:2 · X"),
+    ("spot.png", "{t}_thumbnail_square.png", False, "1:1 · Spotify"),
+]
+
+
+def ingest_thumbnails(project_dir, ticker):
+    """Copy the externally-made thumbnails dropped in assets/ (yt/x/spot .png) into charts/png/.
+    The 16:9 canonical (yt.png) is normalized to 1920x1080 (crop-to-fill); the X (5:2) and Spotify
+    (1:1) variants are copied verbatim. Thumbnails come from ChatGPT — the Claude Design deck no
+    longer builds them."""
+    assets_dir = os.path.join(project_dir, "assets")
     png_dir = os.path.join(project_dir, "charts", "png")
     os.makedirs(png_dir, exist_ok=True)
-    out = os.path.join(png_dir, f"{ticker}_thumbnail.png")
 
-    pdf = os.path.join(deck_dir, f"{ticker}_thumbnail.pdf")
-    png = os.path.join(deck_dir, f"{ticker}_thumbnail.png")
+    found = 0
+    for src_name, out_tmpl, canonical, label in THUMBNAIL_SOURCES:
+        src = os.path.join(assets_dir, src_name)
+        if not os.path.exists(src):
+            continue
+        found += 1
+        out = os.path.join(png_dir, out_tmpl.format(t=ticker))
+        if canonical:
+            _normalize_png_thumbnail(src, out)  # prints its own line (crop-to-fill 1920x1080)
+        else:
+            copyfile(src, out)
+            note = ""
+            size = _png_size(src)
+            if src_name == "spot.png" and size and min(size) < 1400:
+                note = f"  [{size[0]}x{size[1]} — under Spotify's 1400x1400 min; regenerate larger]"
+            print(f"  Thumbnail: assets/{src_name} -> charts/png/{os.path.basename(out)} ({label}){note}")
 
-    if os.path.exists(pdf):
-        subprocess.run(
-            ["pdftoppm", "-png", "-singlefile", "-scale-to-x", str(WIDTH), "-scale-to-y", str(HEIGHT),
-             pdf, os.path.join(png_dir, f"{ticker}_thumbnail")],
-            check=True,
-        )
-        print(f"  Thumbnail: deck/{ticker}_thumbnail.pdf -> charts/png/{ticker}_thumbnail.png ({WIDTH}x{HEIGHT})")
-    elif os.path.exists(png):
-        _normalize_png_thumbnail(png, out)
-    else:
-        print(f"  Thumbnail: no deck/{ticker}_thumbnail.pdf or deck/{ticker}_thumbnail.png "
-              f"— export it from Claude Design (skipped)")
+    if not found:
+        print(f"  Thumbnail: none in assets/ — drop the ChatGPT exports there: "
+              f"yt.png (16:9), x.png (5:2), spot.png (1:1)")
+    elif not os.path.exists(os.path.join(png_dir, f"{ticker}_thumbnail.png")):
+        print(f"  WARN: no assets/yt.png (16:9 canonical) — needed for YouTube + the website card")
 
 
 def slice_standalone(pdf, out_dir):
@@ -195,7 +212,7 @@ def slice_project(project, pdf_override=None):
         print(f"   slide -> {ref}.png")
     os.rmdir(tmp_dir)
     print(f"\nSliced {len(refs)} slides into {png_dir}")
-    rasterize_thumbnail(project_dir, ticker)
+    ingest_thumbnails(project_dir, ticker)
 
 
 def main():
