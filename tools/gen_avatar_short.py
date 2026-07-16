@@ -1,15 +1,19 @@
 """Generate the canonical 9:16 avatar short, headless from the brief.
 
-Chain: brief -> gpt-5 (short script + hook + backdrop prompt) -> HeyGen avatar on green (our
-ElevenLabs voice) -> whisper-1 (word timings) -> gpt-image-2 backdrop (safe-zone) -> PIL brand
-overlay + animated word-synced captions -> ffmpeg key + composite -> videos/{T}_short.mp4.
+Single short (default): brief -> gpt-5 (script + hook + backdrop prompt) -> HeyGen avatar on green
+(our ElevenLabs voice) -> whisper-1 (word timings) -> gpt-image-2 backdrop (safe-zone) -> PIL brand
+overlay + word-synced captions -> ffmpeg key + composite -> videos/{T}_short.mp4.
+
+Q&A short (--qa): a purpose-authored 2-4 turn exchange from scripts/{T}_qa.json's `short` block,
+rendered as two avatars (host vs analyst pool + voice) cut-between over one shared backdrop, then
+concatenated into the same videos/{T}_short.mp4. The turns are authored by Cowork, not gpt-5.
 
 Usage:
-    uv run python tools/gen_avatar_short.py PEP [--test] [--quality high|medium|low]
+    uv run python tools/gen_avatar_short.py PEP [--test] [--quality high|medium|low] [--qa]
     --test  = free watermarked HeyGen render (POC); omit for a clean paid render.
 
-Needs HEYGEN_API_KEY, HEYGEN_AVATAR_LOOK_ID, HEYGEN_VOICE_ID, OPENAI_API_KEY in .env.
-See docs/avatar-short/README.md for the recipe this automates.
+Needs OPENAI_API_KEY, HEYGEN_API_KEY, HEYGEN_VOICE_ID (+ HEYGEN_AVATAR_LOOK_ID) in .env;
+--qa also needs HEYGEN_VOICE_ID2 + HEYGEN_AVATAR_LOOK_ID2 (the host pool).
 """
 import argparse, base64, json, os, random, subprocess, sys, time, urllib.error, urllib.request
 from PIL import Image, ImageDraw, ImageFont
@@ -19,6 +23,14 @@ W, H, FPS = 720, 1280, 30
 FONT = "/System/Library/Fonts/Supplemental/Arial Bold.ttf"
 CHAT_PREF = ["gpt-5", "gpt-5-mini", "gpt-4.1", "gpt-4o"]
 NAVY, BLUE, WHITE, GOLD, GREY, STROKE = (10, 14, 26), (91, 140, 249), (255, 255, 255), (255, 210, 59), (194, 205, 223), (0, 0, 0, 235)
+
+# Q&A short: each turn is one speaker, cut-between over a shared backdrop. The host and the analyst
+# draw from separate HeyGen look pools + voices; a coloured HOST/ANALYST pill distinguishes them.
+SPEAKER = {
+    "analyst":     {"label": "ANALYST", "fill": BLUE, "text_col": WHITE, "look_var": "HEYGEN_AVATAR_LOOK_ID",  "voice_var": "HEYGEN_VOICE_ID"},
+    "interviewer": {"label": "HOST",    "fill": GOLD, "text_col": NAVY,  "look_var": "HEYGEN_AVATAR_LOOK_ID2", "voice_var": "HEYGEN_VOICE_ID2"},
+}
+_LOOK_FALLBACK = {"HEYGEN_AVATAR_LOOK_ID": "HEYGEN_AVATAR_ID", "HEYGEN_AVATAR_LOOK_ID2": "HEYGEN_AVATAR_ID2"}
 
 STYLE = (
     "You are the writer/art-director for RoboSystems, a SEC-filing-grounded equity-research channel. "
@@ -107,8 +119,8 @@ def transcribe(mp3):
 def avatar_looks(var="HEYGEN_AVATAR_LOOK_ID"):
     """A comma-separated pool of HeyGen look ids for one speaker. `HEYGEN_AVATAR_LOOK_ID` is the
     single-short presenter / Q&A analyst pool; `HEYGEN_AVATAR_LOOK_ID2` is the Q&A host pool. One is
-    picked at random per render for variety. Falls back to the avatar-group uuid for the primary pool."""
-    raw = env(var) or (env("HEYGEN_AVATAR_ID") if var == "HEYGEN_AVATAR_LOOK_ID" else "") or ""
+    picked at random per render for variety. Falls back to the matching avatar-group uuid."""
+    raw = env(var) or env(_LOOK_FALLBACK.get(var, "")) or ""
     return [x.strip() for x in raw.split(",") if x.strip()]
 
 
@@ -150,7 +162,7 @@ def _wrap(draw, text, font, maxw):
     return lines
 
 
-def render_overlay(el, out):
+def render_overlay(el, out, speaker_label=None, label_fill=BLUE, label_text=WHITE):
     img = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
     f_wm, f_tick, f_eye, f_hook, f_foot = (ImageFont.truetype(FONT, s) for s in (34, 27, 26, 60, 26))
@@ -167,6 +179,15 @@ def render_overlay(el, out):
     y = 158
     for line in _wrap(d, el["hook_headline"], f_hook, W - 72):
         d.text((36, y), line, font=f_hook, fill=WHITE, stroke_width=4, stroke_fill=STROKE); y += 68
+    # speaker pill (Q&A short only) — a HOST/ANALYST chip just above the captions
+    if speaker_label:
+        f_lab = ImageFont.truetype(FONT, 32)
+        pad_x, pill_h, y0 = 26, 56, 926
+        pw = d.textlength(speaker_label, font=f_lab) + pad_x * 2
+        x0 = (W - pw) / 2
+        d.rounded_rectangle([x0, y0, x0 + pw, y0 + pill_h], radius=pill_h / 2,
+                            fill=(label_fill[0], label_fill[1], label_fill[2], 235), outline=WHITE, width=3)
+        d.text((W / 2, y0 + pill_h / 2), speaker_label, font=f_lab, fill=label_text, anchor="mm")
     # foot
     foot = "robosystems.ai  ·  SEC filing data"
     d.text(((W - d.textlength(foot, font=f_foot)) / 2, H - 80), foot, font=f_foot, fill=GREY, stroke_width=2, stroke_fill=STROKE)
@@ -222,11 +243,83 @@ def composite(backdrop, avatar_mp4, overlay, caps_dir, out):
                     "-pix_fmt", "yuv420p", "-c:v", "libx264", "-c:a", "aac", out], check=True)
 
 
+def concat_turns(parts, out):
+    """Concat the per-turn mp4s (identical params) into one short via the concat filter."""
+    ins = []
+    for p in parts:
+        ins += ["-i", p]
+    n = len(parts)
+    streams = "".join(f"[{i}:v][{i}:a]" for i in range(n))
+    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", *ins,
+                    "-filter_complex", f"{streams}concat=n={n}:v=1:a=1[v][a]",
+                    "-map", "[v]", "-map", "[a]", "-r", str(FPS),
+                    "-pix_fmt", "yuv420p", "-c:v", "libx264", "-c:a", "aac", out], check=True)
+
+
+def load_qa_short(pdir, ticker):
+    """The purpose-authored short exchange (2-4 turns) from scripts/{T}_qa.json's `short` block.
+    Authored by Cowork (COWORK_INSTRUCTIONS #6) — NOT derived from the podcast at render time."""
+    qpath = os.path.join(pdir, "scripts", f"{ticker}_qa.json")
+    if not os.path.exists(qpath):
+        sys.exit(f"No Q&A script at {qpath}")
+    qa = json.load(open(qpath, encoding="utf-8"))
+    short = qa.get("short") if isinstance(qa.get("short"), dict) else None
+    turns = (short or {}).get("turns")
+    if not turns:
+        sys.exit(
+            f"No `short` block in {os.path.basename(qpath)}. The Q&A short reads a purpose-authored\n"
+            f"  short.turns exchange (2-4 turns, ~45s) that Cowork writes (see COWORK_INSTRUCTIONS #6).\n"
+            f"  Re-run Cowork for this name, or hand-add a short.turns block for an older project.")
+    return turns
+
+
+def gen_qa_short(pdir, ticker, el, args, work):
+    """Two-avatar Q&A short: render each authored turn on green (host vs analyst pool + voice),
+    cut-between over one shared backdrop, then concat. Reuses the single-short compositor per turn."""
+    if not env("HEYGEN_VOICE_ID2"):
+        sys.exit("HEYGEN_VOICE_ID2 not in .env — needed for the Q&A host voice.")
+    turns = load_qa_short(pdir, ticker)
+    print(f"  Q&A short: {len(turns)} turns, cut-between over a shared backdrop")
+
+    print("  generating shared backdrop (gpt-image-2) ...", flush=True)
+    backdrop = os.path.join(work, "backdrop.png")
+    gen_backdrop(el["backdrop_prompt"], args.quality, backdrop)
+
+    parts, total = [], 0.0
+    for i, t in enumerate(turns):
+        sp = SPEAKER.get(t.get("speaker"), SPEAKER["analyst"])
+        looks = avatar_looks(sp["look_var"]) or avatar_looks() or [env("HEYGEN_AVATAR_ID")]
+        avatar = random.choice(looks)
+        voice = env(sp["voice_var"]) or env("HEYGEN_VOICE_ID")
+        text = t["text"].strip()
+        print(f"  turn {i + 1}/{len(turns)} [{sp['label']}] look {avatar} (of {len(looks)}) — {text[:55]}...", flush=True)
+        green = os.path.join(work, f"turn{i}_green.mp4")
+        open(green, "wb").write(heygen(text, args.test, avatar=avatar, voice=voice))
+        mp3 = os.path.join(work, f"turn{i}.mp3")
+        subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", green, "-vn", "-acodec", "libmp3lame", "-q:a", "4", mp3], check=True)
+        words, dur = transcribe(mp3)
+        total += dur
+        overlay = os.path.join(work, f"turn{i}_overlay.png")
+        render_overlay(el, overlay, speaker_label=sp["label"], label_fill=sp["fill"], label_text=sp["text_col"])
+        caps = os.path.join(work, f"turn{i}_caps")
+        render_captions(words, dur, caps)
+        part = os.path.join(work, f"turn{i}.mp4")
+        composite(backdrop, green, overlay, caps, part)
+        parts.append(part)
+
+    out = os.path.join(pdir, "videos", f"{ticker}_short.mp4")
+    print("  concatenating turns ...", flush=True)
+    concat_turns(parts, out)
+    print(f"\nDone -> {out}  ({total:.1f}s, {len(turns)} turns)")
+
+
 def main():
     ap = argparse.ArgumentParser(description="Generate the canonical 9:16 avatar short from the brief")
     ap.add_argument("project")
     ap.add_argument("--test", action="store_true", help="free watermarked HeyGen render (POC)")
     ap.add_argument("--quality", default="high", choices=["high", "medium", "low"])
+    ap.add_argument("--qa", action="store_true",
+                    help="two-avatar Q&A short from scripts/{T}_qa.json's `short` block (host + analyst, cut-between)")
     args = ap.parse_args()
     for k in ("OPENAI_API_KEY", "HEYGEN_API_KEY", "HEYGEN_VOICE_ID"):
         if not env(k):
@@ -242,11 +335,18 @@ def main():
     work = os.path.join(pdir, "videos", "short_build")
     os.makedirs(work, exist_ok=True)
 
+    # write_brief supplies the on-screen CHROME (ticker/exchange/hook/eyebrow) + backdrop prompt for
+    # both paths. The single short also uses its narration; the Q&A short ignores it (turns come from
+    # the authored qa.json `short` block, not gpt-5).
     model, el = write_brief(open(brief_path, encoding="utf-8").read())
     print(f"  script model: {model}  ({'TEST render' if args.test else 'PAID render'})")
     print(f"  hook: {el['hook_headline']!r}")
-    print(f"  narration ({len(el['narration'])} chars): {el['narration'][:90]}...")
 
+    if args.qa:
+        gen_qa_short(pdir, ticker, el, args, work)
+        return
+
+    print(f"  narration ({len(el['narration'])} chars): {el['narration'][:90]}...")
     looks = avatar_looks() or [env("HEYGEN_AVATAR_ID")]
     avatar = random.choice(looks)
     print(f"  rendering HeyGen avatar (green) — look {avatar} (random of {len(looks)}) ...", flush=True)

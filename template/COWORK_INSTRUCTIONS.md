@@ -162,16 +162,31 @@ key-finding bullets with specific numbers; a 1-2 sentence plain-English explaine
 metric or term a cold viewer needs; disclaimer ("This is not investment advice. No price
 targets."); relevant `$TICKER` and topic hashtags.
 
-### 5. Short — auto-generated (no authoring)
+### 5. Short — auto-generated (no authoring in the video script)
 The 9:16 short is produced headless from the brief by `just short {TICKER}` (HeyGen avatar in our
-voice + gpt-image backdrop + word-synced captions). **Do not author a `short` block.** Your only
-short-related job is its posting copy in the publish metadata (`short_title`, `short_pinned_comment`, #7).
+voice + gpt-image backdrop + word-synced captions). **Do not author a `short` block in
+`{TICKER}_script.json`.** Your only short-related job on the video script is its posting copy in the
+publish metadata (`short_title`, `short_pinned_comment`, #7). (There is also an optional **two-avatar
+Q&A short** — `just short {TICKER} --qa` — which *does* read an authored exchange; that block lives in
+the Q&A file, see #6. Both write the same canonical `videos/{TICKER}_short.mp4` — pick one per name.)
 
-### 6. Q&A Podcast (`scripts/{TICKER}_qa.json`)
+### 6. Q&A Podcast + Q&A-short exchange (`scripts/{TICKER}_qa.json`)
 A CNBC-style two-voice conversation (host + analyst), ~5–8 min, written for audio. Cover the
 deck's beats as dialogue, open with the host framing the name, close on the RoboSystems angle.
 Schema + rules: `PRODUCTION_CONTRACT.md` → "Companion formats → B". Rendered by
 `just podcast-qa {TICKER}` (MP3 for Spotify, MP4 for YouTube).
+
+**Also author a `short` block in the same file** — a purpose-written short exchange for the
+two-avatar Q&A video short (rendered by `just short {TICKER} --qa`). Add a top-level `short.turns`
+array of **2-4 turns** that stands on its own as a ~45-second 9:16 clip — it is **not** the opening of
+the podcast, it's a fresh micro-story:
+- The **host's first line names the company + ticker** and poses the tension.
+- The **analyst lands the single most striking payoff** in one tight answer (the one number/contrast
+  that defines the name). Keep each turn short — one beat, spoken in ~10-15 seconds.
+- **End on a hook or a pointed question**, not a CTA. No promo, no RoboSystems plug (the short is
+  top-of-funnel; the link lives in the pinned comment).
+- Self-contained (a cold viewer gets it with zero setup); alternate `interviewer`/`analyst`; same
+  spoken-form TTS rules as the rest. Draw the substance from the brief, tightened for the format.
 
 ### 7. Publish metadata (`social/{TICKER}_publish.json`)
 The per-platform native copy that lives nowhere else — you author it; `just postpack {TICKER}`
