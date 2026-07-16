@@ -203,13 +203,17 @@ continuity and follow the **same spoken-form TTS rules** below.
 
 ### A. Short — auto-generated 9:16 avatar video (`just short {TICKER}`)
 
-**You author no `short` block in the video script.** The short is produced headless from the brief by
-`tools/gen_avatar_short.py`: gpt-5 writes a tight ~30s hook, a HeyGen studio avatar reads it in our
-ElevenLabs voice, keyed over a gpt-image-2 backdrop, with word-synced captions -> a 9:16
-`videos/{TICKER}_short.mp4`. Your only short-related job is the **posting copy** in the publish
-metadata (`short_title`, `short_pinned_comment`, see #7). *(Optional variant: a two-avatar **Q&A
-short**, `just short {TICKER} --qa`, which reads an authored `short.turns` exchange from the Q&A file —
-see B. It writes the same `videos/{TICKER}_short.mp4`.)*
+**You author no `short` block in the video script.** Two 9:16 shorts are produced headless by
+`tools/gen_avatar_short.py` (`just shorts {TICKER}` makes both), each teasing a different destination:
+- **Hook short** (`just short {TICKER}` -> `videos/{TICKER}_short.mp4`): gpt-5 writes a tight ~30s hook
+  from the brief, a HeyGen studio avatar reads it in our ElevenLabs voice, keyed over a gpt-image-2
+  backdrop with word-synced captions. **Teases the long-form** (`short_pinned_comment` -> `[YOUTUBE_LINK]`).
+- **Q&A short** (`just short {TICKER} --qa` -> `videos/{TICKER}_short_qa.mp4`): two avatars read the
+  authored `short.turns` exchange from the Q&A file (see B), cut-between over one shared backdrop.
+  **Teases the podcast** (`short_qa_pinned_comment` -> `[PODCAST_LINK]`).
+
+Your short-related job in the video script is the **posting copy** in the publish metadata
+(`short_title`/`short_pinned_comment` and `short_qa_title`/`short_qa_pinned_comment`, see #7).
 
 ### B. Q&A podcast — `scripts/{TICKER}_qa.json`
 
@@ -242,7 +246,7 @@ host voice (`ELEVEN_LABS_INTERVIEWER_VOICE_ID`); analyst = the brand narrator vo
 - **`turns`** — the full podcast. Alternate `interviewer` / `analyst`. Open with the host framing the name; close on the RoboSystems angle and a short sign-off.
 - Written for the **ear**: contractions, natural cadence, no on-screen references. Cover the deck's beats as *dialogue*: setup → the numbers → the catalyst → valuation range → bull/bear → the RoboSystems angle.
 - Same spoken-form TTS rules as the main narration (spell out agencies, never space `AI`, numbers as words). The host asks; the analyst delivers the substance and the numbers.
-- **`short.turns`** — a **separate, purpose-written 2-4 turn exchange** for the two-avatar Q&A video short (`just short {TICKER} --qa`, `tools/gen_avatar_short.py`). NOT a slice of the podcast: a self-contained ~45-second micro-story. Host's first line names the company + ticker and poses the tension; the analyst lands the single defining number/contrast in one tight answer (~10-15s per turn); end on a hook or pointed question, **no CTA/promo**. Each speaker is rendered as its own HeyGen avatar (host = `HEYGEN_AVATAR_LOOK_ID2` + `HEYGEN_VOICE_ID2`; analyst = `HEYGEN_AVATAR_LOOK_ID` + `HEYGEN_VOICE_ID`), cut-between over one shared backdrop.
+- **`short.turns`** - a **separate, purpose-written 2-4 turn exchange** for the two-avatar Q&A video short (`just short {TICKER} --qa`, `tools/gen_avatar_short.py`). NOT a slice of the podcast: a self-contained ~45-second micro-story. Host's first line names the company + ticker and poses the tension; the analyst lands the single defining number/contrast in one tight answer (~10-15s per turn); end on a hook or pointed question, **no CTA/promo**. Each speaker is rendered as its own HeyGen avatar (host = `HEYGEN_AVATAR_LOOK_ID2` + `HEYGEN_VOICE_ID2`; analyst = `HEYGEN_AVATAR_LOOK_ID` + `HEYGEN_VOICE_ID`), cut-between over one shared backdrop.
 
 ---
 

@@ -116,11 +116,18 @@ music prompt *args:
     @just ensure-env
     UV_ENV_FILE={{_env}} uv run python tools/generate_music.py "{{prompt}}" {{args}}
 
-# Assemble a 9:16 teaser Short (b-roll + ducked music + VO + caption cards)
-# Canonical 9:16 avatar short: HeyGen avatar (our voice) + gpt-image backdrop + word-synced captions, from the brief
+# 9:16 avatar short from the brief: HeyGen avatar (our voice) + gpt-image backdrop + word-synced captions.
+# Default = hook short (videos/{T}_short.mp4, teases the long-form); --qa = two-avatar Q&A short
+# (videos/{T}_short_qa.mp4, teases the podcast). Add --test for a free watermarked HeyGen render.
 short project *args:
     @just ensure-env
     UV_ENV_FILE={{_env}} uv run python tools/gen_avatar_short.py {{project}} {{args}}
+
+# Generate BOTH shorts for a name: the hook short (-> long-form) and the Q&A short (-> podcast).
+shorts project *args:
+    @just ensure-env
+    UV_ENV_FILE={{_env}} uv run python tools/gen_avatar_short.py {{project}} {{args}}
+    UV_ENV_FILE={{_env}} uv run python tools/gen_avatar_short.py {{project}} --qa {{args}}
 
 # Generate a two-voice Q&A podcast (MP3 for Spotify + MP4 for YouTube)
 podcast-qa project *args:

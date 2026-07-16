@@ -1,9 +1,9 @@
 """
 Capture YouTube URLs into the research catalog by title-matching the channel's public
 RSS feed — no API key, no OAuth. After you upload to YouTube, run this; it matches each
-ticker's titles (youtube_title / short_title / podcast_episode_title from publish.json)
-against the feed and writes youtube_url / short_youtube_url / podcast_youtube_url into the
-LATEST version's S3 meta.json (content/{T}/meta.json), then reindexes so the portal can
+ticker's titles (youtube_title / short_title / short_qa_title / podcast_episode_title from
+publish.json) against the feed and writes youtube_url / short_youtube_url / short_qa_youtube_url /
+podcast_youtube_url into the LATEST version's S3 meta.json (content/{T}/meta.json), then reindexes so the portal can
 embed YouTube instead of streaming the S3 MP4.
 
 The feed only holds the ~15 most-recent uploads, so run it within a few uploads of posting.
@@ -61,6 +61,7 @@ def _match(title, feed):
 FIELDS = [
     ("youtube_title", "youtube_url", "long"),
     ("short_title", "short_youtube_url", "short"),
+    ("short_qa_title", "short_qa_youtube_url", "short-qa"),
     ("podcast_episode_title", "podcast_youtube_url", "podcast"),
 ]
 

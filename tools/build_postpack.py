@@ -41,6 +41,7 @@ from helpers import apply_promo_code, asset_url, get_project_dir, resolve_promo_
 MEDIA = {
     "final":       ("videos/{t}_final.mp4",         "{t}_final.mp4"),
     "short":       ("videos/{t}_short.mp4",         "{t}_short.mp4"),
+    "short_qa":    ("videos/{t}_short_qa.mp4",      "{t}_short_qa.mp4"),
     "podcast_mp3": ("videos/{t}_qa_podcast.mp3",    "{t}_qa_podcast.mp3"),
     "podcast_mp4": ("videos/{t}_qa_podcast.mp4",    "{t}_qa_podcast.mp4"),
     "thumbnail":    ("charts/png/{t}_thumbnail.png",        "{t}_thumbnail.png"),         # 16:9 YouTube + website
@@ -48,9 +49,17 @@ MEDIA = {
     "thumbnail_sq": ("charts/png/{t}_thumbnail_square.png", "{t}_thumbnail_square.png"),  # 1:1 Spotify
 }
 
+# The two shorts, each teasing a different destination:
+#   (media key, section label, title field, pinned-comment field, what the pinned comment links to)
+SHORTS = [
+    ("short",    "Hook short (teases the long-form)", "short_title",    "short_pinned_comment",    "the long-form video"),
+    ("short_qa", "Q&A short (teases the podcast)",    "short_qa_title", "short_qa_pinned_comment", "the podcast"),
+]
+
 # placeholders we expect the human (or a later step) to resolve before posting
 PLACEHOLDER_HELP = {
     "[YOUTUBE_LINK]":   "paste the long-form URL after you upload to YouTube",
+    "[PODCAST_LINK]":   "the podcast episode URL (Spotify, or its YouTube mirror) once it's live",
     "[X_ARTICLE_LINK]": "the link to the brief once you publish it as an X Article",
     "[PROMO_CODE]":     "the live Stripe promo code (e.g. CANNABIS50 / ROBO50)",
 }
@@ -154,14 +163,6 @@ def build(project):
         lines.append(block(final_desc) if final_desc else f"_(missing social/{t}_youtube_description.txt)_")
         add("YouTube — long-form", lines)
 
-    # ── YouTube — Short ──
-    if urls["short"]:
-        add("YouTube — Short", [
-            f"**Video:** {urls['short']}",
-            "**Title / caption:**", block(field(pub, "short_title", t)),
-            "**Pinned comment** (drops the long-form link):", block(field(pub, "short_pinned_comment", t)),
-        ])
-
     # ── X — publish the brief as an X Article FIRST, then the native-video post linking to it ──
     if x_post:
         # Strip any [YOUTUBE_LINK] line; the post now carries the on-platform Article link instead
@@ -198,15 +199,6 @@ def build(project):
         lines.append(block(post_with_link))
         add("X", lines)
 
-    # ── X — Short clip (second at-bat: the 9:16 Short as a standalone native X post) ──
-    if urls["short"]:
-        add("X — Short (post on a DIFFERENT day from the main post — a second cashtag at-bat)", [
-            f"**Native video** (upload the 9:16 Short as its own post, NOT a reply): {urls['short']}",
-            "**Caption:**", block(field(pub, "short_title", t)),
-            f"_Standalone native-video post so the Short gets its own run in For You + the ${t} cashtag "
-            f"feed. Keep ${t} in the caption; no external link in the body._",
-        ])
-
     # ── Spotify / Podcast (audio MP3 → Spotify; the connected RSS auto-posts it to YouTube too) ──
     if urls["podcast_mp3"]:
         cover = [f"**Cover art (1:1, ≥1400px):** {urls['thumbnail_sq']}"] if urls.get("thumbnail_sq") else []
@@ -217,6 +209,37 @@ def build(project):
             "**Episode title:**", block(field(pub, "podcast_episode_title", t)),
             "**Show notes:**", block(field(pub, "podcast_show_notes", t)),
         ])
+
+    # ── Shorts (both types) - YouTube. Hook short → long-form; Q&A short → podcast. ──
+    yt_short_lines = []
+    for mkey, label, tkey, ckey, dest in SHORTS:
+        if not urls.get(mkey):
+            continue
+        yt_short_lines += [
+            f"### {label}",
+            f"**Video:** {urls[mkey]}",
+            "**Title / caption:**", block(field(pub, tkey, t)),
+            f"**Pinned comment** (drops the link to {dest}):", block(field(pub, ckey, t)), "",
+        ]
+    if yt_short_lines:
+        add("YouTube Shorts", yt_short_lines)
+
+    # ── Shorts (both types) - native X video (each its own post, on its own day) ──
+    x_short_lines = []
+    for mkey, label, tkey, ckey, dest in SHORTS:
+        if not urls.get(mkey):
+            continue
+        x_short_lines += [
+            f"### {label}",
+            f"**Native video** (upload the 9:16 Short as its own post, NOT a reply): {urls[mkey]}",
+            "**Caption:**", block(field(pub, tkey, t)), "",
+        ]
+    if x_short_lines:
+        x_short_lines.append(
+            f"_Post each Short as a standalone native-video post on its OWN day (apart from the main post "
+            f"and from each other) - each gets its own run in For You + the ${t} cashtag feed. Keep ${t} in "
+            f"the caption; no external link in the body._")
+        add("X Shorts (native, spread across days)", x_short_lines)
 
     numbered = [f"## {i}) {title}\n{body}" for i, (title, body) in enumerate(sections, 1)]
 
@@ -238,7 +261,10 @@ def build(project):
         ("1. **YouTube long-form** → copy the resulting URL (fill any `[YOUTUBE_LINK]`)\n"
          "2. **X**: publish the brief as an X **Article FIRST** → copy its URL into `[X_ARTICLE_LINK]`, "
          "then post the main tweet (native video + the Article link)\n"
-         "3. **Spotify** (auto-posts to YouTube via RSS)\n"
+         "3. **Spotify** podcast (auto-posts to YouTube via RSS) → copy the episode URL into `[PODCAST_LINK]`\n"
+         "4. **Shorts**, once their targets are live - the **hook short** links to the long-form "
+         "(`[YOUTUBE_LINK]`), the **Q&A short** links to the podcast (`[PODCAST_LINK]`). Post each on its "
+         "own day, to YouTube Shorts + as a native X video.\n"
          "_LinkedIn is reserved for the technical/blog lane; research analysis doesn't post there._"),
     ]
 

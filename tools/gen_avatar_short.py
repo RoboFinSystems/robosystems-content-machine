@@ -6,7 +6,9 @@ overlay + word-synced captions -> ffmpeg key + composite -> videos/{T}_short.mp4
 
 Q&A short (--qa): a purpose-authored 2-4 turn exchange from scripts/{T}_qa.json's `short` block,
 rendered as two avatars (host vs analyst pool + voice) cut-between over one shared backdrop, then
-concatenated into the same videos/{T}_short.mp4. The turns are authored by Cowork, not gpt-5.
+concatenated into videos/{T}_short_qa.mp4. The turns are authored by Cowork, not gpt-5. The two
+shorts are distinct deliverables: the hook short (videos/{T}_short.mp4) teases the long-form video;
+the Q&A short (videos/{T}_short_qa.mp4) teases the Q&A podcast.
 
 Usage:
     uv run python tools/gen_avatar_short.py PEP [--test] [--quality high|medium|low] [--qa]
@@ -307,7 +309,7 @@ def gen_qa_short(pdir, ticker, el, args, work):
         composite(backdrop, green, overlay, caps, part)
         parts.append(part)
 
-    out = os.path.join(pdir, "videos", f"{ticker}_short.mp4")
+    out = os.path.join(pdir, "videos", f"{ticker}_short_qa.mp4")
     print("  concatenating turns ...", flush=True)
     concat_turns(parts, out)
     print(f"\nDone -> {out}  ({total:.1f}s, {len(turns)} turns)")
