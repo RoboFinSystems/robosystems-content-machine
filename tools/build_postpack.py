@@ -162,35 +162,40 @@ def build(project):
             "**Pinned comment** (drops the long-form link):", block(field(pub, "short_pinned_comment", t)),
         ])
 
-    # ── X — one long-form post + native long-form video; brief as an X Article in the first comment ──
+    # ── X — publish the brief as an X Article FIRST, then the native-video post linking to it ──
     if x_post:
-        # X gets the native video; strip any [YOUTUBE_LINK] line — no external link in the post
+        # Strip any [YOUTUBE_LINK] line; the post now carries the on-platform Article link instead
+        # (an X Article link is internal, so it doesn't trip X's external-link throttle).
         body_lines = [ln for ln in x_post.splitlines() if "[YOUTUBE_LINK]" not in ln]
         x_body = re.sub(r"\n{3,}", "\n\n", "\n".join(body_lines)).strip()
         lines = []
-        vid = urls["final"] or urls["short"]
-        if vid:
-            lines.append(f"**Native video** (upload the 16:9 long-form — the native upload is the discovery, so keep links out of the post): {vid}")
-        elif urls.get("thumbnail_x") or urls["thumbnail"]:
-            img = urls.get("thumbnail_x") or urls["thumbnail"]
-            lines.append(f"**Image** (attach the 5:2 X thumbnail so it isn't a bare-text post): {img}")
+        # Step 1 — the X Article (the brief). Post it FIRST so its URL exists for the main post.
+        # The brief is left as RAW markdown (not a code block) so a markdown preview renders it:
+        # highlight the rendered brief and paste into the X Article (rich-text editor). The
+        # end-of-build pass resolves [PROMO_CODE] + angle brackets here.
+        lines.append("**Step 1 — publish the brief as an X Article FIRST** "
+                     "(then copy its URL into `[X_ARTICLE_LINK]` in Step 2):")
         if urls.get("thumbnail_x"):
-            lines.append(f"**X thumbnail (5:2)** — use as the X Article header image: {urls['thumbnail_x']}")
-        lines.append(f"**Post** ({len(x_body)} chars — one long-form post, NOT a thread; no external link):")
-        lines.append(block(x_body))
-        lines.append("**First comment** (publish the brief as an X Article, then paste its link in for `[X_ARTICLE_LINK]`):")
-        lines.append(block(field(pub, "x_first_comment", t)))
-        # The brief is left as RAW markdown — NOT in a code block — so a markdown preview
-        # renders it: highlight the rendered brief and paste straight into the X Article
-        # (rich-text editor, not markdown). The end-of-build pass still resolves
-        # [PROMO_CODE] + angle brackets here. (The local source keeps the placeholder.)
+            lines.append(f"- Header image (5:2): {urls['thumbnail_x']}")
         if brief_text:
             ref = f" · published copy: {brief_url}" if brief_url else ""
-            lines.append(f"**Brief — highlight the rendered brief below + paste as the X Article**{ref}:")
+            lines.append(f"- Highlight the rendered brief below + paste as the X Article{ref}:")
             lines.append("")
             lines.append(brief_text)
         elif brief_url:
             lines.append(f"- Brief to publish as the X Article: {brief_url}")
+        # Step 2 — the main post: native video + a link to the now-live Article.
+        lines.append("")
+        lines.append("**Step 2 — the main post** (native video + a link to the Article from Step 1):")
+        vid = urls["final"] or urls["short"]
+        if vid:
+            lines.append(f"- **Native video** (upload the 16:9 long-form): {vid}")
+        elif urls.get("thumbnail_x") or urls["thumbnail"]:
+            img = urls.get("thumbnail_x") or urls["thumbnail"]
+            lines.append(f"- **Image** (attach the 5:2 X thumbnail so it isn't a bare-text post): {img}")
+        post_with_link = f"{x_body}\n\n📄 Full brief: [X_ARTICLE_LINK]"
+        lines.append(f"- **Post** ({len(x_body)} chars + the Article link — one post, NOT a thread):")
+        lines.append(block(post_with_link))
         add("X", lines)
 
     # ── X — Short clip (second at-bat: the 9:16 Short as a standalone native X post) ──
@@ -230,11 +235,10 @@ def build(project):
         "## ⚠️ Fill before posting",
         "\n".join(fill) if fill else "_None — everything resolved._",
         "## Posting order",
-        ("1. **YouTube long-form** → copy the resulting URL\n"
-         "2. Replace every `[YOUTUBE_LINK]` below with that URL (the Short's pinned comment)\n"
-         "3. Post the rest: YouTube Short, X (native long-form video + brief as an X Article in the "
-         "first comment), Spotify (auto-posts to YouTube via RSS)\n"
-         "4. On a later day: the **X — Short** post — a second cashtag at-bat.\n"
+        ("1. **YouTube long-form** → copy the resulting URL (fill any `[YOUTUBE_LINK]`)\n"
+         "2. **X**: publish the brief as an X **Article FIRST** → copy its URL into `[X_ARTICLE_LINK]`, "
+         "then post the main tweet (native video + the Article link)\n"
+         "3. **Spotify** (auto-posts to YouTube via RSS)\n"
          "_LinkedIn is reserved for the technical/blog lane; research analysis doesn't post there._"),
     ]
 
