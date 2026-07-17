@@ -158,18 +158,6 @@ def ingest_thumbnails(project_dir, ticker):
         print(f"  WARN: no assets/yt.png (16:9 canonical) — needed for YouTube + the website card")
 
 
-def _thumbnail_as_first_slide(project_dir, ticker, first_ref, png_dir):
-    """Open the long-form on the 16:9 thumbnail instead of the deck's hook slide - it's punchier, and
-    it makes the video open on the image viewers clicked (also fixes the poster frame on X-native and
-    the /research player). Copies charts/png/{ticker}_thumbnail.png over the first slide; no-op if absent."""
-    thumb = os.path.join(png_dir, f"{ticker}_thumbnail.png")
-    if os.path.exists(thumb):
-        copyfile(thumb, os.path.join(png_dir, f"{first_ref}.png"))
-        print(f"  Opening slide: {first_ref}.png <- {ticker}_thumbnail.png (thumbnail as slide 1)")
-    else:
-        print("  Opening slide: no thumbnail found — kept the deck hook slide")
-
-
 def _ensure_pdf_from_pptx(pdf_path):
     """Claude Design's canonical export is a PPTX. If a sibling {name}.pptx exists and is newer
     than {name}.pdf (or the PDF is missing), render it to PDF via PowerPoint's native engine
@@ -216,7 +204,7 @@ def slice_standalone(pdf, out_dir):
         print("   ", os.path.basename(p))
 
 
-def slice_project(project, pdf_override=None, keep_hook=False):
+def slice_project(project, pdf_override=None):
     project_dir = get_project_dir(project)
 
     scripts_dir = os.path.join(project_dir, "scripts")
@@ -268,8 +256,9 @@ def slice_project(project, pdf_override=None, keep_hook=False):
     os.rmdir(tmp_dir)
     print(f"\nSliced {len(refs)} slides into {png_dir}")
     ingest_thumbnails(project_dir, ticker)
-    if not keep_hook and refs:
-        _thumbnail_as_first_slide(project_dir, ticker, refs[0], png_dir)
+    # The hook slide stays as slide 1 (Design's cover page). If a 16:9 thumbnail was ingested,
+    # the assemble step holds it as the frame-0 poster (~1.5s, so it's the X-native preview) then
+    # cuts to the hook slide - see assemble_video.build_timeline. (No longer overwrites the hook.)
 
 
 def main():
@@ -278,14 +267,12 @@ def main():
     ap.add_argument("project", nargs="?", help="Project name (project mode)")
     ap.add_argument("--pdf", help="Path to the deck PDF (overrides project deck.source)")
     ap.add_argument("--out", help="Output dir (standalone mode)")
-    ap.add_argument("--keep-hook", action="store_true",
-                    help="keep the deck hook slide as the opener (default: use the 16:9 thumbnail as slide 1)")
     args = ap.parse_args()
 
     if args.out and args.pdf and not args.project:
         slice_standalone(args.pdf, args.out)
     elif args.project:
-        slice_project(args.project, pdf_override=args.pdf, keep_hook=args.keep_hook)
+        slice_project(args.project, pdf_override=args.pdf)
     else:
         ap.error("Provide a PROJECT name, or (--pdf and --out) for standalone.")
 

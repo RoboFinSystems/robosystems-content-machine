@@ -210,8 +210,11 @@ def build_asset_manifest(project_dir, ticker):
     # Chart PNGs
     png_dir = os.path.join(project_dir, "charts", "png")
     if os.path.isdir(png_dir):
+        # Upload slide PNGs + the 16:9 thumbnail (build_timeline holds it as the frame-0 poster);
+        # skip the X (5:2) and Spotify (1:1) thumbnail variants — those are publish-only assets.
+        _thumb_variants = {f"{ticker}_thumbnail_x.png", f"{ticker}_thumbnail_square.png"}
         for f in sorted(os.listdir(png_dir)):
-            if f.endswith(".png") and not f.startswith(f"{ticker}_thumbnail"):
+            if f.endswith(".png") and f not in _thumb_variants:
                 local_path = os.path.join(png_dir, f)
                 s3_key = f"{s3_prefix}/charts/{f}"
                 print(f"  Uploading {f}...", end=" ")
@@ -448,6 +451,8 @@ def build_timeline(project_dir, ticker, assets, production=False):
 
     # Build clips in sequence
     SEGMENT_GAP = 0.3   # seconds of black between slides
+    POSTER_HOLD = 1.5   # hold the 16:9 thumbnail as the frame-0 poster this long, then cut to the hook slide
+    #                     (long enough for robust cross-platform poster extraction + an autoplay beat)
     video_clips = []
     audio_clips = []
     srt_entries = []      # for subtitle generation
@@ -480,18 +485,42 @@ def build_timeline(project_dir, ticker, assets, production=False):
         print(f"  Seg {seg_id} ({slide_type}): {audio_duration:.1f}s")
 
         if chart_info:
-            # The first visible slide starts at frame 0 (absorbing the lead-in gap) with
-            # NO fade-in — otherwise frame 0 is black and becomes the X/feed poster, since
-            # X has no custom-thumbnail option for native video. Later slides keep the fade.
             is_first_clip = not video_clips
-            clip = {
-                "asset": {"type": "image", "src": chart_info["url"]},
-                "start": 0.0 if is_first_clip else round(current_time, 2),
-                "length": round(current_time + image_duration if is_first_clip else image_duration, 2),
-            }
-            if not is_first_clip:
-                clip["transition"] = {"in": "fade"}
-            video_clips.append(clip)
+            if is_first_clip:
+                # The first visible slide starts at frame 0 (absorbing the lead-in gap) with NO
+                # fade-in — otherwise frame 0 is black and becomes the X/feed poster (X has no
+                # custom-thumbnail option for native video).
+                first_len = round(current_time + image_duration, 2)
+                thumb_info = assets.get(f"{ticker}_thumbnail.png")
+                if thumb_info:
+                    # Hold the 16:9 thumbnail as the poster for POSTER_HOLD s (so the X preview is
+                    # the thumbnail), then hard-cut to Design's hook slide while the narration keeps
+                    # playing — keeps the slide-presentation feel instead of a static cover card.
+                    hold = min(POSTER_HOLD, max(0.5, round(first_len - 1.0, 2)))
+                    video_clips.append({
+                        "asset": {"type": "image", "src": thumb_info["url"]},
+                        "start": 0.0,
+                        "length": hold,
+                    })
+                    video_clips.append({
+                        "asset": {"type": "image", "src": chart_info["url"]},
+                        "start": hold,
+                        "length": round(first_len - hold, 2),
+                    })
+                else:
+                    # No thumbnail — open directly on the hook slide at frame 0.
+                    video_clips.append({
+                        "asset": {"type": "image", "src": chart_info["url"]},
+                        "start": 0.0,
+                        "length": first_len,
+                    })
+            else:
+                video_clips.append({
+                    "asset": {"type": "image", "src": chart_info["url"]},
+                    "start": round(current_time, 2),
+                    "length": round(image_duration, 2),
+                    "transition": {"in": "fade"},
+                })
 
         audio_clips.append({
             "asset": {
