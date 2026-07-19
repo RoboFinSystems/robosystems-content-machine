@@ -20,7 +20,7 @@ For each project directory, check for the presence of key files:
 
 **Cowork outputs:**
 - `reports/*_brief.md` — narrative brief
-- `scripts/*_script.json` — video script (also holds the `thumbnail` + `short` blocks)
+- `scripts/*_script.json` — video script
 - `scripts/*_qa.json` — Q&A podcast script
 - `social/*_x_post.txt` — X post
 - `social/*_youtube_description.txt` — YouTube description
@@ -33,7 +33,7 @@ For each project directory, check for the presence of key files:
 - `charts/png/{visual_ref}.png` — sliced deck slides
 - `videos/audio/*_voiceover.mp3` — voiceover segments
 - `videos/*_final.mp4` — long-form video
-- `videos/*_short.mp4` — 9:16 teaser short
+- `videos/*_short.mp4` / `*_short_qa.mp4` — 9:16 shorts (backburnered; show only if present)
 - `videos/*_qa_podcast.mp3` / `*_qa_podcast.mp4` — Q&A podcast (Spotify + YouTube)
 - `videos/*_podcast.mp3` — long-form audio extract
 
@@ -42,11 +42,11 @@ For each project directory, check for the presence of key files:
 Content Machine — Production Status
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  TICKER   SOURCES   COWORK   DECK   VIDEO   SHORT   Q&A
-  ──────   ───────   ──────   ────   ─────   ─────   ───
-  GTBIF    3/3       done     —      —       —       —
-  TRLV     done      done     done   done    done    done
-  CURLF    scaffold  —        —      —       —       —
+  TICKER   SOURCES   COWORK   DECK   VIDEO   Q&A
+  ──────   ───────   ──────   ────   ─────   ───
+  GTBIF    3/3       done     —      —       —
+  TRLV     done      done     done   done    done
+  CURLF    scaffold  —        —      —       —
 
   Legend: scaffold = project exists but no sources
           3/3 = 3 of 3 source files present
@@ -59,4 +59,4 @@ Based on the state, suggest what to do next:
 - Projects with sources but no Cowork → "Point Cowork at projects/TICKER/"
 - Projects with Cowork outputs but no deck → `just deck-brief TICKER`, then build the deck in Claude Design
 - Projects with a deck PDF → `just pipeline TICKER`
-- Projects with a video → `just short TICKER` · `just podcast-qa TICKER`
+- Projects with a video → `just podcast-qa TICKER` (shorts are backburnered)
