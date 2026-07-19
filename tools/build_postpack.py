@@ -19,7 +19,9 @@ Platform model (X-first; research lane):
     (the native upload is the discovery, so no external link in the post) + the brief published as
     an X Article and linked in the first comment. Shorts are NOT posted to X: the main post's
     cashtags already give X strong organic discovery, so shorts are reserved to drive YouTube.
-  - YouTube: long-form + BOTH shorts (hook short -> the long-form, Q&A short -> the podcast).
+  - YouTube: long-form, plus any shorts whose MP4s exist (hook short -> the long-form,
+    Q&A short -> the podcast). Shorts are backburnered; with no {t}_short*.mp4 present the
+    pack contains no shorts section and no shorts posting step.
   - Spotify: podcast MP3, which auto-mirrors the episode to YouTube via the connected RSS.
   - LinkedIn is NOT used for research — it's reserved for the technical/blog lane (build_blog_postpack.py).
   - Instagram is dropped (wrong audience, strips links).
@@ -241,16 +243,21 @@ def build(project):
         "## ⚠️ Fill before posting",
         "\n".join(fill) if fill else "_None — everything resolved._",
         "## Posting order",
-        ("1. **YouTube long-form** → copy the resulting URL (fill any `[YOUTUBE_LINK]`)\n"
-         "2. **X**: publish the brief as an X **Article FIRST** → copy its URL into `[X_ARTICLE_LINK]`, "
-         "then post the main tweet (native video + the Article link)\n"
-         "3. **Spotify** podcast (auto-posts to YouTube via RSS) → copy the episode URL into `[PODCAST_LINK]`\n"
-         "4. **Shorts** (**YouTube only** - reserved to drive YouTube; X gets discovery from the main "
-         "post's cashtags), once their targets are live: the **hook short** links to the long-form "
-         "(`[YOUTUBE_LINK]`), the **Q&A short** links to the podcast (`[PODCAST_LINK]`). Post each to "
-         "YouTube Shorts on its own day.\n"
-         "_LinkedIn is reserved for the technical/blog lane; research analysis doesn't post there._"),
     ]
+    order = [
+        "1. **YouTube long-form** → copy the resulting URL (fill any `[YOUTUBE_LINK]`)",
+        "2. **X**: publish the brief as an X **Article FIRST** → copy its URL into `[X_ARTICLE_LINK]`, "
+        "then post the main tweet (native video + the Article link)",
+        "3. **Spotify** podcast (auto-posts to YouTube via RSS) → copy the episode URL into `[PODCAST_LINK]`",
+    ]
+    if yt_short_lines:
+        order.append(
+            "4. **Shorts** (**YouTube only** - reserved to drive YouTube; X gets discovery from the main "
+            "post's cashtags), once their targets are live: the **hook short** links to the long-form "
+            "(`[YOUTUBE_LINK]`), the **Q&A short** links to the podcast (`[PODCAST_LINK]`). Post each to "
+            "YouTube Shorts on its own day.")
+    order.append("_LinkedIn is reserved for the technical/blog lane; research analysis doesn't post there._")
+    head.append("\n".join(order))
 
     text = "\n\n".join(head + numbered) + "\n"
     dest = os.path.join(project_dir, f"{t}_publish_pack.md")
