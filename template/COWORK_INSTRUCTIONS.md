@@ -208,7 +208,12 @@ first), then the Q&A script and the publish metadata (#7). 8. Verify completenes
 
 ## Important Rules
 
-- Every number from MCP data or attributed web search — never fabricate.
+- Every number from MCP data or attributed web search - never fabricate.
+- **Never use em-dashes (`—`) or en-dashes (`–`)** in any generated output - briefs, scripts,
+  social copy, publish metadata, slide text, or narration. Use a spaced hyphen ` - ` for a clause
+  break and a plain `-` for ranges (`$8.9-9.2B`, `FY2021-FY2025`). The brief ships verbatim as an
+  X Article and the social copy posts as-is, so this is a hard formatting rule (see
+  PRODUCTION_CONTRACT Universal rules).
 - If MCP data is missing for a metric, note the gap and use web search as a fallback,
   attributing the source.
 - Narration must sound natural read aloud and follow the spoken-form TTS rules in the contract.

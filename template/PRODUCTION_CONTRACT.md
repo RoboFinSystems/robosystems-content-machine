@@ -264,6 +264,12 @@ reads wrong.)*
 
 ## Universal rules
 
+- **No em-dashes or en-dashes - ever.** Use a spaced hyphen ` - ` for a clause break (or
+  restructure with commas / colons / periods); use a plain hyphen for numeric and date ranges
+  (`$8.9-9.2B`, `FY2021-FY2025`), never an en-dash. This governs *everything you generate* - the
+  brief (it ships verbatim as an X Article), all social and publish copy, on-screen slide text,
+  and narration. Stray dashes in the on-screen deck text and the published copy are the ones that
+  bite, so keep them out as you write - do not leave them for a cleanup pass.
 - **The brief is render-safe plain markdown.** The research portal renders the published brief
   with ReactMarkdown + remark-gfm — GFM tables, headings, lists, bold/italic, and links render,
   but **YAML frontmatter and raw HTML (`<sub>`, `<br>`, etc.) do NOT** (frontmatter shows as a
