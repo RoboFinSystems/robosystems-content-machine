@@ -65,7 +65,7 @@ If the card is absent, this is **initiating coverage** — introduce the company
 ## What You Produce
 
 Produce these **4 core outputs** in order (brief FIRST — it's the foundation everything else
-derives from), then the **2 companion formats** (#5–6) and the **publish metadata** (#7). (Schema and slide mechanics: see
+derives from), then the **Q&A podcast** (#6 - shorts, #5, are backburnered) and the **publish metadata** (#7). (Schema and slide mechanics: see
 `PRODUCTION_CONTRACT.md`.) The deck is built in Claude Design from the script; the thumbnails
 are made in ChatGPT from the brief. You author no HTML.
 
@@ -100,6 +100,15 @@ not a data dump. The script and social posts derive from it. Structure:
 5. **Risks** (1-2 ¶) — specific risks from the filing's risk factors and the financials.
 6. **The Bottom Line** (1 ¶) — where the company stands and what to watch next. Framework,
    not a recommendation.
+
+**X Article cashtag (required, in the Hook).** The brief is published verbatim as a native X
+**Article**, and an early cashtag is key to the algorithm picking the Article up for the
+cashtag/topic feeds. Work `$TICKER` into **The Hook** at the first mention of the company name
+(e.g. `Elevance Health $ELV grew revenue nine percent...`), so the cashtag lands in the first
+paragraph - not the closing CTA. Same hygiene as the X post: a space must precede the `$`
+(never `($TICKER)` - a leading paren kills both the link and the cashtag-feed indexing; for a
+parenthetical use the bare `(TICKER)` without the `$`). One early cashtag is the requirement;
+after that, refer to the company by name.
 
 **Footer (optional CTA).** After the analysis, end with a one-line soft RoboSystems CTA; when a
 promo is running, append `New customers get 50% off your first month with code [PROMO_CODE].`
@@ -162,50 +171,28 @@ key-finding bullets with specific numbers; a 1-2 sentence plain-English explaine
 metric or term a cold viewer needs; disclaimer ("This is not investment advice. No price
 targets."); relevant `$TICKER` and topic hashtags.
 
-### 5. Shorts - auto-generated (no authoring in the video script)
-**Two** 9:16 shorts are produced headless by `just shorts {TICKER}` (HeyGen avatar + gpt-image backdrop
-+ word-synced captions), each teasing a different destination:
-- **Hook short** - `just short {TICKER}` → `videos/{TICKER}_short.mp4`. A single-avatar hook from the
-  brief; **teases the long-form video**.
-- **Q&A short** - `just short {TICKER} --qa` → `videos/{TICKER}_short_qa.mp4`. Two avatars reading the
-  authored `short.turns` exchange from the Q&A file (#6); **teases the podcast**.
+### 5. Shorts - BACKBURNERED (author nothing)
+Shorts are paused. Do **not** author a `short` block in `{TICKER}_script.json`, a `short.turns`
+exchange in the Q&A file, or any `short_*` fields in the publish metadata. The renderer stays
+on the shelf (`just shorts {TICKER}`, avatar shorts generated headless from the brief) in case
+shorts return; the postpack only includes a short if its MP4 exists.
 
-**Do not author a `short` block in `{TICKER}_script.json`.** Your short-related authoring is (a) the
-`short.turns` exchange in the Q&A file (#6) and (b) the posting copy for **both** shorts in the publish
-metadata (`short_title`/`short_pinned_comment` and `short_qa_title`/`short_qa_pinned_comment`, #7).
-
-### 6. Q&A Podcast + Q&A-short exchange (`scripts/{TICKER}_qa.json`)
+### 6. Q&A Podcast (`scripts/{TICKER}_qa.json`)
 A CNBC-style two-voice conversation (host + analyst), ~5–8 min, written for audio. Cover the
 deck's beats as dialogue, open with the host framing the name, close on the RoboSystems angle.
 Schema + rules: `PRODUCTION_CONTRACT.md` → "Companion formats → B". Rendered by
 `just podcast-qa {TICKER}` (MP3 for Spotify, MP4 for YouTube).
-
-**Also author a `short` block in the same file** - a purpose-written short exchange for the
-two-avatar Q&A video short (rendered by `just short {TICKER} --qa`). Add a top-level `short.turns`
-array of **2-4 turns** that stands on its own as a ~45-second 9:16 clip — it is **not** the opening of
-the podcast, it's a fresh micro-story:
-- The **host's first line names the company + ticker** and poses the tension.
-- The **analyst lands the single most striking payoff** in one tight answer (the one number/contrast
-  that defines the name). Keep each turn short - one beat, spoken in ~10-15 seconds.
-- **End on a hook or a pointed question**, not a CTA. No promo, no RoboSystems plug (the short is
-  top-of-funnel; the link lives in the pinned comment).
-- Self-contained (a cold viewer gets it with zero setup); alternate `interviewer`/`analyst`; same
-  spoken-form TTS rules as the rest. Draw the substance from the brief, tightened for the format.
 
 ### 7. Publish metadata (`social/{TICKER}_publish.json`)
 The per-platform native copy that lives nowhere else — you author it; `just postpack {TICKER}`
 stitches it into a paste-ready **publish pack** after production (merging in the real chapter
 times, the S3 media links, and flagging any unresolved placeholders). A JSON object of string fields:
 - `youtube_title` — clickable long-form title (≤100 chars).
-- `short_title` - the **hook short's** title/caption.
-- `short_pinned_comment` - the hook short's pinned comment; it teases the long-form, so use `[YOUTUBE_LINK]`.
-- `short_qa_title` - the **Q&A short's** title/caption.
-- `short_qa_pinned_comment` - the Q&A short's pinned comment; it teases the podcast, so use `[PODCAST_LINK]`.
 - `x_first_comment` — the X first comment under the video post; points to the brief published as an X **Article** (use `[X_ARTICLE_LINK]`). The full long-form is uploaded as native video; no YouTube link on X.
 - `podcast_episode_title` — the Q&A episode title.
 - `podcast_show_notes` — episode description / show notes (+ RoboSystems CTA, plus a one-line voice credit `Voiceover by ElevenLabs: https://try.elevenlabs.io/v9z3wzm97gk3` and a `Disclosure: referral link.` note, since the two-voice audio is ElevenLabs).
 
-_No LinkedIn for research - LinkedIn is the technical/blog lane, not a research channel. Shorts post to **YouTube only** (both the hook short and the Q&A short); they're not posted to X, since the main post's cashtags already carry X discovery._
+_No LinkedIn for research - LinkedIn is the technical/blog lane, not a research channel. No `short_*` fields - shorts are backburnered (#5)._
 
 Same placeholder rules as the rest (`[YOUTUBE_LINK]`, `[PROMO_CODE]`) — never hardcode the live URL or code.
 
@@ -216,7 +203,7 @@ Same placeholder rules as the rest (`[YOUTUBE_LINK]`, `[PROMO_CODE]`) — never 
 across 3+ years, segment breakdowns, derived metrics (margins, growth, FCF, ROE/ROA/ROIC).
 5. Web search for price, valuation ratios, analyst consensus, peer context, recent news.
 6. Synthesize the 3-5 most compelling stories. 7. Produce the 4 core outputs in order (brief
-first), then the Short block, the Q&A script, and the publish metadata (#7). 8. Verify completeness — all files exist and
+first), then the Q&A script and the publish metadata (#7). 8. Verify completeness — all files exist and
 `script.json` validates (see contract).
 
 ## Important Rules

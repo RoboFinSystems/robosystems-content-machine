@@ -185,9 +185,9 @@ If the card is absent, this is **initiating coverage** — introduce the company
 ## What You Produce
 
 Produce these **4 core outputs** in order (the narrative brief comes FIRST — it's the foundation
-everything else derives from), then the **2 companion formats** (#5–6) and the **publish metadata** (#7). (Schema and slide
-mechanics: see `PRODUCTION_CONTRACT.md`.) The deck **and** the thumbnail are built in Claude
-Design from the script — you author no HTML.
+everything else derives from), then the **Q&A podcast** (#6 - shorts, #5, are backburnered) and the **publish metadata** (#7). (Schema and slide
+mechanics: see `PRODUCTION_CONTRACT.md`.) The deck is built in Claude Design from the script;
+the thumbnails are made in ChatGPT from the brief. You author no HTML.
 
 **Promo code (optional placeholder).** Where copy invites sign-up, add the offer line
 `New customers get 50% off your first month with code [PROMO_CODE].` Keep `[PROMO_CODE]` as a
@@ -223,6 +223,15 @@ posts derive from it. Structure:
 7. **The Bottom Line** (1 ¶) — where it stands today, how the math changes under each
    catalyst, what to watch next. Give the framework, not a recommendation.
 
+**X Article cashtag (required, in the Hook).** The brief is published verbatim as a native X
+**Article**, and an early cashtag is key to the algorithm picking the Article up for the
+cashtag/topic feeds. Work `$TICKER` into **The Hook** at the first mention of the company name
+(e.g. `Trulieve $TCNNF reported...`), so the cashtag lands in the first paragraph - not the
+closing CTA. Same hygiene as the X post: a space must precede the `$` (never `($TICKER)` - a
+leading paren kills both the link and the cashtag-feed indexing; for a parenthetical use the
+bare `(TICKER)` without the `$`). One early cashtag is the requirement; after that, refer to
+the company by name.
+
 **Footer (optional CTA).** After the analysis, end with a one-line soft RoboSystems CTA; when a
 promo is running, append `New customers get 50% off your first month with code [PROMO_CODE].`
 Keep it a footer, separate from the analysis — never a sales pitch inside the report.
@@ -247,7 +256,7 @@ Cannabis editorial guidance for the script:
 - **Include a valuation slide** — turn the DCF + cross-sector re-rating into a `dual`: current
   price vs implied-value bands by scenario, with the assumptions listed; cover it in the
   narration. Framing: implied value under stated assumptions, not a target.
-- Long-form target 3-5 min (~800-1200 words narration); Short 45-60s.
+- Long-form target 3-5 min (~800-1200 words narration).
 - Vary slide kinds for rhythm (don't stack chart slides). Title → chart → chart → callout →
   dual → chart → callout → title.
 - Every claim references a specific filing number; the slide's `data` shows that exact number.
@@ -285,18 +294,11 @@ off your first month with code [PROMO_CODE]` line under the links; **timestamps*
 bullets with numbers; a 2-3 sentence **280E explainer** (many viewers land cold); disclaimer
 ("This is not investment advice. … No paid promotions. No price targets."); hashtags.
 
-### 5. Short — the `short` block in `scripts/{TICKER}_script.json`
-A **self-contained** 9:16 piece (~20–45s) for YouTube Shorts — a complete
-micro-story, NOT a trailer. Write a **fresh standalone script** for the ear (not a slice of the
-main narration): open on the cognitive-dissonance number (the 280E paradox — big revenue / high
-margins / a reported loss), **name the company and ticker** (a brief mystery hook is fine, but
-reveal it), land the catalyst/now-what payoff, and **end on a provocative question or takeaway**
-(the long-form link goes in the pinned comment, not a card). Pick b-roll `id`s from
-`assets/broll/manifest.json` (or set a `broll_theme` of tags — e.g. ["cultivation","city","macro"]
-— to auto-pick by theme), and write 4–8 caption cards that carry the story for muted viewers
-(e.g. "$1.2B revenue, 60% margins" → "TAXED AT 228%" → "TRULIEVE — NYSE: TRLV" → "NOW 87% —
-FIRST PROFIT" → "A BUYER, NOT A TARGET" → "WHAT DOES IT BUY FIRST?"). Schema + rules:
-`PRODUCTION_CONTRACT.md` → "Companion formats → A". Rendered by `just short {TICKER}`.
+### 5. Shorts - BACKBURNERED (author nothing)
+Shorts are paused. Do **not** author a `short` block in `{TICKER}_script.json`, a `short.turns`
+exchange in the Q&A file, or any `short_*` fields in the publish metadata. The renderer stays
+on the shelf (`just shorts {TICKER}`, avatar shorts generated headless from the brief) in case
+shorts return; the postpack only includes a short if its MP4 exists.
 
 ### 6. Q&A Podcast (`scripts/{TICKER}_qa.json`)
 A CNBC-style two-voice conversation (host + analyst), ~5–8 min, written for audio. Cover the
@@ -310,13 +312,11 @@ The per-platform native copy that lives nowhere else — you author it; `just po
 stitches it into a paste-ready **publish pack** after production (merging in the real chapter
 times, the S3 media links, and flagging any unresolved placeholders). A JSON object of string fields:
 - `youtube_title` — clickable long-form title (≤100 chars).
-- `short_title` — the Short's title/caption. *(omit if no short)*
-- `short_pinned_comment` — the Short's pinned comment; use `[YOUTUBE_LINK]`. *(omit if no short)*
 - `x_first_comment` — the X first comment under the video post; points to the brief published as an X **Article** (use `[X_ARTICLE_LINK]`). The full long-form is uploaded as native video; no YouTube link on X.
 - `podcast_episode_title` — the Q&A episode title.
 - `podcast_show_notes` — episode description / show notes (+ RoboSystems CTA, `[PROMO_CODE]` if a promo runs).
 
-_No LinkedIn for research — LinkedIn is the technical/blog lane, not a research channel. The 9:16 Short also posts as a **separate native X video** (a second cashtag at-bat); the postpack adds that section automatically from `short_title`._
+_No LinkedIn for research — LinkedIn is the technical/blog lane, not a research channel. No `short_*` fields - shorts are backburnered (#5)._
 
 Same placeholder rules as the rest (`[YOUTUBE_LINK]`, `[PROMO_CODE]`) — never hardcode the live URL or code.
 
@@ -327,8 +327,8 @@ company's elements (handle 40-F/IFRS). 4. Deep MCP research — 10-20+ queries: 
 280E inputs (income tax expense + pretax income), goodwill/impairments, debt + maturities,
 segment/state revenue, 3+ years to show the boom-bust arc. 5. Web search for price, valuation,
 state/rescheduling news, peer MSO comps, management commentary. 6. Synthesize the 3-5 most
-compelling stories. 7. Produce the 4 core outputs in order (brief first), then the Short block,
-the Q&A script, and the publish metadata (#7). 8. Verify completeness — all files exist and `script.json` validates (see contract).
+compelling stories. 7. Produce the 4 core outputs in order (brief first), then the Q&A script
+and the publish metadata (#7). 8. Verify completeness — all files exist and `script.json` validates (see contract).
 
 ## Domain narration hints (spoken-form — adds to the contract's general rules)
 
