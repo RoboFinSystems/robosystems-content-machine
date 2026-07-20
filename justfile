@@ -118,7 +118,7 @@ webdeck-mux project *args:
 
 # ─── YouTube (Data API) ──────────────────────────────────────
 
-# One-time YouTube OAuth (opens a browser; stores .gcp/token.json)
+# One-time YouTube OAuth (opens a browser; writes YT_REFRESH_TOKEN to .env)
 yt-auth:
     @just ensure-env
     UV_ENV_FILE={{_env}} uv run python tools/upload_youtube.py auth
