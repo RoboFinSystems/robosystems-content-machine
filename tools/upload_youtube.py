@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 """Upload a project's final video to YouTube via the Data API v3.
 
-One-time:  just yt-auth              interactive browser OAuth; stores .gcp/token.json
+One-time:  just yt-auth              interactive browser OAuth; writes YT_REFRESH_TOKEN to .env
 Then:      just yt-upload TICKER     upload + thumbnail + chapters/tags, PRIVATE by default
 
-Auth notes (web-type OAuth client at .gcp/secret.json):
+All credentials live in .env (same as every other service in this repo):
+  YT_CLIENT_ID / YT_CLIENT_SECRET   the OAuth client (from the GCP console)
+  YT_REFRESH_TOKEN                  written by `just yt-auth`
+
+Auth notes (web-type OAuth client):
   - the GCP console must list http://localhost:8090/ as an authorized redirect URI
     (or use a Desktop-app client, which allows any localhost port)
   - publish the OAuth consent screen to production, else refresh tokens expire in 7 days
@@ -17,49 +21,78 @@ Quota: one upload = 1,600 units of the 10,000/day default (about 6 uploads/day).
 
 import argparse
 import json
+import os
+import re
 import sys
 from pathlib import Path
 
 import helpers
 
 REPO = Path(__file__).resolve().parent.parent
-SECRET = REPO / ".gcp" / "secret.json"
-TOKEN = REPO / ".gcp" / "token.json"
+ENV_FILE = REPO / ".env"
 SCOPES = [
     "https://www.googleapis.com/auth/youtube.upload",
     "https://www.googleapis.com/auth/youtube",
 ]
+TOKEN_URI = "https://oauth2.googleapis.com/token"
 OAUTH_PORT = 8090
 THUMB_MAX_BYTES = 2 * 1024 * 1024   # YouTube custom-thumbnail hard limit
+
+
+def env_client():
+    cid = os.environ.get("YT_CLIENT_ID", "").strip()
+    csec = os.environ.get("YT_CLIENT_SECRET", "").strip()
+    if not (cid and csec):
+        sys.exit("YT_CLIENT_ID / YT_CLIENT_SECRET missing from .env")
+    return cid, csec
+
+
+def save_refresh_token(token: str) -> None:
+    """Idempotently set YT_REFRESH_TOKEN in .env, preserving everything else."""
+    line = f'YT_REFRESH_TOKEN="{token}"'
+    text = ENV_FILE.read_text() if ENV_FILE.exists() else ""
+    if re.search(r"^YT_REFRESH_TOKEN=", text, flags=re.M):
+        text = re.sub(r"^YT_REFRESH_TOKEN=.*$", line, text, flags=re.M)
+    else:
+        text = text.rstrip("\n") + "\n" + line + "\n"
+    ENV_FILE.write_text(text)
+    print("YT_REFRESH_TOKEN written to .env")
 
 
 def get_creds(interactive: bool):
     from google.oauth2.credentials import Credentials
     from google.auth.transport.requests import Request
 
-    creds = None
-    if TOKEN.exists():
-        creds = Credentials.from_authorized_user_file(str(TOKEN), SCOPES)
-    if creds and creds.valid:
-        return creds
-    if creds and creds.expired and creds.refresh_token:
+    cid, csec = env_client()
+    rtok = os.environ.get("YT_REFRESH_TOKEN", "").strip()
+    if rtok:
+        creds = Credentials(None, refresh_token=rtok, token_uri=TOKEN_URI,
+                            client_id=cid, client_secret=csec, scopes=SCOPES)
         creds.refresh(Request())
-        TOKEN.write_text(creds.to_json())
         return creds
     if not interactive:
-        sys.exit("no valid YouTube token - run `just yt-auth` first")
+        sys.exit("YT_REFRESH_TOKEN missing - run `just yt-auth` first")
 
     from google_auth_oauthlib.flow import InstalledAppFlow
-    flow = InstalledAppFlow.from_client_secrets_file(str(SECRET), SCOPES)
+    config = {"installed": {
+        "client_id": cid,
+        "client_secret": csec,
+        "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+        "token_uri": TOKEN_URI,
+        "redirect_uris": [f"http://localhost:{OAUTH_PORT}/"],
+    }}
+    flow = InstalledAppFlow.from_client_config(config, SCOPES)
     try:
         creds = flow.run_local_server(port=OAUTH_PORT, access_type="offline",
                                       prompt="consent")
     except Exception as e:
         sys.exit(f"OAuth flow failed ({e}).\nIf this is redirect_uri_mismatch: add "
                  f"http://localhost:{OAUTH_PORT}/ to the client's authorized redirect "
-                 "URIs in the GCP console, or download a Desktop-app client secret.")
-    TOKEN.write_text(creds.to_json())
-    print(f"token stored: {TOKEN}")
+                 "URIs in the GCP console, or use a Desktop-app client.")
+    if not creds.refresh_token:
+        sys.exit("Google returned no refresh token - remove the app's prior grant at "
+                 "myaccount.google.com/permissions and rerun `just yt-auth`")
+    save_refresh_token(creds.refresh_token)
     return creds
 
 
