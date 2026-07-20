@@ -183,6 +183,7 @@ def cmd_upload(args) -> int:
     from googleapiclient.http import MediaFileUpload
 
     yt = build("youtube", "v3", credentials=get_creds(interactive=False))
+    acting_channel_guard(yt)
     media = MediaFileUpload(str(video), chunksize=8 * 1024 * 1024, resumable=True)
     req = yt.videos().insert(part="snippet,status", body=body, media_body=media)
     resp = None
@@ -194,8 +195,15 @@ def cmd_upload(args) -> int:
     print(f"uploaded: https://youtu.be/{vid}")
 
     if thumb:
-        yt.thumbnails().set(videoId=vid, media_body=str(prepared_thumbnail(thumb))).execute()
-        print("thumbnail set")
+        from googleapiclient.errors import HttpError
+        try:
+            yt.thumbnails().set(videoId=vid,
+                                media_body=str(prepared_thumbnail(thumb))).execute()
+            print("thumbnail set")
+        except HttpError as e:
+            print(f"WARNING: thumbnail not set ({e.status_code}): wrong channel or "
+                  "channel not verified for custom thumbnails. Video is uploaded; "
+                  "set the thumbnail in Studio or retry after fixing auth.")
 
     if body["status"]["privacyStatus"] != "public":
         print("NOTE: uploaded non-public. If Studio shows it LOCKED private, the GCP "
@@ -204,9 +212,34 @@ def cmd_upload(args) -> int:
     return 0
 
 
+def acting_channel(yt):
+    items = yt.channels().list(part="snippet", mine=True).execute().get("items", [])
+    if not items:
+        sys.exit("token has no channel - re-run `just yt-auth` and pick the channel")
+    return items[0]["id"], items[0]["snippet"]["title"]
+
+
+def acting_channel_guard(yt):
+    """Print the channel this token acts as; abort on YT_CHANNEL_ID mismatch.
+    Brand-account gotcha: the OAuth chooser binds the token to ONE channel -
+    picking the personal identity instead of the brand channel uploads to the
+    wrong channel entirely. Pin YT_CHANNEL_ID in .env to make that impossible."""
+    cid, title = acting_channel(yt)
+    print(f"channel:   {title} ({cid})")
+    want = os.environ.get("YT_CHANNEL_ID", "").strip()
+    if want and cid != want:
+        sys.exit(f"ABORT: token is bound to '{title}' ({cid}) but .env pins "
+                 f"YT_CHANNEL_ID={want}. Re-run `just yt-auth` and pick the right "
+                 "channel on Google's account/channel chooser.")
+
+
 def cmd_auth(_args) -> int:
-    get_creds(interactive=True)
-    print("auth OK - try: just yt-upload TICKER --dry-run")
+    creds = get_creds(interactive=True)
+    from googleapiclient.discovery import build
+    cid, title = acting_channel(build("youtube", "v3", credentials=creds))
+    print(f"auth OK - token acts as channel: {title} ({cid})")
+    print(f"pin it: add YT_CHANNEL_ID=\"{cid}\" to .env so uploads refuse any other "
+          "channel; then try `just yt-upload TICKER --dry-run`")
     return 0
 
 
