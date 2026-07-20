@@ -217,14 +217,33 @@ def md_to_content_state(md: str):
         blocks.append(blk)
 
     para = []
+    table = []
 
     def flush():
         if para:
             add(" ".join(para), "unstyled")
             para.clear()
 
+    def flush_table():
+        # Undocumented but verified 2026-07-20: an atomic block whose entity is
+        # type "markdown" renders a real table from the markdown it carries
+        # (same mechanism as the editor's paste-markdown-to-table trick).
+        if table:
+            idx = len(entities)
+            entities.append({"key": str(idx), "value": {
+                "type": "markdown", "mutability": "immutable",
+                "data": {"markdown": "\n".join(table)}}})
+            blocks.append({"text": " ", "type": "atomic",
+                           "entity_ranges": [{"key": idx, "offset": 0, "length": 1}]})
+            table.clear()
+
     for raw in md.splitlines():
         st = raw.strip()
+        if st.startswith("|") and st.endswith("|") and st.count("|") >= 2:
+            flush()
+            table.append(st)
+            continue
+        flush_table()
         if not st:
             flush()
         elif re.fullmatch(r"-{3,}|\*{3,}|_{3,}", st):
@@ -253,6 +272,7 @@ def md_to_content_state(md: str):
         else:
             para.append(st)
     flush()
+    flush_table()
     return title, {"blocks": blocks, "entities": entities}
 
 
