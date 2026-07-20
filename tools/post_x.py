@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
-"""Post a project's single X post (native video + copy) via the X API v2.
+"""Post a project's X presence via the X API v2: the brief as an X Article,
+then the single main post with native video linking to it.
 
-One-time:  just x-auth               verify (or mint) the user access token
-Then:      just x-post TICKER --dry-run     preview the assembled post
-           just x-post TICKER --article-url https://x.com/...   post for real
+One-time:  just x-auth                    verify (or mint) the user access token
+Then:      just x-article TICKER          create the Article DRAFT from reports/{T}_brief.md
+           (review the draft in the X Articles editor)
+           just x-article TICKER --publish    publish it; sidecar stores the URL
+           just x-post TICKER             main post: native video + Article link
+                                          (link auto-read from the article sidecar)
 
 All credentials live in .env (same as every other service in this repo):
   X_CONSUMER_KEY / X_SECRET_KEY     the app's consumer key + consumer secret
@@ -14,16 +18,17 @@ All credentials live in .env (same as every other service in this repo):
 Getting the access token (writes need USER context, not the bearer token):
   A) If the developer app lives on the posting account (@RoboFinSystems):
      developer portal -> app -> Keys and tokens -> Access Token and Secret ->
-     Generate. App permissions must be "Read and write" BEFORE generating
-     (regenerate after changing permissions). Paste both into .env.
+     Generate. App permissions must be "Read and write" BEFORE generating.
   B) Otherwise: `! just x-auth` runs the OAuth 1.0a PIN flow - open the URL
-     while logged in as the posting account, paste the PIN back. Requires
-     "User authentication settings" configured on the app.
+     while logged in as the posting account, paste the PIN back.
 
-Posting model (see postpack): the brief goes up FIRST as an X Article -
-X has NO public API for Articles, so that step stays manual - then this
-tool sends the main post: native video + the Article link via --article-url.
-Long-form native video (>2:20) requires X Premium on the posting account.
+API notes:
+  - media: split endpoints POST /2/media/upload/initialize -> /{id}/append
+    (multipart) -> /{id}/finalize -> GET /2/media/upload?command=STATUS
+  - articles: POST /2/articles/draft (DraftJS content_state built from the
+    brief markdown) -> POST /2/articles/{id}/publish -> returns the post_id
+  - OAuth 1.0a user tokens cover every scope and never expire
+  - long native video (>2:20) and >280-char posts require X Premium
 """
 
 import argparse
@@ -39,7 +44,7 @@ import helpers
 REPO = Path(__file__).resolve().parent.parent
 ENV_FILE = REPO / ".env"
 API = "https://api.x.com"
-UPLOAD_URL = f"{API}/2/media/upload"
+UPLOAD = f"{API}/2/media/upload"
 CHUNK = 4 * 1024 * 1024
 
 
@@ -108,7 +113,248 @@ def detect_campaign(proj: Path) -> str | None:
     return None
 
 
-def build_post_text(ticker: str, args) -> str:
+# ── media upload (split v2 endpoints) ────────────────────────────────────────
+
+def upload_media(sess, path: Path, media_type: str, category: str) -> str:
+    total = path.stat().st_size
+    r = sess.post(f"{UPLOAD}/initialize", json={
+        "media_type": media_type, "total_bytes": total, "media_category": category,
+    })
+    if r.status_code >= 300:
+        api_error(r, "initialize media upload")
+    media_id = str(r.json()["data"]["id"])
+
+    sent, idx = 0, 0
+    with open(path, "rb") as f:
+        while chunk := f.read(CHUNK):
+            r = sess.post(f"{UPLOAD}/{media_id}/append",
+                          data={"segment_index": idx},
+                          files={"media": chunk})
+            if r.status_code >= 300:
+                api_error(r, f"append segment {idx}")
+            sent += len(chunk)
+            idx += 1
+            if total > CHUNK:
+                print(f"  upload {int(sent / total * 100)}%")
+
+    r = sess.post(f"{UPLOAD}/{media_id}/finalize")
+    if r.status_code >= 300:
+        api_error(r, "finalize media upload")
+    info = r.json()["data"].get("processing_info")
+
+    while info and info.get("state") in ("pending", "in_progress"):
+        wait = info.get("check_after_secs", 5)
+        print(f"  processing ({info['state']}) - checking in {wait}s")
+        time.sleep(wait)
+        r = sess.get(UPLOAD, params={"command": "STATUS", "media_id": media_id})
+        if r.status_code >= 300:
+            api_error(r, "poll processing status")
+        info = r.json()["data"].get("processing_info")
+    if info and info.get("state") != "succeeded":
+        sys.exit(f"media processing failed: {json.dumps(info)}\n"
+                 "(a >2:20 video needs X Premium on the posting account)")
+    return media_id
+
+
+# ── markdown -> DraftJS content_state (for the Article body) ─────────────────
+
+def u16len(s: str) -> int:
+    """DraftJS offsets count UTF-16 code units, not codepoints."""
+    return len(s.encode("utf-16-le")) // 2
+
+
+INLINE = re.compile(r"\[([^\]]+)\]\(([^)\s]+)\)"    # [text](url)
+                    r"|\*\*([^*]+)\*\*"             # **bold**
+                    r"|\*([^*\n]+)\*")              # *italic*
+
+
+def parse_inline(md: str):
+    """Strip inline markdown, returning (plain text, style ranges, link ranges)."""
+    parts, styles, links = [], [], []
+    pos = off = 0
+    for m in INLINE.finditer(md):
+        lead = md[pos:m.start()]
+        parts.append(lead)
+        off += u16len(lead)
+        if m.group(1) is not None:
+            t = m.group(1)
+            links.append((off, u16len(t), m.group(2)))
+        elif m.group(3) is not None:
+            t = m.group(3)
+            styles.append((off, u16len(t), "bold"))
+        else:
+            t = m.group(4)
+            styles.append((off, u16len(t), "italic"))
+        parts.append(t)
+        off += u16len(t)
+        pos = m.end()
+    parts.append(md[pos:])
+    return "".join(parts), styles, links
+
+
+def md_to_content_state(md: str):
+    """Convert brief markdown to (title, DraftJS content_state).
+    The first H1 becomes the article title, not a body block."""
+    blocks, entities = [], []
+    title = None
+
+    def add(text, btype):
+        plain, styles, links = parse_inline(text)
+        blk = {"text": plain, "type": btype}
+        if styles:
+            blk["inline_style_ranges"] = [
+                {"offset": o, "length": ln, "style": s} for o, ln, s in styles]
+        if links:
+            ranges = []
+            for o, ln, url in links:
+                key = str(len(entities))
+                entities.append({"key": key, "value": {
+                    "type": "link", "mutability": "mutable", "data": {"url": url}}})
+                ranges.append({"key": key, "offset": o, "length": ln})
+            blk["entity_ranges"] = ranges
+        blocks.append(blk)
+
+    para = []
+
+    def flush():
+        if para:
+            add(" ".join(para), "unstyled")
+            para.clear()
+
+    for raw in md.splitlines():
+        st = raw.strip()
+        if not st:
+            flush()
+        elif re.fullmatch(r"-{3,}|\*{3,}|_{3,}", st):
+            flush()  # horizontal rule - no DraftJS equivalent
+        elif st.startswith("# "):
+            flush()
+            if title is None:
+                title = parse_inline(st[2:])[0]
+            else:
+                add(st[2:], "header-one")
+        elif st.startswith("## "):
+            flush()
+            add(st[3:], "header-two")
+        elif st.startswith("### "):
+            flush()
+            add(st[4:], "header-three")
+        elif re.match(r"^[-*•]\s+", st):
+            flush()
+            add(re.sub(r"^[-*•]\s+", "", st), "unordered-list-item")
+        elif re.match(r"^\d+[.)]\s+", st):
+            flush()
+            add(re.sub(r"^\d+[.)]\s+", "", st), "ordered-list-item")
+        elif st.startswith("> "):
+            flush()
+            add(st[2:], "blockquote")
+        else:
+            para.append(st)
+    flush()
+    return title, {"blocks": blocks, "entities": entities}
+
+
+# ── commands ─────────────────────────────────────────────────────────────────
+
+def article_sidecar(proj: Path, ticker: str) -> Path:
+    return proj / "social" / f"{ticker}_x_article.json"
+
+
+def cmd_article(args) -> int:
+    ticker = args.ticker.upper()
+    proj = REPO / "projects" / ticker
+    sidecar = article_sidecar(proj, ticker)
+
+    if args.publish:
+        if args.id:
+            article_id = args.id
+        elif sidecar.exists():
+            article_id = json.loads(sidecar.read_text())["article_id"]
+        else:
+            sys.exit(f"no {sidecar.name} found - run `just x-article {ticker}` first "
+                     "(or pass --id ARTICLE_ID)")
+        sess = oauth_session()
+        handle = acting_user_guard(sess)
+        r = sess.post(f"{API}/2/articles/{article_id}/publish")
+        if r.status_code >= 300:
+            api_error(r, "publishing the article")
+        post_id = r.json()["data"]["post_id"]
+        url = f"https://x.com/{handle}/status/{post_id}"
+        print(f"ARTICLE LIVE: {url}")
+        data = json.loads(sidecar.read_text()) if sidecar.exists() else {"article_id": article_id}
+        from datetime import datetime, timezone
+        data.update(status="published", post_id=post_id, url=url,
+                    published_at=datetime.now(timezone.utc).isoformat(timespec="seconds"))
+        sidecar.write_text(json.dumps(data, indent=2) + "\n")
+        print(f"next: just x-post {ticker} (picks up the Article link automatically)")
+        return 0
+
+    brief = proj / "reports" / f"{ticker}_brief.md"
+    if not brief.exists():
+        sys.exit(f"brief not found: {brief}")
+    text = brief.read_text()
+    code = helpers.resolve_promo_code(args.campaign or detect_campaign(proj))
+    text = helpers.apply_promo_code(text, code)
+    title, content_state = md_to_content_state(text)
+    if not title:
+        sys.exit("brief has no H1 - the first `# ` line becomes the Article title")
+
+    cover = proj / "charts" / "png" / f"{ticker}_thumbnail_x.png"
+    cover = cover if (cover.exists() and not args.no_cover) else None
+
+    kinds = {}
+    for b in content_state["blocks"]:
+        kinds[b["type"]] = kinds.get(b["type"], 0) + 1
+    print(f"title:     {title}")
+    print(f"blocks:    {sum(kinds.values())} ({', '.join(f'{v} {k}' for k, v in kinds.items())})")
+    print(f"entities:  {len(content_state['entities'])}")
+    print(f"cover:     {cover if cover else 'NONE'}")
+    if args.dry_run:
+        print("--- dry run: first blocks ---")
+        for b in content_state["blocks"][:4]:
+            print(f"[{b['type']}] {b['text'][:110]}")
+        return 0
+
+    sess = oauth_session()
+    acting_user_guard(sess)
+    payload = {"title": title, "content_state": content_state}
+    if cover:
+        payload["cover_media"] = {
+            "media_category": "tweet_image",
+            "media_id": upload_media(sess, cover, "image/png", "tweet_image"),
+        }
+    r = sess.post(f"{API}/2/articles/draft", json=payload)
+    if r.status_code >= 300:
+        api_error(r, "creating the article draft")
+    article_id = r.json()["data"]["id"]
+    print(f"DRAFT created: article {article_id}")
+
+    from datetime import datetime, timezone
+    sidecar.write_text(json.dumps({
+        "article_id": article_id,
+        "title": title,
+        "status": "draft",
+        "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+    }, indent=2) + "\n")
+    print("review it in the X Articles editor (x.com -> Premium -> Articles), then:")
+    print(f"  just x-article {ticker} --publish")
+    return 0
+
+
+def resolve_article_url(proj: Path, ticker: str, args) -> str | None:
+    if args.article_url:
+        return args.article_url
+    sidecar = article_sidecar(proj, ticker)
+    if sidecar.exists():
+        data = json.loads(sidecar.read_text())
+        if data.get("status") == "published" and data.get("url"):
+            return data["url"]
+        print(f"NOTE: article draft exists but is unpublished - "
+              f"run `just x-article {ticker} --publish` first for the link")
+    return None
+
+
+def build_post_text(ticker: str, args, article_url: str | None) -> str:
     proj = REPO / "projects" / ticker
     src = proj / "social" / f"{ticker}_x_post.txt"
     if not src.exists():
@@ -119,62 +365,19 @@ def build_post_text(ticker: str, args) -> str:
     text = re.sub(r"\n{3,}", "\n\n", "\n".join(lines)).strip()
     code = helpers.resolve_promo_code(args.campaign or detect_campaign(proj))
     text = helpers.apply_promo_code(text, code)
-    if args.article_url:
-        text += f"\n\n📄 Full brief: {args.article_url}"
+    if article_url:
+        text += f"\n\n📄 Full brief: {article_url}"
     elif "[X_ARTICLE_LINK]" in text:
-        sys.exit("copy contains [X_ARTICLE_LINK] but no --article-url was given")
+        sys.exit("copy contains [X_ARTICLE_LINK] but there is no published article - "
+                 f"run `just x-article {ticker}` / --publish, or pass --article-url")
     return text
-
-
-def upload_video(sess, video: Path) -> str:
-    """Chunked v2 media upload: INIT -> APPEND -> FINALIZE -> poll STATUS."""
-    total = video.stat().st_size
-    r = sess.post(UPLOAD_URL, data={
-        "command": "INIT", "total_bytes": total,
-        "media_type": "video/mp4", "media_category": "tweet_video",
-    })
-    if r.status_code >= 300:
-        api_error(r, "INIT media upload")
-    d = r.json().get("data", r.json())
-    media_id = str(d.get("id") or d.get("media_id_string") or d.get("media_id"))
-
-    sent, idx = 0, 0
-    with open(video, "rb") as f:
-        while chunk := f.read(CHUNK):
-            r = sess.post(UPLOAD_URL,
-                          data={"command": "APPEND", "media_id": media_id,
-                                "segment_index": idx},
-                          files={"media": chunk})
-            if r.status_code >= 300:
-                api_error(r, f"APPEND segment {idx}")
-            sent += len(chunk)
-            idx += 1
-            print(f"  upload {int(sent / total * 100)}%")
-
-    r = sess.post(UPLOAD_URL, data={"command": "FINALIZE", "media_id": media_id})
-    if r.status_code >= 300:
-        api_error(r, "FINALIZE media upload")
-    info = r.json().get("data", r.json()).get("processing_info")
-
-    while info and info.get("state") in ("pending", "in_progress"):
-        wait = info.get("check_after_secs", 5)
-        print(f"  processing ({info['state']}) - checking in {wait}s")
-        time.sleep(wait)
-        r = sess.get(UPLOAD_URL, params={"command": "STATUS", "media_id": media_id})
-        if r.status_code >= 300:
-            api_error(r, "STATUS poll")
-        info = r.json().get("data", r.json()).get("processing_info")
-    if info and info.get("state") != "succeeded":
-        sys.exit(f"video processing failed: {json.dumps(info)}\n"
-                 "(a >2:20 video needs X Premium on the posting account)")
-    print("video processed")
-    return media_id
 
 
 def cmd_post(args) -> int:
     ticker = args.ticker.upper()
     proj = REPO / "projects" / ticker
-    text = build_post_text(ticker, args)
+    article_url = resolve_article_url(proj, ticker, args)
+    text = build_post_text(ticker, args, article_url)
 
     video = None
     if not args.no_video:
@@ -184,7 +387,7 @@ def cmd_post(args) -> int:
 
     print(f"post:      {len(text)} chars (280 is the non-Premium cap)")
     print(f"video:     {video} ({video.stat().st_size/1e6:.1f} MB)" if video else "video:     NONE")
-    print(f"article:   {args.article_url or 'NONE'}")
+    print(f"article:   {article_url or 'NONE'}")
     if args.dry_run:
         print("--- dry run: post text ---")
         print(text)
@@ -195,7 +398,9 @@ def cmd_post(args) -> int:
 
     payload = {"text": text}
     if video:
-        payload["media"] = {"media_ids": [upload_video(sess, video)]}
+        payload["media"] = {"media_ids": [
+            upload_media(sess, video, "video/mp4", "tweet_video")]}
+        print("video processed")
     r = sess.post(f"{API}/2/tweets", json=payload)
     if r.status_code >= 300:
         api_error(r, "creating the post (POST /2/tweets)")
@@ -209,7 +414,7 @@ def cmd_post(args) -> int:
     sidecar.write_text(json.dumps({
         "tweet_id": tweet_id,
         "url": url,
-        "article_url": args.article_url,
+        "article_url": article_url,
         "chars": len(text),
         "video": str(video) if video else None,
         "posted_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
@@ -259,16 +464,29 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("auth", help="verify (or mint via PIN flow) the user token")
+
+    ar = sub.add_parser("article", help="create (or --publish) the brief as an X Article")
+    ar.add_argument("ticker")
+    ar.add_argument("--publish", action="store_true",
+                    help="publish the draft from the sidecar (the post-review step)")
+    ar.add_argument("--id", help="explicit article id (else social/{T}_x_article.json)")
+    ar.add_argument("--no-cover", action="store_true", help="skip the 5:2 cover image")
+    ar.add_argument("--campaign", help="promo-code campaign override")
+    ar.add_argument("--dry-run", action="store_true")
+
     po = sub.add_parser("post", help="send the single X post with native video")
     po.add_argument("ticker")
-    po.add_argument("--article-url", help="URL of the already-published X Article")
+    po.add_argument("--article-url", help="override the Article link (else the sidecar)")
     po.add_argument("--video", help="explicit video path (e.g. webdeck _music variant)")
     po.add_argument("--no-video", action="store_true", help="text-only post")
     po.add_argument("--campaign", help="promo-code campaign override")
     po.add_argument("--dry-run", action="store_true")
+
     args = ap.parse_args()
     if args.cmd == "auth":
         return cmd_auth(args)
+    if args.cmd == "article":
+        return cmd_article(args)
     return cmd_post(args)
 
 

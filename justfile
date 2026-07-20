@@ -140,7 +140,12 @@ x-auth:
     @just ensure-env
     UV_ENV_FILE={{_env}} uv run python tools/post_x.py auth
 
-# Send the single X post (native video + copy; --article-url for the brief's Article link; --dry-run first)
+# Create the brief as an X Article DRAFT (review in the X editor, then --publish)
+x-article project *args:
+    @just ensure-env
+    UV_ENV_FILE={{_env}} uv run python tools/post_x.py article {{project}} {{args}}
+
+# Send the single X post (native video + Article link from the sidecar; --dry-run first)
 x-post project *args:
     @just ensure-env
     UV_ENV_FILE={{_env}} uv run python tools/post_x.py post {{project}} {{args}}
