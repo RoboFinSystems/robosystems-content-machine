@@ -199,6 +199,15 @@ def cmd_upload(args) -> int:
             print(f"  upload {int(status.progress() * 100)}%")
     vid = resp["id"]
     print(f"uploaded: https://youtu.be/{vid}")
+    from datetime import datetime, timezone
+    sidecar = REPO / "projects" / ticker / "videos" / f"{ticker}_youtube.json"
+    sidecar.write_text(json.dumps({
+        "video_id": vid,
+        "url": f"https://youtu.be/{vid}",
+        "privacy": body["status"]["privacyStatus"],
+        "title": body["snippet"]["title"],
+        "uploaded_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+    }, indent=2) + "\n")
 
     if thumb:
         from googleapiclient.errors import HttpError
@@ -239,6 +248,35 @@ def acting_channel_guard(yt):
                  "channel on Google's account/channel chooser.")
 
 
+def cmd_publish(args) -> int:
+    """Flip an uploaded video to public - the post-watch-gate step."""
+    ticker = args.ticker.upper()
+    sidecar = REPO / "projects" / ticker / "videos" / f"{ticker}_youtube.json"
+    if args.id:
+        vid = args.id
+    elif sidecar.exists():
+        vid = json.loads(sidecar.read_text())["video_id"]
+    else:
+        sys.exit(f"no {sidecar.name} found - pass --id VIDEO_ID")
+
+    from googleapiclient.discovery import build
+    yt = build("youtube", "v3", credentials=get_creds(interactive=False))
+    acting_channel_guard(yt)
+    cur = yt.videos().list(part="status", id=vid).execute()["items"]
+    if not cur:
+        sys.exit(f"video {vid} not found on this channel")
+    status = cur[0]["status"]
+    status["privacyStatus"] = "public"
+    yt.videos().update(part="status", body={"id": vid, "status": status}).execute()
+    print(f"PUBLIC: https://youtu.be/{vid}")
+    if sidecar.exists():
+        data = json.loads(sidecar.read_text())
+        data["privacy"] = "public"
+        sidecar.write_text(json.dumps(data, indent=2) + "\n")
+    print(f"next: just sync-youtube {ticker} to stamp the portal meta")
+    return 0
+
+
 def cmd_auth(_args) -> int:
     creds = get_creds(interactive=True)
     from googleapiclient.discovery import build
@@ -261,8 +299,15 @@ def main() -> int:
     up.add_argument("--category", default="27", help="YouTube categoryId (27=Education)")
     up.add_argument("--campaign", help="promo-code campaign override")
     up.add_argument("--dry-run", action="store_true")
+    pub = sub.add_parser("publish", help="flip an uploaded video to public")
+    pub.add_argument("ticker")
+    pub.add_argument("--id", help="explicit video id (else videos/{T}_youtube.json)")
     args = ap.parse_args()
-    return cmd_auth(args) if args.cmd == "auth" else cmd_upload(args)
+    if args.cmd == "auth":
+        return cmd_auth(args)
+    if args.cmd == "publish":
+        return cmd_publish(args)
+    return cmd_upload(args)
 
 
 if __name__ == "__main__":

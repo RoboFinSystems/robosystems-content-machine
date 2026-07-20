@@ -123,10 +123,15 @@ yt-auth:
     @just ensure-env
     UV_ENV_FILE={{_env}} uv run python tools/upload_youtube.py auth
 
-# Upload the final video to YouTube (private by default until the API audit clears)
+# Upload the final video to YouTube (private by default; --public to skip the gate)
 yt-upload project *args:
     @just ensure-env
     UV_ENV_FILE={{_env}} uv run python tools/upload_youtube.py upload {{project}} {{args}}
+
+# Flip the uploaded video to public after the watch gate
+yt-publish project *args:
+    @just ensure-env
+    UV_ENV_FILE={{_env}} uv run python tools/upload_youtube.py publish {{project}} {{args}}
 
 # Show the b-roll library + coverage across shoot-list categories
 broll:
