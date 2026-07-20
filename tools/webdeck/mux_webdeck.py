@@ -71,8 +71,11 @@ def main() -> int:
     # ---- music variant: bed + sidechain duck keyed by narration ----
     music = REPO / args.music if not Path(args.music).is_absolute() else Path(args.music)
     fade_out_start = max(0.0, total - 4.0)
+    # pad the VO mix to the video length before splitting: sidechaincompress
+    # EOFs with its key input, which would cut the music bed at the last VO
+    # sample instead of the video end (bounded pad - infinite apad never EOFs)
     fc = (vo_mix +
-          ";[vo]asplit=2[voref][vomain]" +
+          f";[vo]apad,atrim=0:{total}[vop];[vop]asplit=2[voref][vomain]" +
           f";[{len(segs)+1}:a]aresample=48000,atrim=0:{total}," +
           f"afade=t=in:st=0:d=2,afade=t=out:st={fade_out_start}:d=4," +
           f"volume={args.music_gain}dB[mus]" +
