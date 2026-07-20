@@ -72,3 +72,6 @@ CLAUDE.local.md
 # Claude Code. Company folders match the backend demo slugs (e.g. coffee_roaster,
 # saas_startup). Products, not tooling — gitignored; only renderer/ (the tool) is committed.
 showcase/
+
+# GCP OAuth credentials (never commit)
+.gcp/

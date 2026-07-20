@@ -116,6 +116,18 @@ webdeck-render project *args:
 webdeck-mux project *args:
     python3 tools/webdeck/mux_webdeck.py {{project}} {{args}}
 
+# ─── YouTube (Data API) ──────────────────────────────────────
+
+# One-time YouTube OAuth (opens a browser; stores .gcp/token.json)
+yt-auth:
+    @just ensure-env
+    UV_ENV_FILE={{_env}} uv run python tools/upload_youtube.py auth
+
+# Upload the final video to YouTube (private by default until the API audit clears)
+yt-upload project *args:
+    @just ensure-env
+    UV_ENV_FILE={{_env}} uv run python tools/upload_youtube.py upload {{project}} {{args}}
+
 # Show the b-roll library + coverage across shoot-list categories
 broll:
     UV_ENV_FILE={{_env}} uv run python tools/list_broll.py
