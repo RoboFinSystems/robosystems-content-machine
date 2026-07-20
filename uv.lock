@@ -463,6 +463,7 @@ dependencies = [
     { name = "google-api-python-client" },
     { name = "google-auth-oauthlib" },
     { name = "pillow" },
+    { name = "requests-oauthlib" },
 ]
 
 [package.metadata]
@@ -470,6 +471,7 @@ requires-dist = [
     { name = "google-api-python-client", specifier = ">=2.140" },
     { name = "google-auth-oauthlib", specifier = ">=1.2" },
     { name = "pillow", specifier = ">=12.3.0" },
+    { name = "requests-oauthlib", specifier = ">=2.0" },
 ]
 
 [[package]]

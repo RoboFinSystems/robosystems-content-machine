@@ -133,6 +133,18 @@ yt-publish project *args:
     @just ensure-env
     UV_ENV_FILE={{_env}} uv run python tools/upload_youtube.py publish {{project}} {{args}}
 
+# ─── X (API v2) ──────────────────────────────────────────────
+
+# One-time X auth: verify the user token in .env (or mint one via the PIN flow - run as `! just x-auth`)
+x-auth:
+    @just ensure-env
+    UV_ENV_FILE={{_env}} uv run python tools/post_x.py auth
+
+# Send the single X post (native video + copy; --article-url for the brief's Article link; --dry-run first)
+x-post project *args:
+    @just ensure-env
+    UV_ENV_FILE={{_env}} uv run python tools/post_x.py post {{project}} {{args}}
+
 # Show the b-roll library + coverage across shoot-list categories
 broll:
     UV_ENV_FILE={{_env}} uv run python tools/list_broll.py

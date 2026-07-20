@@ -10,4 +10,5 @@ dependencies = [
     "pillow>=12.3.0",
     "google-api-python-client>=2.140",
     "google-auth-oauthlib>=1.2",
+    "requests-oauthlib>=2.0",
 ]
