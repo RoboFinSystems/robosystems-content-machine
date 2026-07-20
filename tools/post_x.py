@@ -207,10 +207,12 @@ def md_to_content_state(md: str):
         if links:
             ranges = []
             for o, ln, url in links:
-                key = str(len(entities))
-                entities.append({"key": key, "value": {
+                # entities[].key is a string, but entity_ranges[].key must be
+                # the INTEGER index (API rejects strings despite the docs)
+                idx = len(entities)
+                entities.append({"key": str(idx), "value": {
                     "type": "link", "mutability": "mutable", "data": {"url": url}}})
-                ranges.append({"key": key, "offset": o, "length": ln})
+                ranges.append({"key": idx, "offset": o, "length": ln})
             blk["entity_ranges"] = ranges
         blocks.append(blk)
 
