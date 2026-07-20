@@ -147,6 +147,9 @@ def main():
     ap = argparse.ArgumentParser(description="Generate the 3 platform thumbnails via OpenAI from the brief")
     ap.add_argument("project")
     ap.add_argument("--quality", default="high", choices=["high", "medium", "low"])
+    ap.add_argument("--with-x", action="store_true",
+                    help="also generate the 5:2 X banner (default off: the X Article now uses "
+                         "the branded local cover from gen_article_cover.py instead)")
     ap.add_argument("--dry-run", action="store_true", help="print the extracted elements + prompts, generate nothing")
     args = ap.parse_args()
 
@@ -173,6 +176,8 @@ def main():
     tmp = os.path.join(assets, "_thumb_raw.png")
 
     for name, size, w, h, label in PLATFORMS:
+        if name == "x.png" and not args.with_x:
+            continue
         prompt = build_prompt(el, ASPECT_NOTE[name])
         if args.dry_run:
             print(f"\n[{name} · {label}]\n{prompt}")

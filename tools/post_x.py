@@ -321,7 +321,9 @@ def cmd_article(args) -> int:
     if not title:
         sys.exit("brief has no H1 - the first `# ` line becomes the Article title")
 
-    cover = proj / "charts" / "png" / f"{ticker}_thumbnail_x.png"
+    cover = proj / "charts" / "png" / f"{ticker}_article_cover.png"   # branded masthead
+    if not cover.exists():
+        cover = proj / "charts" / "png" / f"{ticker}_thumbnail_x.png"  # legacy gpt-image 5:2
     cover = cover if (cover.exists() and not args.no_cover) else None
 
     kinds = {}

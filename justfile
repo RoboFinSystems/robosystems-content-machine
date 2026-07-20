@@ -140,8 +140,12 @@ x-auth:
     @just ensure-env
     UV_ENV_FILE={{_env}} uv run python tools/post_x.py auth
 
+# Generate the branded 5:2 X Article cover (local Chrome render - no OpenAI)
+article-cover project *args:
+    python3 tools/gen_article_cover.py {{project}} {{args}}
+
 # Create the brief as an X Article DRAFT (review in the X editor, then --publish)
-x-article project *args:
+x-article project *args: (article-cover project)
     @just ensure-env
     UV_ENV_FILE={{_env}} uv run python tools/post_x.py article {{project}} {{args}}
 
