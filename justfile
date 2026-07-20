@@ -99,6 +99,20 @@ pipeline project:
     @just ensure-env
     ./tools/run_pipeline.sh {{project}}
 
+# ─── Webdeck (pilot): animated HTML deck → frame render → mux ─
+
+# Build the animated webdeck HTML from script.json + VO durations
+webdeck project *args:
+    python3 tools/build_webdeck.py {{project}} {{args}}
+
+# Render the webdeck to silent.mp4, frame by frame via headless Chrome (1080p30)
+webdeck-render project *args:
+    cd tools/webdeck && node render_webdeck.mjs --html ../../projects/{{project}}/webdeck/{{project}}_webdeck.html --out ../../projects/{{project}}/webdeck/render {{args}}
+
+# Mux narration (A) and narration+music with ducking (B) onto the silent render
+webdeck-mux project *args:
+    python3 tools/webdeck/mux_webdeck.py {{project}} {{args}}
+
 # Show the b-roll library + coverage across shoot-list categories
 broll:
     UV_ENV_FILE={{_env}} uv run python tools/list_broll.py
