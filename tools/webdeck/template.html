@@ -152,6 +152,21 @@ html,body { background:#000; }
 .staterow.hl .lb { color:var(--accent); font-weight:600; }
 .staterow.hl .vl { color:var(--blue-400); text-shadow:0 0 34px rgba(59,122,245,.65); }
 
+/* comparison table */
+.tbl { position:absolute; left:150px; right:150px; top:430px; }
+.tbl-head { display:flex; padding:0 36px 20px; }
+.tbl-head .th { font-family:var(--font-display); font-weight:600; font-size:25px;
+  letter-spacing:.18em; text-transform:uppercase; color:#7d8aa1; }
+.tbl-head .th.last { color:var(--accent); }
+.tbl-rule { border-top:2px solid var(--border-strong); }
+.tbl-row { display:flex; align-items:center; padding:0 36px; border-radius:12px;
+  border-bottom:1px solid rgba(28,41,66,.8); will-change:opacity,transform; }
+.tbl .c0 { flex:1.6; text-align:left; }
+.tbl .c { flex:1; text-align:right; }
+.tbl-row .td0 { font-size:34px; font-weight:500; color:#e8edf5; }
+.tbl-row .td { font-size:31px; color:#8593aa; }
+.tbl-row .td.last { font-weight:600; color:var(--text-primary); }
+
 /* callout */
 .k-kicker { position:absolute; left:0; right:0; text-align:center;
   font-family:var(--font-display); font-weight:600; font-size:34px;
@@ -569,6 +584,57 @@ function buildDual(sec, root, tracks) {
   addFooter(root, tracks, sec, 1.8);
 }
 
+/* highlight tone for table rows: green unless the slide says otherwise */
+const TBL_TONE = {
+  negative: ['var(--data-negative)', 'rgba(249,128,128,.07)'],
+  warning:  ['var(--data-warning)',  'rgba(255,138,76,.07)'],
+  positive: ['var(--data-positive)', 'rgba(49,196,141,.07)'],
+};
+function buildTable(sec, root, tracks) {
+  addEyebrow(root, tracks, sec);
+  addHeadline(root, tracks, sec, 'c-headline', 158);
+  const sub = el('div','c-subhead', esc(sec.slide.subhead || ''));
+  root.appendChild(sub);
+  tracks.push(fadeUp(sub, 0.55, 0.55, 18));
+
+  const data = sec.slide.data || {};
+  const cols = data.columns || [];
+  const rows = data.rows || [];
+  const [toneColor, toneBg] = TBL_TONE[sec.slide.tone] || TBL_TONE.positive;
+
+  const wrap = el('div','tbl');
+  const head = el('div','tbl-head');
+  cols.forEach((c, j) => {
+    head.appendChild(el('div',
+      'th' + (j === 0 ? ' c0' : ' c') + (j === cols.length - 1 ? ' last' : ''), esc(c)));
+  });
+  wrap.appendChild(head);
+  wrap.appendChild(el('div','tbl-rule'));
+  tracks.push(fadeUp(head, 0.55, 0.5, 16));
+
+  const padV = rows.length <= 4 ? 27 : rows.length === 5 ? 21 : 15;
+  rows.forEach((r, i) => {
+    const hl = sec.slide.highlight && r[0] === sec.slide.highlight;
+    const row = el('div','tbl-row');
+    row.style.padding = `${padV}px 36px`;
+    r.forEach((cell, j) => {
+      const cls = (j === 0 ? 'td0 c0' : 'td c') + (j === r.length - 1 ? ' last' : '');
+      const td = el('div', cls, esc(cell));
+      if (hl && (j === 0 || j === r.length - 1)) {
+        td.style.color = toneColor; td.style.fontWeight = '600';
+      }
+      row.appendChild(td);
+    });
+    if (hl) row.style.background = toneBg;
+    wrap.appendChild(row);
+    tracks.push(t => { const p = eoc(seg(t, 0.75 + i*0.16, 0.6));
+      row.style.opacity = p;
+      row.style.transform = `translateX(${(1-p)*-30}px)`; });
+  });
+  root.appendChild(wrap);
+  addFooter(root, tracks, sec, 1.8);
+}
+
 const TONE = {
   warning:  { color:'var(--data-warning)',  glow:'rgba(255,138,76,.16)' },
   negative: { color:'var(--data-negative)', glow:'rgba(249,128,128,.14)' },
@@ -646,7 +712,7 @@ function buildCTA(sec, root, tracks) {
 
 const BUILDERS = {
   title: buildTitle, callout: buildCallout, cta: buildCTA,
-  bar: buildBarChart, line: buildLineChart,
+  bar: buildBarChart, line: buildLineChart, table: buildTable,
   metric_cards: buildMetricCards, dual: buildDual,
 };
 function builderFor(sec) {

@@ -130,6 +130,9 @@ Editorial guidance for the script:
 - Long-form target 3-5 min (~800-1200 words narration).
 - Vary slide kinds for rhythm — don't stack chart slides. Title → chart → chart → callout →
   dual → chart → callout → title (close).
+- Give every segment an `eyebrow` — a 2-4 word section label in the deck's editorial voice
+  ("The Top Line", "Read the Split", "Capital Returns"). Skip it only on the closing CTA;
+  numbering is automatic.
 - Every claim references a specific filing number; the slide's `data` shows that exact number.
 - **Include a valuation slide** — turn the scenario DCF + peer re-rating into a `dual`: current
   price vs the implied-value range, with the key assumptions listed; cover it in the narration.

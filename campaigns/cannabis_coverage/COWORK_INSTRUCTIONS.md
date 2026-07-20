@@ -259,6 +259,9 @@ Cannabis editorial guidance for the script:
 - Long-form target 3-5 min (~800-1200 words narration).
 - Vary slide kinds for rhythm (don't stack chart slides). Title → chart → chart → callout →
   dual → chart → callout → title.
+- Give every segment an `eyebrow` — a 2-4 word section label in the deck's editorial voice
+  ("The Top Line", "The 280E Problem", "Capital Returns"). Skip it only on the closing CTA;
+  numbering is automatic.
 - Every claim references a specific filing number; the slide's `data` shows that exact number.
 - Close with a clear bull/bear framework — not a buy call.
 - **RoboSystems plug** — use this verbatim as the final or second-to-last slide

@@ -71,6 +71,8 @@ defines the slides — their count, their order, and the narration timed to each
       "visual_type": "title",           // title | chart | callout | dual  (the slide kind)
       "visual_ref": "hook",             // stable, unique slug — this IS the slide id,
                                         //   ordered 1:1 with the deck; → charts/png/hook.png
+      "eyebrow": "Initiating Coverage", // 2-4 word section label ("01 / INITIATING COVERAGE");
+                                        //   every segment except the closing CTA
       "duration_estimate_seconds": 8,
       "slide": {                        // the slide's CONTENT (drives the generated brief)
         "headline": "Nobody covers this $1.2B company",
@@ -113,6 +115,10 @@ defines the slides — their count, their order, and the narration timed to each
 - `visual_ref` — a short, unique, stable slug (`hook`, `revenue_trend`, `tax_burden`). **It
   is the slide id**: deck slide *i* maps to segment *i*, and the sliced image is named
   `{visual_ref}.png`. Keep them unique and in narration order.
+- `eyebrow` — a 2-4 word section label rendered as the slide's numbered eyebrow
+  ("03 / THE TREND"; numbering is automatic from segment order). Give one to every
+  segment except the closing CTA. Mirror the deck's editorial voice: "The Top Line",
+  "Read the Split", "Capital Returns" — a beat name, not a chart caption.
 - `duration_estimate_seconds` — integer estimate ≈ **narration characters ÷ 16** (real TTS pace
   is ~16 chars/sec; under-counting makes draft timestamps ~2× short). (NOT `duration_seconds`.)
   Actual timing comes from the voiceover at assembly, which also writes
@@ -177,6 +183,14 @@ You don't do these steps, but understanding them tells you what a good script en
 **Implications for your script:** every slide's `headline` and `data` must be complete and
 exact — they become the literal content of the slide. The first slide is the intro, the
 last is the close/CTA (no separate intro/outro files in deck mode).
+
+**Alternate path — webdeck (pilot).** The same script can instead be rendered as an
+animated HTML page with no Claude Design step: `just webdeck-pipeline {TICKER}` runs
+voiceover → `build_webdeck.py` (script + VO durations → `webdeck/{TICKER}_webdeck.html`)
+→ frame-by-frame Chrome render → local ffmpeg mux (`{TICKER}_webpilot.mp4`, plus a
+`_music` variant with a ducked bed). Same slide kinds, same schema — the `eyebrow`
+field and exact `data` matter doubly here because the page renders them verbatim.
+Both paths coexist; the deck path remains the default until the webdeck graduates.
 
 ---
 

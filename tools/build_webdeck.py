@@ -18,6 +18,7 @@ Usage: python3 tools/build_webdeck.py TICKER [--no-poster]
 
 import argparse
 import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -68,6 +69,49 @@ def mmss(t: float) -> str:
     return f"{t // 60}:{t % 60:02d}"
 
 
+def probe_duration(path: Path) -> float:
+    out = subprocess.run(
+        ["ffprobe", "-v", "quiet", "-show_entries", "format=duration",
+         "-of", "csv=p=0", str(path)],
+        capture_output=True, text=True, check=True)
+    return float(out.stdout.strip())
+
+
+def load_durations(proj: Path, ticker: str, segments) -> dict:
+    """Segment audio durations: media_durations.json if the assemble step wrote
+    it, else ffprobe the VO files directly (webdeck path has no assemble)."""
+    dur_path = proj / "videos" / "media_durations.json"
+    if dur_path.exists():
+        return json.loads(dur_path.read_text())["audio"]
+    durations = {}
+    for seg in segments:
+        mp3 = proj / "videos" / "audio" / f"{ticker}_segment_{seg['id']}_voiceover.mp3"
+        if not mp3.exists():
+            print(f"ERROR: missing voiceover {mp3} (run voiceover first)", file=sys.stderr)
+            sys.exit(1)
+        durations[str(seg["id"])] = probe_duration(mp3)
+    dur_path.parent.mkdir(parents=True, exist_ok=True)
+    dur_path.write_text(json.dumps({"audio": durations}, indent=2))
+    print(f"probed {len(durations)} VO durations -> {dur_path.name}")
+    return durations
+
+
+def eyebrow_for(seg, position: int, sidecar: dict):
+    """Per-segment eyebrow: script.json field first, sidecar file second,
+    a label derived from visual_ref last. CTA slides get none."""
+    if seg.get("visual_ref") == "cta":
+        return None
+    num = f"{position:02d}"
+    label = seg.get("eyebrow")
+    if label:
+        return [num, str(label)]
+    sidecar_entry = sidecar.get(str(seg["id"]))
+    if sidecar_entry:
+        return sidecar_entry
+    ref = str(seg.get("visual_ref") or "").replace("_", " ").strip().title()
+    return [num, ref] if ref else None
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("ticker")
@@ -78,13 +122,13 @@ def main() -> int:
 
     proj = REPO / "projects" / ticker
     script = json.loads((proj / "scripts" / f"{ticker}_script.json").read_text())
-    durations = json.loads((proj / "videos" / "media_durations.json").read_text())["audio"]
+    durations = load_durations(proj, ticker, script["segments"])
 
     out_dir = proj / "webdeck"
     out_dir.mkdir(exist_ok=True)
 
     eyebrows_path = out_dir / "eyebrows.json"
-    eyebrows = json.loads(eyebrows_path.read_text()) if eyebrows_path.exists() else {}
+    sidecar = json.loads(eyebrows_path.read_text()) if eyebrows_path.exists() else {}
 
     poster = proj / "charts" / "png" / f"{ticker}_thumbnail.png"
     use_poster = poster.exists() and not args.no_poster
@@ -92,7 +136,7 @@ def main() -> int:
 
     sections = []
     audio_cursor = LEAD_IN
-    for seg in script["segments"]:
+    for pos, seg in enumerate(script["segments"], start=1):
         sid = str(seg["id"])
         if sid not in durations:
             print(f"ERROR: no audio duration for segment {sid}", file=sys.stderr)
@@ -103,7 +147,7 @@ def main() -> int:
             "id": seg["id"],
             "visual_type": seg["visual_type"],
             "visual_ref": seg.get("visual_ref", ""),
-            "eyebrow": eyebrows.get(sid),
+            "eyebrow": eyebrow_for(seg, pos, sidecar),
             "start": start,
             "audioStart": round(audio_cursor, 3),
             "audioDur": round(dur, 3),

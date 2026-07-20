@@ -101,6 +101,9 @@ pipeline project:
 
 # ─── Webdeck (pilot): animated HTML deck → frame render → mux ─
 
+# Full webdeck pipeline: validate → voiceover → build → render → mux (no PPTX, no Shotstack)
+webdeck-pipeline project: (validate project) (voiceover project) (webdeck project) (webdeck-render project) (webdeck-mux project)
+
 # Build the animated webdeck HTML from script.json + VO durations
 webdeck project *args:
     python3 tools/build_webdeck.py {{project}} {{args}}
