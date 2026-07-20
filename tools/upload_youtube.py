@@ -68,9 +68,15 @@ def get_creds(interactive: bool):
     if rtok:
         creds = Credentials(None, refresh_token=rtok, token_uri=TOKEN_URI,
                             client_id=cid, client_secret=csec, scopes=SCOPES)
-        creds.refresh(Request())
-        return creds
-    if not interactive:
+        try:
+            creds.refresh(Request())
+            return creds
+        except Exception as e:
+            if not interactive:
+                sys.exit(f"stored YT_REFRESH_TOKEN no longer valid ({e}) - "
+                         "run `just yt-auth`")
+            print("stored refresh token invalid (client changed?) - rerunning OAuth")
+    elif not interactive:
         sys.exit("YT_REFRESH_TOKEN missing - run `just yt-auth` first")
 
     from google_auth_oauthlib.flow import InstalledAppFlow
