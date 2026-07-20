@@ -21,7 +21,7 @@ Non-negotiables that reviews keep catching: narration is spoken-form (no `$ % x 
 Pull the XBRL facts through the robosystems MCP (`financial-statement-analysis`, `read-graph-cypher`, `search-documents`) rather than trusting press coverage. Every number that lands on a slide or in narration should trace to a filing or be explicitly labeled as guidance/consensus with its source.
 
 ### 3. Author the outputs (this order — later files derive from earlier ones)
-1. `reports/{TICKER}_brief.md` — the narrative brief (ships verbatim as the X Article).
+1. `reports/{TICKER}_brief.md` — the narrative brief (ships verbatim as the X Article). Markdown tables render as native Article tables — use them wherever 3+ rows of figures line up (results vs. estimates, DCF scenarios, multiples grid); 1-3 per brief.
 2. `scripts/{TICKER}_script.json` — segments with narration, slides, eyebrows; set `metadata.coverage_label`.
 3. `scripts/{TICKER}_qa.json` — the two-voice Q&A podcast script.
 4. `social/` — X post, YouTube description, `{TICKER}_publish.json`.

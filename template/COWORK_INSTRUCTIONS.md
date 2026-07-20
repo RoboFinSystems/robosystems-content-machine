@@ -110,6 +110,13 @@ paragraph - not the closing CTA. Same hygiene as the X post: a space must preced
 parenthetical use the bare `(TICKER)` without the `$`). One early cashtag is the requirement;
 after that, refer to the company by name.
 
+**Tables (use them freely).** Markdown pipe tables in the brief render as real formatted
+tables in the X Article and on the /research portal - the pipeline handles the conversion.
+Whenever 3+ rows of figures line up, prefer a compact table over a stat-dense paragraph:
+quarter results vs. estimates, bull/base/bear DCF scenarios, the multiples re-rating grid,
+segment or regional breakdowns. 1-3 tables per brief is a good target. Keep the prose for
+the story and the tables for the numbers; standard `| a | b |` syntax with a header row.
+
 **Footer (optional CTA).** After the analysis, end with a one-line soft RoboSystems CTA; when a
 promo is running, append `New customers get 50% off your first month with code [PROMO_CODE].`
 Keep it a footer, separate from the analysis — never a sales pitch inside the report.
