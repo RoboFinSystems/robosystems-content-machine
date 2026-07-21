@@ -75,3 +75,7 @@ showcase/
 
 # GCP OAuth credentials (never commit)
 .gcp/
+
+# One-off analyses (ad-hoc industry/company reports authored via Claude Code).
+# Working data, models, and rendered reports — kept local; shared via Artifact when needed.
+oneoffs/
