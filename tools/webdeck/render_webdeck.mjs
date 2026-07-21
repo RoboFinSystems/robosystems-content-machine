@@ -27,6 +27,8 @@ const HTML = path.resolve(args.html);
 const OUT = path.resolve(args.out);
 const FPS = Number(args.fps || 30);
 const WORKERS = Number(args.workers || 6);
+const W = Number(args.width || 1920);    // stage width  (portrait short: 1080)
+const H = Number(args.height || 1080);   // stage height (portrait short: 1920)
 const CHROME = args.chrome ||
   '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 
@@ -35,7 +37,7 @@ mkdirSync(OUT, { recursive: true });
 
 async function newReadyPage(browser) {
   const page = await browser.newPage();
-  await page.setViewport({ width: 1920, height: 1080, deviceScaleFactor: 1 });
+  await page.setViewport({ width: W, height: H, deviceScaleFactor: 1 });
   await page.goto(pathToFileURL(HTML).href, { waitUntil: 'load', timeout: 60000 });
   await page.evaluate('window.__init()');
   await page.waitForFunction('window.__READY === true', { timeout: 60000 });
@@ -51,7 +53,7 @@ async function main() {
       '--hide-scrollbars',
       '--disable-gpu-vsync',
       '--allow-file-access-from-files',
-      `--window-size=1920,1080`,
+      `--window-size=${W},${H}`,
     ],
   });
 

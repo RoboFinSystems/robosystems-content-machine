@@ -32,12 +32,24 @@ def main() -> int:
                     help="music bed gain in dB before ducking")
     ap.add_argument("--silent", default=None)
     ap.add_argument("--skip-music", action="store_true")
+    ap.add_argument("--short", action="store_true",
+                    help="mux the 9:16 short: {T}_short_mux_manifest.json + short_render/silent.mp4 "
+                         "-> videos/{T}_short.mp4 (+ _short_music.mp4)")
     args = ap.parse_args()
     t = args.ticker.upper()
 
     wd = REPO / "projects" / t / "webdeck"
-    manifest = json.loads((wd / f"{t}_mux_manifest.json").read_text())
-    silent = Path(args.silent) if args.silent else wd / "render" / "silent.mp4"
+    if args.short:
+        manifest = json.loads((wd / f"{t}_short_mux_manifest.json").read_text())
+        default_silent = wd / "short_render" / "silent.mp4"
+        vids = REPO / "projects" / t / "videos"
+        vids.mkdir(parents=True, exist_ok=True)
+        out_a, out_b = vids / f"{t}_short.mp4", vids / f"{t}_short_music.mp4"
+    else:
+        manifest = json.loads((wd / f"{t}_mux_manifest.json").read_text())
+        default_silent = wd / "render" / "silent.mp4"
+        out_a, out_b = wd / f"{t}_webpilot.mp4", wd / f"{t}_webpilot_music.mp4"
+    silent = Path(args.silent) if args.silent else default_silent
     if not silent.exists():
         print(f"ERROR: {silent} not found (render first)", file=sys.stderr)
         return 1
@@ -57,7 +69,6 @@ def main() -> int:
     vo_mix = (";".join(parts) +
               f";{''.join(labels)}amix=inputs={len(segs)}:normalize=0[vo]")
 
-    out_a = wd / f"{t}_webpilot.mp4"
     run(["ffmpeg", "-y", *inputs,
          "-filter_complex", vo_mix + ";[vo]apad[aout]",
          "-map", "0:v", "-map", "[aout]",
@@ -81,7 +92,6 @@ def main() -> int:
           f"volume={args.music_gain}dB[mus]" +
           ";[mus][voref]sidechaincompress=threshold=0.02:ratio=8:attack=180:release=1000[musd]" +
           ";[vomain][musd]amix=inputs=2:normalize=0,apad[aout]")
-    out_b = wd / f"{t}_webpilot_music.mp4"
     run(["ffmpeg", "-y", *inputs, "-i", music,
          "-filter_complex", fc,
          "-map", "0:v", "-map", "[aout]",

@@ -65,7 +65,7 @@ def generate_audio(voice_id, text, output_path):
 
     Text is run through normalize_for_tts() so mispronounced terms (e.g. EBITDA)
     are respelled phonetically for the audio only — the source script is unchanged.
-    All three TTS paths (voiceover, podcast, short) call this, so the fix is global.
+    Both TTS paths (voiceover and short) call this, so the fix is global.
     """
     text = normalize_for_tts(text)
     data = {
@@ -88,15 +88,22 @@ def generate_audio(voice_id, text, output_path):
     return False
 
 
-def generate_all(project_name, force=False):
+def generate_all(project_name, force=False, short=False):
     project_dir = get_project_dir(project_name)
     voice_id = require_env("ELEVEN_LABS_VOICE_ID")
 
-    # Find script
+    # Find script. --short reads the 9:16 companion (T_short_script.json) and
+    # writes separate T_short_segment_* files so it never collides with the
+    # long-form VO.
     scripts_dir = os.path.join(project_dir, "scripts")
-    script_files = [f for f in os.listdir(scripts_dir) if f.endswith("_script.json")]
+    if short:
+        script_files = [f for f in os.listdir(scripts_dir) if f.endswith("_short_script.json")]
+    else:
+        script_files = [f for f in os.listdir(scripts_dir)
+                        if f.endswith("_script.json") and not f.endswith("_short_script.json")]
     if not script_files:
-        print(f"No script JSON found in {scripts_dir}")
+        kind = "short " if short else ""
+        print(f"No {kind}script JSON found in {scripts_dir}")
         sys.exit(1)
 
     script_path = os.path.join(scripts_dir, script_files[0])
@@ -105,10 +112,11 @@ def generate_all(project_name, force=False):
 
     ticker = script["metadata"]["ticker"]
     segments = script["segments"]
+    seg_prefix = f"{ticker}_short_segment" if short else f"{ticker}_segment"
 
     # Deck mode: every segment is a slide with its own voiceover.
     visual_segments = segments
-    print(f"Script: {ticker} | {len(visual_segments)} segments need voiceover\n")
+    print(f"Script: {ticker}{' (short)' if short else ''} | {len(visual_segments)} segments need voiceover\n")
 
     audio_dir = os.path.join(project_dir, "videos", "audio")
     os.makedirs(audio_dir, exist_ok=True)
@@ -117,8 +125,8 @@ def generate_all(project_name, force=False):
     for seg in visual_segments:
         seg_id = seg["id"]
         narration = seg["narration"]
-        output_path = os.path.join(audio_dir, f"{ticker}_segment_{seg_id}_voiceover.mp3")
-        ref = seg.get("visual_ref", seg.get("visual_type", "visual"))
+        output_path = os.path.join(audio_dir, f"{seg_prefix}_{seg_id}_voiceover.mp3")
+        ref = seg.get("visual_ref", seg.get("kind", seg.get("visual_type", "visual")))
 
         # Idempotent: skip already-generated audio unless --force. Re-running the
         # pipeline shouldn't re-bill every segment to ElevenLabs.
@@ -127,7 +135,7 @@ def generate_all(project_name, force=False):
             results.append({
                 "segment_id": seg_id,
                 "visual_ref": seg.get("visual_ref"),
-                "filename": f"{ticker}_segment_{seg_id}_voiceover.mp3",
+                "filename": f"{seg_prefix}_{seg_id}_voiceover.mp3",
                 "status": "skipped",
             })
             continue
@@ -141,7 +149,7 @@ def generate_all(project_name, force=False):
             results.append({
                 "segment_id": seg_id,
                 "visual_ref": seg.get("visual_ref"),
-                "filename": f"{ticker}_segment_{seg_id}_voiceover.mp3",
+                "filename": f"{seg_prefix}_{seg_id}_voiceover.mp3",
                 "status": "done",
             })
         else:
@@ -152,7 +160,8 @@ def generate_all(project_name, force=False):
             })
 
     # Save manifest
-    manifest_path = os.path.join(audio_dir, "voiceover_manifest.json")
+    manifest_name = "short_voiceover_manifest.json" if short else "voiceover_manifest.json"
+    manifest_path = os.path.join(audio_dir, manifest_name)
     with open(manifest_path, "w") as f:
         json.dump({"ticker": ticker, "voice_id": voice_id, "segments": results}, f, indent=2)
 
@@ -170,8 +179,10 @@ def main():
     parser = argparse.ArgumentParser(description="Generate voiceover audio via ElevenLabs")
     parser.add_argument("project", help="Project name (e.g., JPM_2025_10_K)")
     parser.add_argument("--force", action="store_true", help="Regenerate even if audio already exists")
+    parser.add_argument("--short", action="store_true",
+                        help="Voice the 9:16 short script (T_short_script.json) into T_short_segment_* files")
     args = parser.parse_args()
-    generate_all(args.project, force=args.force)
+    generate_all(args.project, force=args.force, short=args.short)
 
 
 if __name__ == "__main__":
