@@ -33,6 +33,7 @@ ENV_FILE = REPO / ".env"
 SCOPES = [
     "https://www.googleapis.com/auth/youtube.upload",
     "https://www.googleapis.com/auth/youtube",
+    "https://www.googleapis.com/auth/yt-analytics.readonly",   # read-only reach/retention (pull_analytics.py)
 ]
 TOKEN_URI = "https://oauth2.googleapis.com/token"
 OAUTH_PORT = 8090
