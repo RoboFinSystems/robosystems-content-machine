@@ -120,10 +120,10 @@ webdeck-mux project *args:
 # Full short pipeline: voice → build → render (1080x1920) → mux → videos/{T}_short.mp4 (+ _short_music.mp4)
 webdeck-short-pipeline project: (webdeck-short-vo project) (webdeck-short project) (webdeck-short-render project) (webdeck-short-mux project)
 
-# Voice the 9:16 short script (T_short_script.json) into T_short_segment_* mp3s
-webdeck-short-vo project:
+# Voice the 9:16 short script (T_short_script.json) into T_short_segment_* mp3s (--force to re-voice)
+webdeck-short-vo project *args:
     @just ensure-env
-    UV_ENV_FILE={{_env}} uv run python tools/generate_voiceover_audio.py {{project}} --short
+    UV_ENV_FILE={{_env}} uv run python tools/generate_voiceover_audio.py {{project}} --short {{args}}
 
 # Build the vertical short HTML from T_short_script.json (+ --estimate for a pre-VO stills check)
 webdeck-short project *args:
