@@ -115,34 +115,83 @@ def detect_campaign(proj: Path) -> str | None:
     return None
 
 
+def longform_url(proj: Path, ticker: str):
+    """The long-form's public URL from its sidecar (for the Short description link)."""
+    try:
+        return json.loads((proj / "videos" / f"{ticker}_youtube.json").read_text()).get("url")
+    except Exception:
+        return None
+
+
+def shorts_parts(proj: Path, ticker: str, args):
+    """9:16 Short: title + description from social/{T}_short_youtube.txt (line 1 = title,
+    rest = description), the {T}_short.mp4 (music variant), and short-script tags. The
+    long-form link token resolves from the long-form sidecar - so upload the long-form
+    FIRST for the Short to point at it."""
+    copy = proj / "social" / f"{ticker}_short_youtube.txt"
+    if not copy.exists():
+        sys.exit(f"short YouTube copy not found: {copy}\n"
+                 "  (line 1 = title, the rest = description; put [LONGFORM_URL] where the "
+                 "long-form link should go)")
+    raw = copy.read_text().splitlines()
+    body_idx = next((i for i, ln in enumerate(raw) if ln.strip()), None)
+    if body_idx is None:
+        sys.exit(f"{copy.name} is empty")
+    title = raw[body_idx].strip()
+    description = "\n".join(raw[body_idx + 1:]).strip()
+
+    lf = longform_url(proj, ticker)
+    for token in ("[LONGFORM_URL]", "[YOUTUBE_LINK]"):
+        if token in description:
+            if lf:
+                description = description.replace(token, lf)
+            else:
+                description = description.replace(token, "").strip()
+                print(f"NOTE: {token} unresolved - upload the long-form first "
+                      f"(just yt-upload {ticker}) so its URL exists in the Short description")
+    if "#shorts" not in (title + " " + description).lower():
+        description = (description + "\n\n#Shorts").strip()
+
+    video = Path(args.video) if args.video else proj / "videos" / f"{ticker}_short.mp4"
+    tags = []
+    ss = proj / "scripts" / f"{ticker}_short_script.json"
+    if ss.exists():
+        try:
+            tags = json.loads(ss.read_text()).get("metadata", {}).get("tags", [])
+        except Exception:
+            pass
+    return title, description, tags, video, None   # no custom thumb: Shorts pick a frame
+
+
 def build_request_parts(ticker: str, args):
     proj = REPO / "projects" / ticker
-    script = json.loads((proj / "scripts" / f"{ticker}_script.json").read_text())
-    meta = script["metadata"]
+    if getattr(args, "short", False):
+        title, description, raw_tags, video, thumb = shorts_parts(proj, ticker, args)
+    else:
+        script = json.loads((proj / "scripts" / f"{ticker}_script.json").read_text())
+        meta = script["metadata"]
+        title = meta["video_title"]
+        description = (proj / "social" / f"{ticker}_youtube_description.txt").read_text()
+        raw_tags = meta.get("tags", [])
+        video = Path(args.video) if args.video else proj / "videos" / f"{ticker}_final.mp4"
+        thumb = proj / "charts" / "png" / f"{ticker}_thumbnail.png"
+        thumb = thumb if thumb.exists() else None
 
-    title = meta["video_title"]
-    if len(title) > 100:
-        sys.exit(f"title is {len(title)} chars (YouTube max 100): {title}")
-
-    desc_path = proj / "social" / f"{ticker}_youtube_description.txt"
-    description = desc_path.read_text()
     code = helpers.resolve_promo_code(args.campaign or detect_campaign(proj))
     description = helpers.apply_promo_code(description, code)
+    if len(title) > 100:
+        sys.exit(f"title is {len(title)} chars (YouTube max 100): {title}")
     if len(description.encode()) > 5000:
         sys.exit(f"description is {len(description.encode())} bytes (YouTube max 5000)")
+    if not video.exists():
+        sys.exit(f"video not found: {video} (use --video for a webdeck variant)")
 
     tags, budget = [], 480
-    for t in meta.get("tags", []):
+    for t in raw_tags:
         if budget - len(t) < 0:
             break
         tags.append(t)
         budget -= len(t) + 1
-
-    video = Path(args.video) if args.video else proj / "videos" / f"{ticker}_final.mp4"
-    if not video.exists():
-        sys.exit(f"video not found: {video} (use --video for a webdeck variant)")
-
-    thumb = proj / "charts" / "png" / f"{ticker}_thumbnail.png"
 
     privacy = "public" if args.public else "unlisted" if args.unlisted else "private"
     body = {
@@ -157,7 +206,7 @@ def build_request_parts(ticker: str, args):
             "selfDeclaredMadeForKids": False,
         },
     }
-    return body, video, (thumb if thumb.exists() else None)
+    return body, video, thumb
 
 
 def prepared_thumbnail(thumb: Path) -> Path:
@@ -201,7 +250,8 @@ def cmd_upload(args) -> int:
     vid = resp["id"]
     print(f"uploaded: https://youtu.be/{vid}")
     from datetime import datetime, timezone
-    sidecar = REPO / "projects" / ticker / "videos" / f"{ticker}_youtube.json"
+    sc_name = f"{ticker}_short_youtube.json" if getattr(args, "short", False) else f"{ticker}_youtube.json"
+    sidecar = REPO / "projects" / ticker / "videos" / sc_name
     sidecar.write_text(json.dumps({
         "video_id": vid,
         "url": f"https://youtu.be/{vid}",
@@ -252,7 +302,8 @@ def acting_channel_guard(yt):
 def cmd_publish(args) -> int:
     """Flip an uploaded video to public - the post-watch-gate step."""
     ticker = args.ticker.upper()
-    sidecar = REPO / "projects" / ticker / "videos" / f"{ticker}_youtube.json"
+    sc_name = f"{ticker}_short_youtube.json" if getattr(args, "short", False) else f"{ticker}_youtube.json"
+    sidecar = REPO / "projects" / ticker / "videos" / sc_name
     if args.id:
         vid = args.id
     elif sidecar.exists():
@@ -294,6 +345,9 @@ def main() -> int:
     sub.add_parser("auth", help="one-time interactive OAuth")
     up = sub.add_parser("upload", help="upload a project's final video")
     up.add_argument("ticker")
+    up.add_argument("--short", action="store_true",
+                    help="upload the 9:16 Short (videos/{T}_short.mp4 + social/{T}_short_youtube.txt, "
+                         "#Shorts, its own {T}_short_youtube.json sidecar)")
     up.add_argument("--video", help="explicit video path (e.g. webdeck _music variant)")
     up.add_argument("--public", action="store_true")
     up.add_argument("--unlisted", action="store_true")
@@ -302,6 +356,7 @@ def main() -> int:
     up.add_argument("--dry-run", action="store_true")
     pub = sub.add_parser("publish", help="flip an uploaded video to public")
     pub.add_argument("ticker")
+    pub.add_argument("--short", action="store_true", help="publish the Short (its own sidecar)")
     pub.add_argument("--id", help="explicit video id (else videos/{T}_youtube.json)")
     args = ap.parse_args()
     if args.cmd == "auth":

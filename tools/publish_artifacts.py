@@ -26,8 +26,7 @@ from helpers import apply_promo_code, asset_url, get_project_dir, require_env, r
 # (path under the project dir, content-type). Whatever exists gets published.
 ARTIFACTS = [
     ("videos/{t}_final.mp4", "video/mp4"),
-    ("videos/{t}_short.mp4", "video/mp4"),          # 9:16 hook short (just short) -> teases the long-form
-    ("videos/{t}_short_qa.mp4", "video/mp4"),       # 9:16 Q&A short (backburnered)
+    ("videos/{t}_short.mp4", "video/mp4"),          # 9:16 webdeck short (music variant) -> X + YT Shorts
     ("charts/png/{t}_thumbnail.png", "image/png"),          # 16:9 — YouTube + website card
     ("charts/png/{t}_thumbnail_x.png", "image/png"),        # 5:2 — X
     ("charts/png/{t}_thumbnail_square.png", "image/png"),   # 1:1 — Spotify

@@ -380,7 +380,8 @@ def resolve_article_url(proj: Path, ticker: str, args) -> str | None:
 
 def build_post_text(ticker: str, args, article_url: str | None) -> str:
     proj = REPO / "projects" / ticker
-    src = proj / "social" / f"{ticker}_x_post.txt"
+    fname = f"{ticker}_short_x_post.txt" if getattr(args, "short", False) else f"{ticker}_x_post.txt"
+    src = proj / "social" / fname
     if not src.exists():
         sys.exit(f"post copy not found: {src}")
     # Same assembly as postpack: native video replaces any [YOUTUBE_LINK] line,
@@ -405,7 +406,8 @@ def cmd_post(args) -> int:
 
     video = None
     if not args.no_video:
-        video = Path(args.video) if args.video else proj / "videos" / f"{ticker}_final.mp4"
+        default = f"{ticker}_short.mp4" if getattr(args, "short", False) else f"{ticker}_final.mp4"
+        video = Path(args.video) if args.video else proj / "videos" / default
         if not video.exists():
             sys.exit(f"video not found: {video} (use --video, or --no-video for text-only)")
 
@@ -433,7 +435,8 @@ def cmd_post(args) -> int:
     print(f"posted: {url}")
 
     from datetime import datetime, timezone
-    sidecar = proj / "videos" / f"{ticker}_x.json"
+    sc_name = f"{ticker}_short_x.json" if getattr(args, "short", False) else f"{ticker}_x.json"
+    sidecar = proj / "videos" / sc_name
     sidecar.parent.mkdir(parents=True, exist_ok=True)
     sidecar.write_text(json.dumps({
         "tweet_id": tweet_id,
@@ -500,6 +503,9 @@ def main() -> int:
 
     po = sub.add_parser("post", help="send the single X post with native video")
     po.add_argument("ticker")
+    po.add_argument("--short", action="store_true",
+                    help="post the 9:16 short natively (videos/{T}_short.mp4 + "
+                         "social/{T}_short_x_post.txt, its own {T}_short_x.json sidecar)")
     po.add_argument("--article-url", help="override the Article link (else the sidecar)")
     po.add_argument("--video", help="explicit video path (e.g. webdeck _music variant)")
     po.add_argument("--no-video", action="store_true", help="text-only post")

@@ -14,13 +14,13 @@ Combines:
 Writes projects/{t}/{t}_publish_pack.md. Degrades gracefully — missing media or unauthored
 fields are flagged inline, never fatal. Sections appear only when their media/content exist.
 
-Platform model (X-first; research lane):
-  - X is the engine: one long-form post (NOT a thread) + the long-form video uploaded NATIVELY
-    (the native upload is the discovery, so no external link in the post) + the brief published as
-    an X Article and linked in the first comment. Shorts are NOT posted to X: the main post's
-    cashtags already give X strong organic discovery, so shorts are reserved to drive YouTube.
-  - YouTube: long-form, plus any hook short whose MP4 exists (teasing the long-form). Shorts are
-    backburnered; with no {t}_short*.mp4 present the pack contains no shorts section or step.
+Platform model (X-first; research lane) — each asset in the format its surface rewards:
+  - X: the main post's native video is the 9:16 SHORT (native upload = the discovery, so no
+    external link in the body), the brief is published as an X Article (the depth lane) and
+    linked from the post. The 16:9 long-form is NOT posted natively to X — it lives on YouTube,
+    reached via the Article's link.
+  - YouTube: the 16:9 long-form, plus the 9:16 Short (its own upload; #Shorts; links the long-form).
+    With no {t}_short.mp4 present the pack simply omits the Short.
   - The Q&A podcast is retired (no Spotify/podcast section).
   - LinkedIn is NOT used for research — it's reserved for the technical/blog lane (build_blog_postpack.py).
   - Instagram is dropped (wrong audience, strips links).
@@ -41,23 +41,16 @@ from helpers import apply_promo_code, asset_url, get_project_dir, resolve_promo_
 # key -> (path under project dir, S3 object name) ; both templated on the ticker {t}
 MEDIA = {
     "final":       ("videos/{t}_final.mp4",         "{t}_final.mp4"),
-    "short":       ("videos/{t}_short.mp4",         "{t}_short.mp4"),
-    "short_qa":    ("videos/{t}_short_qa.mp4",      "{t}_short_qa.mp4"),
+    "short":       ("videos/{t}_short.mp4",         "{t}_short.mp4"),   # 9:16 (music variant) -> X post + YT Short
     "thumbnail":    ("charts/png/{t}_thumbnail.png",        "{t}_thumbnail.png"),         # 16:9 YouTube + website
     "thumbnail_x":  ("charts/png/{t}_thumbnail_x.png",      "{t}_thumbnail_x.png"),       # 5:2 X
     "thumbnail_sq": ("charts/png/{t}_thumbnail_square.png", "{t}_thumbnail_square.png"),  # 1:1 Spotify
 }
 
-# The two shorts, each teasing a different destination:
-#   (media key, section label, title field, pinned-comment field, what the pinned comment links to)
-SHORTS = [
-    ("short",    "Hook short (teases the long-form)", "short_title",    "short_pinned_comment",    "the long-form video"),
-    ("short_qa", "Q&A short (teases the podcast)",    "short_qa_title", "short_qa_pinned_comment", "the podcast"),
-]
-
 # placeholders we expect the human (or a later step) to resolve before posting
 PLACEHOLDER_HELP = {
     "[YOUTUBE_LINK]":   "paste the long-form URL after you upload to YouTube",
+    "[LONGFORM_URL]":   "the long-form YouTube URL (fills the Short's description link)",
     "[X_ARTICLE_LINK]": "the link to the brief once you publish it as an X Article",
     "[PROMO_CODE]":     "the live Stripe promo code (e.g. CANNABIS50 / ROBO50)",
 }
@@ -135,6 +128,8 @@ def build(project):
             pub = json.load(f)
 
     x_post = read_text(os.path.join(project_dir, f"social/{t}_x_post.txt"))
+    short_x_post = read_text(os.path.join(project_dir, f"social/{t}_short_x_post.txt"))
+    short_yt = read_text(os.path.join(project_dir, f"social/{t}_short_youtube.txt"))
     yt_desc = read_text(os.path.join(project_dir, f"social/{t}_youtube_description.txt"))
     chapters = read_text(os.path.join(project_dir, f"videos/{t}_timestamps.txt"))
     urls = {k: media_url(t, project_dir, k) for k in MEDIA}
@@ -161,11 +156,12 @@ def build(project):
         lines.append(block(final_desc) if final_desc else f"_(missing social/{t}_youtube_description.txt)_")
         add("YouTube — long-form", lines)
 
-    # ── X — publish the brief as an X Article FIRST, then the native-video post linking to it ──
-    if x_post:
-        # Strip any [YOUTUBE_LINK] line; the post now carries the on-platform Article link instead
+    # ── X — publish the brief as an X Article FIRST, then the main post: 9:16 short + Article link ──
+    main_x_copy = short_x_post or x_post
+    if main_x_copy:
+        # Strip any [YOUTUBE_LINK] line; the post carries the on-platform Article link instead
         # (an X Article link is internal, so it doesn't trip X's external-link throttle).
-        body_lines = [ln for ln in x_post.splitlines() if "[YOUTUBE_LINK]" not in ln]
+        body_lines = [ln for ln in main_x_copy.splitlines() if "[YOUTUBE_LINK]" not in ln]
         x_body = re.sub(r"\n{3,}", "\n\n", "\n".join(body_lines)).strip()
         lines = []
         # Step 1 — the X Article (the brief). Post it FIRST so its URL exists for the main post.
@@ -186,9 +182,10 @@ def build(project):
         # Step 2 — the main post: native video + a link to the now-live Article.
         lines.append("")
         lines.append("**Step 2 — the main post** (native video + a link to the Article from Step 1):")
-        vid = urls["final"] or urls["short"]
+        vid = urls["short"] or urls["final"]
         if vid:
-            lines.append(f"- **Native video** (upload the 16:9 long-form): {vid}")
+            kind = "9:16 short" if urls["short"] else "16:9 long-form"
+            lines.append(f"- **Native video** (upload the {kind}): {vid}")
         elif urls.get("thumbnail_x") or urls["thumbnail"]:
             img = urls.get("thumbnail_x") or urls["thumbnail"]
             lines.append(f"- **Image** (attach the 5:2 X thumbnail so it isn't a bare-text post): {img}")
@@ -197,19 +194,20 @@ def build(project):
         lines.append(block(post_with_link))
         add("X", lines)
 
-    # ── Shorts - YouTube (backburnered; only render if the MP4 exists). Hook short → long-form. ──
-    yt_short_lines = []
-    for mkey, label, tkey, ckey, dest in SHORTS:
-        if not urls.get(mkey):
-            continue
-        yt_short_lines += [
-            f"### {label}",
-            f"**Video:** {urls[mkey]}",
-            "**Title / caption:**", block(field(pub, tkey, t)),
-            f"**Pinned comment** (drops the link to {dest}):", block(field(pub, ckey, t)), "",
-        ]
-    if yt_short_lines:
-        add("YouTube Shorts", yt_short_lines)
+    # ── YouTube Short (the 9:16 short as a Short; its description links the long-form) ──
+    has_short = bool(urls["short"])
+    if has_short:
+        s_lines = [f"**Video (9:16):** {urls['short']}"]
+        if short_yt:
+            head_body = short_yt.split("\n", 1)
+            s_lines += ["**Title:**", block(head_body[0].strip())]
+            body = head_body[1].strip() if len(head_body) > 1 else ""
+            if body:
+                s_lines += ["**Description** (keep #Shorts; links the long-form):", block(body)]
+        else:
+            s_lines.append(f"_(author social/{t}_short_youtube.txt — line 1 = title, the rest = "
+                           "description with [LONGFORM_URL] + #Shorts)_")
+        add("YouTube Short", s_lines)
 
     numbered = [f"## {i}) {title}\n{body}" for i, (title, body) in enumerate(sections, 1)]
 
@@ -230,15 +228,16 @@ def build(project):
         "## Posting order",
     ]
     order = [
-        "1. **YouTube long-form** → copy the resulting URL (fill any `[YOUTUBE_LINK]`)",
-        "2. **X**: publish the brief as an X **Article FIRST** → copy its URL into `[X_ARTICLE_LINK]`, "
-        "then post the main tweet (native video + the Article link)",
+        "1. **YouTube long-form** → copy the resulting URL (fill any `[YOUTUBE_LINK]` / `[LONGFORM_URL]`)",
     ]
-    if yt_short_lines:
-        order.append(
-            "3. **Shorts** (**YouTube only** - reserved to drive YouTube; X gets discovery from the main "
-            "post's cashtags), once the long-form is live: the **hook short** links to the long-form "
-            "(`[YOUTUBE_LINK]`). Post to YouTube Shorts on its own day.")
+    if has_short:
+        order.append("2. **YouTube Short** (the 9:16) once the long-form is live, so its description "
+                     "links the long-form")
+    order.append(
+        f"{3 if has_short else 2}. **X**: publish the brief as an X **Article FIRST** → copy its URL "
+        "into `[X_ARTICLE_LINK]`, then the main post = "
+        + ("the **9:16 short** as native video" if has_short else "the native video")
+        + " + the Article link")
     order.append("_LinkedIn is reserved for the technical/blog lane; research analysis doesn't post there._")
     head.append("\n".join(order))
 

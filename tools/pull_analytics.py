@@ -5,9 +5,12 @@ Closes the analytics feedback loop. The human has always had the platform dashbo
 gives the machine the same numbers next to each post/video, so optimization stops being blind.
 
 Reads the IDs each publish step already stamps:
-  videos/{T}_x.json          tweet_id   - the native-video X post
-  social/{T}_x_article.json  post_id    - the published X Article (only present after --publish)
-  videos/{T}_youtube.json    video_id   - the long-form YouTube upload
+  videos/{T}_x.json             tweet_id   - the long-form native-video X post
+  social/{T}_x_article.json     post_id    - the published X Article (only after --publish)
+  videos/{T}_youtube.json       video_id   - the long-form YouTube upload
+  videos/{T}_short_x.json       tweet_id   - the 9:16 short's X post
+  videos/{T}_short_youtube.json video_id   - the 9:16 short's YouTube Short
+(the short is reported on its own `T·s` row so its reach/retention stays separate.)
 
 Queries:
   X API v2  GET /2/tweets ...public_metrics
@@ -60,9 +63,11 @@ def read_json(p: Path):
 
 
 def project_ids(ticker: str):
-    """Return {'x_post': id|None, 'x_article': id|None, 'youtube': id|None} for a ticker."""
+    """Per-ticker ids across surfaces. The 9:16 short posts to X + YT Shorts under its own
+    sidecars ({T}_short_x.json / {T}_short_youtube.json), tracked separately from the long-form."""
     proj = PROJECTS / ticker
-    ids = {"x_post": None, "x_article": None, "youtube": None}
+    ids = {"x_post": None, "x_article": None, "youtube": None,
+           "x_short": None, "youtube_short": None}
     xp = read_json(proj / "videos" / f"{ticker}_x.json")
     if xp:
         ids["x_post"] = xp.get("tweet_id")
@@ -72,6 +77,12 @@ def project_ids(ticker: str):
     yt = read_json(proj / "videos" / f"{ticker}_youtube.json")
     if yt:
         ids["youtube"] = yt.get("video_id")
+    xs = read_json(proj / "videos" / f"{ticker}_short_x.json")
+    if xs:
+        ids["x_short"] = xs.get("tweet_id")
+    yts = read_json(proj / "videos" / f"{ticker}_short_youtube.json")
+    if yts:
+        ids["youtube_short"] = yts.get("video_id")
     return ids
 
 
@@ -234,14 +245,14 @@ def main():
     xs = x_session()
     xid_owner = {}
     for t, ids in ids_by_ticker.items():
-        for kind in ("x_post", "x_article"):
+        for kind in ("x_post", "x_article", "x_short"):
             if ids[kind]:
                 xid_owner[ids[kind]] = (t, kind)
     xmetrics = pull_x(xs, xid_owner.keys())
 
     # YouTube: one query per video (only touch Google auth if there's a video to query)
-    ana, data = (yt_services() if any(ids["youtube"] for ids in ids_by_ticker.values())
-                 else (None, None))
+    needs_yt = any(ids["youtube"] or ids["youtube_short"] for ids in ids_by_ticker.values())
+    ana, data = yt_services() if needs_yt else (None, None)
 
     ts = datetime.now(timezone.utc).isoformat(timespec="seconds")
     snapshots = {}
@@ -250,7 +261,9 @@ def main():
         snap = {"ts": ts, "ids": ids,
                 "x_post": xmetrics.get(ids["x_post"]) if ids["x_post"] else None,
                 "x_article": xmetrics.get(ids["x_article"]) if ids["x_article"] else None,
-                "youtube": pull_youtube(ana, data, ids["youtube"]) if ids["youtube"] else None}
+                "x_short": xmetrics.get(ids["x_short"]) if ids["x_short"] else None,
+                "youtube": pull_youtube(ana, data, ids["youtube"]) if ids["youtube"] else None,
+                "youtube_short": pull_youtube(ana, data, ids["youtube_short"]) if ids["youtube_short"] else None}
         snapshots[t] = snap
         write_snapshot(t, snap)
 
@@ -261,23 +274,28 @@ def main():
     # rollup table
     scope_warned = False
     print(f"\nAnalytics snapshot  {ts}\n" + "=" * 74)
-    hdr = (f"{'':6}{'X impr':>9}{'X eng%':>8}{'X bkmk':>7}{'  ':2}"
+    hdr = (f"{'':7}{'X impr':>9}{'X eng%':>8}{'X bkmk':>7}{'  ':2}"
            f"{'YT views':>9}{'YT AVD%':>8}{'YT min':>9}{'subs':>6}")
     print(hdr)
-    print("-" * 74)
-    for t in tickers:
-        s = snapshots[t]
-        xp = s["x_post"] or {}
-        yt = s["youtube"] or {}
-        if yt.get("_scope_error"):
-            scope_warned = True
+    print("-" * 75)
+
+    def row(label, xp, yt):
         er = xp.get("engagement_rate")
         er = f"{er*100:.1f}%" if er is not None else "-"
-        print(f"{t:6}{fmt(xp.get('impressions')):>9}{er:>8}{fmt(xp.get('bookmarks')):>7}{'  ':2}"
-              f"{fmt(yt.get('views')):>9}{fmt(yt.get('averageViewPercentage'), pct=True):>8}"
-              f"{fmt(yt.get('estimatedMinutesWatched')):>9}{fmt(yt.get('subscribersGained')):>6}")
-    print("-" * 74)
-    print(f"Snapshots appended to projects/*/analytics.json  ({len(tickers)} project(s))")
+        return (f"{label:7}{fmt(xp.get('impressions')):>9}{er:>8}{fmt(xp.get('bookmarks')):>7}{'  ':2}"
+                f"{fmt(yt.get('views')):>9}{fmt(yt.get('averageViewPercentage'), pct=True):>8}"
+                f"{fmt(yt.get('estimatedMinutesWatched')):>9}{fmt(yt.get('subscribersGained')):>6}")
+
+    for t in tickers:
+        s = snapshots[t]
+        for r in (s["x_post"], s["youtube"], s.get("x_short"), s.get("youtube_short")):
+            if r and r.get("_scope_error"):
+                scope_warned = True
+        print(row(t, s["x_post"] or {}, s["youtube"] or {}))
+        if s.get("x_short") or s.get("youtube_short"):   # short = its own line (label T·s)
+            print(row(f"{t[:5]}·s", s["x_short"] or {}, s["youtube_short"] or {}))
+    print("-" * 75)
+    print(f"Snapshots appended to projects/*/analytics.json  ({len(tickers)} project(s))  ·  T·s = 9:16 short")
     if scope_warned:
         print("\n  NOTE: YouTube Analytics 403. Run `just yt-auth` to re-consent with "
               "yt-analytics.readonly, and enable the YouTube Analytics API in the GCP project.")

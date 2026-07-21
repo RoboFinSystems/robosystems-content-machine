@@ -44,7 +44,9 @@ def main() -> int:
         default_silent = wd / "short_render" / "silent.mp4"
         vids = REPO / "projects" / t / "videos"
         vids.mkdir(parents=True, exist_ok=True)
-        out_a, out_b = vids / f"{t}_short.mp4", vids / f"{t}_short_music.mp4"
+        # the music variant (B) is the publish candidate, so it gets the canonical
+        # {T}_short.mp4 name that publish/post default to; VO-only (A) is the compare
+        out_a, out_b = vids / f"{t}_short_vo.mp4", vids / f"{t}_short.mp4"
     else:
         manifest = json.loads((wd / f"{t}_mux_manifest.json").read_text())
         default_silent = wd / "render" / "silent.mp4"

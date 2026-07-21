@@ -158,6 +158,16 @@ yt-publish project *args:
     @just ensure-env
     UV_ENV_FILE={{_env}} uv run python tools/upload_youtube.py publish {{project}} {{args}}
 
+# Upload the 9:16 short as a YouTube Short (#Shorts, own sidecar; long-form link auto-fills if uploaded first)
+yt-short project *args:
+    @just ensure-env
+    UV_ENV_FILE={{_env}} uv run python tools/upload_youtube.py upload {{project}} --short {{args}}
+
+# Flip the uploaded Short to public after the watch gate
+yt-short-publish project *args:
+    @just ensure-env
+    UV_ENV_FILE={{_env}} uv run python tools/upload_youtube.py publish {{project}} --short {{args}}
+
 # ─── X (API v2) ──────────────────────────────────────────────
 
 # One-time X auth: verify the user token in .env (or mint one via the PIN flow - run as `! just x-auth`)
@@ -178,6 +188,11 @@ x-article project *args: (article-cover project)
 x-post project *args:
     @just ensure-env
     UV_ENV_FILE={{_env}} uv run python tools/post_x.py post {{project}} {{args}}
+
+# Post the 9:16 short natively to X (own copy + sidecar; --dry-run first)
+x-short project *args:
+    @just ensure-env
+    UV_ENV_FILE={{_env}} uv run python tools/post_x.py post {{project}} --short {{args}}
 
 # ─── Analytics (reach/retention feedback loop) ───────────────
 
