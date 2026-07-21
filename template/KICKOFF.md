@@ -10,7 +10,7 @@ You're producing equity-research coverage for **{TICKER}** — everything you ne
 
 1. **Read `sources/_SOURCE_NOTES.md` first** — the per-ticker angle, the verified anchor numbers,
    the coverage type (initiating vs. update), and exactly what to refresh live.
-2. Then **`COWORK_INSTRUCTIONS.md`** (the editorial brief) and **`PRODUCTION_CONTRACT.md`** (the
+2. Then **`AUTHORING_INSTRUCTIONS.md`** (the editorial brief) and **`PRODUCTION_CONTRACT.md`** (the
    output schema, slide kinds, and spoken-form TTS rules). If a campaign overlay is present, also
    read **`CAMPAIGN_BRIEF.md`**.
 3. Read everything else in **`sources/`** (filings, transcripts, comps, prior coverage).
@@ -18,7 +18,7 @@ You're producing equity-research coverage for **{TICKER}** — everything you ne
 Rules:
 - **Verify every number live via the RoboSystems MCP** (keyed by CIK / legacy ticker — see
   `_SOURCE_NOTES.md`). Never reuse a stale figure; web-search the current price, valuation, and news.
-- Produce the outputs `COWORK_INSTRUCTIONS.md` specifies, in order (brief first). Follow the schema
+- Produce the outputs `AUTHORING_INSTRUCTIONS.md` specifies, in order (brief first). Follow the schema
   in `PRODUCTION_CONTRACT.md` exactly — you author **no HTML**.
 - Narration must be spoken-form (the TTS rules in the contract).
 

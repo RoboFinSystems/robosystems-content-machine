@@ -1,10 +1,11 @@
 
-# SEC Stock Analysis Video — Cowork Instructions (Generic)
+# SEC Stock Analysis Video - Authoring Instructions (Generic)
 
 You are a financial analyst and content producer. Analyze a company's most recent SEC filing
-using the RoboSystems MCP tools and produce the written assets for a video. This is the
-**generic** coverage template — point it at any public company. (Thematic campaigns layer a
-specific angle on top via their own `COWORK_INSTRUCTIONS.md`.)
+using the RoboSystems MCP tools and produce the written assets for a video. The `/author` skill
+runs this stage directly in Claude Code (the one-shot process - no separate Cowork app). This is
+the **generic** coverage template - point it at any public company. (Thematic campaigns layer a
+specific angle on top via their own `AUTHORING_INSTRUCTIONS.md`.)
 
 > **Read `PRODUCTION_CONTRACT.md` first.** It defines the exact file formats the pipeline
 > consumes — the `script.json` schema, the slide kinds, how the deck is built from your
@@ -64,10 +65,12 @@ If the card is absent, this is **initiating coverage** — introduce the company
 
 ## What You Produce
 
-Produce these **4 core outputs** in order (brief FIRST — it's the foundation everything else
-derives from), then the **Q&A podcast** (#6 - shorts, #5, are backburnered) and the **publish metadata** (#7). (Schema and slide mechanics: see
-`PRODUCTION_CONTRACT.md`.) The deck is built in Claude Design from the script; the thumbnails
-are made in ChatGPT from the brief. You author no HTML.
+Produce these **4 core outputs** in order (brief FIRST - it's the foundation everything else
+derives from) and the **publish metadata** (#6). (Shorts #5 are backburnered; the Q&A podcast is
+retired - author neither.) Schema and slide mechanics: see `PRODUCTION_CONTRACT.md`. Downstream,
+the visuals render from your `script.json` - via the animated **webdeck** (`just webdeck-pipeline`,
+the one-shot Code path) or the Claude Design deck kept in parallel - and thumbnails auto-generate
+from the brief (`just thumbnails`). You author no slide HTML.
 
 **Promo code (optional placeholder).** Where copy invites sign-up, add the offer line
 `New customers get 50% off your first month with code [PROMO_CODE].` Keep `[PROMO_CODE]` as a
@@ -133,7 +136,9 @@ Do **not** author a `thumbnail` block; thumbnails are made in ChatGPT from the b
 `DESIGN_INSTRUCTIONS.md`).
 
 Editorial guidance for the script:
-- Open with a HOOK (first 3 seconds must grab attention).
+- Open with a HOOK: lead with the single most surprising number or tension in the first ~15
+  seconds, BEFORE any company setup or context. The first 30 seconds is YouTube's retention gate,
+  and retention is what search rankings ride on - no slow throat-clearing intro.
 - Long-form target 3-5 min (~800-1200 words narration).
 - Vary slide kinds for rhythm — don't stack chart slides. Title → chart → chart → callout →
   dual → chart → callout → title (close).
@@ -160,16 +165,21 @@ Editorial guidance for the script:
 
 ### 3. X Post (`social/{TICKER}_x_post.txt`)
 A **single post — NOT a numbered thread** (long-form is fine on X; no "1/ 2/ 3/"). Opening
-hook; 3-5 key findings with specific numbers; a risk/caveat; closing takeaway; a closing
-RoboSystems CTA (`robosystems.ai`) + the promo line (`New customers get 50% off your first
-month with code [PROMO_CODE].`); relevant `$TICKER` cashtag **+ 1–2 cashtags anchoring the name to a prominent, on-topic ETF** (extra discovery reach — tag the sector/thematic ETF whose cashtag feed the right readers actually watch; this matters most for thin-volume names whose own `$TICKER` feed is quiet, where the ETF feed *is* the discovery channel; pick the most _relevant_ fund, not the broadest — don't tag a broad index like `$SPY` — and never more than 2 cashtags total) and topic hashtags; tag @RoboFinSystems. **Cashtag placement & hygiene:** **lead with the cashtags** — `$TICKER $ETF` go on the FIRST line (front placement gets more topic-feed reach than burying them at the end, and the tag sits above the fold where the feed crops); the topic hashtags + @RoboFinSystems tag go on the closing line. Keep cashtags space-separated and **never glue a `$`-cashtag inside parens** like `($TICKER)` — X only linkifies AND indexes a cashtag when a space (or start-of-post/@) precedes it, so a leading paren silently kills both the link and the cashtag-feed discovery. For a parenthetical in prose, use the bare ticker `(TICKER)` without the `$`. **Never use `<` or `>`** in any social copy, YouTube description, or brief — YouTube and X parse them as HTML tags and reject the whole paste. Spell comparisons out: `under 1x`, `over $740M` (not `<1x` / `>$740M`).
-**No link in the body.** On X the **full long-form is uploaded as native video**, and the brief
-is published as a native X **Article** whose link goes in the first comment (`x_first_comment`)
-— so there is no YouTube link on X at all (X throttles external links; native video + native
+hook; 3-5 key findings with specific numbers; a risk/caveat; closing takeaway; relevant `$TICKER` cashtag **+ 1–2 cashtags anchoring the name to a prominent, on-topic ETF** (extra discovery reach — tag the sector/thematic ETF whose cashtag feed the right readers actually watch; this matters most for thin-volume names whose own `$TICKER` feed is quiet, where the ETF feed *is* the discovery channel; pick the most _relevant_ fund, not the broadest — don't tag a broad index like `$SPY` — and never more than 2 cashtags total) and topic hashtags; tag @RoboFinSystems. **Cashtag placement & hygiene:** **lead with the cashtags** — `$TICKER $ETF` go on the FIRST line (front placement gets more topic-feed reach than burying them at the end, and the tag sits above the fold where the feed crops); the topic hashtags + @RoboFinSystems tag go on the closing line. Keep cashtags space-separated and **never glue a `$`-cashtag inside parens** like `($TICKER)` — X only linkifies AND indexes a cashtag when a space (or start-of-post/@) precedes it, so a leading paren silently kills both the link and the cashtag-feed discovery. For a parenthetical in prose, use the bare ticker `(TICKER)` without the `$`. **Never use `<` or `>`** in any social copy, YouTube description, or brief — YouTube and X parse them as HTML tags and reject the whole paste. Spell comparisons out: `under 1x`, `over $740M` (not `<1x` / `>$740M`).
+**No link and no promo in the body.** The X post carries **no `robosystems.ai` link and no
+promo-code line** - both suppress reach (X throttles external links, and a discount CTA on every
+post reads as spam and drags engagement). Keep the RoboSystems CTA and any promo to the YouTube
+description and podcast notes, never the X post. And **never a bare-link post**: every post leads
+with substantive text and the cashtag - link-only or near-empty captions get a fraction of a text
+post's reach (measured on our own account). On X the **full long-form is uploaded as native
+video**, and the brief is published as a native X **Article** whose link goes in the first
+comment (`x_first_comment`) - so there is no YouTube link on X at all (native video + native
 Article both win reach).
 
 ### 4. YouTube Description (`social/{TICKER}_youtube_description.txt`)
-Hook (1-2 sentences); links: `https://robosystems.ai` and
+**Open with a search-first line** (the first line, like the title, is a primary ranking signal):
+restate the Company + Ticker + quarter + the topic keywords a searcher would type before any
+flourish. Then a 1-2 sentence hook; links: `https://robosystems.ai` and
 `https://github.com/RoboFinSystems/robosystems-content-machine`; a `🎟️ New customers: 50% off
 your first month with code [PROMO_CODE]` line under the links; a voice-credit line
 `Voiceover by ElevenLabs: https://try.elevenlabs.io/v9z3wzm97gk3` with a following
@@ -182,27 +192,24 @@ metric or term a cold viewer needs; disclaimer ("This is not investment advice. 
 targets."); relevant `$TICKER` and topic hashtags.
 
 ### 5. Shorts - BACKBURNERED (author nothing)
-Shorts are paused. Do **not** author a `short` block in `{TICKER}_script.json`, a `short.turns`
-exchange in the Q&A file, or any `short_*` fields in the publish metadata. The renderer stays
-on the shelf (`just shorts {TICKER}`, avatar shorts generated headless from the brief) in case
-shorts return; the postpack only includes a short if its MP4 exists.
+Shorts are paused. Do **not** author a `short` block in `{TICKER}_script.json` or any `short_*`
+fields in the publish metadata. The renderer stays on the shelf (`just shorts {TICKER}`, avatar
+shorts generated headless from the brief) in case shorts return; the postpack only includes a
+short if its MP4 exists.
 
-### 6. Q&A Podcast (`scripts/{TICKER}_qa.json`)
-A CNBC-style two-voice conversation (host + analyst), ~5–8 min, written for audio. Cover the
-deck's beats as dialogue, open with the host framing the name, close on the RoboSystems angle.
-Schema + rules: `PRODUCTION_CONTRACT.md` → "Companion formats → B". Rendered by
-`just podcast-qa {TICKER}` (MP3 for Spotify, MP4 for YouTube).
-
-### 7. Publish metadata (`social/{TICKER}_publish.json`)
+### 6. Publish metadata (`social/{TICKER}_publish.json`)
 The per-platform native copy that lives nowhere else — you author it; `just postpack {TICKER}`
 stitches it into a paste-ready **publish pack** after production (merging in the real chapter
 times, the S3 media links, and flagging any unresolved placeholders). A JSON object of string fields:
-- `youtube_title` — clickable long-form title (≤100 chars).
+- `youtube_title` — **search-first** long-form title (≤100 chars). YouTube discovery for this
+  channel is almost entirely SEARCH (browse is dead), so front-load the query a viewer would
+  actually type: Company + Ticker + the quarter/filing ("Q2 FY26 Earnings") + the specific
+  angle/metric, then a short curiosity tail. Aim at the specific low-competition long-tail, not
+  the crowded bare-ticker term. **Make it DIFFERENT from the X hook**: X rewards the contrarian
+  curiosity line, YouTube rewards the searchable query; don't reuse the same string on both.
 - `x_first_comment` — the X first comment under the video post; points to the brief published as an X **Article** (use `[X_ARTICLE_LINK]`). The full long-form is uploaded as native video; no YouTube link on X.
-- `podcast_episode_title` — the Q&A episode title.
-- `podcast_show_notes` — episode description / show notes (+ RoboSystems CTA, plus a one-line voice credit `Voiceover by ElevenLabs: https://try.elevenlabs.io/v9z3wzm97gk3` and a `Disclosure: referral link.` note, since the two-voice audio is ElevenLabs).
 
-_No LinkedIn for research - LinkedIn is the technical/blog lane, not a research channel. No `short_*` fields - shorts are backburnered (#5)._
+_No LinkedIn for research - LinkedIn is the technical/blog lane, not a research channel. No `short_*` fields (shorts backburnered #5). The Q&A podcast is retired - no `podcast_*` fields, no `qa.json`._
 
 Same placeholder rules as the rest (`[YOUTUBE_LINK]`, `[PROMO_CODE]`) — never hardcode the live URL or code.
 

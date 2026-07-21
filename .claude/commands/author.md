@@ -1,4 +1,4 @@
-Author the full Cowork-stage output set for a project directly in this session — the Code-native replacement for the claude.ai Cowork handoff. Same artifacts, same contract, no clipboard round-trip. `/review` stays the quality gate afterward.
+Author the full written output set for a project directly in this session - the one-shot Code process that replaces the old claude.ai Cowork handoff. Same artifacts, same contract (`AUTHORING_INSTRUCTIONS.md` + `PRODUCTION_CONTRACT.md`), no clipboard round-trip. `/review` stays the quality gate afterward.
 
 ## Arguments
 - `$ARGUMENTS` — ticker symbol (e.g., NFLX)
@@ -11,11 +11,13 @@ Author the full Cowork-stage output set for a project directly in this session �
 
 ### 1. Load the contract
 Read, in order:
-- `projects/{TICKER}/COWORK_INSTRUCTIONS.md` — the authoring spec (campaign overlay already baked in at scaffold time). Follow it exactly.
+- `projects/{TICKER}/AUTHORING_INSTRUCTIONS.md` — the authoring spec (campaign overlay already baked in at scaffold time). Follow it exactly.
 - `projects/{TICKER}/PRODUCTION_CONTRACT.md` — schema, slide kinds, `data` shapes, TTS spoken-form rules, the per-segment `eyebrow` field.
 - `projects/{TICKER}/KICKOFF.md` and everything in `sources/`.
 
 Non-negotiables that reviews keep catching: narration is spoken-form (no `$ % x / &`), the brief's Hook carries an early ` $TICKER` cashtag (space before `$`, never `($TICKER)`), no em/en dashes anywhere, slide `data` matches narration numbers exactly, every segment except the CTA gets an `eyebrow`.
+
+Reach alignment (measured on our own analytics): the `youtube_title` is **search-first** (Company + Ticker + quarter + the specific angle a viewer would search) and **DIFFERENT from the X hook** - YouTube discovery is ~all search, X rewards the curiosity line; the YouTube description's first line restates those search keywords. The video **opens with the most surprising number in the first ~15 seconds** (retention gate). The X post **never ships as a bare link** - lead with substantive text + an early cashtag.
 
 ### 2. Verify the numbers against the graph
 Pull the XBRL facts through the robosystems MCP (`financial-statement-analysis`, `read-graph-cypher`, `search-documents`) rather than trusting press coverage. Every number that lands on a slide or in narration should trace to a filing or be explicitly labeled as guidance/consensus with its source.
@@ -23,8 +25,9 @@ Pull the XBRL facts through the robosystems MCP (`financial-statement-analysis`,
 ### 3. Author the outputs (this order — later files derive from earlier ones)
 1. `reports/{TICKER}_brief.md` — the narrative brief (ships verbatim as the X Article). Markdown tables render as native Article tables — use them wherever 3+ rows of figures line up (results vs. estimates, DCF scenarios, multiples grid); 1-3 per brief.
 2. `scripts/{TICKER}_script.json` — segments with narration, slides, eyebrows; set `metadata.coverage_label`.
-3. `scripts/{TICKER}_qa.json` — the two-voice Q&A podcast script.
-4. `social/` — X post, YouTube description, `{TICKER}_publish.json`.
+3. `social/` — X post, YouTube description, `{TICKER}_publish.json`.
+
+(No `qa.json` - the Q&A podcast is retired. No `short` block / `short_*` fields - shorts backburnered.)
 
 Use subagents for scale where useful (e.g., parallel section drafts), but the fact-check pass belongs to `/review`, not here.
 

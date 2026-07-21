@@ -1,4 +1,4 @@
-Update an existing project's campaign files without touching sources or outputs. Use when you've refined the CAMPAIGN_BRIEF or COWORK_INSTRUCTIONS in the campaign directory and want to push changes to an existing project.
+Update an existing project's campaign files without touching sources or outputs. Use when you've refined the CAMPAIGN_BRIEF or AUTHORING_INSTRUCTIONS in the campaign directory and want to push changes to an existing project.
 
 ## Arguments
 - `$ARGUMENTS` — ticker symbol (e.g., GTBIF) and optionally a campaign name. If no campaign specified, detect from CAMPAIGN_BRIEF.md in the project.
@@ -17,8 +17,8 @@ Check that `projects/{TICKER}/` exists. If not, tell the user to scaffold first.
 Copy from the campaign directory, overwriting what's in the project:
 
 ```bash
-# Overwrite COWORK_INSTRUCTIONS
-cp campaigns/{CAMPAIGN}/COWORK_INSTRUCTIONS.md projects/{TICKER}/COWORK_INSTRUCTIONS.md
+# Overwrite AUTHORING_INSTRUCTIONS
+cp campaigns/{CAMPAIGN}/AUTHORING_INSTRUCTIONS.md projects/{TICKER}/AUTHORING_INSTRUCTIONS.md
 
 # Overwrite CAMPAIGN_BRIEF
 cp campaigns/{CAMPAIGN}/CAMPAIGN_BRIEF.md projects/{TICKER}/CAMPAIGN_BRIEF.md
@@ -39,6 +39,6 @@ cp -r campaigns/{CAMPAIGN}/overrides/. projects/{TICKER}/
 ```
 Refreshed: projects/{TICKER}
   Campaign: {CAMPAIGN}
-  Updated:  COWORK_INSTRUCTIONS.md, CAMPAIGN_BRIEF.md, INTRO_SLIDE.html, OUTRO_SLIDE.html
+  Updated:  AUTHORING_INSTRUCTIONS.md, CAMPAIGN_BRIEF.md, INTRO_SLIDE.html, OUTRO_SLIDE.html
   Kept:     sources/ (4 files), reports/ (1 file), scripts/ (1 file)
 ```

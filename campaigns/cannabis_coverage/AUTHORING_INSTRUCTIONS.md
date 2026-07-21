@@ -185,7 +185,7 @@ If the card is absent, this is **initiating coverage** — introduce the company
 ## What You Produce
 
 Produce these **4 core outputs** in order (the narrative brief comes FIRST — it's the foundation
-everything else derives from), then the **Q&A podcast** (#6 - shorts, #5, are backburnered) and the **publish metadata** (#7). (Schema and slide
+everything else derives from) and the **publish metadata** (#6). (Shorts #5 are backburnered; the Q&A podcast is retired - author neither.) (Schema and slide
 mechanics: see `PRODUCTION_CONTRACT.md`.) The deck is built in Claude Design from the script;
 the thumbnails are made in ChatGPT from the brief. You author no HTML.
 
@@ -255,7 +255,9 @@ line become the close. Follow the schema, slide kinds, and field rules in
 `PRODUCTION_CONTRACT.md` exactly.
 
 Cannabis editorial guidance for the script:
-- Open with a HOOK framing the coverage gap: "Nobody covers this stock. Here's why they should."
+- Open with a HOOK framing the coverage gap ("Nobody covers this stock. Here's why they should.") -
+  lead with the single most surprising number in the first ~15 seconds, before any setup. The
+  first 30 seconds is YouTube's retention gate, and retention is what search rankings ride on.
 - Surface the sector context early — 280E, OTC-only, zero analyst coverage.
 - **Include a 280E / catalyst slide** — the adjusted-earnings pro forma is the slide that
   makes cannabis coverage unique. A `callout` for the 280E dollar cost, a `dual` for the
@@ -288,15 +290,16 @@ Cannabis editorial guidance for the script:
 ### 3. X Post (`social/{TICKER}_x_post.txt`)
 A **single post — NOT a numbered thread** (long-form is fine on X; no "1/ 2/ 3/"). Hook framing
 the coverage angle; 3-5 findings with specific numbers (include 280E impact); catalyst
-sensitivity; risk/caveat; closing takeaway; mention robosystems.ai + the promo line
-(`New customers get 50% off your first month with code [PROMO_CODE].`);
-`$TICKER` **+ the sector anchor `$MSOS`** (the cannabis-sector cashtag — tag it on **every** US cannabis name we cover, regardless of the name's weight in the fund. The point is discovery, not holdings: a thin-volume microcap's own `$TICKER` feed is dead, so the `$MSOS` feed *is* the channel — that's where cannabis-sector investors actually look. `$MSOX` (2x) optional as a 2nd; never more than 2 cashtags) + `#Cannabis #MSO #280E #Rescheduling`; tag @RoboFinSystems. **No link in the body.** **Cashtag placement & hygiene:** **lead with the cashtags** — `$MRMD $MSOS` go on the FIRST line (front placement gets more topic-feed reach than burying them at the end, and the tag sits above the fold where the feed crops); the topic hashtags + @RoboFinSystems tag go on the closing line. Keep cashtags space-separated and **never glue a `$`-cashtag inside parens** like `($MRMD)` — X only linkifies AND indexes a cashtag when a space (or start-of-post/@) precedes it, so a leading paren silently kills both the link and the cashtag-feed discovery. For a parenthetical in prose, use the bare ticker `(MRMD)` without the `$`. **Never use `<` or `>`** in any social copy, YouTube description, or brief — YouTube and X parse them as HTML tags and reject the whole paste. Spell comparisons out: `under 1x`, `over $740M` (not `<1x` / `>$740M`).
+sensitivity; risk/caveat; closing takeaway;
+`$TICKER` **+ the sector anchor `$MSOS`** (the cannabis-sector cashtag — tag it on **every** US cannabis name we cover, regardless of the name's weight in the fund. The point is discovery, not holdings: a thin-volume microcap's own `$TICKER` feed is dead, so the `$MSOS` feed *is* the channel — that's where cannabis-sector investors actually look. `$MSOX` (2x) optional as a 2nd; never more than 2 cashtags) + `#Cannabis #MSO #280E #Rescheduling`; tag @RoboFinSystems. **No link and no promo in the body** (no `robosystems.ai`, no promo-code line - both suppress reach on X); **never a bare-link post** - lead with substantive text + the cashtag (link-only captions get a fraction of a text post's reach). **Cashtag placement & hygiene:** **lead with the cashtags** — `$MRMD $MSOS` go on the FIRST line (front placement gets more topic-feed reach than burying them at the end, and the tag sits above the fold where the feed crops); the topic hashtags + @RoboFinSystems tag go on the closing line. Keep cashtags space-separated and **never glue a `$`-cashtag inside parens** like `($MRMD)` — X only linkifies AND indexes a cashtag when a space (or start-of-post/@) precedes it, so a leading paren silently kills both the link and the cashtag-feed discovery. For a parenthetical in prose, use the bare ticker `(MRMD)` without the `$`. **Never use `<` or `>`** in any social copy, YouTube description, or brief — YouTube and X parse them as HTML tags and reject the whole paste. Spell comparisons out: `under 1x`, `over $740M` (not `<1x` / `>$740M`).
 On X the **full long-form is uploaded as native video**, and the brief is published as a native
 X **Article** whose link goes in the first comment (`x_first_comment`) — no YouTube link on X
 (X throttles external links; native video + native Article both win reach).
 
 ### 4. YouTube Description (`social/{TICKER}_youtube_description.txt`)
-Hook (1-2 sentences); links: `https://robosystems.ai`
+**Open with a search-first line** (first line + title are the primary ranking signals - restate
+Company + Ticker + the 280E/MSO topic keywords a searcher would type), then a 1-2 sentence hook;
+links: `https://robosystems.ai`
 and `https://github.com/RoboFinSystems/robosystems-content-machine`; a `🎟️ New customers: 50%
 off your first month with code [PROMO_CODE]` line under the links; **timestamps** — draft from
 `duration_estimate_seconds` (`0:00` start, accumulate); after render, finalize from the generated
@@ -305,28 +308,24 @@ bullets with numbers; a 2-3 sentence **280E explainer** (many viewers land cold)
 ("This is not investment advice. … No paid promotions. No price targets."); hashtags.
 
 ### 5. Shorts - BACKBURNERED (author nothing)
-Shorts are paused. Do **not** author a `short` block in `{TICKER}_script.json`, a `short.turns`
-exchange in the Q&A file, or any `short_*` fields in the publish metadata. The renderer stays
-on the shelf (`just shorts {TICKER}`, avatar shorts generated headless from the brief) in case
-shorts return; the postpack only includes a short if its MP4 exists.
+Shorts are paused. Do **not** author a `short` block in `{TICKER}_script.json` or any `short_*`
+fields in the publish metadata. The renderer stays on the shelf (`just shorts {TICKER}`, avatar
+shorts generated headless from the brief) in case shorts return; the postpack only includes a
+short if its MP4 exists.
 
-### 6. Q&A Podcast (`scripts/{TICKER}_qa.json`)
-A CNBC-style two-voice conversation (host + analyst), ~5–8 min, written for audio. Cover the
-cannabis beats as dialogue — the 280E paradox, the catalyst/pro-forma math, the valuation range,
-the honest bull/bear — opening with the host framing the name and closing on the RoboSystems
-angle. Same domain narration hints below. Schema + rules: `PRODUCTION_CONTRACT.md` → "Companion
-formats → B". Rendered by `just podcast-qa {TICKER}` (MP3 for Spotify, MP4 for YouTube).
-
-### 7. Publish metadata (`social/{TICKER}_publish.json`)
+### 6. Publish metadata (`social/{TICKER}_publish.json`)
 The per-platform native copy that lives nowhere else — you author it; `just postpack {TICKER}`
 stitches it into a paste-ready **publish pack** after production (merging in the real chapter
 times, the S3 media links, and flagging any unresolved placeholders). A JSON object of string fields:
-- `youtube_title` — clickable long-form title (≤100 chars).
+- `youtube_title` — **search-first** long-form title (≤100 chars). YouTube discovery here is
+  almost entirely SEARCH (browse is dead), so front-load the query a viewer would type: Company +
+  Ticker + the specific angle (e.g. "280E tax", "MSO") + quarter, then a short curiosity tail.
+  Aim at the low-competition long-tail (these obscure names ARE the search advantage), not a
+  crowded term. **Make it DIFFERENT from the X hook**: X rewards the curiosity line, YouTube the
+  searchable query.
 - `x_first_comment` — the X first comment under the video post; points to the brief published as an X **Article** (use `[X_ARTICLE_LINK]`). The full long-form is uploaded as native video; no YouTube link on X.
-- `podcast_episode_title` — the Q&A episode title.
-- `podcast_show_notes` — episode description / show notes (+ RoboSystems CTA, `[PROMO_CODE]` if a promo runs).
 
-_No LinkedIn for research — LinkedIn is the technical/blog lane, not a research channel. No `short_*` fields - shorts are backburnered (#5)._
+_No LinkedIn for research - LinkedIn is the technical/blog lane, not a research channel. No `short_*` fields (shorts backburnered #5). The Q&A podcast is retired - no `podcast_*` fields, no `qa.json`._
 
 Same placeholder rules as the rest (`[YOUTUBE_LINK]`, `[PROMO_CODE]`) — never hardcode the live URL or code.
 
@@ -337,8 +336,8 @@ company's elements (handle 40-F/IFRS). 4. Deep MCP research — 10-20+ queries: 
 280E inputs (income tax expense + pretax income), goodwill/impairments, debt + maturities,
 segment/state revenue, 3+ years to show the boom-bust arc. 5. Web search for price, valuation,
 state/rescheduling news, peer MSO comps, management commentary. 6. Synthesize the 3-5 most
-compelling stories. 7. Produce the 4 core outputs in order (brief first), then the Q&A script
-and the publish metadata (#7). 8. Verify completeness — all files exist and `script.json` validates (see contract).
+compelling stories. 7. Produce the 4 core outputs in order (brief first), then the publish
+metadata (#6). 8. Verify completeness — all files exist and `script.json` validates (see contract).
 
 ## Domain narration hints (spoken-form — adds to the contract's general rules)
 

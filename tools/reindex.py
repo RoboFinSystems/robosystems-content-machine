@@ -30,13 +30,10 @@ from helpers import asset_url, require_env
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PROJECTS = os.path.join(ROOT, "projects")
 
-# filename suffix -> catalog asset key (order matters: _qa_podcast before _podcast)
+# filename suffix -> catalog asset key
 SUFFIX_MAP = [
     ("_final.mp4", "video"),
     ("_short.mp4", "short"),
-    ("_qa_podcast.mp3", "podcast_mp3"),
-    ("_qa_podcast.mp4", "podcast_mp4"),
-    ("_podcast.mp3", "podcast_mp3"),   # legacy v1 long-form-extracted audio
     ("_brief.md", "brief"),
     ("_thumbnail.png", "thumbnail"),
 ]

@@ -2,12 +2,12 @@
 # Production Contract — How Written Outputs Become a Video
 
 This is the **shared, campaign-agnostic** contract for the content pipeline. Your
-`COWORK_INSTRUCTIONS.md` (base or campaign) defines the *editorial* work — what to analyze,
+`AUTHORING_INSTRUCTIONS.md` (base or campaign) defines the *editorial* work — what to analyze,
 the angle, the tone. **This file defines the *mechanical* work** — the exact file formats
 the production pipeline consumes. Both the generic template and every campaign reference
 this file, so the schema and rules below are identical for every video.
 
-> If anything here conflicts with your `COWORK_INSTRUCTIONS.md`, the editorial direction in
+> If anything here conflicts with your `AUTHORING_INSTRUCTIONS.md`, the editorial direction in
 > that file wins for *content*; this file wins for *format and schema*.
 
 ---
@@ -34,7 +34,7 @@ scripts/{TICKER}_script.json   ──►  build_deck_brief → deck/{TICKER}_dec
                                      voiceover (ElevenLabs) → assemble (Shotstack) → MP4
 ```
 
-Your job ends at the **script** (plus the editorial outputs your `COWORK_INSTRUCTIONS.md`
+Your job ends at the **script** (plus the editorial outputs your `AUTHORING_INSTRUCTIONS.md`
 lists — brief, social, etc.). The deck brief is *generated from your script* — you don't
 write it. The only thing that makes the deck good is a complete, accurate script.
 
@@ -203,43 +203,14 @@ block** — the brief is the source. They are publish-only assets, not part of t
 
 ---
 
-## Companion formats — Short and Q&A podcast
+## Companion format - Short (BACKBURNERED)
 
-From the *same* research, the pipeline produces the Q&A podcast (shorts are backburnered -
-see A). It reuses the analyst (narrator) voice for brand continuity and follows the **same
-spoken-form TTS rules** below.
+Shorts are the only companion format, and they're currently paused. Author no `short` block
+anywhere: not in the video script, and no `short_*` fields in the publish metadata. The
+avatar-short renderer stays on the shelf (`tools/gen_avatar_short.py`, `just short {TICKER}` /
+`just shorts {TICKER}`) in case shorts return; the postpack only includes a short if its MP4 exists.
 
-### A. Short — BACKBURNERED (nothing to author)
-
-Shorts are paused. Author no `short` block anywhere: not in the video script, not in the Q&A
-file, and no `short_*` fields in the publish metadata. The avatar-short renderer stays on the
-shelf (`tools/gen_avatar_short.py`, `just short {TICKER}` / `just shorts {TICKER}`) in case
-shorts return; the postpack only includes a short if its MP4 exists.
-
-### B. Q&A podcast — `scripts/{TICKER}_qa.json`
-
-A CNBC-style two-voice conversation (host + analyst), written for audio. ~5–8 min. Rendered by
-`just podcast-qa {TICKER}` → `{TICKER}_qa_podcast.mp3` (Spotify / Apple / Amazon) +
-`{TICKER}_qa_podcast.mp4` (static thumbnail background, for YouTube). Interviewer = a fixed
-host voice (`ELEVEN_LABS_INTERVIEWER_VOICE_ID`); analyst = the brand narrator voice.
-
-```jsonc
-{
-  "ticker": "TRLV",
-  "company": "Trulieve Cannabis Corp.",
-  "title": "Trulieve: Tax Relief Is Finally Here — Now What?",
-  "intro_sting": false,
-  "turns": [
-    { "speaker": "interviewer", "text": "Let's start with the setup — why look at this name now?" },
-    { "speaker": "analyst",     "text": "Two things changed this quarter..." }
-  ]
-}
-```
-
-- **`turns`** — the full podcast. Alternate `interviewer` / `analyst`. Open with the host framing the name; close on the RoboSystems angle and a short sign-off.
-- Written for the **ear**: contractions, natural cadence, no on-screen references. Cover the deck's beats as *dialogue*: setup → the numbers → the catalyst → valuation range → bull/bear → the RoboSystems angle.
-- Same spoken-form TTS rules as the main narration (spell out agencies, never space `AI`, numbers as words). The host asks; the analyst delivers the substance and the numbers.
-- No `short` block - shorts are backburnered (see A). If a stale example shows one, ignore it.
+The Q&A podcast has been **retired** (2026-07-21): author no `qa.json` and no `podcast_*` fields.
 
 ---
 
@@ -296,4 +267,4 @@ reads wrong.)*
   slide's `data`/`headline` shows that same number. Slide and words are one unit.
 - **Completeness check before finishing:** confirm `script.json` is valid (every required
   field, `deck.slide_count` == segment count, unique ordered `visual_ref`s) and every output
-  your `COWORK_INSTRUCTIONS.md` lists exists. The task isn't done until all files are saved.
+  your `AUTHORING_INSTRUCTIONS.md` lists exists. The task isn't done until all files are saved.

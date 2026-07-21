@@ -9,7 +9,7 @@ the *hub* that ties together our individual `/research/{TICKER}` coverage of the
 > the RoboSystems graph). Cross-company grid queries on these nine are flaky — they time out — so **go one
 > company at a time** with `financial-statement-analysis` to **validate every scorecard number and surface
 > additional insights** the aggregate missed, then turn it all into the **video assets** (script, brief,
-> short, podcast, social). See "The per-company second pass" below.
+> social; shorts backburnered, podcast retired). See "The per-company second pass" below.
 
 > **Read `PRODUCTION_CONTRACT.md` first.** It defines the exact file formats the pipeline consumes —
 > the `script.json` schema, the slide kinds (`title | chart | callout | dual`), the `short`/`qa` blocks,
@@ -148,13 +148,14 @@ for rhythm, fill exact numbers in every `slide.data`):
 A single post (NOT a thread). **Lead the first line with the sector cashtag `$MSOS`** (this *is* the
 sector piece — `$MSOS` is the channel; `$MSOX` optional as a 2nd, never more than 2). Hook on the
 paradox; 3–5 findings with numbers (the $606M tax on a loss, $2.1B reserves, 8-of-9 taxed while losing
-money, the re-rating math); the catalyst; a risk; closing takeaway; robosystems.ai + the promo line.
-Closing line = `#Cannabis #MSO #280E #Rescheduling` + tag `@RoboFinSystems`. **No link in the body.**
+money, the re-rating math); the catalyst; a risk; closing takeaway.
+Closing line = `#Cannabis #MSO #280E #Rescheduling` + tag `@RoboFinSystems`. **No link and no promo in the body** (no `robosystems.ai`, no promo-code line - both suppress reach on X); **never a bare-link post** - lead with substantive text + the cashtag.
 **Never use `<` or `>`** anywhere (spell out "under"/"over") — X and YouTube reject the paste. Don't glue
 a cashtag inside parens. The brief publishes as a native X Article (linked in `x_first_comment`).
 
 ### 4. YouTube Description (`social/CANNABIS_youtube_description.txt`)
-Hook; links (robosystems.ai + the repo); promo line; timestamps (draft from `duration_estimate_seconds`,
+**Search-first opening line** (first line + title are the main ranking signals - restate the
+sector/280E topic keywords a searcher would type), then the hook; links (robosystems.ai + the repo); promo line; timestamps (draft from `duration_estimate_seconds`,
 finalize from `videos/CANNABIS_timestamps.txt` after render); 6–8 finding bullets with numbers; a 2–3
 sentence 280E explainer; **a "Full coverage on each operator" list linking all nine
 `https://robosystems.ai/research/{TICKER}` pages** (the hub→spoke payoff); disclaimer; hashtags.
@@ -167,15 +168,9 @@ a question ("What happens when the tax lifts?"). 4–8 caption cards carry it fo
 "$2.1B DISPUTED" → "WHAT IF IT LIFTS?"). Pick `broll_theme` tags (e.g. ["cultivation","markets","policy"])
 and a `music_mood`. The long-form link goes in the pinned comment, not a card.
 
-### 6. Q&A Podcast (`scripts/CANNABIS_qa.json`)
-A CNBC-style two-voice conversation (host + analyst), ~5–8 min, about the **sector**: the 280E paradox,
-the scorecard, the gambit/reserves and the IRS clawback, the half-flipped catalyst, the tiers, the
-honest bull/bear, closing on the RoboSystems angle. Written for the ear; same TTS rules.
-
-### 7. Publish metadata (`social/CANNABIS_publish.json`)
+### 6. Publish metadata (`social/CANNABIS_publish.json`)
 `youtube_title`, `short_title`, `short_pinned_comment` (`[YOUTUBE_LINK]`), `x_first_comment`
-(`[X_ARTICLE_LINK]`), `podcast_episode_title`, `podcast_show_notes` (+ CTA / `[PROMO_CODE]`). Sector
-framing throughout. (No LinkedIn for research.)
+(`[X_ARTICLE_LINK]`). Sector framing throughout. (No LinkedIn for research; the Q&A podcast is retired - no `podcast_*` fields.)
 
 ## Domain narration hints (spoken-form — on top of the contract's TTS rules)
 - `280E` → "section two eighty E"; `Schedule I` → "schedule one"; `Schedule III` → "schedule three"

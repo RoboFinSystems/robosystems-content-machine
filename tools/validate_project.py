@@ -285,25 +285,6 @@ def check_companion_formats(project_dir, ticker, script):
     # short up if its MP4 exists.
     ok("shorts: backburnered - nothing to author (tooling kept: `just short` / `just shorts`)")
 
-    # --- Q&A podcast: scripts/{ticker}_qa.json ---
-    qa_path = os.path.join(project_dir, "scripts", f"{ticker}_qa.json")
-    if not os.path.exists(qa_path):
-        ok("no Q&A script (optional — scripts/{ticker}_qa.json)".replace("{ticker}", ticker))
-        return
-    with open(qa_path) as f:
-        qa = json.load(f)
-    turns = qa.get("turns", [])
-    if not turns:
-        error("qa: no turns")
-        return
-    bad = [i for i, t in enumerate(turns)
-           if t.get("speaker") not in ("interviewer", "analyst") or not t.get("text")]
-    if bad:
-        error(f"qa: bad turns (speaker must be interviewer|analyst, text required) at {bad[:5]}")
-    else:
-        chars = sum(len(t["text"]) for t in turns)
-        ok(f"qa: {len(turns)} turns, ~{chars // 16 // 60}–{chars // 13 // 60} min")
-
 
 def check_publish_metadata(project_dir, ticker, script):
     """Validate social/{ticker}_publish.json — the per-platform copy postpack stitches.
@@ -326,8 +307,6 @@ def check_publish_metadata(project_dir, ticker, script):
     expected = [
         "youtube_title",
         "x_first_comment",
-        "podcast_episode_title",
-        "podcast_show_notes",
     ]
     if has_short:
         expected += ["short_title", "short_pinned_comment"]

@@ -260,7 +260,7 @@ def concat_turns(parts, out):
 
 def load_qa_short(pdir, ticker):
     """The purpose-authored short exchange (2-4 turns) from scripts/{T}_qa.json's `short` block.
-    Authored by Cowork (COWORK_INSTRUCTIONS #6) — NOT derived from the podcast at render time."""
+    Authored by Cowork (AUTHORING_INSTRUCTIONS #6) — NOT derived from the podcast at render time."""
     qpath = os.path.join(pdir, "scripts", f"{ticker}_qa.json")
     if not os.path.exists(qpath):
         sys.exit(f"No Q&A script at {qpath}")
@@ -270,7 +270,7 @@ def load_qa_short(pdir, ticker):
     if not turns:
         sys.exit(
             f"No `short` block in {os.path.basename(qpath)}. The Q&A short reads a purpose-authored\n"
-            f"  short.turns exchange (2-4 turns, ~45s) that Cowork writes (see COWORK_INSTRUCTIONS #6).\n"
+            f"  short.turns exchange (2-4 turns, ~45s) that Cowork writes (see AUTHORING_INSTRUCTIONS #6).\n"
             f"  Re-run Cowork for this name, or hand-add a short.turns block for an older project.")
     return turns
 

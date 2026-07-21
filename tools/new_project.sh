@@ -47,15 +47,15 @@ if [ -n "$CAMPAIGN" ]; then
         ls -1 "${ROOT_DIR}/campaigns/" 2>/dev/null || echo "  (none)"
         exit 1
     fi
-    if [ ! -f "$CAMPAIGN_DIR/COWORK_INSTRUCTIONS.md" ]; then
-        echo "Campaign missing COWORK_INSTRUCTIONS.md: $CAMPAIGN_DIR"
+    if [ ! -f "$CAMPAIGN_DIR/AUTHORING_INSTRUCTIONS.md" ]; then
+        echo "Campaign missing AUTHORING_INSTRUCTIONS.md: $CAMPAIGN_DIR"
         exit 1
     fi
 fi
 
 apply_campaign() {
     [ -n "$CAMPAIGN_DIR" ] || return 0
-    cp "$CAMPAIGN_DIR/COWORK_INSTRUCTIONS.md" "$PROJECT_DIR/COWORK_INSTRUCTIONS.md"
+    cp "$CAMPAIGN_DIR/AUTHORING_INSTRUCTIONS.md" "$PROJECT_DIR/AUTHORING_INSTRUCTIONS.md"
     [ -f "$CAMPAIGN_DIR/CAMPAIGN_BRIEF.md" ] && cp "$CAMPAIGN_DIR/CAMPAIGN_BRIEF.md" "$PROJECT_DIR/CAMPAIGN_BRIEF.md"
     [ -d "$CAMPAIGN_DIR/overrides" ] && cp -r "$CAMPAIGN_DIR/overrides/." "$PROJECT_DIR/"
     if [ -d "$CAMPAIGN_DIR/sources" ]; then
@@ -129,11 +129,9 @@ echo "Folder structure:"
 find "$PROJECT_DIR" -type d | sort | sed "s|$ROOT_DIR/||"
 echo ""
 echo "Next steps:"
-echo "  1. Collect sources into sources/ (filings, transcripts)"
-echo "  2. just kickoff $TICKER   (prints the Cowork cold-start prompt) -> paste into Cowork at $PROJECT_DIR"
-echo "  3. just deck-brief $TICKER   (generate the Claude Design hand-off)"
-echo "  4. Build the deck in Claude Design (deck only; see DESIGN_INSTRUCTIONS.md); export PPTX -> deck/${TICKER}_deck.pptx (auto-converts to PDF on slice)"
-echo "     Thumbnails: make in ChatGPT from the brief, drop into assets/ (yt.png 16:9, x.png 5:2, spot.png 1:1)"
-echo "  5. just pipeline $TICKER     (slice -> voiceover -> render)"
-echo "  6. just short $TICKER        (9:16 teaser short — b-roll + music + cards)"
-echo "  7. just podcast-qa $TICKER   (two-voice Q&A podcast: MP3 + MP4)"
+echo "  1. /collect $TICKER   (or drop filings/transcripts into sources/)"
+echo "  2. /author $TICKER    (one-shot authoring in Claude Code: brief + script + social + publish.json)"
+echo "  3. /review $TICKER    (quality gate before spending render credits)"
+echo "  4. just webdeck-pipeline $TICKER   (animated deck -> render -> mux)"
+echo "  5. just thumbnails $TICKER   then   just publish $TICKER   ·   yt-upload / x-article / x-post"
+echo "     (Legacy deck path, kept in parallel: just kickoff -> Claude Design deck -> just pipeline.)"

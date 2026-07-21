@@ -4,7 +4,7 @@ platform's exact upload fields plus the public S3 media links. Makes manual nati
 (or a future API push) a copy/paste job.
 
 Combines:
-  - social/{t}_publish.json            (Cowork-authored native copy: titles, podcast notes)
+  - social/{t}_publish.json            (authored native copy: titles, first-comment)
   - social/{t}_x_post.txt              (the single X post)
   - social/{t}_youtube_description.txt (the YouTube description)
   - reports/{t}_brief.md               (the written brief — published on X as an X Article)
@@ -19,10 +19,9 @@ Platform model (X-first; research lane):
     (the native upload is the discovery, so no external link in the post) + the brief published as
     an X Article and linked in the first comment. Shorts are NOT posted to X: the main post's
     cashtags already give X strong organic discovery, so shorts are reserved to drive YouTube.
-  - YouTube: long-form, plus any shorts whose MP4s exist (hook short -> the long-form,
-    Q&A short -> the podcast). Shorts are backburnered; with no {t}_short*.mp4 present the
-    pack contains no shorts section and no shorts posting step.
-  - Spotify: podcast MP3, which auto-mirrors the episode to YouTube via the connected RSS.
+  - YouTube: long-form, plus any hook short whose MP4 exists (teasing the long-form). Shorts are
+    backburnered; with no {t}_short*.mp4 present the pack contains no shorts section or step.
+  - The Q&A podcast is retired (no Spotify/podcast section).
   - LinkedIn is NOT used for research — it's reserved for the technical/blog lane (build_blog_postpack.py).
   - Instagram is dropped (wrong audience, strips links).
 
@@ -44,8 +43,6 @@ MEDIA = {
     "final":       ("videos/{t}_final.mp4",         "{t}_final.mp4"),
     "short":       ("videos/{t}_short.mp4",         "{t}_short.mp4"),
     "short_qa":    ("videos/{t}_short_qa.mp4",      "{t}_short_qa.mp4"),
-    "podcast_mp3": ("videos/{t}_qa_podcast.mp3",    "{t}_qa_podcast.mp3"),
-    "podcast_mp4": ("videos/{t}_qa_podcast.mp4",    "{t}_qa_podcast.mp4"),
     "thumbnail":    ("charts/png/{t}_thumbnail.png",        "{t}_thumbnail.png"),         # 16:9 YouTube + website
     "thumbnail_x":  ("charts/png/{t}_thumbnail_x.png",      "{t}_thumbnail_x.png"),       # 5:2 X
     "thumbnail_sq": ("charts/png/{t}_thumbnail_square.png", "{t}_thumbnail_square.png"),  # 1:1 Spotify
@@ -61,7 +58,6 @@ SHORTS = [
 # placeholders we expect the human (or a later step) to resolve before posting
 PLACEHOLDER_HELP = {
     "[YOUTUBE_LINK]":   "paste the long-form URL after you upload to YouTube",
-    "[PODCAST_LINK]":   "the podcast episode URL (Spotify, or its YouTube mirror) once it's live",
     "[X_ARTICLE_LINK]": "the link to the brief once you publish it as an X Article",
     "[PROMO_CODE]":     "the live Stripe promo code (e.g. CANNABIS50 / ROBO50)",
 }
@@ -201,18 +197,7 @@ def build(project):
         lines.append(block(post_with_link))
         add("X", lines)
 
-    # ── Spotify / Podcast (audio MP3 → Spotify; the connected RSS auto-posts it to YouTube too) ──
-    if urls["podcast_mp3"]:
-        cover = [f"**Cover art (1:1, ≥1400px):** {urls['thumbnail_sq']}"] if urls.get("thumbnail_sq") else []
-        add("Spotify / Podcast", [
-            f"**Audio (MP3 — Spotify / Apple / Amazon):** {urls['podcast_mp3']}",
-            *cover,
-            "_Posting to Spotify also publishes the episode to YouTube via the connected RSS feed; then `just sync-youtube` captures its URL._",
-            "**Episode title:**", block(field(pub, "podcast_episode_title", t)),
-            "**Show notes:**", block(field(pub, "podcast_show_notes", t)),
-        ])
-
-    # ── Shorts (both types) - YouTube. Hook short → long-form; Q&A short → podcast. ──
+    # ── Shorts - YouTube (backburnered; only render if the MP4 exists). Hook short → long-form. ──
     yt_short_lines = []
     for mkey, label, tkey, ckey, dest in SHORTS:
         if not urls.get(mkey):
@@ -248,14 +233,12 @@ def build(project):
         "1. **YouTube long-form** → copy the resulting URL (fill any `[YOUTUBE_LINK]`)",
         "2. **X**: publish the brief as an X **Article FIRST** → copy its URL into `[X_ARTICLE_LINK]`, "
         "then post the main tweet (native video + the Article link)",
-        "3. **Spotify** podcast (auto-posts to YouTube via RSS) → copy the episode URL into `[PODCAST_LINK]`",
     ]
     if yt_short_lines:
         order.append(
-            "4. **Shorts** (**YouTube only** - reserved to drive YouTube; X gets discovery from the main "
-            "post's cashtags), once their targets are live: the **hook short** links to the long-form "
-            "(`[YOUTUBE_LINK]`), the **Q&A short** links to the podcast (`[PODCAST_LINK]`). Post each to "
-            "YouTube Shorts on its own day.")
+            "3. **Shorts** (**YouTube only** - reserved to drive YouTube; X gets discovery from the main "
+            "post's cashtags), once the long-form is live: the **hook short** links to the long-form "
+            "(`[YOUTUBE_LINK]`). Post to YouTube Shorts on its own day.")
     order.append("_LinkedIn is reserved for the technical/blog lane; research analysis doesn't post there._")
     head.append("\n".join(order))
 

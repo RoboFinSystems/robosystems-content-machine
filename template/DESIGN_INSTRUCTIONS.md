@@ -2,7 +2,7 @@
 
 This is the **Stage 2** spec. The pipeline has three stages:
 
-1. **Cowork** → research + `script.json` + brief + social (see `COWORK_INSTRUCTIONS.md` + `PRODUCTION_CONTRACT.md`)
+1. **Cowork** → research + `script.json` + brief + social (see `AUTHORING_INSTRUCTIONS.md` + `PRODUCTION_CONTRACT.md`)
 2. **Claude Design** → the on-brand deck (← *this file*)
 3. **Code** → slice + voiceover + mux + ship (the pipeline)
 

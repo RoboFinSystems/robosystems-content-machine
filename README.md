@@ -48,7 +48,7 @@ Campaigns add an editorial layer for thematic coverage across many companies —
 campaigns/
   my_campaign/
     CAMPAIGN_BRIEF.md        # Editorial strategy and analytical framework
-    COWORK_INSTRUCTIONS.md   # Production instructions (overrides base)
+    AUTHORING_INSTRUCTIONS.md   # Production instructions (overrides base)
     tickers.md               # Target companies and production calendar
     sources/                 # Third-party research and reference data (gitignored)
     overrides/               # File replacements (custom assets/instructions)
@@ -58,7 +58,7 @@ The base template is applied first, then the campaign overlays its instructions,
 
 ### 2. Content Generation (Claude Cowork)
 
-Point a Cowork session at the scaffolded project folder. Claude reads the instructions (`COWORK_INSTRUCTIONS.md` + `PRODUCTION_CONTRACT.md`) and produces:
+Point a Cowork session at the scaffolded project folder. Claude reads the instructions (`AUTHORING_INSTRUCTIONS.md` + `PRODUCTION_CONTRACT.md`) and produces:
 
 - **Narrative brief** — the written analysis (Markdown), authored first.
 - **Video script** (`scripts/{TICKER}_script.json`) — the source of truth: ordered segments with narration + per-slide content, the `thumbnail` block, and a `short` block (the teaser).

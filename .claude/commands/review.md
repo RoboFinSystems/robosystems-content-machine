@@ -35,9 +35,8 @@ The deck is built in Claude Design from the script (no chart HTML). Confirm:
 - `visual_ref`s are unique and in narration order
 - If the deck is built: `deck/{TICKER}_deck.pdf` exists (and slices to `charts/png/{visual_ref}.png`)
 
-### 5. Companion format
-- **Q&A** — `scripts/{TICKER}_qa.json`: turn count, interviewer/analyst alternation, written-for-the-ear.
-- (Shorts are backburnered - nothing authored, nothing to review.)
+### 5. Companion formats
+- (Shorts backburnered and the Q&A podcast retired - nothing authored, nothing to review.)
 
 ### 6. Social posts preview
 Show the X post and YouTube description:
