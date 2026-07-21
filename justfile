@@ -12,7 +12,6 @@
 #   just slice TICKER           # Slice the exported deck PDF into slide PNGs
 #   just voiceover TICKER       # Generate ElevenLabs voiceovers
 #   just assemble TICKER        # Assemble final video via Shotstack
-#   just podcast TICKER         # Extract podcast audio (MP3)
 #
 # =============================================================================
 
@@ -116,6 +115,32 @@ webdeck-render project *args:
 webdeck-mux project *args:
     python3 tools/webdeck/mux_webdeck.py {{project}} {{args}}
 
+# ─── Webdeck SHORT (9:16): purpose-built vertical short for X + YT Shorts ─
+
+# Full short pipeline: voice → build → render (1080x1920) → mux → videos/{T}_short.mp4 (+ _short_music.mp4)
+webdeck-short-pipeline project: (webdeck-short-vo project) (webdeck-short project) (webdeck-short-render project) (webdeck-short-mux project)
+
+# Voice the 9:16 short script (T_short_script.json) into T_short_segment_* mp3s
+webdeck-short-vo project:
+    @just ensure-env
+    UV_ENV_FILE={{_env}} uv run python tools/generate_voiceover_audio.py {{project}} --short
+
+# Build the vertical short HTML from T_short_script.json (+ --estimate for a pre-VO stills check)
+webdeck-short project *args:
+    python3 tools/build_webdeck_short.py {{project}} {{args}}
+
+# Render the short to silent.mp4 frame-by-frame at 1080x1920
+webdeck-short-render project *args:
+    cd tools/webdeck && node render_webdeck.mjs --html ../../projects/{{project}}/webdeck/{{project}}_short.html --out ../../projects/{{project}}/webdeck/short_render --width 1080 --height 1920 {{args}}
+
+# QA stills for the short (comma-separated seconds), e.g. just webdeck-short-stills NFLX "3,10,20"
+webdeck-short-stills project times:
+    cd tools/webdeck && node render_webdeck.mjs --html ../../projects/{{project}}/webdeck/{{project}}_short.html --out ../../projects/{{project}}/webdeck/short_stills --width 1080 --height 1920 --stills "{{times}}"
+
+# Mux narration + ducked music onto the short's silent render -> videos/{T}_short.mp4
+webdeck-short-mux project *args:
+    python3 tools/webdeck/mux_webdeck.py {{project}} --short {{args}}
+
 # ─── YouTube (Data API) ──────────────────────────────────────
 
 # One-time YouTube OAuth (opens a browser; writes YT_REFRESH_TOKEN to .env)
@@ -154,6 +179,20 @@ x-post project *args:
     @just ensure-env
     UV_ENV_FILE={{_env}} uv run python tools/post_x.py post {{project}} {{args}}
 
+# ─── Analytics (reach/retention feedback loop) ───────────────
+
+# Pull X + YouTube performance into projects/*/analytics.json (all tickers, or named ones)
+analytics *tickers:
+    @just ensure-env
+    UV_ENV_FILE={{_env}} uv run python tools/pull_analytics.py {{tickers}}
+
+# Channel/account-level reach (YouTube traffic sources + retention, X post impressions) - powers /insights
+insights *args:
+    @just ensure-env
+    UV_ENV_FILE={{_env}} uv run python tools/pull_insights.py {{args}}
+
+# ─── Media libraries ─────────────────────────────────────────
+
 # Show the b-roll library + coverage across shoot-list categories
 broll:
     UV_ENV_FILE={{_env}} uv run python tools/list_broll.py
@@ -184,10 +223,6 @@ shorts project *args:
     UV_ENV_FILE={{_env}} uv run python tools/gen_avatar_short.py {{project}} {{args}}
     UV_ENV_FILE={{_env}} uv run python tools/gen_avatar_short.py {{project}} --qa {{args}}
 
-# Generate a two-voice Q&A podcast (MP3 for Spotify + MP4 for YouTube)
-podcast-qa project *args:
-    @just ensure-env
-    UV_ENV_FILE={{_env}} uv run python tools/generate_podcast_qa.py {{project}} {{args}}
 
 # Assemble a per-platform publish pack (paste-ready copy + S3 media links)
 postpack project:
@@ -282,10 +317,6 @@ render-capture config company entity="" scenes="home,transactions,close,statemen
 # Mux VO/music downstream in the Python short path. e.g. just render-short showcase/coffee_roaster/driftline.demo.json
 render-short spec:
     node renderer/src/cli.mjs short --spec {{spec}}
-
-# Extract podcast audio (MP3) from final video
-podcast project:
-    @./tools/extract_podcast.sh {{project}}
 
 # ─── Utilities ────────────────────────────────────────────────
 
