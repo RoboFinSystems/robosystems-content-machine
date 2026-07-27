@@ -198,9 +198,10 @@ Every name ships a vertical short. It is **not** a crop of the 16:9 video: it is
 purpose-built piece, rendered by the same engine at 1080x1920, and one asset serves both the
 X native-video post and the YouTube Short.
 
-- `scripts/{TICKER}_short_script.json` - 5-6 beats. **Aim ~32s of narration (~500 chars):**
-  the rendered short runs about 1.4x its narration once transitions and holds are added, so
-  ~32s of narration is the ~45s target. `metadata{ticker, company, quarter, tags}`; each
+- `scripts/{TICKER}_short_script.json` - 5-6 beats. **Aim ~630 narration characters for a ~45s
+  short.** Measured on real renders: ElevenLabs runs ~15-16 characters per second and the
+  finished video lands ~1.1x the narration once transitions and holds are added.
+  `metadata{ticker, company, quarter, tags}`; each
   segment `{id, kind, narration, slide}` with `kind` one of:
   - `hook` - `slide{headline, punch, tone}`: the surprising turn
   - `stat` - `slide{kicker, big, context, tone}`: one huge number

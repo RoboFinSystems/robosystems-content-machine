@@ -307,18 +307,20 @@ def check_companion_formats(project_dir, ticker, script):
     if any(not isinstance(s.get("slide"), dict) for s in segs):
         error("short: every segment needs a slide object")
 
-    # ~15.5 chars/sec is the pace build_webdeck_short.py estimates with. The RENDERED short
-    # runs longer than its narration once transitions and holds are added: the NFLX pilot was
-    # ~44s of narration and a 63s video, so ~1.4x. Target a ~45s video => ~32s of narration.
+    # Measured on both rendered shorts (2026-07-27): ElevenLabs runs ~15-16 chars/sec, and the
+    # rendered video lands ~1.1x the narration once transitions and holds are added.
+    #   NFLX  688 chars -> 46.6s VO -> 50.2s video (1.08x)
+    #   RGP   507 chars -> 31.7s VO -> 35.3s video (1.11x)
+    # So a ~45s short is ~41s of narration, about 630 characters.
     chars = sum(len(s.get("narration") or "") for s in segs)
     est = chars / 15.5
     if not (4 <= len(segs) <= 7):
         warn(f"short has {len(segs)} beats (aim for 5-6)")
-    if est > 35:
-        warn(f"short narration is ~{est:.0f}s ({chars} chars) -> ~{est * 1.4:.0f}s rendered; "
-             f"aim ~32s of narration for a ~45s short")
+    if est > 45:
+        warn(f"short narration is ~{est:.0f}s ({chars} chars) -> ~{est * 1.1:.0f}s rendered; "
+             f"aim under ~630 chars for a ~45s short")
     else:
-        ok(f"short: {len(segs)} beats, ~{est:.0f}s narration (~{est * 1.4:.0f}s rendered)")
+        ok(f"short: {len(segs)} beats, ~{est:.0f}s narration (~{est * 1.1:.0f}s rendered)")
 
     for name in (f"social/{ticker}_short_x_post.txt", f"social/{ticker}_short_youtube.txt"):
         if not os.path.exists(os.path.join(project_dir, name)):
