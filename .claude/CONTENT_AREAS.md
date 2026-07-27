@@ -418,3 +418,88 @@ The failure this exists to prevent: on 2026-07-26 a single `/atomize fpa` run pr
 | 15 | Anything sourced from `local/` | Internal: pricing analyses, roadmap, security reviews, customer names. Never a public source. |
 | 16 | AI memory as available | Built but **gated off by default**, blocked on public graphs. |
 | 17 | `research` / `financial` / `rag` operators | **Do not exist.** Only `cypher` + `mapping`. |
+
+---
+
+## AREA: Demo-able surfaces - what to actually film
+
+**State**: all shipped, verified by route + real content component (not README claims). **last_used**: never
+
+**Ranked film list, effort to impact:**
+
+1. **Holon Viewer, File Mode** (~30s, zero auth) - drag one `.jsonld` onto a page, a complete financial report renders offline. No backend, no key, no signup. A sample file ships in the repo. **The single highest-leverage top-of-funnel asset in the portfolio - film this first.**
+2. **Inbox → "Preview - what would post" → Approve** (~45s) - click an event, see the **matched handler name**, the **planned debit/credit rows**, and `would_succeed: false` with the reason if it wouldn't post. Approve is one click. The strongest controller hook anywhere in the product.
+3. **Close blockers in plain English** (~60s) - the messages are written for humans, verbatim in the code: *"QuickBooks hasn't synced through this period - run a sync before closing (or use 'Close with stale sync')."* Plus the unbalanced-draft gate, and **reopen requires a written reason** (placeholder: *"e.g., Missed expense reimbursement from Vendor X"*). Audit trail as a required field.
+4. **Plan grid** (~45s) - income statement, balance sheet and cash flow stacked in one monthly grid running straight across the actuals/forecast seam, with the scenario's assumptions rendered underneath. Flip the scenario dropdown and only the forward columns change. `?scenario=` is in the URL, so you can send a CFO the exact view.
+5. **Block Explorer six-view cycle** (~60s) - Rendered → Chart → Facts → Elements → Validation → Rules on one object. Validation groups Pass/Fail/Error/**Skipped** with failures sorted to the top. Then compute a metric live and watch the series gain a column, with skips carrying their reason.
+6. **Chart of Accounts auto-map** (~30s) - coverage bar at 46%, click Auto-map, bar jumps past 90%. Candidate suggestions exclude subtotals so the dropdown only offers concepts that will actually render.
+7. **Console on the SEC graph** (~45s, no customer data) - *"Compare gross margin for NVIDIA, AMD, and Intel over the last three years"* → narrative streams → **expand the generated Cypher** → one-click re-run → Download CSV. The AI shows its work.
+8. **FactInspector** (~20s) - click a subtotal and see **the calculation rule it foots, computed live in the browser**. Controller catnip.
+
+**Also strong**: Live Statements (subtitle is literally *"no close required"*), Trial Balance account-vs-GAAP rollup toggle, AI Memory (read, edit, and **delete** what the AI remembers about your business - a rare trust artifact), encrypted backup + verify-first restore.
+
+⚠️ **Do not film**: graph creation inside RoboLedger or RoboInvestor (both are redirect stubs), the SEC CIK setup (validation is hardcoded), anything Plaid/bank-feed (orphaned stub).
+
+**Grounding**: `roboledger-app/src/app/(app)/ledger/inbox/EventBlockDetailModal.tsx` · `.../close/components/PeriodClosePanel.tsx` (BLOCKER_MESSAGES:56-65) · `.../plan/` · `.../explorer/` · `.../chart-of-accounts/content.tsx` · `robosystems-holon-viewer/src/modes/FileMode.tsx` · `robosystems-report-components/src/components/FactInspector.tsx`
+
+---
+
+## AREA: The consultancy angle (Harbinger FinLab) - Engine P's conversion lane
+
+**What it is**: the positioning and offer that Engine P's education content is ultimately selling into.
+
+**State**: **landing page only - there is no app.** Auth routes removed, NextAuth unused. The working backend is a contact form.
+
+**last_used**: never
+
+**The positioning, verbatim**
+
+- Category: **Co-sourced AI Controllership**
+- H1: **"Great books drive great decisions."**
+- **"We sell outcomes, not hours."** · *"Pricing is transparent and aligned to the outcome - never billable hours."*
+- Trust line: Powered by Claude · Apache-2.0 platform · Human-in-the-loop · Open and yours
+
+**The ladder**: 01 Teardown (diagnostic of your current close) → 02 Pilot (we run one real close) → 03 Managed (ongoing on an outcome-based retainer) → 04 Build (custom adapters, frameworks, deployment).
+
+**Three tracks**: Companies (start here) · Accounting firms and fractional CFOs (scale - white-labeled, your clients stay yours) · Funds (enterprise - LP-ready packs deployed in your VPC).
+
+**The five principles - the best raw material for Engine P atoms in the whole catalog:**
+
+1. **No black box** - "the platform is open source. Read the code."
+2. **No lock-in** - "take it in-house and self-host whenever you like. You will never be stranded by a vendor shutting down."
+3. **No overpromise** - "AI generates, humans approve. We sell a reviewed, signed-off close, not an autonomous accountant that quietly breaks on the hard cases."
+4. **Your infra or ours**
+5. **Advice first, software second** - **"If targeted tooling solves it, we won't sell you a platform. We're accountants who deploy AI to fit the problem, and we'll tell you what you don't need."**
+
+Framing: *"Most AI-accounting firms sell a black box and promise autonomy they can't deliver. We do the opposite - because when it's your books, trust is the product."*
+
+**Two service descriptions map 1:1 onto footage** - film the surface, caption with the copy:
+- *"Every transaction lands in an inbox pre-classified, with the exact entries shown before anything posts, so approval is a real decision rather than a rubber stamp"* → that is the **Inbox preview** clip, verbatim.
+- *"Monthly statements and your scenario's assumptions in one grid, so the forecast is driven by the ledger you just closed, not a spreadsheet copied out of it"* → that is the **Plan grid** clip, verbatim.
+
+⚠️ **UNRESOLVED COPY CONFLICT - fix before writing any teardown offer.** The ladder and the Companies card say **fixed-fee** teardown; the hero modal and closing CTA say **free**. Pick one.
+
+⚠️ **NEVER claim multi-entity consolidation, consolidated statements, or eliminations.** Explicitly not built; `parent_entity_id` is a placeholder and bundling asserts a single entity. A commit on 2026-07-24 deliberately removed consolidation claims. Safe phrasing: **"side-by-side per-entity comparison."**
+
+**Grounding**: `harbinger-finlab-app/src/app/(landing)/content.tsx` (claim-discipline note at :23-29, ladder :162-183, audiences :36-84, principles :134-160)
+
+---
+
+# ⛔ ADDITIONAL FLAGS - frontend surfaces
+
+| Do not publish | Reality |
+|---|---|
+| **Multi-entity consolidation / eliminations** | Explicitly not built. Say "side-by-side per-entity comparison." |
+| "Agents = AI agent management with conversation history" | README is **wrong**. `/agents` is a counterparty browser: customers, vendors, employees. |
+| "Mapping Workbench" as a named surface | No such route. The capability is real but lives **inside Chart of Accounts**. |
+| Report "templates" | Do not exist. They are **period presets**. |
+| SEC CIK validation | **Faked** - hardcoded `{valid: true, company_name: 'Company Name'}`. |
+| Bank feeds / Plaid | Orphaned stub, nothing links to it. |
+| Asset allocation, risk analytics, dividend tracking, TWR/IRR | RoboInvestor **roadmap**, not built. |
+| Real-time portfolio market values | `current_value_dollars` is nullable. Cost basis is guaranteed; current value is not. |
+| Self-serve graph creation | **Gated** - `max_graphs === 0` returns "requires approval." |
+| RoboLedger landing screenshots as product shots | They are **hand-built HTML mockups**. The `screenshot?` field is never populated. |
+| Harbinger having a product or app | It does not. Landing page plus a contact form. |
+| report-components as a stable API | **Pre-1.0**, API may evolve between minors. |
+
+**Standing opportunity**: the RoboLedger landing page has six finished, claim-disciplined marketing spotlights (Inbox, Close, Reporting/XBRL, Plan, Block Explorer, Console) whose screenshots are placeholders - and every one has a real working screen behind it. Capturing them is shovel-ready and the copy is already approved.
