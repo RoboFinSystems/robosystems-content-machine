@@ -184,6 +184,11 @@ def main() -> int:
         ts_lines.append(f"{mmss(max(0, t))} - {s['slide']['headline']}")
     ts_path = out_dir / f"{ticker}_web_timestamps.txt"
     ts_path.write_text("\n".join(ts_lines) + "\n")
+    # also drop the chapters where the deck path put them, so anything looking for
+    # videos/{T}_timestamps.txt finds them regardless of which renderer produced the video
+    vids = proj / "videos"
+    vids.mkdir(parents=True, exist_ok=True)
+    (vids / f"{ticker}_timestamps.txt").write_text("\n".join(ts_lines) + "\n")
 
     # audio placement manifest for the mux step
     mux = {

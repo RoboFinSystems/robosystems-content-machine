@@ -12,31 +12,32 @@ this file, so the schema and rules below are identical for every video.
 
 ---
 
-## The production model (deck mode)
+## The production model (one-shot)
 
-You produce **written artifacts**. A largely-automated pipeline turns them into a narrated
-video. You do **not** author slide HTML or do any layout — slides are built in Claude
-Design from the brand design system.
+You produce **written artifacts**. Code turns them into narrated video with no other app in
+the loop — no Cowork hand-off, no Claude Design step, no clipboard. You do **not** author
+slide HTML or do any layout: the renderer builds every slide from your `script.json`.
 
 ```
-You (Cowork)                          Claude Design (DESIGN_INSTRUCTIONS.md)
-─────────────                         ─────────────────────────
-scripts/{TICKER}_script.json   ──►  build_deck_brief → deck/{TICKER}_deck_brief.md
-   (source of truth: narration            │
-    + per-slide content)                  ▼
-                                     paste into claude.ai/design (RoboSystems Content Design System)
-                                     → compose 16:9 deck  → deck/{TICKER}_deck.pdf
-                                     (thumbnails: made in ChatGPT → dropped in assets/ → (slice) → charts/png/{TICKER}_thumbnail.png)
-                                          │
-                                          ▼
-                                     Pipeline (code)
-                                     slice_deck → charts/png/{visual_ref}.png
-                                     voiceover (ElevenLabs) → assemble (Shotstack) → MP4
+/author  (this session)                    Code (just webdeck-pipeline / webdeck-short-pipeline)
+──────────────────────                     ────────────────────────────────────────────────
+reports/{TICKER}_brief.md          ──►  validate
+scripts/{TICKER}_script.json       ──►  voiceover (ElevenLabs)  →  build_webdeck (HTML)
+scripts/{TICKER}_short_script.json ──►  headless-Chrome frame render  →  ffmpeg mux
+social/                                 →  videos/{TICKER}_final.mp4   (16:9 long-form)
+                                        →  videos/{TICKER}_short.mp4   (9:16 short)
+                                        thumbnails: just thumbnails {TICKER} (OpenAI)
+                                              │
+                                              ▼
+                                        publish → yt-upload / yt-short / x-article / x-short
 ```
 
-Your job ends at the **script** (plus the editorial outputs your `AUTHORING_INSTRUCTIONS.md`
-lists — brief, social, etc.). The deck brief is *generated from your script* — you don't
-write it. The only thing that makes the deck good is a complete, accurate script.
+Your job ends at the **written artifacts**. The only thing that makes the video good is a
+complete, accurate script: every `headline` and every `data` value renders on screen verbatim.
+
+**The 16:9 deck path is retired.** `build_deck_brief.py`, `slice_deck.py`, `assemble_video.py`
+(Shotstack) and `DESIGN_INSTRUCTIONS.md` remain in the repo as history and are not part of a
+run. Ignore any instruction to produce a deck brief, a PPTX or a PDF.
 
 ---
 
@@ -59,18 +60,17 @@ defines the slides — their count, their order, and the narration timed to each
   },
 
   "deck": {
-    "slide_count": 12,                  // MUST equal the number of segments below
-    "source": "deck/GTBIF_deck.pdf"     // filled in after the deck is built/exported
+    "slide_count": 12                   // MUST equal the number of segments below
   },
 
   "segments": [
     {
       "id": 1,                          // sequential integer, starts at 1
-      "type": "visual",                 // deck mode: every segment is "visual"
+      "type": "visual",                 // every segment is "visual"
       "narration": "Spoken-form narration for this slide (see TTS rules below).",
       "visual_type": "title",           // title | chart | callout | dual  (the slide kind)
       "visual_ref": "hook",             // stable, unique slug — this IS the slide id,
-                                        //   ordered 1:1 with the deck; → charts/png/hook.png
+                                        //   ordered 1:1 with the rendered slides
       "eyebrow": "Initiating Coverage", // 2-4 word section label ("01 / INITIATING COVERAGE");
                                         //   every segment except the closing CTA
       "duration_estimate_seconds": 8,
@@ -109,24 +109,26 @@ defines the slides — their count, their order, and the narration timed to each
 ### Field rules (the pipeline parses these programmatically — use them EXACTLY)
 
 - `id` — integer, sequential from 1. (NOT `segment_id`.)
-- `type` — always `"visual"` in deck mode.
+- `type` — always `"visual"`.
 - `narration` — spoken-form text (see TTS rules). This is what ElevenLabs reads.
 - `visual_type` — one of `title | chart | callout | dual`. This is the slide *kind*.
 - `visual_ref` — a short, unique, stable slug (`hook`, `revenue_trend`, `tax_burden`). **It
-  is the slide id**: deck slide *i* maps to segment *i*, and the sliced image is named
-  `{visual_ref}.png`. Keep them unique and in narration order.
+  is the slide id**: slide *i* maps to segment *i*. Keep them unique and in narration order.
+  The renderer treats `visual_ref: "cta"` specially and gives that segment the CTA layout,
+  so use it for the closing segment and nowhere else.
 - `eyebrow` — a 2-4 word section label rendered as the slide's numbered eyebrow
   ("03 / THE TREND"; numbering is automatic from segment order). Give one to every
   segment except the closing CTA. Mirror the deck's editorial voice: "The Top Line",
   "Read the Split", "Capital Returns" — a beat name, not a chart caption.
 - `duration_estimate_seconds` — integer estimate ≈ **narration characters ÷ 16** (real TTS pace
   is ~16 chars/sec; under-counting makes draft timestamps ~2× short). (NOT `duration_seconds`.)
-  Actual timing comes from the voiceover at assembly, which also writes
+  Actual timing comes from the real voiceover durations at build time, which also write
   `videos/{TICKER}_timestamps.txt` with the real YouTube chapter times.
 - `slide` — the on-screen content (see slide kinds). Put **exact numbers** here; this is
-  what the deck renders, so vague data here = vague slides.
+  what the renderer draws verbatim, so vague data here = vague slides.
 - `deck.slide_count` — set it to the number of segments. **Validation fails if they differ.**
-- Thumbnails are made in ChatGPT from the brief, **not authored here** — no `thumbnail` block.
+- Thumbnails are generated by `just thumbnails` from the brief, **not authored here** — no
+  `thumbnail` block.
   See `DESIGN_INSTRUCTIONS.md`.
 
 ### Mapping rule
@@ -155,62 +157,63 @@ Vary the kinds for rhythm — never run many `chart` slides back to back. A good
 - `metric_cards`: a map of label → `{ "value": "$1.20B", "change": "+10% YoY" }`.
 
 **`visual_takeaway`** (chart slides) — one sentence naming what the viewer should see at a
-glance ("up five years straight," "one segment negative," "flat until the last bar"). The deck
-renderer designs the chart around it; the deck-brief generator additionally flags narrow-range
-and negative series automatically, so a flat series gets an honest reframe and negatives get a
-zero axis.
+glance ("up five years straight," "one segment negative," "flat until the last bar"). Write it
+honestly: a flat series should say so rather than being framed as growth, and a series with
+negatives needs one, because the renderer will draw exactly what the numbers say.
 
 Put raw numbers in base units where you have them (revenue $1.2B = `1200000000`) **and** a
-display form in `headline`/`highlight` if the phrasing matters. Claude Design formats for
+display form in `headline`/`highlight` if the phrasing matters. The renderer formats for
 display; the raw numbers keep it honest.
 
 ---
 
-## How the deck gets built (after your script)
+## How the video gets built (after your script)
 
-You don't do these steps, but understanding them tells you what a good script enables:
+You don't do these steps, but understanding them tells you what a good script enables.
+`just webdeck-pipeline {TICKER}` runs them in order:
 
-1. **`build_deck_brief.py`** renders `deck/{TICKER}_deck_brief.md` from your script — one
-   section per slide (kind, headline, the data as a table, narration as speaker context),
-   with a header pinning: *build in the **RoboSystems Content Design System** project (start
-   from its `video-deck` template), RoboSystems house brand, dark 16:9, produce exactly N
-   slides in this order.*
-2. A human pastes that brief into **claude.ai/design** and the deck is composed on-brand.
-3. The deck is exported to `deck/{TICKER}_deck.pdf` (or per-slide PNGs).
-4. **`slice_deck.py`** turns it into `charts/png/{visual_ref}.png`, one per slide.
-5. Voiceover + Shotstack assemble the final video.
+1. **`validate_project.py`** checks the schema, the spoken-form narration rules and the
+   publish metadata. Errors abort the run.
+2. **Voiceover** (ElevenLabs) renders one MP3 per segment; their real durations set the
+   timing for everything downstream.
+3. **`build_webdeck.py`** turns the script + those durations into a single animated HTML
+   page, `webdeck/{TICKER}_webdeck.html`, and writes the chapter list to
+   `videos/{TICKER}_timestamps.txt`.
+4. **`render_webdeck.mjs`** renders it frame by frame in headless Chrome at 1080p30.
+5. **`mux_webdeck.py`** lays the narration onto the silent render at exact offsets and adds
+   a music bed ducked under the VO, producing **`videos/{TICKER}_final.mp4`** (the publish
+   candidate) plus a VO-only compare at `webdeck/{TICKER}_webpilot.mp4`.
 
 **Implications for your script:** every slide's `headline` and `data` must be complete and
-exact — they become the literal content of the slide. The first slide is the intro, the
-last is the close/CTA (no separate intro/outro files in deck mode).
-
-**Alternate path — webdeck (pilot).** The same script can instead be rendered as an
-animated HTML page with no Claude Design step: `just webdeck-pipeline {TICKER}` runs
-voiceover → `build_webdeck.py` (script + VO durations → `webdeck/{TICKER}_webdeck.html`)
-→ frame-by-frame Chrome render → local ffmpeg mux (`{TICKER}_webpilot.mp4`, plus a
-`_music` variant with a ducked bed). Same slide kinds, same schema — the `eyebrow`
-field and exact `data` matter doubly here because the page renders them verbatim.
-Both paths coexist; the deck path remains the default until the webdeck graduates.
+exact — the page renders them verbatim, so there is no design pass to catch a wrong number
+or a headline that does not fit. The first segment is the intro, the last is the close/CTA
+(no separate intro/outro files). The `eyebrow` field is rendered, so every segment except
+the CTA needs one.
 
 ---
 
-## Thumbnails (made in ChatGPT, not authored here)
+## Thumbnails (generated, not authored here)
 
-Thumbnails are generated in **ChatGPT** from the brief (better output than we build) and dropped
-into `assets/` per platform: `yt.png` (16:9 → YouTube + website), `x.png` (5:2 → X), `spot.png`
-(1:1 → Spotify). The `slice` step ingests them into `charts/png/`. Cowork authors **no thumbnail
-block** — the brief is the source. They are publish-only assets, not part of the video sequence.
+`just thumbnails {TICKER}` reads the brief and generates all three per-platform images via
+OpenAI (gpt-5 writes the prompt, gpt-image-2 renders): `assets/yt.png` (16:9 → YouTube +
+website), `assets/x.png` (5:2 → X), `assets/spot.png` (1:1). Author **no thumbnail block** —
+the brief is the source. They are publish-only assets, not part of the video sequence.
 
 ---
 
-## Companion format - Short (BACKBURNERED)
+## Companion format — the 9:16 short (REQUIRED)
 
-Shorts are the only companion format, and they're currently paused. Author no `short` block
-anywhere: not in the video script, and no `short_*` fields in the publish metadata. The
-avatar-short renderer stays on the shelf (`tools/gen_avatar_short.py`, `just short {TICKER}` /
-`just shorts {TICKER}`) in case shorts return; the postpack only includes a short if its MP4 exists.
+Every name ships a vertical short alongside the long-form. It is **not** a crop of the 16:9
+video: it is a purpose-built vertical piece from its own script,
+`scripts/{TICKER}_short_script.json`, rendered by the same engine at 1080x1920 via
+`just webdeck-short-pipeline {TICKER}` → `videos/{TICKER}_short.mp4`. One asset serves both
+the X native-video post and the YouTube Short. Its schema (5-6 beats; `hook` / `stat` /
+`cards` / `points` / `cta`) is specified in the `/author` skill, along with the two social
+files it needs: `social/{TICKER}_short_x_post.txt` and `social/{TICKER}_short_youtube.txt`.
 
-The Q&A podcast has been **retired** (2026-07-21): author no `qa.json` and no `podcast_*` fields.
+The Q&A podcast has been **retired** (2026-07-21): author no `qa.json` and no `podcast_*`
+fields. The avatar-short renderer (`tools/gen_avatar_short.py`, `just short` / `just shorts`)
+is retired too and is not part of a run.
 
 ---
 
@@ -266,5 +269,7 @@ reads wrong.)*
 - **Data on the slide must match the narration.** If the voice says "1.2 billion," the
   slide's `data`/`headline` shows that same number. Slide and words are one unit.
 - **Completeness check before finishing:** confirm `script.json` is valid (every required
-  field, `deck.slide_count` == segment count, unique ordered `visual_ref`s) and every output
-  your `AUTHORING_INSTRUCTIONS.md` lists exists. The task isn't done until all files are saved.
+  field, `deck.slide_count` == segment count, unique ordered `visual_ref`s), that
+  `scripts/{TICKER}_short_script.json` and its two `social/` files exist, and that every
+  output your `AUTHORING_INSTRUCTIONS.md` lists exists. The task isn't done until all files
+  are saved.

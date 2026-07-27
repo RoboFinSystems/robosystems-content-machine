@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """Mux webdeck audio onto the silent render.
 
-Variant A ({T}_webpilot.mp4): narration only, placed at exact timeline offsets.
-Variant B ({T}_webpilot_music.mp4): + music bed with sidechain ducking under VO.
+Variant A (webdeck/{T}_webpilot.mp4): narration only, placed at exact timeline offsets.
+Variant B (videos/{T}_final.mp4): + music bed with sidechain ducking under VO. B is the
+publish candidate, so it takes the canonical name every downstream tool defaults to
+(publish_artifacts / upload_youtube / post_x / build_postpack / reindex).
 
 Usage:
   python3 tools/webdeck/mux_webdeck.py TICKER [--music assets/music/tech_corporate.mp3]
@@ -39,18 +41,18 @@ def main() -> int:
     t = args.ticker.upper()
 
     wd = REPO / "projects" / t / "webdeck"
+    vids = REPO / "projects" / t / "videos"
+    vids.mkdir(parents=True, exist_ok=True)
+    # the music variant (B) is the publish candidate in both orientations, so it gets
+    # the canonical videos/ name that publish/post default to; VO-only (A) is the compare
     if args.short:
         manifest = json.loads((wd / f"{t}_short_mux_manifest.json").read_text())
         default_silent = wd / "short_render" / "silent.mp4"
-        vids = REPO / "projects" / t / "videos"
-        vids.mkdir(parents=True, exist_ok=True)
-        # the music variant (B) is the publish candidate, so it gets the canonical
-        # {T}_short.mp4 name that publish/post default to; VO-only (A) is the compare
         out_a, out_b = vids / f"{t}_short_vo.mp4", vids / f"{t}_short.mp4"
     else:
         manifest = json.loads((wd / f"{t}_mux_manifest.json").read_text())
         default_silent = wd / "render" / "silent.mp4"
-        out_a, out_b = wd / f"{t}_webpilot.mp4", wd / f"{t}_webpilot_music.mp4"
+        out_a, out_b = wd / f"{t}_webpilot.mp4", vids / f"{t}_final.mp4"
     silent = Path(args.silent) if args.silent else default_silent
     if not silent.exists():
         print(f"ERROR: {silent} not found (render first)", file=sys.stderr)
