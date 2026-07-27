@@ -56,6 +56,20 @@ If an atom survives all four, note in the queue which flag entries it was checke
 
 ## Step 4 - Write
 
+⛔ **THE FIRST LINE IS AN ARGUMENT, NOT AN OBSERVATION.** (Measured 2026-07-27, n=8 LinkedIn posts.) The account's history splits cleanly on this and nothing else comes close:
+
+| Opening | Result |
+|---|---|
+| "XBRL was supposed to make financial data machine-readable 15 years ago. The format is fine. The problem is..." | 3,557 |
+| "In 1982, an accounting professor argued that debits and credits shouldn't be the thing you store" | 2,273 |
+| "Why hasn't AI fixed accounting yet? Not for lack of trying. The reason is structural" | 1,998 |
+| "Most AI financial analysis starts the same way: paste a PDF, hope the model finds the right numbers" | 1,378 |
+| **"I counted the rows in our operating plan last week. 178."** | **91** |
+
+Every winner makes a **claim about the world with a named target** - XBRL, AI in accounting, paste-a-PDF, a 1982 paper - that a reader can agree or disagree with in the first line. The failure was an observation about the author's own spreadsheet: no target, no stake, nothing to react to.
+
+This is a **15-40x** effect, far larger than timing, format or posting time. Test every atom with: *what is the claim, and who would argue with it?* If there is no answer, the atom is not ready. "Most financial controls are decorative" passes. "Every model I've inherited has a row that says CHECK" does not.
+
 **Every atom obeys the audience thesis:**
 
 1. **Consequence first, concept as punchline.** Open with a question or outcome the reader recognizes as real work. Name the mechanism in the **last line**, one term per atom. Never open with "Information Block", "knowledge graph", "semantic layer", "taxonomy block", "provenance", "MCP", "REA".

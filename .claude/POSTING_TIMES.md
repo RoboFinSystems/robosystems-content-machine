@@ -18,17 +18,32 @@ Account timezone is **America/Chicago**. All times CT. Build `dueAt` as ISO 8601
 
 ### LinkedIn (Joseph French, personal)
 
+**Revised 2026-07-27 against actual post history (n=8). The 07:00 slot is retired.**
+
 | Day | Slot 1 | Slot 2 | Notes |
 |---|---|---|---|
-| Mon | 07:00 | 11:30 | |
-| Tue | 07:00 | 11:30 | strongest day |
-| Wed | 07:00 | 11:30 | strongest day |
-| Thu | 07:00 | 11:30 | strong |
-| Fri | 07:00 | - | drops after midday |
-| Sat | 09:30 | - | light |
-| Sun | 16:00 | - | light; evening browse |
+| Mon-Fri | **12:30** | 14:30 | the measured band |
+| Sat | 09:30 | - | light, untested |
+| Sun | 16:00 | - | light, untested |
 
-Reasoning: the audience is US accountants, controllers and fractional CFOs, weighted to Eastern. 07:00 CT = 08:00 ET, the morning scroll before the workday. 11:30 CT = 12:30 ET, lunch. Tue-Thu outperform Mon/Fri for B2B.
+**One post per day while the account recovers from dormancy.** Use slot 2 only when there is a reason to run two, and never within three hours of slot 1.
+
+What the history says. Every LinkedIn post with metrics, by send time CT:
+
+| Impressions | Time CT |
+|---|---|
+| 3,557 | 11:48 |
+| 2,273 | 14:57 |
+| 1,998 | 13:12 |
+| 1,378 | 13:33 |
+| 1,374 | 13:16 |
+| 1,220 | 08:00 |
+| 688 | 23:43 |
+| **91** | **07:00** |
+
+Five of the top six land between 11:45 and 15:00. The old 07:00 prior came from "08:00 ET, the morning scroll before the workday" reasoning, and the one post ever sent at 07:00 returned 91 impressions against an account median around 1,300.
+
+**Read this honestly: content is confounded with time here.** The 91 was also the weakest post the account has published (an observation with no argument in it), and it ran after three weeks of dormancy, which LinkedIn punishes on its own. So 07:00 is not proven bad. What is true is that the midday band has five independent successes and 07:00 has zero, so the prior should sit where the evidence is until something separates them.
 
 ### X (@JosephTFrench, Premium)
 
@@ -42,9 +57,11 @@ Reasoning: a finance audience clusters around the trading day. The existing Buff
 
 ## Confidence, and when to revisit
 
-**This table is convention plus audience reasoning, not our data.** LinkedIn has n=2 posts ever, so there is no signal to fit to. X has directional per-post impressions via `just insights`, but not enough to separate a timing effect from a content effect.
+**LinkedIn times are now fitted to n=8 real posts (revised 2026-07-27). X times are still convention** - the X cuts carry no per-post metrics in Buffer, so `just insights` is the only source there and it has not accumulated enough to separate timing from content.
 
-Treat it as the starting prior. Once the volume cadence has run ~3 weeks, there will be enough posts at enough times to tune it - hold content type roughly constant and compare slots. Update this file when that happens, and note the date and n.
+The LinkedIn fit is weak evidence, not proof: eight posts, unequal content quality, and one long dormancy gap. Re-check after ~3 weeks of the daily cadence, when there are enough posts in each slot to hold content type roughly constant. Update this file with the date and n each time.
+
+**The bigger lever is content register, not timing.** Same account, same audience: posts that open with an argument about the world ("XBRL was supposed to make financial data machine-readable 15 years ago") ran 1,200-3,600. Posts that open with an observation about the author's own work ran 91. That is a larger spread than any slot difference in the table above, so do not spend effort tuning times while the copy is still observational. See the register rules in `/atomize`.
 
 ## Plan limits (checked live 2026-07-26)
 
@@ -52,6 +69,6 @@ Treat it as the starting prior. Once the volume cadence has run ~3 weeks, there 
 |---|---|---|
 | Daily posting, LinkedIn | 50/day | no |
 | Daily posting, X | 100/day | no |
-| **Org `scheduledPosts`** | **10** | **yes** |
+| Org `scheduledPosts` | **5000** (paid, re-checked 2026-07-27) | no |
 
-The 10-post scheduled cap is the Buffer plan limit and it is the binding constraint on a volume cadence. At 1-2 items/day/channel the week needs 14-28 scheduled posts. Free-tier Buffer cannot hold a week of queue. **A paid plan is a prerequisite for the volume plan**, not an optimization. Check headroom with `list_posts(status:["scheduled"])` before any large scheduling run and say so if the selection would exceed it.
+The scheduled cap was 10 on the free tier and was the binding constraint on the volume plan. The upgrade removed it - nothing in Buffer limits the cadence now. **The constraint is supply of good copy, not queue capacity.**
