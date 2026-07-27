@@ -455,13 +455,25 @@ def check_render_freshness(project_dir, ticker, script):
 
     final = os.path.join(vids, f"{ticker}_final.mp4")
     spath = os.path.join(project_dir, "scripts", f"{ticker}_script.json")
+    # The built HTML is included deliberately: a renderer/template fix changes what the
+    # slides look like without touching the script or the audio, so comparing only those
+    # two reports a stale video as current. That happened on AMC - the table overflow fix
+    # rebuilt the page, the re-render was interrupted, and validate still said PASSED.
+    html = os.path.join(project_dir, "webdeck", f"{ticker}_webdeck.html")
     if os.path.exists(final) and os.path.exists(spath):
+        newer_than = []
         if os.path.getmtime(spath) > os.path.getmtime(final):
-            warn(f"{ticker}_final.mp4 is older than the script - re-render before publishing")
-        elif mp3s and max(os.path.getmtime(m) for m in mp3s) > os.path.getmtime(final):
-            warn(f"{ticker}_final.mp4 is older than the voiceover - re-render before publishing")
+            newer_than.append("the script")
+        if mp3s and max(os.path.getmtime(m) for m in mp3s) > os.path.getmtime(final):
+            newer_than.append("the voiceover")
+        if os.path.exists(html) and os.path.getmtime(html) > os.path.getmtime(final):
+            newer_than.append("the built webdeck page")
+        if newer_than:
+            error(f"{ticker}_final.mp4 is older than {' and '.join(newer_than)} - "
+                  f"re-render before publishing (just webdeck-render {ticker} && "
+                  f"just webdeck-mux {ticker})")
         else:
-            ok("final render is newer than the script and audio")
+            ok("final render is current with the script, audio and built page")
 
 
 def _load_manifest_ids(rel_path):
