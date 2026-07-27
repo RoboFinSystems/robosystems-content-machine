@@ -1,4 +1,4 @@
-Generate standalone social atoms, drawn from the area roster in [`.claude/CONTENT_AREAS.md`](../CONTENT_AREAS.md), grounded in **where the system is now**, and written to a queue that `/buffer-draft-li` schedules.
+Generate standalone social atoms, drawn from the area roster in `local/CONTENT_AREAS.md` (**private - gitignored vault, never commit it**), grounded in **where the system is now**, and written to a queue that `/buffer-draft-li` schedules.
 
 This is what makes the volume cadence possible: at 1-2 items/day/channel nothing hand-written survives contact.
 
@@ -16,7 +16,7 @@ This is what makes the volume cadence possible: at 1-2 items/day/channel nothing
 
 ## Step 1 - Pick from the roster
 
-Read `.claude/CONTENT_AREAS.md`. Each area carries a `last_used` date.
+Read `local/CONTENT_AREAS.md`. Each area carries a `last_used` date.
 
 **Selection rule: stalest first, skipping any area whose good hooks are exhausted.** One atom per area - never two from the same area in one batch. If fewer areas have usable hooks than `--count` asks for, **write fewer**. Padding a batch to hit a number is how a cadence becomes noise.
 
@@ -41,7 +41,7 @@ For each selected area, read its **Grounding** paths. Then confirm against:
 
 ## Step 3 - THE GATE (blocking - run before writing a single line)
 
-Read the **⛔ GLOBAL ACCURACY FLAGS** and **⛔ ADDITIONAL FLAGS** tables in `CONTENT_AREAS.md`. For every atom, answer these in order. A "no" at any step means rewrite or drop the atom.
+Read the **⛔ GLOBAL ACCURACY FLAGS** and **⛔ ADDITIONAL FLAGS** tables in `local/CONTENT_AREAS.md`. For every atom, answer these in order. A "no" at any step means rewrite or drop the atom.
 
 1. **Does this atom make a product claim at all?**
    - **No** → it is *problem-space*. Safe. Skip to step 4. This is the default and preferred register for Engine P: "here is what breaks in normal systems, here is how I think about it." A reader cannot fact-check a claim you did not make.
@@ -96,7 +96,7 @@ Append to `drafts/atoms/{personal|brand}.md`, continuing the existing numbering:
 
 ## Step 6 - Stamp the roster
 
-Update `last_used: <today>` on every area drawn from, in `CONTENT_AREAS.md`. **This is what makes rotation work** - skip it and the next run picks the same areas.
+Update `last_used: <today>` on every area drawn from, in `local/CONTENT_AREAS.md`. **This is what makes rotation work** - skip it and the next run picks the same areas.
 
 If you burned an area's last good hook, note it so the next pass skips it.
 
@@ -108,6 +108,10 @@ Roster stamped. Next:  /buffer-draft-li --schedule
 ```
 
 Do **not** schedule from this skill. Generation and scheduling stay separate so a bad batch can be edited before it reaches a channel.
+
+## Privacy
+
+**This repo is PUBLIC.** `local/` is the gitignored vault and is where anything strategy-bearing lives. The roster contains product gaps, a do-not-claim list, unflattering reach numbers, and partner detail - **never move it back into a tracked path, never quote it into a commit message, and never paste its flag tables into a public artifact.** Atoms drawn from it are public; the roster itself is not.
 
 ## Notes
 
