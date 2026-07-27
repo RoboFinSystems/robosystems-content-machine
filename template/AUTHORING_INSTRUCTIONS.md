@@ -8,7 +8,7 @@ the **generic** coverage template - point it at any public company. (Thematic ca
 specific angle on top via their own `AUTHORING_INSTRUCTIONS.md`.)
 
 > **Read `PRODUCTION_CONTRACT.md` first.** It defines the exact file formats the pipeline
-> consumes — the `script.json` schema, the slide kinds, how the deck is built from your
+> consumes — the `script.json` schema, the slide kinds, how the video is rendered from your
 > script, and the spoken-form narration rules. This file is the *editorial* layer: what to
 > analyze and what to write. You build slides by writing a complete script — you do **not**
 > author any slide HTML.
@@ -65,12 +65,12 @@ If the card is absent, this is **initiating coverage** — introduce the company
 
 ## What You Produce
 
-Produce these **4 core outputs** in order (brief FIRST - it's the foundation everything else
-derives from) and the **publish metadata** (#6). (Shorts #5 are backburnered; the Q&A podcast is
-retired - author neither.) Schema and slide mechanics: see `PRODUCTION_CONTRACT.md`. Downstream,
-the visuals render from your `script.json` - via the animated **webdeck** (`just webdeck-pipeline`,
-the one-shot Code path) or the Claude Design deck kept in parallel - and thumbnails auto-generate
-from the brief (`just thumbnails`). You author no slide HTML.
+Produce the **4 core outputs** in order (brief FIRST - it's the foundation everything else
+derives from), the **9:16 short** (#5) and the **publish metadata** (#6). (The Q&A podcast is
+retired - author no `qa.json`.) Schema and slide mechanics: see `PRODUCTION_CONTRACT.md`.
+Downstream the visuals render from your `script.json` via the animated **webdeck**
+(`just webdeck-pipeline`), and thumbnails auto-generate from the brief (`just thumbnails`).
+You author no slide HTML.
 
 **Promo code (optional placeholder).** Where copy invites sign-up, add the offer line
 `New customers get 50% off your first month with code [PROMO_CODE].` Keep `[PROMO_CODE]` as a
@@ -132,8 +132,7 @@ the hook and financial story until there's a genuine insight. Only then move to 
 **Build it from the brief — don't write from scratch.** The hook becomes the opening title
 slide; the financial story becomes chart/callout/dual slides; the bottom line becomes the
 close. Follow the schema, slide kinds, and field rules in `PRODUCTION_CONTRACT.md` exactly.
-Do **not** author a `thumbnail` block; thumbnails are made in ChatGPT from the brief (see
-`DESIGN_INSTRUCTIONS.md`).
+Do **not** author a `thumbnail` block; `just thumbnails` generates them from the brief.
 
 Editorial guidance for the script:
 - Open with a HOOK: lead with the single most surprising number or tension in the first ~15
@@ -194,11 +193,28 @@ key-finding bullets with specific numbers; a 1-2 sentence plain-English explaine
 metric or term a cold viewer needs; disclaimer ("This is not investment advice. No price
 targets."); relevant `$TICKER` and topic hashtags.
 
-### 5. Shorts - BACKBURNERED (author nothing)
-Shorts are paused. Do **not** author a `short` block in `{TICKER}_script.json` or any `short_*`
-fields in the publish metadata. The renderer stays on the shelf (`just shorts {TICKER}`, avatar
-shorts generated headless from the brief) in case shorts return; the postpack only includes a
-short if its MP4 exists.
+### 5. The 9:16 short (REQUIRED - three files)
+Every name ships a vertical short. It is **not** a crop of the 16:9 video: it is its own
+purpose-built piece, rendered by the same engine at 1080x1920, and one asset serves both the
+X native-video post and the YouTube Short.
+
+- `scripts/{TICKER}_short_script.json` - 5-6 beats. **Aim ~32s of narration (~500 chars):**
+  the rendered short runs about 1.4x its narration once transitions and holds are added, so
+  ~32s of narration is the ~45s target. `metadata{ticker, company, quarter, tags}`; each
+  segment `{id, kind, narration, slide}` with `kind` one of:
+  - `hook` - `slide{headline, punch, tone}`: the surprising turn
+  - `stat` - `slide{kicker, big, context, tone}`: one huge number
+  - `cards` - `slide{eyebrow, headline, cards:[{label,value,change}], highlight}`: 2-3 metric cards
+  - `points` - `slide{eyebrow, headline, points:[{text,value,tone,highlight}], footnote}`: 3-4 rows
+  - `cta` - `slide{headline, subhead}`: robosystems.ai
+
+  Narration is spoken-form (captions derive from it automatically). Reuse the already-verified
+  long-form numbers. Arc: hook -> the number -> the turn -> why -> valuation -> CTA.
+- `social/{TICKER}_short_x_post.txt` - the X post body: substantive, early ` $TICKER` cashtag,
+  ~200-270 chars, framed as a 60-second clip and distinct from the long-form `x_post`.
+- `social/{TICKER}_short_youtube.txt` - **line 1 = the Short title** (hook-first, different from
+  both the long-form YouTube title and the X hook, under 100 chars); the rest is the
+  description with `[LONGFORM_URL]`, a `robosystems.ai` line, and `#Shorts`.
 
 ### 6. Publish metadata (`social/{TICKER}_publish.json`)
 The per-platform native copy that lives nowhere else — you author it; `just postpack {TICKER}`
@@ -212,7 +228,7 @@ times, the S3 media links, and flagging any unresolved placeholders). A JSON obj
   curiosity line, YouTube rewards the searchable query; don't reuse the same string on both.
 - `x_first_comment` — the X first comment under the video post; points to the brief published as an X **Article** (use `[X_ARTICLE_LINK]`). The full long-form is uploaded as native video; no YouTube link on X.
 
-_No LinkedIn for research - LinkedIn is the technical/blog lane, not a research channel. No `short_*` fields (shorts backburnered #5). The Q&A podcast is retired - no `podcast_*` fields, no `qa.json`._
+_No LinkedIn for research - LinkedIn is the technical/blog lane, not a research channel. The 9:16 short carries its own copy in the two `social/` files above (#5), not in `publish.json`. The Q&A podcast is retired - no `podcast_*` fields, no `qa.json`._
 
 Same placeholder rules as the rest (`[YOUTUBE_LINK]`, `[PROMO_CODE]`) — never hardcode the live URL or code.
 
@@ -223,8 +239,8 @@ Same placeholder rules as the rest (`[YOUTUBE_LINK]`, `[PROMO_CODE]`) — never 
 across 3+ years, segment breakdowns, derived metrics (margins, growth, FCF, ROE/ROA/ROIC).
 5. Web search for price, valuation ratios, analyst consensus, peer context, recent news.
 6. Synthesize the 3-5 most compelling stories. 7. Produce the 4 core outputs in order (brief
-first), then the Q&A script and the publish metadata (#7). 8. Verify completeness — all files exist and
-`script.json` validates (see contract).
+first), then the 9:16 short (#5) and the publish metadata (#6). 8. Verify completeness — all
+files exist and `just validate {TICKER}` passes.
 
 ## Important Rules
 
