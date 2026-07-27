@@ -10,6 +10,8 @@ Usage:
 import argparse
 import json
 import os
+import re
+import subprocess
 import sys
 import time
 import urllib.request
@@ -60,16 +62,51 @@ def api_request(path, data=None, method="POST"):
     return None
 
 
+# ElevenLabs occasionally inserts multi-second dead air in the middle of a segment.
+# Measured 2026-07-27: the same text, voice and settings produced max internal gaps of
+# 1.91s, 3.48s, 3.28s and 1.96s across four runs, and a fifth run came back clean at
+# 0.71s. It is stochastic, not a voice or a settings problem - which is why switching
+# voices never fixed it. So generate, measure, and re-roll the bad takes.
+GAP_LIMIT = float(os.environ.get("TTS_GAP_LIMIT", "1.5"))   # seconds of mid-clip silence
+GAP_TAKES = int(os.environ.get("TTS_GAP_TAKES", "3"))       # attempts before keeping the best
+
+
+def max_internal_gap(path):
+    """Longest silence that is neither leading nor trailing, in seconds.
+
+    Leading/trailing silence is normal and gets trimmed by the mux; a long pause in the
+    middle of a sentence is the artifact we are hunting. Returns 0.0 if ffmpeg is
+    unavailable so the check degrades to a no-op rather than blocking a run.
+    """
+    try:
+        out = subprocess.run(
+            ["ffmpeg", "-hide_banner", "-nostats", "-i", str(path),
+             "-af", "silencedetect=n=-42dB:d=0.4", "-f", "null", "-"],
+            capture_output=True, text=True).stderr
+        dur = float(subprocess.run(
+            ["ffprobe", "-v", "error", "-show_entries", "format=duration",
+             "-of", "default=nw=1:nk=1", str(path)],
+            capture_output=True, text=True).stdout.strip() or 0)
+    except (OSError, ValueError):
+        return 0.0
+    starts = [float(x) for x in re.findall(r"silence_start:\s*([\d.]+)", out)]
+    durs = [float(x) for x in re.findall(r"silence_duration:\s*([\d.]+)", out)]
+    internal = [d for s, d in zip(starts, durs) if s > 0.3 and s + d < dur - 0.3]
+    return max(internal, default=0.0)
+
+
 def generate_audio(voice_id, text, output_path):
     """Generate speech audio for a text segment.
 
     Text is run through normalize_for_tts() so mispronounced terms (e.g. EBITDA)
     are respelled phonetically for the audio only — the source script is unchanged.
     Both TTS paths (voiceover and short) call this, so the fix is global.
+
+    Each take is checked for mid-clip dead air and re-rolled up to GAP_TAKES times;
+    the cleanest take wins so a bad roll never reaches the render.
     """
-    text = normalize_for_tts(text)
     data = {
-        "text": text,
+        "text": normalize_for_tts(text),
         "model_id": "eleven_turbo_v2_5",
         "voice_settings": {
             "stability": 0.7,
@@ -79,13 +116,28 @@ def generate_audio(voice_id, text, output_path):
         },
     }
 
-    audio_data = api_request(f"/text-to-speech/{voice_id}", data)
-
-    if audio_data and isinstance(audio_data, bytes):
+    best_audio, best_gap = None, None
+    for take in range(1, GAP_TAKES + 1):
+        audio_data = api_request(f"/text-to-speech/{voice_id}", data)
+        if not (audio_data and isinstance(audio_data, bytes)):
+            continue
         with open(output_path, "wb") as f:
             f.write(audio_data)
-        return True
-    return False
+        gap = max_internal_gap(output_path)
+        if best_gap is None or gap < best_gap:
+            best_audio, best_gap = audio_data, gap
+        if gap <= GAP_LIMIT:
+            break
+        print(f"    take {take}: {gap:.2f}s of dead air mid-clip, re-rolling", flush=True)
+
+    if best_audio is None:
+        return False
+    with open(output_path, "wb") as f:
+        f.write(best_audio)
+    if best_gap > GAP_LIMIT:
+        print(f"    WARNING: best of {GAP_TAKES} takes still has a {best_gap:.2f}s gap",
+              flush=True)
+    return True
 
 
 def generate_all(project_name, force=False, short=False):
