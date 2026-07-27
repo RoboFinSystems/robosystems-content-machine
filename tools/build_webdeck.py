@@ -78,17 +78,35 @@ def probe_duration(path: Path) -> float:
 
 
 def load_durations(proj: Path, ticker: str, segments) -> dict:
-    """Segment audio durations: media_durations.json if the assemble step wrote
-    it, else ffprobe the VO files directly (webdeck path has no assemble)."""
+    """Segment audio durations: media_durations.json if it is still current, else
+    ffprobe the VO files directly (the webdeck path has no assemble step).
+
+    The cache MUST be invalidated when any VO file is newer than it. Re-voicing -
+    a changed ELEVEN_LABS_VOICE_ID, or edited narration - rewrites the mp3s but not
+    this file, and a stale read lays the timeline out on the old durations while the
+    mux drops the new audio at those offsets. The result is narration drifting off
+    its slide and, where a segment got longer, overlapping the next one.
+    """
     dur_path = proj / "videos" / "media_durations.json"
+    mp3s = [proj / "videos" / "audio" / f"{ticker}_segment_{seg['id']}_voiceover.mp3"
+            for seg in segments]
+    missing = [m for m in mp3s if not m.exists()]
+    if missing:
+        print(f"ERROR: missing voiceover {missing[0]} (run voiceover first)", file=sys.stderr)
+        sys.exit(1)
+
     if dur_path.exists():
-        return json.loads(dur_path.read_text())["audio"]
+        cached = json.loads(dur_path.read_text())["audio"]
+        cache_mtime = dur_path.stat().st_mtime
+        newer = [m.name for m in mp3s if m.stat().st_mtime > cache_mtime]
+        have_all = all(str(seg["id"]) in cached for seg in segments)
+        if not newer and have_all:
+            return cached
+        if newer:
+            print(f"VO durations stale ({len(newer)} file(s) re-voiced) - re-probing")
+
     durations = {}
-    for seg in segments:
-        mp3 = proj / "videos" / "audio" / f"{ticker}_segment_{seg['id']}_voiceover.mp3"
-        if not mp3.exists():
-            print(f"ERROR: missing voiceover {mp3} (run voiceover first)", file=sys.stderr)
-            sys.exit(1)
+    for seg, mp3 in zip(segments, mp3s):
         durations[str(seg["id"])] = probe_duration(mp3)
     dur_path.parent.mkdir(parents=True, exist_ok=True)
     dur_path.write_text(json.dumps({"audio": durations}, indent=2))
