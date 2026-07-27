@@ -1,12 +1,12 @@
 Queue selected LinkedIn shorts from `drafts/thought-leadership/linkedin.md` to Buffer: a LinkedIn post plus an optional mirrored **X** text cut (posting X in parallel with LinkedIn is fine here, because these are text posts with no video and no Article).
 
-**Two modes.** `--schedule` (the batch-day mode) drops the posts straight into Buffer's queue so the week ships without a second visit. Default is draft-only, which needs you to open Buffer and press post per item. See "Which mode" below - picking wrong is how this lane stalled in June.
+**Two modes.** `--schedule` (the batch-day mode) places each post at an explicit time from [`.claude/POSTING_TIMES.md`](../POSTING_TIMES.md), so the week ships without a second visit. Default is draft-only, which needs you to open Buffer and press post per item. See "Which mode" below - picking wrong is how this lane stalled in June.
 
 LinkedIn is the primary channel for this content. The X mirror is a text cut only. Buffer cannot put long video or an X Article on X (those are native-only via `just x-post` / `x-short` / `x-article`). That never bites here because these posts are pure text. See [[buffer-drafting]] for the channel reality.
 
 ## Arguments
 - `$ARGUMENTS` - optional selectors: post numbers (`1 3 8`), `all`, or a status (`ready`). Empty lists them and asks which.
-- `--schedule` - add to the Buffer queue instead of saving drafts. **This is the batch-day default.**
+- `--schedule` - schedule at explicit times instead of saving drafts. **This is the batch-day default.**
 - `--no-x` - LinkedIn only.
 
 ## Channels (verified live 2026-07-26)
@@ -25,7 +25,7 @@ Buffer org **Harbinger FinLab** (`6a4710d8f9144a22713ee87e`) has exactly two cha
 - **`--schedule`** for the pre-written, pre-reviewed, link-free shorts in `linkedin.md`. They already passed editorial review when they were written; a second gate just recreates the manual step that killed this lane (2 posts shipped out of 15 in June). One confirm inside the batch-day block, then it ships itself.
 - **Draft-only (default)** for anything new, rewritten in this session, or where you want to eyeball the rendering in Buffer first.
 
-**Plan cap: 10 scheduled posts.** A weekly batch of 3 to 5 per channel fits comfortably; you cannot queue a month ahead. Check headroom with `list_posts(status:["scheduled"])` before a large `--schedule` run and say so if the selection would exceed it.
+**Plan cap: 10 scheduled posts** (org-level, checked live 2026-07-26). Check headroom with `list_posts(status:["scheduled"])` before a large `--schedule` run and refuse to exceed it. Daily limits are not a constraint (LinkedIn 50/day, X 100/day).
 
 ## Model
 - Voice guardrail from the file's frontmatter: **no links, engagement-prompt endings, soft brand mention at most.** Preserve it; do not add blog or product links.
@@ -57,7 +57,7 @@ Take the selection from `$ARGUMENTS`, else ask which numbers.
 
 Show both per post, state the mode and where each will land, and confirm once:
 ```
-Mode: SCHEDULE -> Buffer queue (LinkedIn 2 slots/day, X 4 slots/day)
+Mode: SCHEDULE -> explicit dueAt from POSTING_TIMES.md
 Queue headroom: 4 scheduled of 10
 
 Post 1, "Events, not transactions"
@@ -69,10 +69,10 @@ Schedule 2 posts (4 items) to @JosephTFrench + Joseph French? (y/n)
 ### 4. Create (on confirm)
 `get_account` for the org, `list_channels` for the linkedin + twitter ids, then per selected post:
 
-- **`--schedule`**: `create_post(channelId=…, schedulingType:"automatic", mode:"addToQueue", text=…)`
+- **`--schedule`**: `create_post(channelId=…, schedulingType:"automatic", mode:"customScheduled", dueAt=<computed>, text=…)`
 - **default**: `create_post(channelId=…, schedulingType:"automatic", saveToDraft:true, text=…)`
 
-Buffer fills queue slots from the channel's posting schedule in order, so a batch spreads itself across the week without any `dueAt` math. Only reach for `mode:"customScheduled"` + `dueAt` (ISO 8601 with the America/Chicago offset) when a post has to land on a specific day.
+**Never use `mode:"addToQueue"`.** Buffer's built-in slot grid cannot be edited through the API (no mutation exists) and its generated defaults are bad - LinkedIn at Mon 21:41 and Sun 22:17. Compute `dueAt` from **[`.claude/POSTING_TIMES.md`](../POSTING_TIMES.md)** instead: read the table, take the next unfilled slot per channel, and build ISO 8601 with the America/Chicago offset. That table is the single source of truth for timing and is tuned from `just insights` as data accumulates.
 
 ### 5. Mark the source
 Update the `## N.` heading in `linkedin.md` so the same post is not re-queued next run:
@@ -83,13 +83,13 @@ You mark `status: posted (date)` and drop the URL once it actually goes out. `ju
 
 ### 6. Report
 ```
-Scheduled to Buffer (spreads across the week's slots; nothing further to do):
-   - Post 1: LinkedIn Mon 21:41 · X Mon 08:19  ({id}, {id})
-   - Post 3: LinkedIn Tue 21:12 · X Tue 08:48  ({id}, {id})
+Scheduled to Buffer (explicit times; nothing further to do):
+   - Post 1: LinkedIn Mon 07:00 CT · X Mon 07:30 CT  ({id}, {id})
+   - Post 3: LinkedIn Tue 07:00 CT · X Tue 07:30 CT  ({id}, {id})
 Queue now 8 of 10.
 ```
 
 ## Notes
 - **Idempotency**: `list_posts(status:["draft","scheduled"])` per channel; skip or `edit_post` if a matching first line already exists.
-- **The LinkedIn slots are Buffer's random defaults and several are bad** - Mon 21:41, Tue 21:12, Sun 22:17 are dead air for B2B. Fix them in Buffer to weekday mid-morning / lunch, then this skill inherits the better times automatically. X (08:00-12:00 CT) is fine.
+- **Do not mirror the same idea to both channels in the same slot.** Offset the X cut by at least a few hours, or run it the next day - the overlap in followers is real and simultaneous duplicates read as broadcast spam.
 - Same pattern works for the launch-era standalone posts in `drafts/archive/` if you ever want to re-run proven copy: point step 1 at that file instead.
