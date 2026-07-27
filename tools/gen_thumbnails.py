@@ -189,7 +189,13 @@ def main():
     if os.path.exists(tmp):
         os.remove(tmp)
     if not args.dry_run:
-        print(f"\nDone. Run `just slice {ticker}` to ingest, then publish.")
+        # Ingest straight into charts/png/ ourselves. This used to be bolted to the end of
+        # `just slice`, which only runs on the retired deck path - so on the one-shot webdeck
+        # path the thumbnail never reached charts/png/ and `just publish` uploaded no image
+        # (publish_artifacts and reindex both key off charts/png/{t}_thumbnail.png).
+        from slice_deck import ingest_thumbnails
+        ingest_thumbnails(project_dir, ticker)
+        print("\nDone. Thumbnails generated and ingested - ready to publish.")
 
 
 if __name__ == "__main__":
