@@ -29,7 +29,7 @@ Buffer org **Harbinger FinLab** (`6a4710d8f9144a22713ee87e`) has exactly two cha
 **Plan cap: 10 scheduled posts** (org-level, checked live 2026-07-26). Check headroom with `list_posts(status:["scheduled"])` before a large `--schedule` run and refuse to exceed it. Daily limits are not a constraint (LinkedIn 50/day, X 100/day).
 
 ## Model
-- Voice guardrail from the file's frontmatter: **no links, engagement-prompt endings, soft brand mention at most.** Preserve it; do not add blog or product links.
+- Voice guardrail: **no links in the body** (measured suppression - the URL goes in the first comment instead), engagement-prompt endings. **"Soft brand mention at most" is retired as of 2026-07-26** - it produced 13 consecutive atoms in which neither RoboLedger nor RoboSystems was ever named, including product posts that said "our system" and gave the reader nothing to reach. Name the product when the post is about the product, and say it is open source.
 - **No em-dashes** in any generated X cut (repo-wide rule). Use a spaced hyphen or restructure.
 - `schedulingType: "automatic"` always. Never `shareNow`.
 

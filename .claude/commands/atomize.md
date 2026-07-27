@@ -43,10 +43,12 @@ For each selected area, read its **Grounding** paths. Then confirm against:
 
 Read the **⛔ GLOBAL ACCURACY FLAGS** and **⛔ ADDITIONAL FLAGS** tables in `local/CONTENT_AREAS.md`. For every atom, answer these in order. A "no" at any step means rewrite or drop the atom.
 
+0. **Who is the subject, and are they real?** ⛔ **Blocking, checked first.** If the atom describes a company, that company must be **our own** or a **real public filer**. Every demo in the repo except `demo-sec` runs on a fabricated company (Cascade Advisory Group, Driftline, the SaaS startup, both Seattle Method datasets) - those are **test fixtures, not subjects.** Never imply a fixture is real ("someone else's books", "a real company", "external validation", "independently verified"). Two pieces have already been killed for this. If a synthetic dataset's numbers appear at all, the word "demo" appears beside them.
 1. **Does this atom make a product claim at all?**
-   - **No** → it is *problem-space*. Safe. Skip to step 4. This is the default and preferred register for Engine P: "here is what breaks in normal systems, here is how I think about it." A reader cannot fact-check a claim you did not make.
-   - **Yes** → continue.
-2. **Is there a public source a reader could reach?** The wiki, a public README, the live API, a published package. If the only source is `local/**`, the claim is unverifiable to every reader - **rewrite it as problem-space.** FP&A, Metrics and the Block Explorer are genuinely shipped with *zero* public documentation and fail here.
+   - **No** → it is *problem-space*, and it is safe. **Safe is not the same as good.** A batch that is all problem-space is indistinguishable from any other finance consultant's feed - that is the 2026-07-26 failure. Cap it around half a batch.
+   - **Yes** → continue. Prefer the **named build** register: name RoboLedger or RoboSystems, show the mechanism, point at the open-source repo. The system is 100% open source, which makes the claim checkable by construction and the post an invitation rather than a pitch.
+2. **Is there a public source a reader could reach?** The wiki, a public README, the live API, a published package, the repo itself. If the only source is `local/**`, the claim is unverifiable to every reader - **rewrite it as problem-space.** FP&A, Metrics and the Block Explorer are genuinely shipped with *zero* public documentation and fail here.
+   - If a public source **does** exist, **name it in the post and put the URL in the first comment.** An unnamed, unlinked "our system does X" is the worst register available: vendor tone, nothing delivered. Both atoms cut on 2026-07-26 were that.
 3. **Does the claim touch anything in the flag tables?** Check every one. The recurring traps: SOC 2 wording, multi-entity consolidation (not built), "you can author any block type" (statements and metrics return 501), the `research`/`financial`/`rag` operators (don't exist), "2,000 GAAP concepts" (that's the library; a tenant gets ~143), AI memory (gated off by default), self-serve graph creation (approval-gated), RoboInvestor analytics (roadmap only).
 4. **Is the state right?** Shipped, partial, or aspirational - and does the atom's phrasing match?
 
@@ -57,6 +59,8 @@ If an atom survives all four, note in the queue which flag entries it was checke
 **Every atom obeys the audience thesis:**
 
 1. **Consequence first, concept as punchline.** Open with a question or outcome the reader recognizes as real work. Name the mechanism in the **last line**, one term per atom. Never open with "Information Block", "knowledge graph", "semantic layer", "taxonomy block", "provenance", "MCP", "REA".
+   - **The punchline has to actually land.** Ending on an engagement question *instead of* the reveal wastes the whole setup - that is what made the first batch feel like it was building to nothing. Name the thing, then ask the question.
+2. **Say the product's name.** RoboLedger and RoboSystems appeared **zero times** in the first 13 atoms because an earlier rule said "soft brand mention at most." That rule is retired. When a post is about the product, name it, and say it is open source - that is the free trial, the verification story and the reason this is not a pitch. Not every atom, but never zero.
 2. **Standalone.** Every atom works cold, for someone who has seen nothing else. **Never a numbered series.**
 3. **One idea.** The hook earns the "see more" - LinkedIn truncates at ~2 lines.
 4. **Agree, then upgrade.** "Claude in Excel" is the wedge, not the enemy.
