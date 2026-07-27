@@ -1,4 +1,4 @@
-Queue selected LinkedIn shorts from `drafts/thought-leadership/linkedin.md` to Buffer: a LinkedIn post plus an optional mirrored **X** text cut (posting X in parallel with LinkedIn is fine here, because these are text posts with no video and no Article).
+Queue selected atoms from `drafts/atoms/personal.md` (or any `--source` queue) to Buffer: a LinkedIn post plus an optional mirrored **X** text cut (posting X in parallel with LinkedIn is fine here, because these are text posts with no video and no Article).
 
 **Two modes.** `--schedule` (the batch-day mode) places each post at an explicit time from [`.claude/POSTING_TIMES.md`](../POSTING_TIMES.md), so the week ships without a second visit. Default is draft-only, which needs you to open Buffer and press post per item. See "Which mode" below - picking wrong is how this lane stalled in June.
 
@@ -7,6 +7,7 @@ LinkedIn is the primary channel for this content. The X mirror is a text cut onl
 ## Arguments
 - `$ARGUMENTS` - optional selectors: post numbers (`1 3 8`), `all`, or a status (`ready`). Empty lists them and asks which.
 - `--schedule` - schedule at explicit times instead of saving drafts. **This is the batch-day default.**
+- `--source <path>` - which queue to read. Default `drafts/atoms/personal.md` (what `/atomize` writes). The legacy `drafts/thought-leadership/linkedin.md` still parses.
 - `--no-x` - LinkedIn only.
 
 ## Channels (verified live 2026-07-26)
@@ -35,11 +36,24 @@ Buffer org **Harbinger FinLab** (`6a4710d8f9144a22713ee87e`) has exactly two cha
 ## Steps
 
 ### 1. Parse the queue
-Read `drafts/thought-leadership/linkedin.md`. Each post is:
+
+Two formats. Both key off a `## N. <title> … status: <state>` heading; they differ in what follows.
+
+**Atom format** (default, `drafts/atoms/personal.md` - written by `/atomize`). Carries a purpose-written cut per platform:
 ```
-## N. <title>  ·  <Pillar>  ·  status: <drafting|ready|queued|scheduled|posted (date)>
+## N. <title>  ·  source: <subject>  ·  status: ready
+
+**LinkedIn**
+<fenced block = the LinkedIn body>
+
+**X**
+<fenced block = the X body>
 ```
-followed by a fenced ```` ``` ```` block, the post body. Extract `(N, title, pillar, status, body)` for each.
+Use each body **verbatim**. They were written natively per platform; do not regenerate the X cut from the LinkedIn one.
+
+**Legacy format** (`drafts/thought-leadership/linkedin.md`): one fenced block after the heading, which is the LinkedIn body. The X cut has to be authored (step 3).
+
+Extract `(N, title, status, linkedin_body, x_body_or_None)` either way.
 
 ### 2. List and select
 Show the queue; default candidates = status NOT in (`posted`, `queued`, `scheduled`):
@@ -53,7 +67,7 @@ Take the selection from `$ARGUMENTS`, else ask which numbers.
 
 ### 3. Build LinkedIn + X for each selected, then PREVIEW (no writes)
 - **LinkedIn** = the fenced body **verbatim**.
-- **X** (unless `--no-x`) = an X-native cut of the same idea: keep the hook first line, tighten to X cadence, drop LinkedIn-only scaffolding, keep the question ending. Single post; Premium allows length but punchier wins.
+- **X** (unless `--no-x`): atom format already has one, use it verbatim. Legacy format needs one authored - keep the hook first line, tighten to X cadence, drop LinkedIn-only scaffolding, keep the question ending. Single post; Premium allows length but punchier wins.
 
 Show both per post, state the mode and where each will land, and confirm once:
 ```
