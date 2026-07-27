@@ -612,7 +612,15 @@ function buildTable(sec, root, tracks) {
   wrap.appendChild(el('div','tbl-rule'));
   tracks.push(fadeUp(head, 0.55, 0.5, 16));
 
-  const padV = rows.length <= 4 ? 27 : rows.length === 5 ? 21 : 15;
+  /* Fit the rows to the space between the table top (430px) and the footer rule.
+     The old fixed ramp stopped shrinking at 6 rows, so a 7-row table overflowed and
+     collided with the source line and the logo. Compute the padding instead, and drop
+     the row font once even zero padding would not fit. */
+  const AVAIL = 470, HEAD = 47;
+  const rowFont = rows.length >= 8 ? 26 : rows.length === 7 ? 29 : 0;   // 0 = CSS default
+  const lineH = rowFont ? Math.round(rowFont * 1.2) : 41;
+  const padV = Math.max(6, Math.min(27,
+    Math.floor((AVAIL - HEAD - rows.length * lineH) / (2 * rows.length))));
   rows.forEach((r, i) => {
     const hl = sec.slide.highlight && r[0] === sec.slide.highlight;
     const row = el('div','tbl-row');
@@ -620,6 +628,7 @@ function buildTable(sec, root, tracks) {
     r.forEach((cell, j) => {
       const cls = (j === 0 ? 'td0 c0' : 'td c') + (j === r.length - 1 ? ' last' : '');
       const td = el('div', cls, esc(cell));
+      if (rowFont) td.style.fontSize = (j === 0 ? rowFont + 3 : rowFont) + 'px';
       if (hl && (j === 0 || j === r.length - 1)) {
         td.style.color = toneColor; td.style.fontWeight = '600';
       }
