@@ -169,9 +169,12 @@ hook; 3-5 key findings with specific numbers; a risk/caveat; closing takeaway; r
 **No link and no promo in the body.** The X post carries **no `robosystems.ai` link and no
 promo-code line** - both suppress reach (X throttles external links, and a discount CTA on every
 post reads as spam and drags engagement). Keep the RoboSystems CTA and any promo to the YouTube
-description and podcast notes, never the X post. And **never a bare-link post**: every post leads
-with substantive text and the cashtag - link-only or near-empty captions get a fraction of a text
-post's reach (measured on our own account). On X the **full long-form is uploaded as native
+description and podcast notes, never the X post. Every post leads with substantive text and the
+cashtag. (An earlier version of this rule claimed link-only captions get a fraction of a text
+post's reach - **retracted 2026-07-26**: that was a measurement artifact which filed native X
+Articles in the same bucket as outbound links. Articles are our HIGHEST-reach format, median 380
+vs 272 for text+video and 112 for a text post carrying a self-link. Publish the Article on every
+name.) On X the **full long-form is uploaded as native
 video**, and the brief is published as a native X **Article** whose link goes in the first
 comment (`x_first_comment`) - so there is no YouTube link on X at all (native video + native
 Article both win reach).

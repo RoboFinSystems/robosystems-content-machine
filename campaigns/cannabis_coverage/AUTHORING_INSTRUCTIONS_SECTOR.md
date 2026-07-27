@@ -149,7 +149,7 @@ A single post (NOT a thread). **Lead the first line with the sector cashtag `$MS
 sector piece — `$MSOS` is the channel; `$MSOX` optional as a 2nd, never more than 2). Hook on the
 paradox; 3–5 findings with numbers (the $606M tax on a loss, $2.1B reserves, 8-of-9 taxed while losing
 money, the re-rating math); the catalyst; a risk; closing takeaway.
-Closing line = `#Cannabis #MSO #280E #Rescheduling` + tag `@RoboFinSystems`. **No link and no promo in the body** (no `robosystems.ai`, no promo-code line - both suppress reach on X); **never a bare-link post** - lead with substantive text + the cashtag.
+Closing line = `#Cannabis #MSO #280E #Rescheduling` + tag `@RoboFinSystems`. **No link and no promo in the body** (no `robosystems.ai`, no promo-code line - both suppress reach on X); lead with substantive text + the cashtag. (The old "never a bare-link post" rule was **retracted 2026-07-26** - it conflated native X Articles with outbound links; Articles are our highest-reach format, median 380.)
 **Never use `<` or `>`** anywhere (spell out "under"/"over") — X and YouTube reject the paste. Don't glue
 a cashtag inside parens. The brief publishes as a native X Article (linked in `x_first_comment`).
 

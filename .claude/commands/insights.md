@@ -20,7 +20,7 @@ Read the output and write a short analytical brief. Work through:
 - Which NAMES win? The pattern has been uncovered/obscure names (cannabis microcaps) out-pulling marquee large-caps, because low search competition = you're the only result. Note whether that still holds.
 
 **X - format variance and engagement.**
-- Compare the `text` vs `link-only` medians in the SUMMARY line. Text+cashtag posts should dramatically out-reach bare-link posts; if half the posts are link-only and dragging the median, that's the biggest fixable leak.
+- Read the **By format** table. Measured 2026-07-26 (n=60): **X Article 380 · text+video 272 · text+self-link 112 · outbound link 106**. The Article is our best format and X boosts its own long-form; outbound links are suppressed. **Never collapse `ARTICL` and `extlnk` into one "links" bucket** - the old classifier did exactly that and produced a false "text beats links 10-40x" rule, retracted 2026-07-26. Check whether the format ranking still holds and whether Articles are being published on every name.
 - Engagement rate vs the ~4% small-account benchmark. Running below it points at the missing reply motion (broadcast-only), which also caps how far each post gets expanded out-of-network.
 - Which posts topped impressions, and what did they share (an early cashtag, a real hook, an ETF anchor on a thin name)?
 
