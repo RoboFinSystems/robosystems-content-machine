@@ -35,6 +35,14 @@ const h = React.createElement;
 const container = document.getElementById('root');
 const RESEARCH = SPEC.brand === 'research';
 
+// Vertical type scale. The showcase scenes were sized for 16:9; on a 1080x1920
+// canvas the same block floats in the middle with ~40% dead space top and
+// bottom. Portrait gets a single uniform bump so the format is actually used.
+// Landscape is untouched (VS = 1).
+const PORTRAIT = (SPEC.height || 1920) > (SPEC.width || 1080);
+const VS = PORTRAIT ? 1.3 : 1;
+const px = (n) => Math.round(n * VS) + 'px';
+
 const clamp01 = (x) => Math.max(0, Math.min(1, x));
 const lerp = (a, b, t) => a + (b - a) * t;
 const eo = (t) => 1 - Math.pow(1 - clamp01(t), 3);           // ease-out cubic
@@ -120,8 +128,8 @@ function BoldText(s, te, entrance) {
 }
 
 // ---- showcase (DS tokens) ----
-const cCenter = { position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '30px', padding: '0 90px', textAlign: 'center' };
-const dsEyebrow = { fontFamily: 'var(--font-display,"Orbitron")', fontSize: '26px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--text-muted,#9aa4bf)', fontWeight: 700 };
+const cCenter = { position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: px(30), padding: PORTRAIT ? '0 70px' : '0 90px', textAlign: 'center' };
+const dsEyebrow = { fontFamily: 'var(--font-display,"Orbitron")', fontSize: px(26), letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--text-muted,#9aa4bf)', fontWeight: 700 };
 const dsTone = (t) => ({ positive: 'var(--data-positive,#3fd08a)', negative: 'var(--data-negative,#ff6b6b)', warning: 'var(--data-warning,#ffb454)', accent: 'var(--accent,#7c5cff)' }[t] || 'var(--text-primary,#fff)');
 function FallbackCard({ label, value, change, changeTone = 'positive', highlight }) {
   return h('div', { style: { background: 'var(--surface-card,#141a2e)', border: '1px solid ' + (highlight ? 'var(--accent,#7c5cff)' : 'var(--border-hairline,#232a42)'), borderRadius: 'var(--radius-lg,18px)', padding: '34px', display: 'flex', flexDirection: 'column', gap: '10px' } },
@@ -141,14 +149,14 @@ function ShowcaseHero(s, te) {
   }
   return h('div', { style: { ...cCenter, ...rise(te) } },
     s.eyebrow && h('div', { style: dsEyebrow }, s.eyebrow),
-    disp != null ? h('div', { style: { fontFamily: 'var(--font-display,"Orbitron")', fontWeight: 800, fontSize: '150px', lineHeight: 1, color: dsTone(s.tone) } }, disp)
-      : h('div', { style: { fontFamily: 'var(--font-display,"Orbitron")', fontWeight: 800, fontSize: '92px', lineHeight: 1.04, color: 'var(--text-primary,#fff)' } }, s.title),
-    s.subline && h('div', { style: { fontFamily: 'var(--font-body,"Space Grotesk")', fontSize: '34px', color: 'var(--text-muted,#9aa4bf)', fontWeight: 500, maxWidth: '840px' } }, s.subline));
+    disp != null ? h('div', { style: { fontFamily: 'var(--font-display,"Orbitron")', fontWeight: 800, fontSize: px(150), lineHeight: 1, color: dsTone(s.tone) } }, disp)
+      : h('div', { style: { fontFamily: 'var(--font-display,"Orbitron")', fontWeight: 800, fontSize: px(92), lineHeight: 1.04, color: 'var(--text-primary,#fff)' } }, s.title),
+    s.subline && h('div', { style: { fontFamily: 'var(--font-body,"Space Grotesk")', fontSize: px(34), color: 'var(--text-muted,#9aa4bf)', fontWeight: 500, maxWidth: PORTRAIT ? '920px' : '840px' } }, s.subline));
 }
 function ShowcaseMetrics(s, te) {
-  return h('div', { style: { ...cCenter, gap: '36px' } },
+  return h('div', { style: { ...cCenter, gap: px(36) } },
     s.heading && h('div', { style: dsEyebrow }, s.heading),
-    h('div', { style: { display: 'flex', flexDirection: 'column', gap: '26px', width: '100%' } },
+    h('div', { style: { display: 'flex', flexDirection: 'column', gap: px(26), width: '100%' } },
       (s.cards || []).map((c, i) => {
         const e = eo(clamp01((te - i * 0.12) / 0.5));
         return h('div', { key: i, style: { opacity: e, transform: 'translateY(' + (1 - e) * 22 + 'px)' } },
