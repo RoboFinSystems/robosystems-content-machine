@@ -342,7 +342,7 @@ The failure this exists to prevent: on 2026-07-26 a single `/atomize fpa` run pr
 
 ## AREA: Security posture - unusually blunt
 
-**State**: controls shipped; compliance stacks off by default; **SOC 2 NOT attested**. **last_used**: never
+**State**: controls shipped; compliance stacks off by default; **SOC 2 process formally begun 2026-07-26** (Vanta for compliance automation, Sensiba as the CPA firm). **No report exists yet.** **last_used**: never
 
 1. The most quotable paragraph in the repo: **"a SOC 2 report attests to an organization operating a system over time - it is not a property of the source code."** And: *"you inherit the control design, you do not inherit operating evidence."*
 2. **The admin surface is not reachable from the internet at all** - the load balancer 403s it. SSO or tunnel only.
@@ -350,7 +350,24 @@ The failure this exists to prevent: on 2026-07-26 a single `/atomize fpa` run pr
 4. **The raw API key is returned exactly once, at creation.** The server can never show it again, only an 8-character prefix.
 5. Blunt operational advice: *"turn the technical controls on before engaging a CPA firm, because the observation window only counts time the controls were actually running."*
 
-⚠️ **Never imply SOC 2 attestation.**
+### ⚠️ SOC 2 - exact permitted wording (updated 2026-07-26)
+
+Contracts signed with **Vanta** (compliance automation) and **Sensiba** (the CPA firm). That changes what is sayable, but only in one direction: you may describe **the process you have started**, never **a result you do not have**.
+
+**SAFE - claims about an action taken:**
+- "We've engaged Vanta and Sensiba to begin our SOC 2 process."
+- "SOC 2 audit underway" · "SOC 2 readiness in progress" · "working toward SOC 2."
+- Naming the auditor is a credibility signal and is normal practice.
+
+**NEVER:**
+- ❌ "SOC 2 **certified**" - not a thing that exists. SOC 2 produces an attestation report, not a certificate. Using it signals you don't know the standard, to an audience that does.
+- ❌ "SOC 2 **compliant**" or "**attested**" - not until the report is issued.
+- ❌ Anything implying a report exists, or that a customer can request one.
+- ❌ **Type II** unless the observation window has actually run. Type I is a point in time; Type II requires months of operating evidence.
+
+**Operational note, from your own SECURITY.md and now urgent:** *"turn the technical controls on before engaging a CPA firm, because the observation window only counts time during which the controls were actually running."* The six compliance stacks (WAF, CloudTrail, VPC flow logs, GuardDuty/Security Hub/Inspector, 13-month audit retention, monthly secret rotation) are **off by default to keep costs down**. If the Type II window is about to start, they need to be on first - otherwise the clock runs on evidence that isn't being generated.
+
+**Content angle worth taking**: "we're doing SOC 2" is boring and everyone says it. The interesting post is the distinction already written in your own docs - that a SOC 2 report attests to an *organization operating a system over time*, so a fork inherits the control design and none of the operating evidence. Going through the process now makes that first-person and timely rather than theoretical.
 
 **Grounding**: `SECURITY.md` · wiki `Security-and-Compliance.md`
 
@@ -408,7 +425,7 @@ The failure this exists to prevent: on 2026-07-26 a single `/atomize fpa` run pr
 | 5 | Metric blocks working | Code README says the evaluator is unimplemented (501); roadmap says shipped. |
 | 6 | RoboSCM / RoboFO / RoboEPM / RoboHRM / RoboReport | README sections are stale; placeholder schemas were deleted. |
 | 7 | "You can author any block type" | Statements + metrics return **501**. |
-| 8 | **SOC 2 attestation** | Explicitly **not attested**. Control-design alignment only. |
+| 8 | **SOC 2 "certified" / "compliant" / "attested"** | Process **begun** 2026-07-26 (Vanta + Sensiba); no report exists. "Underway" / "in progress" is safe; "certified" is not even a real thing for SOC 2. See the Security area for exact wording. |
 | 9 | Multi-user organizations / teams | **Do not exist.** One org per user. |
 | 10 | Storage billing | **Not live.** One dashboard figure is still a heuristic. |
 | 11 | IFRS / tax / call-report / FERC frameworks | Directory-ready, **unbuilt**. |
