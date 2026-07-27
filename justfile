@@ -84,9 +84,9 @@ thumbnails project *args:
     UV_ENV_FILE={{_env}} uv run python tools/gen_thumbnails.py {{project}} {{args}}
 
 # Generate voiceover audio via ElevenLabs
-voiceover project:
+voiceover project *args:
     @just ensure-env
-    UV_ENV_FILE={{_env}} uv run python tools/generate_voiceover_audio.py {{project}}
+    UV_ENV_FILE={{_env}} uv run python tools/generate_voiceover_audio.py {{project}} {{args}}
 
 # Assemble final video via Shotstack (add --production to use credits)
 assemble project *args:
