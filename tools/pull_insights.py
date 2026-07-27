@@ -133,18 +133,43 @@ def x_section(n_posts):
     except Exception as e:
         print(f"X auth error: {e}")
         return
-    posts, token = [], None
+    posts, media, token = [], {}, None
     while len(posts) < n_posts:
         params = {"max_results": min(100, n_posts - len(posts)), "exclude": "retweets,replies",
-                  "tweet.fields": "public_metrics,created_at"}
+                  "tweet.fields": "public_metrics,created_at,entities,attachments",
+                  "expansions": "attachments.media_keys", "media.fields": "type"}
         if token:
             params["pagination_token"] = token
         r = s.get(f"https://api.x.com/2/users/{uid}/tweets", params=params).json()
         posts += r.get("data", [])
+        for mm in r.get("includes", {}).get("media", []):
+            media[mm["media_key"]] = mm["type"]
         token = r.get("meta", {}).get("next_token")
         if not token:
             break
     print(f"@{me['username']}  -  {len(posts)} recent original posts\n")
+
+    def classify(p):
+        """Format matters more than length here, so classify by what the post actually IS.
+
+        The old rule was `"link" if len(text_without_urls) < 15` - which lumped X's
+        native Articles in with bare links and hid the account's best format. An
+        x.com/i/article link is the opposite of an external link: X boosts its own
+        long-form format and suppresses outbound ones.
+        """
+        urls = [u.get("expanded_url", "") or "" for u in p.get("entities", {}).get("urls", [])]
+        types = {media.get(k, "") for k in p.get("attachments", {}).get("media_keys", [])}
+        if any("/i/article/" in u for u in urls):
+            return "ARTICL"
+        if types & {"video", "animated_gif"}:
+            return "video"
+        if types & {"photo"}:
+            return "photo"
+        if any(u and "x.com" not in u and "twitter.com" not in u for u in urls):
+            return "extlnk"
+        if urls:
+            return "selflk"
+        return "text"
 
     rows = []
     for p in posts:
@@ -152,13 +177,11 @@ def x_section(n_posts):
         imp = m.get("impression_count", 0)
         eng = (m["like_count"] + m["retweet_count"] + m["reply_count"]
                + m["quote_count"] + m.get("bookmark_count", 0))
-        text = p["text"]
-        stripped = re.sub(r"https://t\.co/\S+", "", text).strip()
-        kind = "link" if len(stripped) < 15 else "text"
+        stripped = re.sub(r"https://t\.co/\S+", "", p["text"]).strip()
         rows.append({"date": p["created_at"][:10], "imp": imp, "eng": eng,
                      "er": eng / imp * 100 if imp else 0, "likes": m["like_count"],
-                     "bkmk": m.get("bookmark_count", 0), "kind": kind,
-                     "text": (stripped or text)[:46].replace("\n", " ")})
+                     "bkmk": m.get("bookmark_count", 0), "kind": classify(p),
+                     "text": (stripped or p["text"])[:46].replace("\n", " ")})
     rows.sort(key=lambda x: -x["imp"])
     print(f"{'date':11}{'impr':>7}{'eng':>5}{'eng%':>6}{'bkmk':>5} kind  text")
     for r in rows:
@@ -169,14 +192,20 @@ def x_section(n_posts):
         return xs[len(xs) // 2] if xs else 0
     if rows:
         allimp = [r["imp"] for r in rows]
-        txt = [r["imp"] for r in rows if r["kind"] == "text"]
-        lnk = [r["imp"] for r in rows if r["kind"] == "link"]
         ers = [r["er"] for r in rows if r["imp"]]
         print(f"\nSUMMARY: {len(rows)} posts | impressions median {med(allimp)}, max {max(allimp)}, "
               f"total {sum(allimp)}")
-        print(f"  text posts (n={len(txt)}): median {med(txt)} impr   |   "
-              f"link-only (n={len(lnk)}): median {med(lnk)} impr")
-        print(f"  engagement rate: median {med(ers):.1f}%  (small-account benchmark ~4%)")
+        print("\n  By format (median impressions - this is the format lever):")
+        for k in sorted({r["kind"] for r in rows},
+                        key=lambda k: -med([r["imp"] for r in rows if r["kind"] == k])):
+            v = [r["imp"] for r in rows if r["kind"] == k]
+            e = [r["er"] for r in rows if r["kind"] == k and r["imp"]]
+            print(f"    {k:8} n={len(v):>3}  median {med(v):>6}  max {max(v):>6}  eng {med(e):>4.1f}%")
+        print("\n  ARTICL = X native long-form (boosted) · extlnk = outbound link (suppressed).")
+        print("  Do not read these two as one bucket - they move in opposite directions.")
+        print(f"\n  engagement rate: median {med(ers):.1f}%  (small-account benchmark ~4%)")
+        print("  NOTE: eng% falls as impressions rise (more out-of-network reach). A high-reach")
+        print("  post with 0.2% is not 'worse' than a 60-impression post at 8% - different jobs.")
 
 
 def main():
