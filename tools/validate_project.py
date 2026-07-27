@@ -44,6 +44,159 @@ def ok(msg):
     print(f"  OK    {msg}")
 
 
+# ─── Slide/narration coherence ───────────────────────────────
+# A one-shot pipeline renders straight from the script, so nobody ever sees an
+# intermediate artifact. That makes "the slide says one thing while the voice says
+# another" the easiest defect to ship - it happened on RGP's short, where a card read
+# "$52M enterprise value" under a burned-in caption about a risk factor. The contract
+# has always required slide and narration to agree; nothing enforced it until now.
+
+_STOP = {
+    "the", "and", "for", "with", "that", "this", "from", "into", "than", "then",
+    "was", "were", "are", "its", "it's", "has", "have", "had", "not", "but", "you",
+    "your", "our", "their", "they", "them", "what", "when", "which", "while", "who",
+    "how", "why", "all", "any", "one", "two", "out", "off", "over", "under", "just",
+    "now", "here", "there", "still", "only", "even", "more", "most", "less", "least",
+    "about", "after", "before", "because", "been", "being", "does", "did", "done",
+    "can", "could", "would", "should", "will", "may", "might", "must", "per",
+}
+# slide keys that carry presentation, not content
+_SKIP_KEYS = {"tone", "chart_type", "source", "visual_takeaway", "highlight"}
+
+
+def _content_tokens(text):
+    """Lowercase content words (len>2, non-stopword). Digits are stripped out - the
+    narration is spoken-form, so '17.5' never literally matches 'seventeen point five'
+    and comparing them would be noise."""
+    words = re.findall(r"[A-Za-z][A-Za-z'&.]*", str(text).lower())
+    return {w.strip("'&.") for w in words
+            if len(w.strip("'&.")) > 2 and w.strip("'&.") not in _STOP}
+
+
+def _slide_text(slide):
+    """Every human-readable string in a slide, minus presentation-only keys."""
+    out = []
+
+    def walk(node, key=None):
+        if key in _SKIP_KEYS:
+            return
+        if isinstance(node, dict):
+            for k, v in node.items():
+                if k not in _SKIP_KEYS:
+                    out.append(k)          # data keys are on-screen labels
+                    walk(v, k)
+        elif isinstance(node, list):
+            for v in node:
+                walk(v, key)
+        elif isinstance(node, str):
+            out.append(node)
+
+    walk(slide)
+    return " ".join(out)
+
+
+_ONES = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
+         "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen",
+         "seventeen", "eighteen", "nineteen"]
+_TENS = ["", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"]
+
+
+def _int_words(n):
+    """Spoken form of 0-999 (the range slide figures land in once scaled)."""
+    if n < 20:
+        return _ONES[n]
+    if n < 100:
+        return (_TENS[n // 10] + (" " + _ONES[n % 10] if n % 10 else "")).strip()
+    rest = n % 100
+    return (_ONES[n // 100] + " hundred" + (" " + _int_words(rest) if rest else "")).strip()
+
+
+def _small_forms(num_str):
+    """Spoken renderings of a figure under 1000.
+    '17.5' -> 'seventeen point five'; '52' -> 'fifty two' / 'fifty-two'."""
+    forms = {num_str}
+    try:
+        whole, _, frac = num_str.partition(".")
+        w = int(whole)
+        if w > 999:
+            return forms
+        base = _int_words(w)
+        forms.add(base)
+        forms.add(base.replace(" ", "-"))
+        if frac:
+            digits = " ".join(_ONES[int(d)] for d in frac if d.isdigit())
+            forms.add(f"{base} point {digits}")
+    except (ValueError, IndexError):
+        pass
+    return forms
+
+
+def _spoken_forms(num_str):
+    """Every way a slide figure might be spoken. Chart `data` carries raw base units
+    (revenue $8.2B is stored 8200500000) while narration says "eight point two billion",
+    so large values are also matched at their scaled magnitudes."""
+    forms = set(_small_forms(num_str))
+    try:
+        val = float(num_str)
+    except ValueError:
+        return forms
+    for scale in (1e9, 1e6, 1e3):
+        if val >= scale:
+            for places in (1, 2):
+                scaled = round(val / scale, places)
+                text = f"{scaled:.{places}f}".rstrip("0").rstrip(".")
+                forms |= _small_forms(text)
+    return forms
+
+
+def _slide_numbers(text):
+    return re.findall(r"\d+(?:\.\d+)?", text)
+
+
+# Hooks and CTAs are deliberately punchy and do not restate their narration, so the
+# vocabulary test does not apply to them.
+_NO_RESTATE = {"hook", "cta"}
+
+
+def check_slide_narration_coherence(segments, label, narration_key="narration",
+                                    slide_key="slide", id_key="id"):
+    """Flag any segment whose slide appears to describe something other than its narration.
+
+    A segment passes if EITHER the wording overlaps OR a figure on the slide is spoken in
+    the narration. Numbers matter more than words here: good short-form writing avoids
+    reading its own slide, so lexical overlap alone produced mostly false positives, but a
+    slide showing $52M whose narration never says fifty-two million is genuinely wrong.
+    """
+    flagged = 0
+    for seg in segments:
+        slide = seg.get(slide_key) or {}
+        narr = seg.get(narration_key) or ""
+        kind = (seg.get("kind") or "").lower()
+        if kind in _NO_RESTATE or seg.get("visual_ref") == "cta" or not narr:
+            continue
+        stext = _slide_text(slide)
+        s_toks = _content_tokens(stext)
+        if not s_toks:
+            continue
+
+        shared = s_toks & _content_tokens(narr)
+        if len(shared) / len(s_toks) >= 0.15:
+            continue
+
+        narr_l = narr.lower()
+        if any(any(f in narr_l for f in _spoken_forms(n)) for n in _slide_numbers(stext)):
+            continue
+
+        flagged += 1
+        face = slide.get("headline") or slide.get("big") or slide.get("kicker") or ""
+        warn(f"{label} segment {seg.get(id_key, '?')}: slide shares neither wording nor "
+             f"any figure with its narration - do they describe the same thing? "
+             f"slide: \"{str(face)[:50]}\"")
+    if not flagged:
+        ok(f"{label}: every slide agrees with its narration")
+    return flagged
+
+
 def check_required_files(project_dir, ticker):
     """Check outputs. Only the script is required to render; the rest are publish artifacts."""
     print("\n--- Required Files ---")
@@ -251,9 +404,49 @@ def check_deck_contract(project_dir, script):
     else:
         ok("closing segment uses the cta layout")
 
+    check_slide_narration_coherence(segs, "long-form")
+
     # Thumbnails are generated by `just thumbnails` into assets/ (yt/x/spot.png), not a script
     # block; the canonical 16:9 charts/png/{ticker}_thumbnail.png is checked with the publish
     # artifacts above.
+
+
+def check_render_freshness(project_dir, ticker, script):
+    """Catch renders/timelines built from stale inputs.
+
+    build_webdeck caches VO durations in videos/media_durations.json. That cache going
+    stale against re-voiced audio silently misaligns narration from slides (and can make
+    segments overlap), which is invisible in every other check - the schema is still valid
+    and the video still plays. Same idea for a final MP4 older than the script it came from.
+    """
+    print("\n--- Render Freshness ---")
+    vids = os.path.join(project_dir, "videos")
+    audio_dir = os.path.join(vids, "audio")
+    if not os.path.isdir(audio_dir):
+        return
+
+    mp3s = [os.path.join(audio_dir, f) for f in os.listdir(audio_dir)
+            if f.endswith(".mp3") and "_short_" not in f]
+    cache = os.path.join(vids, "media_durations.json")
+    if mp3s and os.path.exists(cache):
+        stale = [os.path.basename(m) for m in mp3s
+                 if os.path.getmtime(m) > os.path.getmtime(cache)]
+        if stale:
+            error(f"VO duration cache is older than {len(stale)} re-voiced file(s) - "
+                  f"rebuild before rendering or narration will drift off its slides "
+                  f"(just webdeck {ticker})")
+        else:
+            ok("VO duration cache is current with the audio")
+
+    final = os.path.join(vids, f"{ticker}_final.mp4")
+    spath = os.path.join(project_dir, "scripts", f"{ticker}_script.json")
+    if os.path.exists(final) and os.path.exists(spath):
+        if os.path.getmtime(spath) > os.path.getmtime(final):
+            warn(f"{ticker}_final.mp4 is older than the script - re-render before publishing")
+        elif mp3s and max(os.path.getmtime(m) for m in mp3s) > os.path.getmtime(final):
+            warn(f"{ticker}_final.mp4 is older than the voiceover - re-render before publishing")
+        else:
+            ok("final render is newer than the script and audio")
 
 
 def _load_manifest_ids(rel_path):
@@ -321,6 +514,8 @@ def check_companion_formats(project_dir, ticker, script):
              f"aim under ~630 chars for a ~45s short")
     else:
         ok(f"short: {len(segs)} beats, ~{est:.0f}s narration (~{est * 1.1:.0f}s rendered)")
+
+    check_slide_narration_coherence(segs, "short")
 
     for name in (f"social/{ticker}_short_x_post.txt", f"social/{ticker}_short_youtube.txt"):
         if not os.path.exists(os.path.join(project_dir, name)):
@@ -437,6 +632,7 @@ def main():
     check_robosystems_plug(script)
     check_companion_formats(project_dir, ticker, script)
     check_publish_metadata(project_dir, ticker, script)
+    check_render_freshness(project_dir, ticker, script)
 
     if args.fix:
         try_fix_script(project_dir, ticker, script)
