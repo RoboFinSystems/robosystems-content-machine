@@ -23,7 +23,7 @@ Buffer org **Harbinger FinLab** (`6a4710d8f9144a22713ee87e`) has exactly two cha
 
 ## Which mode
 
-- **`--schedule`** for the pre-written, pre-reviewed, link-free shorts in `linkedin.md`. They already passed editorial review when they were written; a second gate just recreates the manual step that killed this lane (2 posts shipped out of 15 in June). One confirm inside the batch-day block, then it ships itself.
+- **`--schedule`** for the pre-written, pre-reviewed, link-free atoms in the queue. `/atomize` already applied the voice and format rules when it wrote them; a second gate just recreates the manual step that killed this lane (2 posts shipped out of 15 in June). One confirm inside the batch-day block, then it ships itself.
 - **Draft-only (default)** for anything new, rewritten in this session, or where you want to eyeball the rendering in Buffer first.
 
 **Plan cap: 10 scheduled posts** (org-level, checked live 2026-07-26). Check headroom with `list_posts(status:["scheduled"])` before a large `--schedule` run and refuse to exceed it. Daily limits are not a constraint (LinkedIn 50/day, X 100/day).
@@ -58,10 +58,10 @@ Extract `(N, title, status, linkedin_body, x_body_or_None)` either way.
 ### 2. List and select
 Show the queue; default candidates = status NOT in (`posted`, `queued`, `scheduled`):
 ```
-# · title                                   · pillar        · status    · chars
-1   Events, not transactions                  2 Foundation    ready       980
-3   Information Blocks, pivot + author         2 Foundation    ready      1120
-6   Graph-native, AI-native close             1 Problem       posted      -      (skip)
+ # · title                                  · source · status   · LI/X chars
+ 1   The 14 rows that are actually decisions    fpa      ready      1106 / 307
+ 2   The check row that never stopped anything  fpa      ready      1109 / 337
+ 5   The line between actual and forecast       fpa      scheduled  -          (skip)
 ```
 Take the selection from `$ARGUMENTS`, else ask which numbers.
 
@@ -74,10 +74,10 @@ Show both per post, state the mode and where each will land, and confirm once:
 Mode: SCHEDULE -> explicit dueAt from POSTING_TIMES.md
 Queue headroom: 4 scheduled of 10
 
-Post 1, "Events, not transactions"
-  LinkedIn (980):  Your general ledger isn't the source of truth. It's a derived artifact. ...
-  X (268):         Your GL isn't the source of truth, it's a derived artifact. ...
-Schedule 2 posts (4 items) to @JosephTFrench + Joseph French? (y/n)
+Post 1, "The 14 rows that are actually decisions"
+  LinkedIn (1106):  I counted the rows in our financial operating plan last week. 178. ...
+  X (307):          I counted the rows in our operating plan. 178. ...
+Schedule 2 atoms (4 items) to Joseph French + @JosephTFrench? (y/n)
 ```
 
 ### 4. Create (on confirm)
@@ -89,7 +89,7 @@ Schedule 2 posts (4 items) to @JosephTFrench + Joseph French? (y/n)
 **Never use `mode:"addToQueue"`.** Buffer's built-in slot grid cannot be edited through the API (no mutation exists) and its generated defaults are bad - LinkedIn at Mon 21:41 and Sun 22:17. Compute `dueAt` from **[`.claude/POSTING_TIMES.md`](../POSTING_TIMES.md)** instead: read the table, take the next unfilled slot per channel, and build ISO 8601 with the America/Chicago offset. That table is the single source of truth for timing and is tuned from `just insights` as data accumulates.
 
 ### 5. Mark the source
-Update the `## N.` heading in `linkedin.md` so the same post is not re-queued next run:
+Update the `## N.` heading in the source queue so the same atom is not re-queued next run:
 - `--schedule` → `status: scheduled (YYYY-MM-DD)`
 - draft mode → `status: queued`
 
