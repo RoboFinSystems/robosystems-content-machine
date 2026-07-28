@@ -70,6 +70,16 @@ def api_request(path, data=None, method="POST"):
 GAP_LIMIT = float(os.environ.get("TTS_GAP_LIMIT", "1.5"))   # seconds of mid-clip silence
 GAP_TAKES = int(os.environ.get("TTS_GAP_TAKES", "3"))       # attempts before keeping the best
 
+# We render videos ahead of time, so generation latency is worth nothing to us and
+# fidelity is worth a lot. The pipeline ran on eleven_turbo_v2_5 (the latency-optimized
+# model) at the API's default 128kbps with style 0.3, which trades quality for speed we
+# never use and stability we do want. eleven_v3 is the highest-quality model on the
+# account; 192kbps removes compression mush that reads as slurring; style 0 keeps the
+# read even. Chosen by ear from an A/B of the same sentence across both models.
+TTS_MODEL = os.environ.get("TTS_MODEL", "eleven_v3")
+TTS_FORMAT = os.environ.get("TTS_FORMAT", "mp3_44100_192")
+TTS_STABILITY = float(os.environ.get("TTS_STABILITY", "0.5"))
+
 
 def max_internal_gap(path):
     """Longest silence that is neither leading nor trailing, in seconds.
@@ -107,18 +117,19 @@ def generate_audio(voice_id, text, output_path):
     """
     data = {
         "text": normalize_for_tts(text),
-        "model_id": "eleven_turbo_v2_5",
+        "model_id": TTS_MODEL,
         "voice_settings": {
-            "stability": 0.7,
+            "stability": TTS_STABILITY,
             "similarity_boost": 0.8,
-            "style": 0.3,
+            "style": 0.0,
             "use_speaker_boost": True,
         },
     }
 
     best_audio, best_gap = None, None
     for take in range(1, GAP_TAKES + 1):
-        audio_data = api_request(f"/text-to-speech/{voice_id}", data)
+        audio_data = api_request(
+            f"/text-to-speech/{voice_id}?output_format={TTS_FORMAT}", data)
         if not (audio_data and isinstance(audio_data, bytes)):
             continue
         with open(output_path, "wb") as f:
