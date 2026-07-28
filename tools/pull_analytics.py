@@ -173,14 +173,26 @@ def pull_youtube(ana, data, video_id, scope_ok=[True]):
         return None
     from googleapiclient.errors import HttpError
     start = "2005-02-14"   # YouTube epoch; Analytics clamps to the video's first day
+    stats = {}
     try:
         items = data.videos().list(part="snippet,statistics", id=video_id).execute().get("items", [])
         if items:
             start = items[0]["snippet"]["publishedAt"][:10]
+            stats = items[0].get("statistics") or {}
     except Exception:
         pass
     today = datetime.now(timezone.utc).date().isoformat()
     row = {"video_id": video_id, "since": start}
+    # The Data API's statistics are near-real-time; Analytics runs 24-48h behind and
+    # returns NO rows for a video published today. Keeping both means a fresh upload
+    # still reports a view count instead of a blank cell that reads like a broken tool.
+    for src, dst in (("viewCount", "views_live"), ("likeCount", "likes_live"),
+                     ("commentCount", "comments_live")):
+        if src in stats:
+            try:
+                row[dst] = int(stats[src])
+            except (TypeError, ValueError):
+                pass
 
     def q(metrics):
         return ana.reports().query(ids="channel==MINE", startDate=start, endDate=today,
@@ -282,8 +294,14 @@ def main():
     def row(label, xp, yt):
         er = xp.get("engagement_rate")
         er = f"{er*100:.1f}%" if er is not None else "-"
+        # Fall back to the live view count, flagged with ~, when Analytics has not
+        # processed the day yet. A blank here reads as "no views" when it means
+        # "not reported yet", which is a very different thing to act on.
+        views = fmt(yt.get("views"))
+        if views == "-" and yt.get("views_live") is not None:
+            views = f"~{yt['views_live']}"
         return (f"{label:7}{fmt(xp.get('impressions')):>9}{er:>8}{fmt(xp.get('bookmarks')):>7}{'  ':2}"
-                f"{fmt(yt.get('views')):>9}{fmt(yt.get('averageViewPercentage'), pct=True):>8}"
+                f"{views:>9}{fmt(yt.get('averageViewPercentage'), pct=True):>8}"
                 f"{fmt(yt.get('estimatedMinutesWatched')):>9}{fmt(yt.get('subscribersGained')):>6}")
 
     for t in tickers:
