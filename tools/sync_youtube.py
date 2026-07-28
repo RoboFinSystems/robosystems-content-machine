@@ -64,6 +64,33 @@ FIELDS = [
     ("short_qa_title", "short_qa_youtube_url", "short-qa"),
 ]
 
+# `just yt-upload` already records the exact video it created. Rediscovering that by
+# title-matching an RSS feed is strictly worse: the feed holds only ~15 uploads and lags
+# by minutes, so SAM and IMAX both reported no match right after going public even though
+# their ids were sitting on disk. Prefer the sidecar; RSS stays the fallback for videos
+# uploaded outside this pipeline.
+SIDECARS = {
+    "youtube_url": "{t}_youtube.json",
+    "short_youtube_url": "{t}_short_youtube.json",
+}
+
+
+def sidecar_url(ticker, url_key):
+    """URL recorded by the upload step, if it exists and the video is public."""
+    name = SIDECARS.get(url_key)
+    if not name:
+        return None
+    path = os.path.join(get_project_dir(ticker), "videos", name.format(t=ticker))
+    if not os.path.exists(path):
+        return None
+    try:
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return None
+    vid = data.get("video_id")
+    return f"https://youtu.be/{vid}" if vid else None
+
 
 def sync(tickers, report_only=False):
     bucket = require_env("AWS_S3_BUCKET")
@@ -89,7 +116,11 @@ def sync(tickers, report_only=False):
         cells, hits = [], {}
         for title_key, url_key, label in FIELDS:
             title = pub.get(title_key)
-            if not title:
+            if (url := sidecar_url(t, url_key)):
+                hits[url_key] = url
+                cells.append(f"{label} ✓id")      # from the upload sidecar, not the feed
+                n_matched += 1
+            elif not title:
                 cells.append(f"{label} —")
             elif (url := _match(title, feed)):
                 hits[url_key] = url
