@@ -101,7 +101,14 @@ pipeline project:
 # ─── Webdeck (pilot): animated HTML deck → frame render → mux ─
 
 # Full webdeck pipeline: validate → voiceover → build → render → mux (no PPTX, no Shotstack)
-webdeck-pipeline project: (validate project) (voiceover project) (webdeck project) (webdeck-render project) (webdeck-mux project)
+# Validates with --pre-render: the render-freshness check would otherwise refuse to let
+# the pipeline run precisely when a re-render is what the project needs.
+webdeck-pipeline project: (validate-pre-render project) (voiceover project) (webdeck project) (webdeck-render project) (webdeck-mux project)
+
+# Validate everything except render freshness (used as the pipeline's pre-render gate)
+validate-pre-render project:
+    @just ensure-env
+    UV_ENV_FILE={{_env}} uv run python tools/validate_project.py {{project}} --pre-render
 
 # Build the animated webdeck HTML from script.json + VO durations
 webdeck project *args:

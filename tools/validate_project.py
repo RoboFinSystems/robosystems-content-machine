@@ -654,6 +654,12 @@ def main():
     parser = argparse.ArgumentParser(description="Validate project outputs")
     parser.add_argument("project", help="Project name (e.g., AAP_2025_10_K)")
     parser.add_argument("--fix", action="store_true", help="Auto-fix common schema issues")
+    # The freshness check exists to stop a stale video reaching publish. Running it as a
+    # pre-render gate is circular: the render is what clears the staleness, so an error
+    # here blocks the fix and the pipeline silently keeps the old MP4. webdeck-pipeline
+    # passes this; a bare `just validate` still runs the full check.
+    parser.add_argument("--pre-render", action="store_true",
+                        help="Skip the render-freshness check (the render about to run clears it)")
     args = parser.parse_args()
 
     project_dir = get_project_dir(args.project)
@@ -672,7 +678,8 @@ def main():
     check_robosystems_plug(script)
     check_companion_formats(project_dir, ticker, script)
     check_publish_metadata(project_dir, ticker, script)
-    check_render_freshness(project_dir, ticker, script)
+    if not args.pre_render:
+        check_render_freshness(project_dir, ticker, script)
 
     if args.fix:
         try_fix_script(project_dir, ticker, script)
