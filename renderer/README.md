@@ -10,6 +10,13 @@ package to `design-system/`. It does the two jobs the Python pipeline can't:
    browser and shoot one screenshot per frame → a frame-accurate mp4 (9:16
    research shorts, 16:9 demo cutaways). This replaced the retired Pillow
    caption-card renderer: one brand source for both the deck and the short.
+3. **`demo`** — record a scripted **walkthrough of the live product**: a pointer
+   travels, hovers, clicks and scrolls, and the UI responds, because the drawn
+   cursor and the real mouse are the same mouse. Zoom is a camera over the live
+   page aimed at a named component. This is the replacement for the old
+   still-plus-Ken-Burns demo cut.
+4. **`probe`** — list the anchors a walkthrough can actually aim at, read off the
+   running app.
 
 **Tool vs. product:** this package is the generalized, committed *tool*. Everything
 per-episode is a *product* and lives together under the repo-root
@@ -109,6 +116,85 @@ Determinism: the harness exposes `window.__renderFrame(i)` and we drive it
 frame-by-frame (no wall-clock) — the same spec always renders the identical
 video.
 
+## demo — the live product walkthrough
+
+```bash
+just demo-probe    <config> Driftline "/ledger/close,/reports,/plan"   # what can I aim at?
+just demo-stills   showcase/coffee_roaster/driftline.walkthrough.json <config>   # ~15s fit check
+just demo-pipeline showcase/coffee_roaster/driftline.walkthrough.json <config>   # narrate -> record -> mux
+```
+
+Needs the RoboLedger UI running (default `http://localhost:3001`); `--base-url`
+points it at prod instead. Renders at roughly **2x realtime** - a 90-second demo
+takes about three minutes.
+
+**Two rules hold it together.**
+
+*Voiceover owns the clock.* `tools/demo_narrate.py` synthesises one mp3 per beat,
+measures it, and writes `durationMs` back into the spec. The renderer then fits
+that beat's choreography into exactly that many frames. Audio and video cannot
+drift, however long a sentence turns out to be.
+
+*Waiting happens off camera.* Navigations, network settles and entrance
+animations run to completion **between** frames, never during them. Every frame
+is shot of a settled UI, so the recording has no dead air and the product looks
+as fast as it is.
+
+**Zoom is sharp because the browser does the work.** The page renders at
+`deviceScaleFactor: 2` and each frame is a screenshot `clip` of the camera rect,
+downsampled to 1920x1080. At 1x that is a supersampled frame; at the 2x cap it is
+pixel-for-pixel. Nothing is ever upsampled - which is the whole difference from
+Ken-Burns-ing a PNG. `maxZoom` is clamped to the device scale factor for that
+reason. A zoom target already wider than the viewport correctly resolves to 1x:
+there is nothing to zoom into.
+
+### Spec format
+
+`showcase/<company>/<name>.walkthrough.json` is a list of **beats**; each beat is
+one narration line plus the **actions** performed while it plays.
+
+```jsonc
+{
+  "slug": "driftline_walkthrough", "width": 1920, "height": 1080, "fps": 30,
+  "theme": "dark", "entity": "Driftline", "maxZoom": 2,
+  "beats": [
+    { "id": "close-detail",
+      "narration": "Claude drafts every entry, and each one carries its evidence.",
+      "actions": [
+        { "kind": "goto", "route": "/ledger/close", "ms": 700 },
+        { "kind": "zoom", "target": "[data-testid=\"period-close-panel\"]", "ms": 1300 },
+        { "kind": "dwell" }
+      ] }
+  ]
+}
+```
+
+| action | does | notes |
+|---|---|---|
+| `goto` | navigate, settle off camera, hold | resets the camera unless `keepZoom` |
+| `move` / `hover` | pointer travels along a bowed path | the real mouse moves too, so hover styles fire |
+| `click` | press, click for real, ride the ripple out | settles the consequence off camera |
+| `scroll` | eases the element's own scroll container | finds the scroller rather than assuming the document |
+| `zoom` | animates the camera to a component | no `target` means back to full frame |
+| `type` / `key` | keyboard input | |
+| `dwell` | hold | **elastic**: with no `ms`, absorbs the beat's remaining time |
+| `wait` | `waitForSelector`, emits no frames | |
+
+`target` is a **raw Playwright selector** (`[data-testid="x"]`,
+`button:has-text("Close")`, `text=Deferred revenue`), or `[x, y]`, or
+`{ selector, offset, nth, timeout }`. Raw selectors on purpose: the app's
+`data-testid` vocabulary is thin, so specs need `text=` and `:has-text()` as
+first-class options.
+
+Add `"optional": true` to an action to degrade a missing target into a hold plus
+a warning instead of killing the render. A missing target otherwise fails with
+the closest matching anchors on that page listed for you.
+
+**Always run `just demo-stills` first.** It walks the entire choreography and
+writes one framed still per beat in ~15 seconds, reporting the zoom level each
+beat settled at. Catching a zoom aimed at the wrong element there costs seconds;
+catching it after a full render costs minutes.
+
 ## How it fits together
 
 ```
@@ -125,5 +211,5 @@ robosystems UI  ──login + routes──►  renderer (capture)  ──►  st
   so cutaways are on-brand dark and deterministic.
 - **Entity** ✅ — `--entity Driftline` drives the header switcher; the selection
   is persisted server-side (JWT session), so every scene navigation reflects it.
-- **Clips:** `capture` emits stills today; motion (scrolls, the draft-entry
-  click) via frame sequence → ffmpeg is the same core as `short`. *(next)*
+- **Clips** ✅ — shipped as `demo`: real cursor, real clicks, component-targeted
+  zoom, VO-locked timing. Supersedes the still-plus-Ken-Burns demo cut.

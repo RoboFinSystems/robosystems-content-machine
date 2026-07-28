@@ -345,6 +345,37 @@ render-capture config company entity="" scenes="home,transactions,close,statemen
 render-short spec:
     node renderer/src/cli.mjs short --spec {{spec}}
 
+# ─── Product demos (live UI walkthrough: real cursor, real clicks, component zoom) ───
+
+# List the anchors a walkthrough can aim at, read off the RUNNING app rather than
+# guessed from source. "fit" is the largest zoom that still frames the element.
+# e.g. just demo-probe <config> Driftline "/ledger/close,/reports,/plan"
+demo-probe config entity="" routes="/home,/ledger/close,/ledger/statements,/reports,/plan":
+    node renderer/src/cli.mjs probe --config {{config}} --routes "{{routes}}" {{ if entity != "" { "--entity '" + entity + "'" } else { "" } }}
+
+# 1. Voiceover + timing. Writes durationMs into the spec so narration owns the clock.
+demo-narrate spec *args="":
+    @just ensure-env
+    UV_ENV_FILE={{_env}} uv run python tools/demo_narrate.py {{spec}} {{args}}
+
+# 2. Record the walkthrough against the live UI -> silent mp4 in showcase/<company>/renders/.
+demo-render spec config *args="":
+    node renderer/src/cli.mjs demo --spec {{spec}} --config {{config}} {{args}}
+
+# 3. Mux the per-beat VO (+ ducked music bed) onto the silent render.
+demo-mux spec *args="":
+    @just ensure-env
+    UV_ENV_FILE={{_env}} uv run python tools/demo_mux.py {{spec}} {{args}}
+
+# The whole demo pipeline. Needs the RoboLedger UI running (default localhost:3001).
+# e.g. just demo-pipeline showcase/coffee_roaster/driftline.walkthrough.json ~/Projects/robosystems/.local/config.json
+demo-pipeline spec config: (demo-narrate spec) (demo-render spec config) (demo-mux spec)
+
+# Single-frame fit check before committing to a full render (~10s vs minutes).
+# Shoots the first frame of each beat so a bad zoom target is caught early.
+demo-stills spec config:
+    node renderer/src/cli.mjs demo --spec {{spec}} --config {{config}} --stills
+
 # ─── Utilities ────────────────────────────────────────────────
 
 # Play the final video
