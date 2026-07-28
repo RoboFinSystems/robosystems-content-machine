@@ -460,6 +460,14 @@ def check_render_freshness(project_dir, ticker, script):
     # two reports a stale video as current. That happened on AMC - the table overflow fix
     # rebuilt the page, the re-render was interrupted, and validate still said PASSED.
     html = os.path.join(project_dir, "webdeck", f"{ticker}_webdeck.html")
+    # ...and the sources that GENERATE that page, because comparing to the built page alone
+    # only catches a template fix once something happens to rebuild it. Edit the template
+    # and every already-rendered project keeps reporting "current" while its slides are
+    # built from the old renderer. That is how a broken negative-bar chart nearly shipped.
+    repo = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    renderer = [os.path.join(repo, "tools", "webdeck", "template.html"),
+                os.path.join(repo, "tools", "webdeck", "render_webdeck.mjs"),
+                os.path.join(repo, "tools", "build_webdeck.py")]
     if os.path.exists(final) and os.path.exists(spath):
         newer_than = []
         if os.path.getmtime(spath) > os.path.getmtime(final):
@@ -468,6 +476,11 @@ def check_render_freshness(project_dir, ticker, script):
             newer_than.append("the voiceover")
         if os.path.exists(html) and os.path.getmtime(html) > os.path.getmtime(final):
             newer_than.append("the built webdeck page")
+        rsrc = [p for p in renderer
+                if os.path.exists(p) and os.path.getmtime(p) > os.path.getmtime(final)]
+        if rsrc:
+            newer_than.append("the renderer (" +
+                              ", ".join(os.path.basename(p) for p in rsrc) + ")")
         if newer_than:
             error(f"{ticker}_final.mp4 is older than {' and '.join(newer_than)} - "
                   f"re-render before publishing (just webdeck-render {ticker} && "
