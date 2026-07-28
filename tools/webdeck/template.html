@@ -86,12 +86,17 @@ html,body { background:#000; }
 .bar { position:absolute; left:0; right:0; bottom:56px; border-radius:14px;
   background:#182238; will-change:height; }
 .bar.hl { background:var(--accent); }
+.bar.neg { background:#3a1b26; }
+.bar.neg.hl { background:var(--data-negative); }
+.bar-zero { position:absolute; left:0; right:0; height:2px;
+  background:rgba(255,255,255,.16); opacity:0; }
 .bar-glow { position:absolute; left:-40px; right:-40px; bottom:0; top:-60px; border-radius:40px;
   background:radial-gradient(closest-side, rgba(59,122,245,.28), transparent 75%);
   opacity:0; }
 .bar-val { position:absolute; left:0; right:0; text-align:center;
   font-weight:600; font-size:31px; color:var(--text-primary); }
 .bar-val.hl { color:var(--blue-400); }
+.bar-val.neg { color:var(--data-negative); }
 .bar-x { position:absolute; left:0; right:0; bottom:0; text-align:center;
   font-size:29px; color:#7d8aa1; }
 .bar-x.hl { color:var(--text-primary); font-weight:600; }
@@ -363,8 +368,9 @@ function buildTitle(sec, root, tracks) {
 }
 
 function fmtBarValue(v) {
-  if (Math.abs(v) >= 1e9) return '$' + (v/1e9).toFixed(1) + 'B';
-  if (Math.abs(v) >= 1e6) return '$' + (v/1e6).toFixed(0) + 'M';
+  const sign = v < 0 ? '-' : '', a = Math.abs(v);   // '-$59M', never '$-59M'
+  if (a >= 1e9) return sign + '$' + (a/1e9).toFixed(1) + 'B';
+  if (a >= 1e6) return sign + '$' + (a/1e6).toFixed(0) + 'M';
   return String(v);
 }
 function buildBarChart(sec, root, tracks) {
@@ -377,25 +383,44 @@ function buildBarChart(sec, root, tracks) {
   const wrap = el('div','bars');
   root.appendChild(wrap);
   const entries = Object.entries(sec.slide.data);
-  const max = Math.max(...entries.map(([,v]) => +v));
+  // Scale across the full range so positives and negatives share one zero baseline.
+  // Scaling by max alone made a negative value clamp to a stub at the axis, which
+  // silently deleted the point of the slide (CALM's Q4 loss, EAF's operating cash burn).
+  const vals = entries.map(([,v]) => +v);
+  const lo = Math.min(0, ...vals), hi = Math.max(0, ...vals);
+  const range = (hi - lo) || 1;
+  const zeroFrac = (0 - lo) / range;
+  if (lo < 0) {
+    const zl = el('div','bar-zero');
+    wrap.appendChild(zl);
+    tracks.push(t => {
+      zl.style.bottom = (56 + zeroFrac * (wrap.clientHeight - 56 - 60)) + 'px';
+      zl.style.opacity = eoq(seg(t, 0.6, 0.5));
+    });
+  }
   entries.forEach(([k, v], i) => {
     const hl = k === sec.slide.highlight;
+    const neg = (+v) < 0;
     const col = el('div','barcol');
     const glow = el('div','bar-glow');
-    const bar = el('div', 'bar' + (hl ? ' hl' : ''));
-    const val = el('div', 'bar-val' + (hl ? ' hl' : ''));
+    const bar = el('div', 'bar' + (hl ? ' hl' : '') + (neg ? ' neg' : ''));
+    const val = el('div', 'bar-val' + (hl ? ' hl' : '') + (neg ? ' neg' : ''));
     const x = el('div', 'bar-x' + (hl ? ' hl' : ''), esc(k));
     col.appendChild(glow); col.appendChild(bar); col.appendChild(val); col.appendChild(x);
     wrap.appendChild(col);
-    const frac = (+v) / max;
+    const frac = Math.abs(+v) / range;
     const d = 0.75 + i*0.14;
     const spec = { target:+v };
     tracks.push(t => {
       const p = eoq(seg(t, d, 1.15));
       const hMax = col.clientHeight - 56 - 60;      // reserve label + x row
-      const h = Math.max(6, frac * hMax * p);
+      const zero = 56 + zeroFrac * hMax;           // baseline, above the x-label row
+      const h = Math.max(4, frac * hMax * p);
       bar.style.height = h + 'px';
-      val.style.bottom = (56 + h + 16) + 'px';
+      bar.style.bottom = (neg ? zero - h : zero) + 'px';
+      // A negative bar can reach the x-label row, so its value sits in the empty
+      // space above the baseline rather than under the bar, where it would collide.
+      val.style.bottom = (neg ? zero + 16 : zero + h + 16) + 'px';
       val.style.opacity = p < 0.15 ? 0 : 1;
       val.textContent = fmtBarValue(spec.target * p);
       if (hl) glow.style.opacity = p * (0.75 + 0.25*(0.5+0.5*Math.sin(t*0.9)));
