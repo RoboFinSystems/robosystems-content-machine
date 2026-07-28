@@ -134,10 +134,54 @@ def generate_audio(voice_id, text, output_path):
         return False
     with open(output_path, "wb") as f:
         f.write(best_audio)
+
+    # Re-rolling is a lottery and some inputs lose it repeatedly, so cap what is left.
     if best_gap > GAP_LIMIT:
-        print(f"    WARNING: best of {GAP_TAKES} takes still has a {best_gap:.2f}s gap",
-              flush=True)
+        capped = cap_long_pauses(output_path)
+        if capped is not None:
+            print(f"    trimmed dead air: {best_gap:.2f}s -> {capped:.2f}s", flush=True)
+        else:
+            print(f"    WARNING: best of {GAP_TAKES} takes still has a {best_gap:.2f}s gap",
+                  flush=True)
     return True
+
+
+def cap_long_pauses(path, cap=0.7):
+    """Trim any silence longer than `cap` seconds down to roughly `cap`.
+
+    The dropouts cluster in the first few seconds of a clip: the voice says a phrase,
+    goes quiet for 2-3 seconds, then resumes. Capping is deterministic where re-rolling
+    is not. Returns the new max internal gap, or None if the trim was skipped because it
+    did not help or because it removed so much audio that it likely ate speech.
+    """
+    before = max_internal_gap(path)
+    tmp = f"{path}.capped.mp3"
+    try:
+        old_dur = float(subprocess.run(
+            ["ffprobe", "-v", "error", "-show_entries", "format=duration",
+             "-of", "default=nw=1:nk=1", str(path)],
+            capture_output=True, text=True).stdout.strip() or 0)
+        subprocess.run(
+            ["ffmpeg", "-y", "-v", "error", "-i", str(path), "-af",
+             f"silenceremove=stop_periods=-1:stop_duration={cap}:"
+             f"stop_threshold=-42dB:detection=peak", tmp],
+            capture_output=True, check=True)
+        new_dur = float(subprocess.run(
+            ["ffprobe", "-v", "error", "-show_entries", "format=duration",
+             "-of", "default=nw=1:nk=1", tmp],
+            capture_output=True, text=True).stdout.strip() or 0)
+    except (OSError, ValueError, subprocess.CalledProcessError):
+        if os.path.exists(tmp):
+            os.remove(tmp)
+        return None
+
+    after = max_internal_gap(tmp)
+    # Guard against the filter eating speech rather than silence.
+    if new_dur < old_dur * 0.75 or after >= before:
+        os.remove(tmp)
+        return None
+    os.replace(tmp, path)
+    return after
 
 
 def generate_all(project_name, force=False, short=False):
