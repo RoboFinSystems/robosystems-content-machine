@@ -111,6 +111,11 @@ webdeck project *args:
 webdeck-render project *args:
     cd tools/webdeck && node render_webdeck.mjs --html ../../projects/{{project}}/webdeck/{{project}}_webdeck.html --out ../../projects/{{project}}/webdeck/render {{args}}
 
+# QA stills for the long-form (comma-separated seconds), e.g. just webdeck-stills CALM "78,140"
+# A still takes ~10s against a ~16-min render - use it to check any template change.
+webdeck-stills project times:
+    cd tools/webdeck && node render_webdeck.mjs --html ../../projects/{{project}}/webdeck/{{project}}_webdeck.html --out ../../projects/{{project}}/webdeck/stills --stills "{{times}}"
+
 # Mux narration (A) and narration+music with ducking (B) onto the silent render
 webdeck-mux project *args:
     python3 tools/webdeck/mux_webdeck.py {{project}} {{args}}
