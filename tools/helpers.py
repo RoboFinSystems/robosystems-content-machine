@@ -31,14 +31,11 @@ def require_env(key):
 def cdn_base():
   """Public base URL that published assets are served from.
 
-  Prefers the CloudFront custom domain (AWS_CDN_DOMAIN_URL, e.g.
-  "https://assets.robosystems.ai"); falls back to the raw S3 endpoint (the bucket is
-  public-read) so URLs still resolve before the content CDN stack is deployed.
+  The CloudFront custom domain (AWS_CDN_DOMAIN_URL, e.g.
+  "https://assets.robosystems.ai") is the only public surface: the bucket is
+  private (OAC-only), so raw S3 URLs return 403 and would publish as dead links.
   """
-  cdn = os.environ.get("AWS_CDN_DOMAIN_URL", "").strip().rstrip("/")
-  if cdn:
-    return cdn
-  return f"https://{require_env('AWS_S3_BUCKET')}.s3.amazonaws.com"
+  return require_env("AWS_CDN_DOMAIN_URL").strip().rstrip("/")
 
 
 def asset_url(key):
