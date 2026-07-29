@@ -273,13 +273,21 @@ Cannabis editorial guidance for the script:
   numbering is automatic.
 - Every claim references a specific filing number; the slide's `data` shows that exact number.
 - Close with a clear bull/bear framework — not a buy call.
+- **Close on the generalization, not just the ticker.** Ending at the company's conclusion sells
+  the analysis, not the machine that made it. Immediately before or inside the CTA slide, land
+  ONE beat that widens the frame: no analyst wrote this, the same pipeline reads any filer's
+  XBRL, and a private company reporting in the same format is the same job. One or two flat,
+  concrete sentences, written fresh per name so it hangs off that company's specific finding -
+  never a boast or a feature list. For a cannabis name the 280E math is the natural hook into
+  it: the adjustment came out of the filing's own tax note, not a spreadsheet someone maintained.
 - **RoboSystems plug** — use this verbatim as the final or second-to-last slide
-  (`visual_type: "title"`, `visual_ref: "cta"`, no chart):
-  > "This entire analysis was built using RoboSystems — an open source platform that gives you
-  > direct access to structured SEC filing data for every public company. Revenue, earnings,
-  > balance sheet, cash flow, segment breakdowns — all queryable, all from the original XBRL
-  > filings. You can set up the same tools I just used in about five minutes. Head to
-  > robosystems dot AI to get started — link in the description."
+  (`visual_type: "title"`, `visual_ref: "cta"`, no chart). **The door is the SEC Shared
+  Repository, not the homepage:** subhead `robosystems.ai/pricing`, and link it first in the
+  YouTube description. Never speak a price - tiers change and the video does not.
+  > "This entire analysis was built on the RoboSystems SEC Shared Repository: structured filing
+  > data for every public company that files. Revenue, earnings, balance sheet, cash flow,
+  > segment breakdowns, all queryable, all from the original XBRL. If you want to run your own
+  > deep dives like this one, the link is in the description."
 - **Thumbnail block** — fill the script's `thumbnail` block (Claude Design builds it; see
   `DESIGN_INSTRUCTIONS.md`): **hero = the adjusted P/E post-280E-relief** (the
   cognitive-dissonance number); **banner = "INITIATING COVERAGE"** for a new name, or
@@ -299,7 +307,8 @@ X **Article** whose link goes in the first comment (`x_first_comment`) — no Yo
 ### 4. YouTube Description (`social/{TICKER}_youtube_description.txt`)
 **Open with a search-first line** (first line + title are the primary ranking signals - restate
 Company + Ticker + the 280E/MSO topic keywords a searcher would type), then a 1-2 sentence hook;
-links: `https://robosystems.ai`
+links: **`https://robosystems.ai/pricing` first** (the SEC Shared Repository door - what the video
+is actually selling), then `https://robosystems.ai`
 and `https://github.com/RoboFinSystems/robosystems-content-machine`; a `🎟️ New customers: 50%
 off your first month with code [PROMO_CODE]` line under the links; **timestamps** — draft from
 `duration_estimate_seconds` (`0:00` start, accumulate); after render, finalize from the generated

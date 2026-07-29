@@ -77,6 +77,29 @@ You author no slide HTML.
 literal token (swap in the live Stripe code at post time, or omit the line if no promo is
 running) — never hardcode a real code here, since codes change and expire.
 
+## Surface rules - one analysis, framed three ways
+
+Every name produces all the assets; they land on surfaces whose discovery mechanisms differ, and
+a line tuned for one surface loses on the others. This is measured on our own analytics, not
+assumed:
+
+| Surface | How readers arrive | What wins there |
+|---|---|---|
+| **YouTube** | ~61% search, browse is negligible | The **searchable query**: Company + Ticker + quarter + the specific metric. Front-load what someone would actually type. |
+| **X** | cashtag / topic feeds | The **contrarian curiosity line** plus an early ` $TICKER`. Small active cashtag communities out-reach marquee names 6-10x; crowded tickers land near the account median. |
+| **/research** | direct link (a prospect we sent) + long-tail SERP | The **brief**. This is the asset a buyer actually reads, so it carries the analytical claim plainly. Page titles come from `seo_title` in `reindex.py`, never from the YouTube hook. |
+
+**Never reuse one string across two surfaces.** The `youtube_title` is a query, the X hook is a
+curiosity line, the Short title is a third thing again, and the brief's headline is the
+analytical claim. A single string copied across all four reads as automated and underperforms on
+at least two of them.
+
+**The niche rule inverts between X and YouTube, so do not apply one rule to both.** On X an
+underserved ticker is an advantage: its cashtag feed is quiet and the right readers are in it. On
+YouTube an unsearched ticker has no audience at any quality level, because nobody types the
+company's name. When a name is thin on YouTube demand, the title has to earn its traffic on the
+*topic* rather than the ticker (the accounting mechanism, the sector question), not on the name.
+
 ### 1. Narrative Brief (`reports/{TICKER}_brief.md`) — write this FIRST
 
 A markdown document synthesizing your research into a compelling story. Opinionated prose,
@@ -149,18 +172,28 @@ Editorial guidance for the script:
   price vs the implied-value range, with the key assumptions listed; cover it in the narration.
   Framing: implied value under stated assumptions, not a price target.
 - Close with a clear takeaway and call-to-action.
-- **RoboSystems plug** — use ONE of these verbatim (don't rewrite), in a `title` slide
-  (`visual_ref: "cta"`), never over a chart:
+- **Close on the generalization, not just the ticker.** The analysis ending at the company's
+  conclusion sells the analysis; it does not sell the machine that made it. Immediately before
+  or inside the CTA slide, land ONE beat that widens the frame: no analyst wrote this, the same
+  pipeline reads any filer's XBRL, and a private company reporting in the same format is the
+  same job. One or two sentences, concrete and flat - never a boast, never a feature list.
+  Write it fresh per name so it hangs off that company's specific finding, e.g.
+  > "Nobody wrote this by hand. Every number came out of the filing itself, and the same
+  > pipeline runs on any of the ten thousand companies that file with the SEC."
+- **RoboSystems plug** - use ONE of these verbatim (don't rewrite), in a `title` slide
+  (`visual_ref: "cta"`), never over a chart. **The door is the SEC Shared Repository, not the
+  homepage:** name the repository in the narration, put `robosystems.ai/pricing` in the slide
+  subhead, and link it in the YouTube description. Never speak a price - tiers change and the
+  video does not.
   - *Mid-video attribution (best for shorter videos), after citing a specific data point:*
     > "All of the financial data in this analysis comes from the company's actual SEC filing,
-    > pulled directly from the RoboSystems shared data repository. If you want to run your own
-    > queries on any public company's filings, check out robosystems dot AI."
+    > pulled directly from the RoboSystems SEC Shared Repository. It is a subscription you can
+    > point your own tools at, across every public company that files. Link in the description."
   - *Closing CTA (best for longer analyses), as the final or second-to-last slide:*
-    > "This entire analysis was built using RoboSystems — a platform that gives you direct
-    > access to structured SEC filing data for every public company. Revenue, earnings, balance
-    > sheet, cash flow, segment breakdowns — all queryable, all from the original XBRL filings.
-    > If you want to do your own deep dives like this one, head to robosystems dot AI. Link in
-    > the description."
+    > "This entire analysis was built on the RoboSystems SEC Shared Repository: structured
+    > filing data for every public company that files. Revenue, earnings, balance sheet, cash
+    > flow, segment breakdowns, all queryable, all from the original XBRL. If you want to run
+    > your own deep dives like this one, the link is in the description."
 
 ### 3. X Post (`social/{TICKER}_x_post.txt`)
 A **single post — NOT a numbered thread** (long-form is fine on X; no "1/ 2/ 3/"). Opening
@@ -181,7 +214,8 @@ Article both win reach).
 ### 4. YouTube Description (`social/{TICKER}_youtube_description.txt`)
 **Open with a search-first line** (the first line, like the title, is a primary ranking signal):
 restate the Company + Ticker + quarter + the topic keywords a searcher would type before any
-flourish. Then a 1-2 sentence hook; links: `https://robosystems.ai` and
+flourish. Then a 1-2 sentence hook; links: **`https://robosystems.ai/pricing` first** (the SEC
+Shared Repository door - the thing this video is actually selling), then `https://robosystems.ai` and
 `https://github.com/RoboFinSystems/robosystems-content-machine`; a `🎟️ New customers: 50% off
 your first month with code [PROMO_CODE]` line under the links; a voice-credit line
 `Voiceover by ElevenLabs: https://try.elevenlabs.io/v9z3wzm97gk3` with a following
@@ -207,7 +241,7 @@ X native-video post and the YouTube Short.
   - `stat` - `slide{kicker, big, context, tone}`: one huge number
   - `cards` - `slide{eyebrow, headline, cards:[{label,value,change}], highlight}`: 2-3 metric cards
   - `points` - `slide{eyebrow, headline, points:[{text,value,tone,highlight}], footnote}`: 3-4 rows
-  - `cta` - `slide{headline, subhead}`: robosystems.ai
+  - `cta` - `slide{headline, subhead}`: the SEC Shared Repository, subhead `robosystems.ai/pricing`
 
   Narration is spoken-form (captions derive from it automatically). Reuse the already-verified
   long-form numbers. Arc: hook -> the number -> the turn -> why -> valuation -> CTA.
@@ -215,7 +249,7 @@ X native-video post and the YouTube Short.
   ~200-270 chars, framed as a 60-second clip and distinct from the long-form `x_post`.
 - `social/{TICKER}_short_youtube.txt` - **line 1 = the Short title** (hook-first, different from
   both the long-form YouTube title and the X hook, under 100 chars); the rest is the
-  description with `[LONGFORM_URL]`, a `robosystems.ai` line, and `#Shorts`.
+  description with `[LONGFORM_URL]`, a `robosystems.ai/pricing` line, and `#Shorts`.
 
 ### 6. Publish metadata (`social/{TICKER}_publish.json`)
 The per-platform native copy that lives nowhere else — you author it; `just postpack {TICKER}`
