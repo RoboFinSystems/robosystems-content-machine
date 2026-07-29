@@ -29,6 +29,7 @@ import argparse
 import datetime
 import json
 import os
+import re
 import subprocess
 
 from helpers import asset_url, require_env
@@ -114,6 +115,13 @@ def _load(path):
         return {}
 
 
+def strip_md(s):
+    """Inline markdown -> plain text. These strings land in <title>/<meta> tags and SERP
+    snippets, where '**$238.1 million**' renders its asterisks literally."""
+    s = re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", s)   # [text](url) -> text
+    return re.sub(r"\*\*|__|[*_`]", "", s).strip()
+
+
 def brief_headline(pdir, ticker):
     """(title, summary) read off the brief's leading '# H1' + the paragraph under it.
     Brief-only coverage has no script.json/publish.json to take a video title from,
@@ -124,8 +132,37 @@ def brief_headline(pdir, ticker):
     except OSError:
         return "", ""
     title = next((ln.lstrip("# ").strip() for ln in lines if ln.startswith("# ")), "")
-    body = [ln.strip() for ln in lines if ln.strip() and not ln.startswith("#")]
-    return title, (body[0] if body else "")
+    # First line of actual prose. Briefs commonly open with an italic source-note
+    # ("*RoboSystems Cannabis Coverage · Narrative Brief · Drafted June 29, 2026*"),
+    # which is useless as a search snippet — skip that, headings, quotes, rules,
+    # list/table rows, and anything too short to be a lede.
+    body = next((s for ln in lines
+                 if (s := ln.strip())
+                 and not s.startswith(("#", "*", "_", ">", "-", "|", "!", "`", "["))
+                 and len(s) > 60), "")
+    return strip_md(title), strip_md(body)
+
+
+def seo_fields(ticker, company, brief_summary, editorial_summary):
+    """The search-facing title/description, kept separate from the editorial `title` the
+    page shows. Google prints these verbatim, and the editorial copy is written for a
+    YouTube thumbnail ("The First $100B Software Profit - Is the AI Capex Worth It?"),
+    which matches nothing anyone types: /research ranks ~7 and earns 0.00% CTR across 363
+    impressions (Search Console, 3mo to 2026-07-28). The brief's opening paragraph leads
+    with the concrete numbers, so it beats the video blurb as a snippet.
+
+    Composed here rather than at publish time so it reaches already-published coverage on
+    the next reindex, with meta.json free to override either field per ticker."""
+    text = (brief_summary or editorial_summary or "").strip()
+    if len(text) > 155:  # Google truncates ~155-160; cut on a word so it reads as prose
+        text = text[:155].rsplit(" ", 1)[0].rstrip(" ,;:-") + "…"
+    # Some catalog names already carry a parenthetical ("GE Aerospace (General Electric
+    # Company)"), which would double up against the ticker we append.
+    company = re.sub(r"\s*\([^)]*\)\s*$", "", company).strip() or ticker
+    return {
+        "seo_title": f"{company} ({ticker}) SEC Filing Analysis",
+        "seo_description": text,
+    }
 
 
 def project_meta(ticker):
@@ -178,6 +215,11 @@ def run():
             meta = {**project_meta(t), "date": date, "version": quarter(date)}
 
         item = {"ticker": t, **meta, "assets": map_assets(present, flat)}
+        # setdefault: a per-ticker override in meta.json wins over the composed default.
+        for k, v in seo_fields(t, item.get("company") or t,
+                               brief_headline(os.path.join(PROJECTS, t), t)[1],
+                               item.get("summary", "")).items():
+            item.setdefault(k, v)
 
         history = []
         for ver in sorted(s3_ls_dirs(bucket, f"{flat}archive/"), reverse=True):
