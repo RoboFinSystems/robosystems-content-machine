@@ -25,7 +25,7 @@ import sys
 import blog_common as bc
 import narrate_blog
 import reindex_blog
-from helpers import asset_url, require_env
+from helpers import asset_url, invalidate_cdn, require_env
 
 # Optional sidecar artifacts (filename template under blog/<slug>/, content-type). The body
 # (post.md) is handled separately so we can strip frontmatter before upload.
@@ -66,9 +66,11 @@ def publish(slug, narrate=True):
     r = subprocess.run(["aws", "s3", "cp", "-", f"s3://{bucket}/{body_key}",
                         "--content-type", "text/markdown; charset=utf-8", "--only-show-errors"],
                        input=body if body.endswith("\n") else body + "\n", text=True)
+    published_keys = []
     if r.returncode == 0:
         print(f"  {asset_url(body_key)}  (body)")
         urls.append(asset_url(body_key))
+        published_keys.append(body_key)
     else:
         print("  FAILED: post.md (body)")
 
@@ -86,6 +88,7 @@ def publish(slug, narrate=True):
         url = asset_url(key)
         print(f"  {url}  ({os.path.getsize(local) / 1e6:.2f} MB)")
         urls.append(url)
+        published_keys.append(key)
 
     # Self-describing post metadata (mirrors research meta.json); reindex prefers the local
     # post.md but this keeps each S3 folder independently describable.
@@ -107,7 +110,11 @@ def publish(slug, narrate=True):
          "--cache-control", "public, max-age=60", "--only-show-errors"],
         input=json.dumps(meta_obj, indent=2, ensure_ascii=False), text=True, check=True)
 
-    print(f"\n{len(urls)} file(s) published. Refreshing blog catalog...\n")
+    print(f"\n{len(urls)} file(s) published.")
+    # Republishing reuses the same keys, so the CDN keeps serving the old bytes until the
+    # 24h TTL lapses. index.json is exempt (uploaded with max-age=60), the rest is not.
+    invalidate_cdn(published_keys)
+    print("\nRefreshing blog catalog...\n")
     reindex_blog.run()
     return urls
 

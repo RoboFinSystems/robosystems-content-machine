@@ -70,13 +70,23 @@ def api_request(path, data=None, method="POST"):
     return None
 
 
-# ElevenLabs occasionally inserts multi-second dead air in the middle of a segment.
-# Measured 2026-07-27: the same text, voice and settings produced max internal gaps of
-# 1.91s, 3.48s, 3.28s and 1.96s across four runs, and a fifth run came back clean at
-# 0.71s. It is stochastic, not a voice or a settings problem - which is why switching
-# voices never fixed it. So generate, measure, and re-roll the bad takes.
-GAP_LIMIT = float(os.environ.get("TTS_GAP_LIMIT", "1.5"))   # seconds of mid-clip silence
-GAP_TAKES = int(os.environ.get("TTS_GAP_TAKES", "3"))       # attempts before keeping the best
+# eleven_turbo_v2_5 stochastically inserted multi-second dead air mid-segment. Measured
+# 2026-07-27: the same text, voice and settings gave max internal gaps of 1.91s, 3.48s,
+# 3.28s and 1.96s across four runs. We answered that by generating up to three takes and
+# keeping the cleanest, then capping whatever silence survived.
+#
+# Re-measured on eleven_v3 (2026-07-29, 12 raw takes, re-roll disabled): 6 short video
+# segments came in at 0.93-1.20s and 6 long single-paragraph chunks at 1.13-1.32s. Zero
+# takes over 1.5s, and the variance is tight where turbo's was wild. The artifact was a
+# turbo defect and v3 does not reproduce it.
+#
+# So the re-roll is gone. It was not free: it tripled TTS spend, and its pause-capping
+# fallback used silenceremove with stop_periods=-1, which clamps EVERY pause in the clip,
+# not just the offending one - it flattened whole chunks of blog narration to a 0.7s
+# rhythm. What is left is a passive warning: measure, report, never rewrite the audio.
+# The threshold sits between real prosody (paragraph breaks reach ~1.9s) and a genuine
+# turbo-style dropout (3s+), so a future model regression still surfaces in the log.
+GAP_WARN = float(os.environ.get("TTS_GAP_WARN", "2.5"))     # seconds of mid-clip silence
 
 # We render videos ahead of time, so generation latency is worth nothing to us and
 # fidelity is worth a lot. The pipeline ran on eleven_turbo_v2_5 (the latency-optimized
@@ -92,9 +102,10 @@ TTS_STABILITY = float(os.environ.get("TTS_STABILITY", "0.5"))
 def max_internal_gap(path):
     """Longest silence that is neither leading nor trailing, in seconds.
 
-    Leading/trailing silence is normal and gets trimmed by the mux; a long pause in the
-    middle of a sentence is the artifact we are hunting. Returns 0.0 if ffmpeg is
-    unavailable so the check degrades to a no-op rather than blocking a run.
+    Leading/trailing silence is normal and gets trimmed by the mux. Note this cannot tell
+    a dropout from a paragraph break — both are just silence — so it is a smoke alarm, not
+    a judge. Returns 0.0 if ffmpeg is unavailable so the check degrades to a no-op rather
+    than blocking a run.
     """
     try:
         out = subprocess.run(
@@ -120,8 +131,8 @@ def generate_audio(voice_id, text, output_path):
     are respelled phonetically for the audio only — the source script is unchanged.
     Both TTS paths (voiceover and short) call this, so the fix is global.
 
-    Each take is checked for mid-clip dead air and re-rolled up to GAP_TAKES times;
-    the cleanest take wins so a bad roll never reaches the render.
+    Dead air is measured and reported but never corrected — see GAP_WARN. Any fix belongs
+    in a re-run, not in a filter that silently rewrites the pacing of a good take.
     """
     data = {
         "text": normalize_for_tts(text),
@@ -134,73 +145,17 @@ def generate_audio(voice_id, text, output_path):
         },
     }
 
-    best_audio, best_gap = None, None
-    for take in range(1, GAP_TAKES + 1):
-        audio_data = api_request(
-            f"/text-to-speech/{voice_id}?output_format={TTS_FORMAT}", data)
-        if not (audio_data and isinstance(audio_data, bytes)):
-            continue
-        with open(output_path, "wb") as f:
-            f.write(audio_data)
-        gap = max_internal_gap(output_path)
-        if best_gap is None or gap < best_gap:
-            best_audio, best_gap = audio_data, gap
-        if gap <= GAP_LIMIT:
-            break
-        print(f"    take {take}: {gap:.2f}s of dead air mid-clip, re-rolling", flush=True)
-
-    if best_audio is None:
+    audio_data = api_request(f"/text-to-speech/{voice_id}?output_format={TTS_FORMAT}", data)
+    if not (audio_data and isinstance(audio_data, bytes)):
         return False
     with open(output_path, "wb") as f:
-        f.write(best_audio)
+        f.write(audio_data)
 
-    # Re-rolling is a lottery and some inputs lose it repeatedly, so cap what is left.
-    if best_gap > GAP_LIMIT:
-        capped = cap_long_pauses(output_path)
-        if capped is not None:
-            print(f"    trimmed dead air: {best_gap:.2f}s -> {capped:.2f}s", flush=True)
-        else:
-            print(f"    WARNING: best of {GAP_TAKES} takes still has a {best_gap:.2f}s gap",
-                  flush=True)
+    gap = max_internal_gap(output_path)
+    if gap > GAP_WARN:
+        print(f"    WARNING: {gap:.2f}s of silence mid-clip (over the {GAP_WARN:.1f}s "
+              f"threshold) — listen before shipping: {output_path}", flush=True)
     return True
-
-
-def cap_long_pauses(path, cap=0.7):
-    """Trim any silence longer than `cap` seconds down to roughly `cap`.
-
-    The dropouts cluster in the first few seconds of a clip: the voice says a phrase,
-    goes quiet for 2-3 seconds, then resumes. Capping is deterministic where re-rolling
-    is not. Returns the new max internal gap, or None if the trim was skipped because it
-    did not help or because it removed so much audio that it likely ate speech.
-    """
-    before = max_internal_gap(path)
-    tmp = f"{path}.capped.mp3"
-    try:
-        old_dur = float(subprocess.run(
-            ["ffprobe", "-v", "error", "-show_entries", "format=duration",
-             "-of", "default=nw=1:nk=1", str(path)],
-            capture_output=True, text=True).stdout.strip() or 0)
-        subprocess.run(
-            ["ffmpeg", "-y", "-v", "error", "-i", str(path), "-af",
-             f"silenceremove=stop_periods=-1:stop_duration={cap}:"
-             f"stop_threshold=-42dB:detection=peak", tmp],
-            capture_output=True, check=True)
-        new_dur = float(subprocess.run(
-            ["ffprobe", "-v", "error", "-show_entries", "format=duration",
-             "-of", "default=nw=1:nk=1", tmp],
-            capture_output=True, text=True).stdout.strip() or 0)
-    except (OSError, ValueError, subprocess.CalledProcessError):
-        if os.path.exists(tmp):
-            os.remove(tmp)
-        return None
-
-    after = max_internal_gap(tmp)
-    # Guard against the filter eating speech rather than silence.
-    if new_dur < old_dur * 0.75 or after >= before:
-        os.remove(tmp)
-        return None
-    os.replace(tmp, path)
-    return after
 
 
 def generate_all(project_name, force=False, short=False):

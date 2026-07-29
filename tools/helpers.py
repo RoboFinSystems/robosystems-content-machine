@@ -7,6 +7,7 @@ and shell scripts. These are just convenience functions.
 
 import os
 import re
+import subprocess
 import sys
 
 
@@ -41,6 +42,39 @@ def cdn_base():
 def asset_url(key):
   """Public URL for an object key in the content bucket (e.g. "content/AAPL/x.mp4")."""
   return f"{cdn_base()}/{key.lstrip('/')}"
+
+
+def invalidate_cdn(keys):
+  """Invalidate object keys on the CloudFront distribution. Returns True if requested.
+
+  Republishing to an existing key does NOT expire the CDN copy. The distribution uses
+  Managed-CachingOptimized and we upload media without a Cache-Control header, so the
+  default 24h TTL applies: overwriting a narration in S3 leaves the old audio playing
+  for a day. Found the hard way re-voicing the blog on 2026-07-29.
+
+  Best-effort by design — a failed invalidation should not fail a publish that already
+  succeeded. Needs AWS_CLOUDFRONT_DISTRIBUTION_ID; says so loudly rather than silently
+  leaving stale content served.
+  """
+  keys = [k for k in keys if k]
+  if not keys:
+    return False
+  dist = os.environ.get("AWS_CLOUDFRONT_DISTRIBUTION_ID", "").strip()
+  if not dist:
+    print("  ! AWS_CLOUDFRONT_DISTRIBUTION_ID not set — skipping CDN invalidation.\n"
+          "    Republished files may serve the OLD version for up to 24h.")
+    return False
+  paths = ["/" + k.lstrip("/") for k in keys]
+  r = subprocess.run(
+    ["aws", "cloudfront", "create-invalidation", "--distribution-id", dist,
+     "--paths", *paths, "--query", "Invalidation.Id", "--output", "text"],
+    capture_output=True, text=True)
+  if r.returncode != 0:
+    print(f"  ! CDN invalidation failed (files are published, cache may be stale): "
+          f"{r.stderr.strip()}")
+    return False
+  print(f"  CDN invalidation {r.stdout.strip()} requested for {len(paths)} path(s)")
+  return True
 
 
 # ─── TTS text normalization ──────────────────────────────────────────────────
