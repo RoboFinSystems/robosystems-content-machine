@@ -302,6 +302,17 @@ blog-publish slug *args:
     @just ensure-env
     UV_ENV_FILE={{_env}} uv run python tools/publish_blog.py {{slug}} {{args}}
 
+# Generate the branded 5:2 X Article cover for a blog post
+blog-article-cover slug *args:
+    python3 tools/gen_article_cover.py {{slug}} --blog {{args}}
+
+# Create a blog post as an X Article DRAFT on @RoboFinSystems (review, then --publish).
+# The X Article is the account's best format (~2x plain text) - this is what lets the
+# concept/education lane use it instead of only ticker briefs.
+blog-x-article slug *args: (blog-article-cover slug)
+    @just ensure-env
+    UV_ENV_FILE={{_env}} uv run python tools/post_x.py article {{slug}} --blog {{args}}
+
 # Rebuild the blog catalog (blog/index.json) the /blog routes read
 blog-reindex:
     @just ensure-env

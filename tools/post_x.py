@@ -9,6 +9,12 @@ Then:      just x-article TICKER          create the Article DRAFT from reports/
            just x-post TICKER             main post: native video + Article link
                                           (link auto-read from the article sidecar)
 
+Blog essays take the same Article path (`just blog-x-article <slug>` -> --publish),
+sourcing blog/<slug>/post.md with the frontmatter title. The X Article is the
+account's best-performing format by roughly 2x, and it used to be reachable only
+by ticker briefs - which left the concept/education lane, the one with measured
+search demand behind it, unable to use the best format we have.
+
 All credentials live in .env (same as every other service in this repo):
   X_CONSUMER_KEY / X_SECRET_KEY     the app's consumer key + consumer secret
   X_ACCESS_TOKEN / X_ACCESS_SECRET  user-context token for the posting account
@@ -38,7 +44,9 @@ import re
 import sys
 import time
 from pathlib import Path
+from typing import NamedTuple
 
+import blog_common
 import helpers
 
 REPO = Path(__file__).resolve().parent.parent
@@ -282,10 +290,59 @@ def article_sidecar(proj: Path, ticker: str) -> Path:
     return proj / "social" / f"{ticker}_x_article.json"
 
 
-def cmd_article(args) -> int:
-    ticker = args.ticker.upper()
+class ArticleSource(NamedTuple):
+    """Everything an X Article needs, resolved from either a ticker project or a blog
+    post. The two differ only in where the markdown, the cover and the sidecar live, so
+    cmd_article takes one of these rather than a ticker.
+
+    Blog posts get this path because the X Article is the best-performing format on the
+    account (median 380 vs 189 plain text) and it was reachable only by ticker content -
+    while the concept/education lane is the one with measured search demand behind it.
+    """
+    kind: str              # "ticker" | "blog"
+    name: str              # TICKER or slug: used in messages and the --publish hint
+    text: str              # markdown body, frontmatter already stripped
+    title: str | None      # explicit title (blog frontmatter); None = take the body's H1
+    sidecar: Path
+    cover: Path | None
+    campaign: str | None
+    recipe: str            # the `just` recipe that produced it, for the next-step hints
+
+
+def resolve_article_source(args) -> ArticleSource:
+    if args.blog:
+        slug = args.target
+        d = REPO / "blog" / slug
+        if not d.is_dir():
+            sys.exit(f"no blog post at blog/{slug}/ - `just blog-new {slug}` first")
+        meta, body = blog_common.parse_post(slug)
+        cover = d / f"{slug}_article_cover.png"
+        return ArticleSource(
+            kind="blog", name=slug, text=body,
+            # The blog's frontmatter title is authoritative; the body often has no H1.
+            title=(meta.get("title") or "").strip() or None,
+            sidecar=d / f"{slug}_x_article.json",
+            cover=cover if cover.exists() else None,
+            campaign=args.campaign, recipe="blog-x-article")
+
+    ticker = args.target.upper()
     proj = REPO / "projects" / ticker
-    sidecar = article_sidecar(proj, ticker)
+    brief = proj / "reports" / f"{ticker}_brief.md"
+    if not brief.exists():
+        sys.exit(f"brief not found: {brief}")
+    cover = proj / "charts" / "png" / f"{ticker}_article_cover.png"   # branded masthead
+    if not cover.exists():
+        cover = proj / "charts" / "png" / f"{ticker}_thumbnail_x.png"  # legacy gpt-image 5:2
+    return ArticleSource(
+        kind="ticker", name=ticker, text=brief.read_text(), title=None,
+        sidecar=article_sidecar(proj, ticker),
+        cover=cover if cover.exists() else None,
+        campaign=args.campaign or detect_campaign(proj), recipe="x-article")
+
+
+def cmd_article(args) -> int:
+    src = resolve_article_source(args)
+    sidecar = src.sidecar
 
     if args.publish:
         if args.id:
@@ -293,7 +350,7 @@ def cmd_article(args) -> int:
         elif sidecar.exists():
             article_id = json.loads(sidecar.read_text())["article_id"]
         else:
-            sys.exit(f"no {sidecar.name} found - run `just x-article {ticker}` first "
+            sys.exit(f"no {sidecar.name} found - run `just {src.recipe} {src.name}` first "
                      "(or pass --id ARTICLE_ID)")
         sess = oauth_session()
         handle = acting_user_guard(sess)
@@ -308,23 +365,18 @@ def cmd_article(args) -> int:
         data.update(status="published", post_id=post_id, url=url,
                     published_at=datetime.now(timezone.utc).isoformat(timespec="seconds"))
         sidecar.write_text(json.dumps(data, indent=2) + "\n")
-        print(f"next: just x-post {ticker} (picks up the Article link automatically)")
+        if src.kind == "ticker":
+            print(f"next: just x-post {src.name} (picks up the Article link automatically)")
         return 0
 
-    brief = proj / "reports" / f"{ticker}_brief.md"
-    if not brief.exists():
-        sys.exit(f"brief not found: {brief}")
-    text = brief.read_text()
-    code = helpers.resolve_promo_code(args.campaign or detect_campaign(proj))
-    text = helpers.apply_promo_code(text, code)
-    title, content_state = md_to_content_state(text)
+    text = helpers.apply_promo_code(src.text, helpers.resolve_promo_code(src.campaign))
+    h1_title, content_state = md_to_content_state(text)
+    title = src.title or h1_title
     if not title:
-        sys.exit("brief has no H1 - the first `# ` line becomes the Article title")
+        sys.exit(f"{src.name} has no title - the first `# ` line becomes the Article title"
+                 + (" (or set `title:` in the frontmatter)" if src.kind == "blog" else ""))
 
-    cover = proj / "charts" / "png" / f"{ticker}_article_cover.png"   # branded masthead
-    if not cover.exists():
-        cover = proj / "charts" / "png" / f"{ticker}_thumbnail_x.png"  # legacy gpt-image 5:2
-    cover = cover if (cover.exists() and not args.no_cover) else None
+    cover = src.cover if (src.cover and not args.no_cover) else None
 
     kinds = {}
     for b in content_state["blocks"]:
@@ -361,7 +413,7 @@ def cmd_article(args) -> int:
         "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }, indent=2) + "\n")
     print("review it in the X Articles editor (x.com -> Premium -> Articles), then:")
-    print(f"  just x-article {ticker} --publish")
+    print(f"  just {src.recipe} {src.name} --publish")
     return 0
 
 
@@ -492,11 +544,13 @@ def main() -> int:
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("auth", help="verify (or mint via PIN flow) the user token")
 
-    ar = sub.add_parser("article", help="create (or --publish) the brief as an X Article")
-    ar.add_argument("ticker")
+    ar = sub.add_parser("article", help="create (or --publish) a brief or blog post as an X Article")
+    ar.add_argument("target", help="TICKER, or a blog slug with --blog")
+    ar.add_argument("--blog", action="store_true",
+                    help="target is a blog slug (blog/<slug>/post.md) rather than a ticker")
     ar.add_argument("--publish", action="store_true",
                     help="publish the draft from the sidecar (the post-review step)")
-    ar.add_argument("--id", help="explicit article id (else social/{T}_x_article.json)")
+    ar.add_argument("--id", help="explicit article id (else the sidecar next to the source)")
     ar.add_argument("--no-cover", action="store_true", help="skip the 5:2 cover image")
     ar.add_argument("--campaign", help="promo-code campaign override")
     ar.add_argument("--dry-run", action="store_true")
