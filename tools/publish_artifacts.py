@@ -44,8 +44,9 @@ def snapshot_prior_version(bucket, ticker):
                        capture_output=True, text=True)
     if r.returncode != 0:
         return
-    prior_date = next((line.split()[0] for line in r.stdout.splitlines()
-                       if line.split() and line.split()[-1] == f"{ticker}_final.mp4"), None)
+    listing = [(parts[-1], parts[0]) for parts in
+               (line.split() for line in r.stdout.splitlines()) if parts]
+    prior_date = reindex.version_date(listing, ticker)
     if not prior_date:
         return  # nothing published yet
     prior_version = reindex.quarter(prior_date)

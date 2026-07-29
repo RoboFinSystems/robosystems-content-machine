@@ -266,6 +266,21 @@ reindex:
     @just ensure-env
     UV_ENV_FILE={{_env}} uv run python tools/reindex.py
 
+# ─── Tier 1: brief-only coverage (volume → /research + SEO, no video) ─────────
+# The brief admits a ticker to the catalog, so a /research page needs no render,
+# no voiceover and no upload. Reserve the video treatment (webdeck-pipeline +
+# YouTube/X) for the few names per batch whose finding is story-shaped.
+
+# Validate a brief-only project (skips every script/deck/render check)
+validate-brief project:
+    @just ensure-env
+    UV_ENV_FILE={{_env}} uv run python tools/validate_project.py {{project}} --brief-only
+
+# Validate + publish a brief-only ticker straight to /research
+publish-brief project: (validate-brief project)
+    @just ensure-env
+    UV_ENV_FILE={{_env}} uv run python tools/publish_artifacts.py {{project}}
+
 # ─── Blog Pipeline (markdown essays → S3 blog/ + blog/index.json) ─────────────
 
 # Scaffold a new blog post: blog/<slug>/post.md from the template

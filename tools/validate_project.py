@@ -197,6 +197,40 @@ def check_slide_narration_coherence(segments, label, narration_key="narration",
     return flagged
 
 
+def check_brief(project_dir, ticker):
+    """Brief-only (tier 1) coverage — the brief IS the deliverable, so it carries the
+    checks the script would otherwise cover. `reindex` admits a ticker to the catalog on
+    the brief and reads the page title/summary off its leading H1 (which the portal then
+    strips from the body), so a missing H1 silently degrades the /research page."""
+    print("\n--- Brief ---")
+    path = os.path.join(project_dir, "reports", f"{ticker}_brief.md")
+    if not os.path.exists(path):
+        error(f"Brief missing: reports/{ticker}_brief.md")
+        return
+    with open(path, encoding="utf-8") as fh:
+        text = fh.read()
+    ok(f"Brief: reports/{ticker}_brief.md ({len(text):,} bytes)")
+
+    lines = text.splitlines()
+    if any(ln.startswith("# ") for ln in lines):
+        ok("H1 present (becomes the /research page title)")
+    else:
+        error("No '# ' H1 — the portal takes the page title from it")
+
+    # X Article pickup needs a space-preceded cashtag; "($TICKER)" does not register.
+    if re.search(rf"(?:^|\s)\${ticker}\b", "\n".join(lines[:20]), re.M):
+        ok(f"${ticker} cashtag in the opening")
+    else:
+        warn(f"No space-preceded ${ticker} in the first 20 lines — X Article pickup needs one")
+
+    # publish resolves [PROMO_CODE]; anything else in that shape renders literally on /research.
+    stray = sorted(set(re.findall(r"\[([A-Z][A-Z0-9_]{3,})\]", text)) - {"PROMO_CODE"})
+    if stray:
+        error(f"Unresolved placeholder(s) would render literally: {', '.join(stray)}")
+    else:
+        ok("No unresolved placeholders")
+
+
 def check_required_files(project_dir, ticker):
     """Check outputs. Only the script is required to render; the rest are publish artifacts."""
     print("\n--- Required Files ---")
@@ -680,6 +714,10 @@ def main():
     # passes this; a bare `just validate` still runs the full check.
     parser.add_argument("--pre-render", action="store_true",
                         help="Skip the render-freshness check (the render about to run clears it)")
+    # Tier 1 (volume): brief -> /research page, no video. The script-, deck- and
+    # render-centric checks below have nothing to inspect, so run only the brief's.
+    parser.add_argument("--brief-only", action="store_true",
+                        help="Validate a brief-only project (no script/video expected)")
     args = parser.parse_args()
 
     project_dir = get_project_dir(args.project)
@@ -691,18 +729,21 @@ def main():
     print(f"  Validating: {args.project}")
     print(f"{'='*50}")
 
-    check_required_files(project_dir, ticker)
-    script = check_script_schema(project_dir, ticker)
-    check_deck_contract(project_dir, script)
-    check_narration_quality(script)
-    check_robosystems_plug(script)
-    check_companion_formats(project_dir, ticker, script)
-    check_publish_metadata(project_dir, ticker, script)
-    if not args.pre_render:
-        check_render_freshness(project_dir, ticker, script)
+    if args.brief_only:
+        check_brief(project_dir, ticker)
+    else:
+        check_required_files(project_dir, ticker)
+        script = check_script_schema(project_dir, ticker)
+        check_deck_contract(project_dir, script)
+        check_narration_quality(script)
+        check_robosystems_plug(script)
+        check_companion_formats(project_dir, ticker, script)
+        check_publish_metadata(project_dir, ticker, script)
+        if not args.pre_render:
+            check_render_freshness(project_dir, ticker, script)
 
-    if args.fix:
-        try_fix_script(project_dir, ticker, script)
+        if args.fix:
+            try_fix_script(project_dir, ticker, script)
 
     # Summary
     print(f"\n{'='*50}")

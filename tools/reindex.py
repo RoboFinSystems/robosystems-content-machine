@@ -5,6 +5,12 @@ Scans local projects/, includes those whose deliverables are actually published 
 s3://{AWS_S3_BUCKET}/content/{TICKER}/, and emits ONE content/index.json. No database —
 this flat file is the catalog; the portal fetches it to discover everything.
 
+The BRIEF is what admits a ticker to the catalog, not the video: every ticker gets a
+brief and a /research page (volume — SEO + the in-app research feature), while only
+selected ones get the video/short/YouTube/X treatment. The portal components already
+render brief-only coverage (CoverageCard and ResearchArticle both guard their asset
+lookups), so a ticker with no video is a complete page, not a broken one.
+
 Versioning: the company is the durable entity; each run is a dated report version.
   - LATEST report lives at flat content/{T}/ (stable URL → /research/{T}).
   - prior versions are snapshotted to content/{T}/archive/{YYYY-MM}/ by `just publish`.
@@ -43,6 +49,13 @@ def quarter(date_str):
     """'2026-06-22' -> '2026-Q2' (calendar quarter; coverage cadence is quarterly)."""
     y, m = int(date_str[:4]), int(date_str[5:7])
     return f"{y}-Q{(m - 1) // 3 + 1}"
+
+
+def version_date(listing, ticker):
+    """Upload date of the artifact that dates a published version: the brief (every
+    ticker has one), falling back to the video for older video-first publishes."""
+    by_name = dict(listing)
+    return by_name.get(f"{ticker}_brief.md") or by_name.get(f"{ticker}_final.mp4")
 
 
 def s3_ls(bucket, prefix):
@@ -101,6 +114,20 @@ def _load(path):
         return {}
 
 
+def brief_headline(pdir, ticker):
+    """(title, summary) read off the brief's leading '# H1' + the paragraph under it.
+    Brief-only coverage has no script.json/publish.json to take a video title from,
+    and the portal strips this same H1 when it renders the markdown."""
+    try:
+        with open(os.path.join(pdir, "reports", f"{ticker}_brief.md"), encoding="utf-8") as fh:
+            lines = fh.read().splitlines()
+    except OSError:
+        return "", ""
+    title = next((ln.lstrip("# ").strip() for ln in lines if ln.startswith("# ")), "")
+    body = [ln.strip() for ln in lines if ln.strip() and not ln.startswith("#")]
+    return title, (body[0] if body else "")
+
+
 def project_meta(ticker):
     """Rich metadata from the local project (title, summary, tags, company, campaign).
     Used for a freshly-published latest that has no meta.json yet, and by publish."""
@@ -108,10 +135,11 @@ def project_meta(ticker):
     meta = (_load(os.path.join(pdir, "scripts", f"{ticker}_script.json")) or {}).get("metadata", {})
     pub = _load(os.path.join(pdir, "social", f"{ticker}_publish.json"))
     campaign = meta.get("campaign")
+    b_title, b_summary = brief_headline(pdir, ticker)
     return {
         "company": meta.get("company") or ticker,
-        "title": (pub.get("youtube_title") or meta.get("video_title") or ticker).strip(),
-        "summary": (meta.get("video_description") or "").strip(),
+        "title": (pub.get("youtube_title") or meta.get("video_title") or b_title or ticker).strip(),
+        "summary": (meta.get("video_description") or b_summary or "").strip(),
         "tags": meta.get("tags") or [],
         "campaign": campaign,
         "campaign_slug": "cannabis_coverage" if "cannabis" in (campaign or "").lower() else None,
@@ -141,13 +169,12 @@ def run():
         flat = f"content/{t}/"
         listing = s3_ls(bucket, flat)
         present = {n for n, _ in listing}
-        if f"{t}_final.mp4" not in present:
+        if f"{t}_brief.md" not in present:
             continue  # not published — skip
 
         meta = s3_get_json(bucket, f"{flat}meta.json")
         if not meta:  # freshly published before meta.json existed — derive from local
-            date = next((d for n, d in listing if n == f"{t}_final.mp4"), None) \
-                or datetime.date.today().isoformat()
+            date = version_date(listing, t) or datetime.date.today().isoformat()
             meta = {**project_meta(t), "date": date, "version": quarter(date)}
 
         item = {"ticker": t, **meta, "assets": map_assets(present, flat)}
