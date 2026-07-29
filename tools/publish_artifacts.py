@@ -21,7 +21,8 @@ import os
 import subprocess
 
 import reindex
-from helpers import apply_promo_code, asset_url, get_project_dir, require_env, resolve_promo_code, strip_angle_brackets
+from helpers import (apply_promo_code, asset_url, get_project_dir, invalidate_cdn,
+                     require_env, resolve_promo_code, strip_angle_brackets)
 
 # (path under the project dir, content-type). Whatever exists gets published.
 ARTIFACTS = [
@@ -72,7 +73,7 @@ def publish(project):
     # placeholder would render literally on /research.
     promo = resolve_promo_code((reindex.project_meta(ticker) or {}).get("campaign"))
 
-    urls = []
+    urls, published_keys = [], []
     for rel_tmpl, ctype in ARTIFACTS:
         rel = rel_tmpl.format(t=ticker)
         local = os.path.join(project_dir, rel)
@@ -99,8 +100,14 @@ def publish(project):
         url = asset_url(key)
         print(f"  {url}  ({size / 1e6:.1f} MB)")
         urls.append(url)
+        published_keys.append(key)
 
     print(f"\n{len(urls)} artifact(s) published to s3://{bucket}/{prefix}")
+
+    # These keys are flat per ticker, not per version, so re-covering a ticker inside the
+    # same quarter overwrites them in place (snapshot_prior_version says so explicitly) and
+    # the CDN would keep serving the previous video/thumbnail for its 24h TTL.
+    invalidate_cdn(published_keys)
 
     # self-describing version metadata + research catalog refresh (best-effort)
     try:
