@@ -24,6 +24,11 @@ API_BASE = "https://api.elevenlabs.io/v1"
 MAX_RETRIES = int(os.environ.get("HTTP_MAX_RETRIES", "4"))
 _RETRYABLE_HTTP = (429, 500, 502, 503, 504)
 
+# eleven_v3 is the quality model, not the latency model, and generation time scales with
+# input length. Video segments are a couple hundred chars and return in seconds; a 2500-char
+# blog chunk can take minutes and blew straight through the old 60s ceiling.
+HTTP_TIMEOUT = float(os.environ.get("TTS_HTTP_TIMEOUT", "600"))
+
 
 def api_request(path, data=None, method="POST"):
     url = f"{API_BASE}{path}"
@@ -37,7 +42,7 @@ def api_request(path, data=None, method="POST"):
     for attempt in range(MAX_RETRIES):
         req = urllib.request.Request(url, data=body, headers=headers, method=method)
         try:
-            with urllib.request.urlopen(req, timeout=60) as resp:
+            with urllib.request.urlopen(req, timeout=HTTP_TIMEOUT) as resp:
                 content_type = resp.headers.get("Content-Type", "")
                 if "audio" in content_type:
                     return resp.read()  # Binary audio data
@@ -51,13 +56,16 @@ def api_request(path, data=None, method="POST"):
                 continue
             print(f"  API Error {e.code}: {error_body}")
             return None
-        except urllib.error.URLError as e:
+        except (urllib.error.URLError, TimeoutError, OSError) as e:
+            # A read timeout surfaces as a bare TimeoutError, not a URLError — uncaught, it
+            # killed the whole run instead of retrying the chunk.
+            reason = getattr(e, "reason", e)
             if attempt < MAX_RETRIES - 1:
                 wait = 2 ** attempt
-                print(f"  ElevenLabs network error ({e.reason}), retrying in {wait}s...")
+                print(f"  ElevenLabs network error ({reason}), retrying in {wait}s...")
                 time.sleep(wait)
                 continue
-            print(f"  Network error: {e.reason}")
+            print(f"  Network error: {reason}")
             return None
     return None
 

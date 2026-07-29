@@ -52,14 +52,16 @@ def narrate(slug, force=False):
         if len(parts) == 1:
             os.replace(parts[0], out_path)
         else:
-            # Re-encode-concat to one MP3 (same approach as the Q&A podcast assembler).
+            # Re-encode-concat to one MP3. Match the TTS output bitrate (mp3_44100_192):
+            # the old -q:a 2 landed around 110kbps on speech, which re-introduced exactly
+            # the compression mush the move to eleven_v3 @192kbps was meant to remove.
             inputs = []
             for p in parts:
                 inputs += ["-i", p]
             concat = "".join(f"[{i}:a]" for i in range(len(parts))) + \
                 f"concat=n={len(parts)}:v=0:a=1[out]"
             cmd = ["ffmpeg", "-y", *inputs, "-filter_complex", concat,
-                   "-map", "[out]", "-c:a", "libmp3lame", "-q:a", "2", out_path]
+                   "-map", "[out]", "-c:a", "libmp3lame", "-b:a", "192k", out_path]
             print("\n  Concatenating chunks -> MP3 ...")
             subprocess.run(cmd, check=True, capture_output=True)
 
