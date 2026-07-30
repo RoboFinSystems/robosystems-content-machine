@@ -85,7 +85,32 @@ def save_env(**pairs):
 
 
 def api_error(r, doing):
-    sys.exit(f"X API error while {doing}: HTTP {r.status_code}\n{r.text[:1000]}")
+    msg = f"X API error while {doing}: HTTP {r.status_code}\n{r.text[:1000]}"
+    # A 429 usually comes back with an EMPTY body, so without the headers there is nothing to
+    # act on - you cannot tell a 15-minute window from a 24-hour one. Surface the reset time so
+    # the retry is scheduled rather than guessed. (Hit 2026-07-30: the 4th Article publish of the
+    # day was rejected with a bare "HTTP 429".)
+    if r.status_code == 429:
+        from datetime import datetime, timezone
+        h = r.headers
+        reset = h.get("x-rate-limit-reset") or h.get("x-user-limit-24hour-reset")
+        limit = h.get("x-rate-limit-limit") or h.get("x-user-limit-24hour-limit")
+        remaining = h.get("x-rate-limit-remaining") or h.get("x-user-limit-24hour-remaining")
+        bits = []
+        if limit is not None:
+            bits.append(f"limit={limit} remaining={remaining}")
+        if reset:
+            try:
+                when = datetime.fromtimestamp(int(reset), tz=timezone.utc).astimezone()
+                mins = max(0, round((when - datetime.now(when.tzinfo)).total_seconds() / 60))
+                bits.append(f"resets {when:%H:%M %Z} (~{mins} min)")
+            except (ValueError, TypeError):
+                bits.append(f"reset={reset}")
+        if h.get("retry-after"):
+            bits.append(f"retry-after={h['retry-after']}s")
+        msg += "\nRATE LIMIT: " + ("; ".join(bits) if bits else
+                                   "no rate-limit headers returned - retry in ~15 min, then back off to hourly")
+    sys.exit(msg)
 
 
 def acting_user(sess):
