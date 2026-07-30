@@ -440,20 +440,67 @@ def check_deck_contract(project_dir, script):
 
     check_slide_narration_coherence(segs, "long-form")
 
-    # The table renderer fits rows into a fixed band and shrinks the font past 7 rows.
-    # AMC shipped a 7-row table that collided with the source line before the renderer
-    # learned to compute its own padding; past 9 rows nothing will make it readable.
+    # The table renderer fits rows into a fixed band above the footer rule. Measured on the
+    # 2026-07-29 batch: 6 data rows clear the divider cleanly (ENPH), 7 push the last row
+    # down until the footer rule strikes through it (JBLU shipped two such tables, and the
+    # struck row was the total - the most important line on the slide). The older 7/9
+    # thresholds here were set when the renderer was expected to compute its own padding;
+    # it does not, so 6 is the real ceiling. Move a subtotal into the subhead rather than
+    # deleting a data row.
     for seg in segs:
         slide = seg.get("slide") or {}
         if slide.get("chart_type") != "table":
             continue
         n = len(((slide.get("data") or {}).get("rows")) or [])
-        if n > 9:
-            error(f"segment {seg.get('id')}: table has {n} rows - will not fit the slide "
-                  f"(9 is the practical maximum; split it or cut rows)")
-        elif n > 7:
-            warn(f"segment {seg.get('id')}: table has {n} rows - readable but the font "
-                 f"shrinks; 7 or fewer reads better on a phone")
+        if n > 6:
+            error(f"segment {seg.get('id')}: table has {n} data rows - the footer rule strikes "
+                  f"through the last one past 6. Fold a subtotal into the subhead, or split "
+                  f"the table across two slides.")
+
+        # A row label that wraps costs a second line of height, so a 6-row table with a long
+        # label overflows exactly as a 7-row one does. Whether it wraps depends on the label
+        # against the column width, so this is a heuristic: CSBR wrapped a 34-char label in a
+        # 4-column table, while ENPH fit 40 chars in a 2-column one where the label column is
+        # far wider.
+        cols = len(((slide.get("data") or {}).get("columns")) or [])
+        if n >= 6 and cols >= 4:
+            long_labels = [str(r[0]) for r in ((slide.get("data") or {}).get("rows") or [])
+                           if r and len(str(r[0])) > 30]
+            if long_labels:
+                warn(f"segment {seg.get('id')}: {n}-row, {cols}-column table with a long row "
+                     f"label ({long_labels[0]!r}, {len(long_labels[0])} chars) - it may wrap to "
+                     f"two lines and push the last row onto the footer. Shorten it to ~28 "
+                     f"characters or drop to 5 rows.")
+
+    # `dual` renders <=4 data entries as a 2x2 mini grid and 5+ as a taller stat panel whose
+    # last row lands on top of the RoboSystems footer mark. JBLU seg7 printed "-$147M" over
+    # the wordmark, illegible. Four is the ceiling; fold the extra stat into the subhead.
+    for seg in segs:
+        slide = seg.get("slide") or {}
+        if seg.get("visual_type") != "dual":
+            continue
+        n = len(slide.get("data") or {})
+        if n > 4:
+            error(f"segment {seg.get('id')}: dual slide has {n} data entries - past 4 the stat "
+                  f"panel overflows onto the footer mark. Fold one into the subhead or bullets.")
+
+    # `dual` and `callout` stringify their data values (String(v) in buildDual), so an object
+    # renders as the literal "[object Object]" and its width shoves the card off the canvas.
+    # Only chart_type "metric_cards" takes the {value, change} shape. AEHR shipped three such
+    # slides and ENPH two - the two shapes sit next to each other in PRODUCTION_CONTRACT and
+    # are easy to transpose. Correct form is "value (note)": splitValue() peels the
+    # parenthetical off and renders it as a sub-label, so nothing is lost.
+    for seg in segs:
+        slide = seg.get("slide") or {}
+        kind = seg.get("visual_type")
+        if kind not in ("dual", "callout"):
+            continue
+        for key, val in (slide.get("data") or {}).items():
+            if isinstance(val, (dict, list)):
+                error(f"segment {seg.get('id')}: {kind} slide data[{key!r}] is a "
+                      f"{type(val).__name__} - {kind} renders it as '[object Object]'. Use a "
+                      f'flat string like "$116.36M (from $24.53M)"; only metric_cards takes '
+                      f"{{value, change}}.")
 
     # bar and line take a FLAT {label: number} map. A nested shape - most often
     # {"series": {...}} for a multi-line comparison - reads as valid JSON, passes every
@@ -474,6 +521,25 @@ def check_deck_contract(project_dir, script):
             error(f"segment {seg.get('id')}: {slide.get('chart_type')} chart data must be a flat "
                   f"{{label: number}} map - {', '.join(bad)} is not a number. The renderer draws "
                   f"one series; for a multi-series comparison use a table.")
+            continue
+
+        # fmtBarValue prints millions with .toFixed(0), so 80,600,000 draws as "$81M" while
+        # the narration says "eighty point six million" - a mismatch no other check can see,
+        # because the script's data is correct and only the rendered label is rounded. Put the
+        # exact figure in the headline or subhead (AEHR: "Backlog: $15.2M to $80.6M in One
+        # Year") and the bar labels read as scale rather than as the claim.
+        if slide.get("chart_type") == "bar":
+            head = f"{slide.get('headline', '')} {slide.get('subhead', '')}".replace(",", "")
+            for key, val in data.items():
+                mag = abs(val)
+                if not 1e6 <= mag < 1e9:
+                    continue
+                exact = f"{mag / 1e6:.1f}".rstrip("0").rstrip(".")
+                shown = f"{mag / 1e6:.0f}"
+                if exact != shown and f"{exact}M" not in head:
+                    warn(f"segment {seg.get('id')}: bar {key!r}={val:,} renders as ${shown}M but "
+                         f"is ${exact}M - if the narration says the exact figure, put it in the "
+                         f"headline or subhead.")
 
     # Thumbnails are generated by `just thumbnails` into assets/ (yt/x/spot.png), not a script
     # block; the canonical 16:9 charts/png/{ticker}_thumbnail.png is checked with the publish

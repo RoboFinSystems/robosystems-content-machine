@@ -161,6 +161,35 @@ glance ("up five years straight," "one segment negative," "flat until the last b
 honestly: a flat series should say so rather than being framed as growth, and a series with
 negatives needs one, because the renderer will draw exactly what the numbers say.
 
+### ⚠️ Layout capacity - hard limits the renderer will not tell you about
+
+The slide is a fixed 1920x1080 stage with a footer rule near the bottom. Overrun it and the
+renderer does not error, wrap, or shrink - it draws straight over the footer. `just validate`
+now enforces all of these, but author to them so you never see the failure:
+
+| Rule | Limit | What overrun looks like |
+|---|---|---|
+| `chart_type: "table"` rows | **6 data rows** (+ header) | the footer rule strikes *through* the last row, which is usually the total |
+| `dual` `data` entries | **4** | 5+ switches to a taller stat panel and the last value prints on top of the RoboSystems mark, illegible |
+| `dual` / `callout` `data` values | **flat strings only** | an object renders as the literal `[object Object]` and its width shoves the card off the canvas |
+| `bar` labels ≥ $1M | rounded to whole millions | `80600000` draws as `$81M` while the narration says "eighty point six million" |
+
+**The `dual` vs `metric_cards` data shape is the easiest mistake to make**, because the two sit
+next to each other above. Only `chart_type: "metric_cards"` takes `{value, change}`. A `dual`
+slide stringifies whatever you give it, so write `"Cash": "$116.36M (from $24.53M)"` - the
+renderer splits on the parenthetical and shows the note as a sub-label, so nothing is lost.
+
+**When something does not fit, move a figure into the `subhead` rather than deleting it.** That
+also fixes the bar-rounding case: put the exact number in the headline (`"Backlog: $15.2M to
+$80.6M in One Year"`) and note the rounding in the subhead, so the bar labels read as scale
+rather than as the claim.
+
+**Highlighted table rows default to green regardless of meaning.** Set `slide.tone` to
+`negative` or `warning` when the highlighted row is bad news, or a writedown, a collapsing
+balance and a cost blowout all render in the same green used for good news. Leave the default
+where the row is genuinely ambiguous, and on *column* highlights like `FY2026`, which mark the
+current period rather than a judgement.
+
 Put raw numbers in base units where you have them (revenue $1.2B = `1200000000`) **and** a
 display form in `headline`/`highlight` if the phrasing matters. The renderer formats for
 display; the raw numbers keep it honest.
