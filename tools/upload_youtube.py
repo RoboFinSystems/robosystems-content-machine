@@ -170,7 +170,15 @@ def build_request_parts(ticker: str, args):
     else:
         script = json.loads((proj / "scripts" / f"{ticker}_script.json").read_text())
         meta = script["metadata"]
+        # publish.json's `youtube_title` is the SEARCH-FIRST title (Company + Ticker + quarter +
+        # the angle a viewer would type); script.json's `video_title` is the short curiosity line.
+        # ~61% of this channel's traffic is search, and the authoring contract requires the two to
+        # differ, so the search title has to win. Uploads before 2026-07-30 silently used
+        # `video_title` and threw the search title away.
+        pj = proj / "social" / f"{ticker}_publish.json"
         title = meta["video_title"]
+        if pj.exists():
+            title = json.loads(pj.read_text()).get("youtube_title") or title
         description = (proj / "social" / f"{ticker}_youtube_description.txt").read_text()
         raw_tags = meta.get("tags", [])
         video = Path(args.video) if args.video else proj / "videos" / f"{ticker}_final.mp4"
