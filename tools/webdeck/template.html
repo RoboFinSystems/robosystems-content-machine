@@ -131,10 +131,16 @@ html,body { background:#000; }
 .bullet.hl { color:var(--text-primary); font-weight:600; font-size:34px; }
 .bullet .sc { font-family:var(--font-display); font-weight:600; font-size:34px; margin-right:18px; }
 
+/* minmax(0,1fr), not 1fr: a bare 1fr track is minmax(auto,1fr), so a wide nowrap value
+   grew the column past the grid box and the cards painted off the right of the slide.
+   Worse, it defeated the autofit shrink pass below, which measured the already-widened
+   card, concluded the text fit, and did nothing. Capping the track restores that pass.
+   (MGPI Q2 2026 segment cards, "$59.6M sales", clipped mid-word.) */
 .ministats { position:absolute; left:1010px; right:150px; top:420px;
-  display:grid; grid-template-columns:1fr 1fr; gap:34px; }
+  display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:34px; }
 .mini { position:relative; background:#101a2e; border:1.5px solid var(--border-hairline);
-  border-radius:20px; padding:30px 36px; min-height:210px; will-change:opacity,transform; }
+  border-radius:20px; padding:30px 36px; min-height:210px; will-change:opacity,transform;
+  overflow:hidden; }
 .mini.hl { border-color:rgba(59,122,245,.75); box-shadow:var(--glow-accent); }
 .mini .lb { font-size:25px; color:#93a0b6; }
 .mini .vl { margin-top:12px; font-family:var(--font-display); font-weight:700;
@@ -486,7 +492,13 @@ function buildLineChart(sec, root, tracks) {
     tracks.push(fadeIn(x, 0.6 + i*0.1, 0.5));
   });
 
-  const target = vals[vals.length-1].toFixed(1) + '%';
+  // The endpoint label used to hardcode '%', which silently mangled every absolute-value
+  // series: MGPI's barrel inventory drew '325,554,000%'. Percentage series never exceed 100
+  // and money series are tagged in millions or more, so magnitude separates them cleanly.
+  const last = vals[vals.length-1];
+  const target = Math.max(...vals.map(Math.abs)) >= 1e6
+    ? fmtBarValue(last)
+    : last.toFixed(1) + '%';
   const spec = parseCountable(target);
   tracks.push(t => {
     const p = eio(seg(t, 0.8, 1.6));
