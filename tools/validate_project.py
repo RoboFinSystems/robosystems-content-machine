@@ -364,6 +364,13 @@ def check_narration_quality(script):
         (r'\bFCF\b', "FCF — should be 'free cash flow'"),
         (r'\bA I\b', 'Spaced "A I" — TTS reads it as the word "ai"; use "AI" or "A.I."'),
         (r'\bD E A\b', 'Spaced "D E A" — TTS drags it; spell out "Drug Enforcement Administration"'),
+        # Invented phonetic respellings. normalize_for_tts() handles the only term that
+        # actually needs one (EBITDA), so anything else here is a plain misspelling that
+        # gets SPOKEN wrong and, in a short, BURNED INTO THE CAPTIONS where viewers read it.
+        # "data senter" reached a rendered MSFT short and had already been copied into
+        # three scripts across two batches before anyone looked at a frame.
+        (r'\bsenter\b', 'Misspelling "senter" — write "center"; it is burned into short captions'),
+        (r'\bbillyun\b|\bmillyun\b', 'Invented respelling — write the word normally'),
     ]
 
     issues_found = 0
