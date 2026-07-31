@@ -18,6 +18,7 @@ Usage: python3 tools/build_webdeck.py TICKER [--no-poster]
 
 import argparse
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -199,7 +200,16 @@ def main() -> int:
     ts_lines = []
     for s in sections:
         t = 0.0 if s["id"] == sections[0]["id"] else s["audioStart"] - TRANS
-        ts_lines.append(f"{mmss(max(0, t))} - {s['slide']['headline']}")
+        slide = s["slide"]
+        # On a callout slide the headline field IS the big number, and the descriptive
+        # line lives in subhead. Using headline verbatim produced YouTube chapters named
+        # "$12.0M" and "$201.25M" - useless to a viewer scanning the chapter list - so
+        # prefer the subhead there. Every other layout keeps its headline.
+        title = slide.get("headline") or ""
+        if (s.get("visual_type") == "callout" and slide.get("subhead")
+                and not re.search(r"[A-Za-z]{3,}", title)):
+            title = slide["subhead"]
+        ts_lines.append(f"{mmss(max(0, t))} - {title}")
     ts_path = out_dir / f"{ticker}_web_timestamps.txt"
     ts_path.write_text("\n".join(ts_lines) + "\n")
     # also drop the chapters where the deck path put them, so anything looking for
