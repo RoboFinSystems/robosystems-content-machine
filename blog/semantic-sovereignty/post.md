@@ -47,7 +47,7 @@ Infrastructure sovereignty asks: where does it run? Code sovereignty asks: what 
 
 ## Finance Is Where This Gets Real
 
-Abstract? Try this: what is your revenue?
+That stays abstract until you try to answer one question about your own company: what is your revenue?
 
 Not the number. The definition. Which accounts roll into it. How intercompany transactions get eliminated. Which fiscal calendar scopes it. How a refund, a credit memo, or a contract modification changes it. What "revenue" even is under your reporting framework versus your tax framework versus your board deck.
 
@@ -83,13 +83,23 @@ Concretely, that means:
 
 If any of those fail, you don't own your meaning. You're borrowing it, on terms that can change.
 
+## Here Is Ours
+
+It would be strange to publish that test and not sit for it, so rather than describe our semantics, here they are.
+
+The [RoboSystems ontology](https://github.com/RoboFinSystems/robosystems/blob/main/frameworks/ontology/v1/ontology.ttl) is about a hundred lines of Turtle declaring every class and property in the model: RoboSystems topology, XBRL vocabulary, with predicates inheriting from the standards wherever the standards already define the term. Alongside it, [shapes.ttl](https://github.com/RoboFinSystems/robosystems/blob/main/frameworks/ontology/v1/shapes.ttl) carries the SHACL constraints that validate data against that ontology, so the rules are enforced by a published artifact rather than by application code you can't see.
+
+The calculation structures live in [fac-calculations](https://github.com/RoboFinSystems/robosystems/blob/main/frameworks/fac/packages/fac-calculations/v1/taxonomy.jsonld) and the presentation structures in [fac-presentation](https://github.com/RoboFinSystems/robosystems/blob/main/frameworks/fac/packages/fac-presentation/v1/taxonomy.jsonld), both as JSON-LD taxonomy packages. What rolls into what is a file you can read, diff in a pull request, and hand to an auditor.
+
+No account, no sales call, no admin console. That is the whole point: if you had to ask us what your numbers mean, we would have failed our own test.
+
 ## Why This Requires Open Source
 
 You cannot build semantic sovereignty on a proprietary semantic layer. It's a contradiction in terms. Meaning you can't inspect is meaning you don't own, and a license that forbids inspection settles the question before it starts.
 
 This is why we built RoboSystems fully in the open. The platform is open source, top to bottom: the graph engine integration, the accounting ontology, the reporting taxonomies, the calculation structures, all of it public, all of it inspectable, all of it yours to run. Our accounting model is built on decades of open standards work, from the REA accounting ontology to XBRL's calculation and presentation semantics, precisely because meaning this important should rest on foundations no single company controls.
 
-And it's why the business model matters as much as the license. Companies that monetize through license restrictions eventually face the relicensing temptation: the rug-pull that has burned the industry repeatedly. We monetize hosting, support, and the managed platform, never the semantics. The definitions of your financial reality should not have a subscription attached, and there is no future version of this company that needs to close them to survive.
+And it's why the business model matters as much as the license. We monetize hosting, support, and the managed platform, never the semantics. The definitions of your financial reality should not have a subscription attached.
 
 Run it in our cloud, run it in your own AWS account, or run it fully self-hosted. The sovereignty story holds at every tier because the meaning layer is identical and open in all of them.
 
