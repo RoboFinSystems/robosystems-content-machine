@@ -31,6 +31,7 @@ import json
 import os
 import re
 import subprocess
+import time
 
 from helpers import asset_url, require_env
 
@@ -59,14 +60,34 @@ def version_date(listing, ticker):
     return by_name.get(f"{ticker}_brief.md") or by_name.get(f"{ticker}_final.mp4")
 
 
+def _aws_ls(bucket, prefix):
+    """Raw `aws s3 ls` lines under prefix, with retries.
+
+    An empty listing and a FAILED listing look identical downstream (both used to
+    return []), and the caller reads "no {T}_brief.md" as "not published" and drops
+    the ticker. A rebuild issues 150+ CLI calls back to back, so a throttle or an SSO
+    hiccup on a handful of them silently shrank the live catalog from 53 entries to
+    17 and published it over the good one. Retry, then fail LOUDLY: a partial scan
+    must never be mistaken for a complete one.
+    """
+    last = None
+    for attempt in range(4):
+        r = subprocess.run(["aws", "s3", "ls", f"s3://{bucket}/{prefix}"],
+                           capture_output=True, text=True)
+        if r.returncode == 0:
+            return r.stdout.splitlines()
+        # rc=1 with no stderr is the documented "no objects matched" exit, not an error.
+        if r.returncode == 1 and not r.stderr.strip():
+            return []
+        last = r.stderr.strip() or f"exit {r.returncode}"
+        time.sleep(0.5 * 2 ** attempt)
+    raise RuntimeError(f"`aws s3 ls s3://{bucket}/{prefix}` failed after 4 tries: {last}")
+
+
 def s3_ls(bucket, prefix):
     """[(name, date)] for objects directly under prefix; skips 'PRE <dir>/' rows."""
-    r = subprocess.run(["aws", "s3", "ls", f"s3://{bucket}/{prefix}"],
-                       capture_output=True, text=True)
-    if r.returncode != 0:
-        return []
     rows = []
-    for line in r.stdout.splitlines():
+    for line in _aws_ls(bucket, prefix):
         p = line.split()
         if not p or p[0] == "PRE":
             continue
@@ -76,23 +97,34 @@ def s3_ls(bucket, prefix):
 
 def s3_ls_dirs(bucket, prefix):
     """Sub-'directory' names (the 'PRE x/' rows) directly under prefix."""
-    r = subprocess.run(["aws", "s3", "ls", f"s3://{bucket}/{prefix}"],
-                       capture_output=True, text=True)
-    if r.returncode != 0:
-        return []
-    return [p.split()[-1].rstrip("/") for p in r.stdout.splitlines()
+    return [p.split()[-1].rstrip("/") for p in _aws_ls(bucket, prefix)
             if p.split() and p.split()[0] == "PRE"]
 
 
 def s3_get_json(bucket, key):
-    r = subprocess.run(["aws", "s3", "cp", f"s3://{bucket}/{key}", "-"],
-                       capture_output=True, text=True)
-    if r.returncode != 0 or not r.stdout.strip():
-        return None
-    try:
-        return json.loads(r.stdout)
-    except json.JSONDecodeError:
-        return None
+    """Parsed JSON at key, or None if the key genuinely does not exist.
+
+    None means "no meta.json yet" and the caller rebuilds meta from the local project -
+    which silently DISCARDS anything only S3 knows, notably the youtube_url that
+    sync-youtube stamps there. So a transient fetch failure must not return None;
+    retry, then raise.
+    """
+    last = None
+    for attempt in range(4):
+        r = subprocess.run(["aws", "s3", "cp", f"s3://{bucket}/{key}", "-"],
+                           capture_output=True, text=True)
+        if r.returncode == 0:
+            if not r.stdout.strip():
+                return None
+            try:
+                return json.loads(r.stdout)
+            except json.JSONDecodeError:
+                return None
+        if "404" in r.stderr or "Not Found" in r.stderr or "NoSuchKey" in r.stderr:
+            return None       # the object really is absent - the legitimate None
+        last = r.stderr.strip() or f"exit {r.returncode}"
+        time.sleep(0.5 * 2 ** attempt)
+    raise RuntimeError(f"fetching s3://{bucket}/{key} failed after 4 tries: {last}")
 
 
 def s3_put_json(bucket, key, obj):
@@ -195,7 +227,7 @@ def map_assets(names, prefix):
     return out
 
 
-def run():
+def run(allow_shrink=False):
     bucket = require_env("AWS_S3_BUCKET")
     tickers = sorted(d for d in os.listdir(PROJECTS)
                      if os.path.isdir(os.path.join(PROJECTS, d))
@@ -236,6 +268,21 @@ def run():
         "count": len(items),
         "items": sorted(items, key=lambda x: x.get("date", ""), reverse=True),
     }
+
+    # Backstop for anything that still slips a ticker out of the scan. The catalog only
+    # ever grows (retiring a ticker moves it to projects/archive/, which also drops it
+    # from `tickers` and is the one legitimate shrink). Publishing is destructive - the
+    # portal reads this one file - so a smaller catalog stops here instead of going live.
+    live = s3_get_json(bucket, "content/index.json") or {}
+    lost = {i["ticker"] for i in live.get("items", [])} - {i["ticker"] for i in items}
+    if lost and not allow_shrink:
+        raise SystemExit(
+            f"REFUSING to publish: {len(lost)} ticker(s) in the live catalog are missing "
+            f"from this scan: {', '.join(sorted(lost))}\n"
+            f"  live={len(live.get('items', []))} -> new={len(items)}\n"
+            "  Re-run; if they were deliberately retired, pass --allow-shrink."
+        )
+
     s3_put_json(bucket, "content/index.json", index)
 
     local_copy = os.path.join(ROOT, "local", "content_index.json")
@@ -253,8 +300,11 @@ def run():
 
 
 def main():
-    argparse.ArgumentParser(description="Rebuild the research catalog (content/index.json)").parse_args()
-    run()
+    ap = argparse.ArgumentParser(description="Rebuild the research catalog (content/index.json)")
+    ap.add_argument("--allow-shrink", action="store_true",
+                    help="publish even though tickers in the live catalog are absent from "
+                         "this scan (use after deliberately retiring one)")
+    run(allow_shrink=ap.parse_args().allow_shrink)
 
 
 if __name__ == "__main__":
