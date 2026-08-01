@@ -180,6 +180,11 @@ yt-short-publish project *args:
     @just ensure-env
     UV_ENV_FILE={{_env}} uv run python tools/upload_youtube.py publish {{project}} --short {{args}}
 
+# Post the first comment (written-brief link) on an uploaded video; publish does this automatically (--short / --force / --text)
+yt-comment project *args:
+    @just ensure-env
+    UV_ENV_FILE={{_env}} uv run python tools/upload_youtube.py comment {{project}} {{args}}
+
 # ─── X (API v2) ──────────────────────────────────────────────
 
 # One-time X auth: verify the user token in .env (or mint one via the PIN flow - run as `! just x-auth`)

@@ -16,7 +16,15 @@ Auth notes (web-type OAuth client):
 YouTube policy note: videos uploaded through an UNAUDITED API project are locked
 to private by YouTube. Until the API audit clears, upload private (the default),
 review in Studio, and flip visibility there. After the audit, use --public.
-Quota: one upload = 1,600 units of the 10,000/day default (about 6 uploads/day).
+Quota: one upload = 1,600 units of the 10,000/day default (about 6 uploads/day);
+a first comment = 50 units.
+
+First comment: `publish` (and `upload --public`) posts the channel's first comment
+on the video - the written-brief link (publish.json `youtube_comment` overrides the
+default; `[RESEARCH_URL]` resolves to the ticker's /research page). The API cannot
+pin a comment; on a video with no other comments it sits on top anyway. Comments
+need the youtube.force-ssl scope - tokens minted before it was added must re-run
+`just yt-auth` once.
 """
 
 import argparse
@@ -33,6 +41,7 @@ ENV_FILE = REPO / ".env"
 SCOPES = [
     "https://www.googleapis.com/auth/youtube.upload",
     "https://www.googleapis.com/auth/youtube",
+    "https://www.googleapis.com/auth/youtube.force-ssl",       # commentThreads.insert (first comment)
     "https://www.googleapis.com/auth/yt-analytics.readonly",   # read-only reach/retention (pull_analytics.py)
 ]
 TOKEN_URI = "https://oauth2.googleapis.com/token"
@@ -113,6 +122,56 @@ def detect_campaign(proj: Path) -> str | None:
         except (json.JSONDecodeError, OSError):
             pass
     return None
+
+
+RESEARCH_URL = "https://robosystems.ai/research/{ticker}"
+DEFAULT_COMMENT = ("Full written brief, with every number sourced to the filing: {url}")
+
+
+def first_comment_text(ticker: str, override: str | None = None) -> str:
+    """The first-comment body: --text override, else publish.json `youtube_comment`,
+    else the default written-brief line. `[RESEARCH_URL]` resolves in all three."""
+    url = RESEARCH_URL.format(ticker=ticker)
+    text = (override or "").strip()
+    if not text:
+        pj = REPO / "projects" / ticker / "social" / f"{ticker}_publish.json"
+        if pj.exists():
+            try:
+                text = str(json.loads(pj.read_text()).get("youtube_comment") or "").strip()
+            except (json.JSONDecodeError, OSError):
+                pass
+    if not text:
+        text = DEFAULT_COMMENT.format(url=url)
+    return text.replace("[RESEARCH_URL]", url)
+
+
+def post_first_comment(yt, vid: str, text: str, sidecar: Path, force: bool = False) -> None:
+    """Post the channel's first comment on `vid`. Idempotent via the sidecar's
+    `comment_id` (--force to post another). A failure never blocks publish - the
+    video is already live; warn and move on."""
+    data = json.loads(sidecar.read_text()) if sidecar.exists() else None
+    if data and data.get("comment_id") and not force:
+        print(f"first comment already posted ({data['comment_id']}) - --force posts another")
+        return
+    from googleapiclient.errors import HttpError
+    try:
+        resp = yt.commentThreads().insert(part="snippet", body={
+            "snippet": {
+                "videoId": vid,
+                "topLevelComment": {"snippet": {"textOriginal": text}},
+            },
+        }).execute()
+    except HttpError as e:
+        hint = (" Token predates the comment scope - re-run `just yt-auth` once, then "
+                "`just yt-comment TICKER`." if e.status_code == 403 else "")
+        print(f"WARNING: first comment not posted ({e.status_code}).{hint}")
+        return
+    cid = resp["id"]
+    print(f"first comment posted: {text[:80]}{'...' if len(text) > 80 else ''}")
+    print(f"  (thread {cid}; pin it in Studio if you want - the API cannot pin)")
+    if data is not None:
+        data["comment_id"] = cid
+        sidecar.write_text(json.dumps(data, indent=2) + "\n")
 
 
 def longform_url(proj: Path, ticker: str):
@@ -283,6 +342,8 @@ def cmd_upload(args) -> int:
         print("NOTE: uploaded non-public. If Studio shows it LOCKED private, the GCP "
               "project still needs the YouTube API audit. Once public, run "
               f"`just sync-youtube {ticker}` to stamp the portal meta.")
+    else:
+        post_first_comment(yt, vid, first_comment_text(ticker), sidecar)
     return 0
 
 
@@ -333,7 +394,34 @@ def cmd_publish(args) -> int:
         data = json.loads(sidecar.read_text())
         data["privacy"] = "public"
         sidecar.write_text(json.dumps(data, indent=2) + "\n")
+    post_first_comment(yt, vid, first_comment_text(ticker), sidecar)
     print(f"next: just sync-youtube {ticker} to stamp the portal meta")
+    return 0
+
+
+def cmd_comment(args) -> int:
+    """Post (or re-post with --force) the first comment on an already-uploaded video.
+    The backfill path for videos published before this step existed."""
+    ticker = args.ticker.upper()
+    sc_name = f"{ticker}_short_youtube.json" if getattr(args, "short", False) else f"{ticker}_youtube.json"
+    sidecar = REPO / "projects" / ticker / "videos" / sc_name
+    if args.id:
+        vid = args.id
+    elif sidecar.exists():
+        vid = json.loads(sidecar.read_text())["video_id"]
+    else:
+        sys.exit(f"no {sidecar.name} found - pass --id VIDEO_ID")
+
+    text = first_comment_text(ticker, args.text)
+    if args.dry_run:
+        print(f"video:   https://youtu.be/{vid}")
+        print(f"comment: {text}")
+        return 0
+
+    from googleapiclient.discovery import build
+    yt = build("youtube", "v3", credentials=get_creds(interactive=False))
+    acting_channel_guard(yt)
+    post_first_comment(yt, vid, text, sidecar, force=args.force)
     return 0
 
 
@@ -366,11 +454,21 @@ def main() -> int:
     pub.add_argument("ticker")
     pub.add_argument("--short", action="store_true", help="publish the Short (its own sidecar)")
     pub.add_argument("--id", help="explicit video id (else videos/{T}_youtube.json)")
+    cm = sub.add_parser("comment", help="post the first comment on an uploaded video")
+    cm.add_argument("ticker")
+    cm.add_argument("--short", action="store_true", help="comment on the Short (its own sidecar)")
+    cm.add_argument("--id", help="explicit video id (else the sidecar)")
+    cm.add_argument("--text", help="override the comment body ([RESEARCH_URL] resolves)")
+    cm.add_argument("--force", action="store_true",
+                    help="post even if the sidecar already records a comment_id")
+    cm.add_argument("--dry-run", action="store_true")
     args = ap.parse_args()
     if args.cmd == "auth":
         return cmd_auth(args)
     if args.cmd == "publish":
         return cmd_publish(args)
+    if args.cmd == "comment":
+        return cmd_comment(args)
     return cmd_upload(args)
 
 

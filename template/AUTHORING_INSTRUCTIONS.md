@@ -262,6 +262,7 @@ times, the S3 media links, and flagging any unresolved placeholders). A JSON obj
   the crowded bare-ticker term. **Make it DIFFERENT from the X hook**: X rewards the contrarian
   curiosity line, YouTube rewards the searchable query; don't reuse the same string on both.
 - `x_first_comment` — the X first comment under the video post; points to the brief published as an X **Article** (use `[X_ARTICLE_LINK]`). The full long-form is uploaded as native video; no YouTube link on X.
+- `youtube_comment` (optional) — the YouTube first comment, posted automatically at `yt-publish`. Omit it and the tool posts the default written-brief line pointing at the ticker's `/research` page (`[RESEARCH_URL]` resolves to it). Write one only when a bespoke line beats "here is the full written brief" - e.g. a question that invites replies.
 
 _No LinkedIn for research - LinkedIn is the technical/blog lane, not a research channel. The 9:16 short carries its own copy in the two `social/` files above (#5), not in `publish.json`. The Q&A podcast is retired - no `podcast_*` fields, no `qa.json`._
 
