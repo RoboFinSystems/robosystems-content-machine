@@ -153,19 +153,37 @@ def post_first_comment(yt, vid: str, text: str, sidecar: Path, force: bool = Fal
     if data and data.get("comment_id") and not force:
         print(f"first comment already posted ({data['comment_id']}) - --force posts another")
         return
+    import time
     from googleapiclient.errors import HttpError
-    try:
-        resp = yt.commentThreads().insert(part="snippet", body={
-            "snippet": {
-                "videoId": vid,
-                "topLevelComment": {"snippet": {"textOriginal": text}},
-            },
-        }).execute()
-    except HttpError as e:
-        hint = (" Token predates the comment scope - re-run `just yt-auth` once, then "
-                "`just yt-comment TICKER`." if e.status_code == 403 else "")
-        print(f"WARNING: first comment not posted ({e.status_code}).{hint}")
-        return
+    body = {
+        "snippet": {
+            "videoId": vid,
+            "topLevelComment": {"snippet": {"textOriginal": text}},
+        },
+    }
+    resp = None
+    for attempt in (1, 2):
+        try:
+            resp = yt.commentThreads().insert(part="snippet", body=body).execute()
+            break
+        except HttpError as e:
+            try:
+                reason = (e.error_details or [{}])[0].get("reason", "")
+            except Exception:
+                reason = ""
+            if reason == "insufficientPermissions" or "scope" in str(e).lower():
+                print("WARNING: first comment not posted - token lacks the comment scope. "
+                      "Re-run `just yt-auth` once, then `just yt-comment TICKER`.")
+                return
+            if attempt == 1:
+                # an insert seconds after the publish flip can 403 transiently - retry once
+                print(f"comment insert {e.status_code} ({reason or 'no reason given'}) - "
+                      "retrying in 20s")
+                time.sleep(20)
+                continue
+            print(f"WARNING: first comment not posted ({e.status_code}: {reason or e}) - "
+                  "retry later with `just yt-comment TICKER [--short]`")
+            return
     cid = resp["id"]
     print(f"first comment posted: {text[:80]}{'...' if len(text) > 80 else ''}")
     print(f"  (thread {cid}; pin it in Studio if you want - the API cannot pin)")
