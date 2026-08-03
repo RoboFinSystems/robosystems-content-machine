@@ -265,7 +265,7 @@ Every video should:
 ### Distribution
 - **YouTube** [@RoboSystems](https://www.youtube.com/@RoboSystems) — long-form 3-5 min + Shorts
 - **X** [@RoboFinSystems](https://x.com/robofinsystems) — findings, data highlights, video links (cashtags: use **$TRLV** for Trulieve now; $TCNNF is legacy OTC)
-- **LinkedIn** [RoboFinSystems](https://www.linkedin.com/company/robofinsystems) — open-source methodology, live analysis recordings
+- **LinkedIn** [RoboSystems](https://www.linkedin.com/company/robosystems) — open-source methodology, live analysis recordings
 - **Podcast** — Spotify for Creators (audio extracted from final MP4 via ffmpeg; `just podcast PROJECT`)
 
 **Transparency angle:** record live Cowork analysis sessions as behind-the-scenes content — 100% methodology transparency differentiates from traditional coverage.
