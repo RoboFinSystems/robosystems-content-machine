@@ -15,8 +15,8 @@ If the entity doesn't exist in the graph, say so — the company may need to be 
 
 ### 2. Check S3 for raw filings
 ```bash
-AWS_PROFILE=robosystems-sso aws s3 ls "s3://robosystems-821526227241-shared-raw-prod/sec/year=2026/{CIK}/"
-AWS_PROFILE=robosystems-sso aws s3 ls "s3://robosystems-821526227241-shared-raw-prod/sec/year=2025/{CIK}/"
+AWS_PROFILE=robosystems-sso aws s3 ls "s3://robosystems-shared-raw-prod/sec/year=2026/{CIK}/"
+AWS_PROFILE=robosystems-sso aws s3 ls "s3://robosystems-shared-raw-prod/sec/year=2025/{CIK}/"
 ```
 
 ### 3. Quick financial snapshot

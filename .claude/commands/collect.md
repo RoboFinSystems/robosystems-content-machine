@@ -18,7 +18,7 @@ The user will provide a ticker and optionally a project path. If no project path
 - Look up latest filing via MCP: `MATCH (e:Entity)-[:ENTITY_HAS_REPORT]->(r:Report) WHERE e.ticker = '{TICKER}' RETURN r.form, r.filing_date, r.accession_number ORDER BY r.filing_date DESC LIMIT 5`
 - List available ZIPs in S3:
   ```bash
-  AWS_PROFILE=robosystems-sso aws s3 ls s3://robosystems-821526227241-shared-raw-prod/sec/year={YEAR}/{CIK}/
+  AWS_PROFILE=robosystems-sso aws s3 ls s3://robosystems-shared-raw-prod/sec/year={YEAR}/{CIK}/
   ```
 - Download the filing ZIP to `/tmp/{TICKER}/`
 - Unzip and find the main HTML file (largest `.htm` file, usually `{ticker}-{date}.htm`)
