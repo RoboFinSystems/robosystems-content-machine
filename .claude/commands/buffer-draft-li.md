@@ -1,3 +1,8 @@
+---
+description: Queue selected atoms to Buffer as LinkedIn drafts.
+argument-hint: '[source]'
+---
+
 Queue selected atoms from `drafts/atoms/personal.md` (or any `--source` queue) to Buffer: a LinkedIn post plus an optional mirrored **X** text cut (posting X in parallel with LinkedIn is fine here, because these are text posts with no video and no Article).
 
 **Two modes.** `--schedule` (the batch-day mode) places each post at an explicit time from [`.claude/POSTING_TIMES.md`](../POSTING_TIMES.md), so the week ships without a second visit. Default is draft-only, which needs you to open Buffer and press post per item. See "Which mode" below - picking wrong is how this lane stalled in June.

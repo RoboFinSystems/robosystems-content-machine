@@ -1,3 +1,8 @@
+---
+description: Reach review — pull channel and account analytics.
+argument-hint: '[period]'
+---
+
 Reach review - pull the channel/account-level analytics and interpret them, not just dump numbers. This is the weekly bird's-eye read; `/status` is production state and `just analytics TICKER` is the per-post rollup.
 
 ## Arguments

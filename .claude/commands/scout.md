@@ -1,3 +1,8 @@
+---
+description: Quick recon on a company before initiating coverage.
+argument-hint: '[ticker]'
+---
+
 Quick recon on a company before initiating coverage. Check what data exists, what's ready, and whether it's worth covering.
 
 ## Arguments

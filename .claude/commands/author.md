@@ -1,3 +1,8 @@
+---
+description: Author the full written output set for a project in this session.
+argument-hint: '[project]'
+---
+
 Author the full written output set for a project directly in this session - the one-shot Code process that replaces the old claude.ai Cowork handoff. Same artifacts, same contract (`AUTHORING_INSTRUCTIONS.md` + `PRODUCTION_CONTRACT.md`), no clipboard round-trip. `/review` stays the quality gate afterward.
 
 ## Arguments

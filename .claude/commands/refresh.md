@@ -1,3 +1,8 @@
+---
+description: Update an existing project's campaign files in place.
+argument-hint: '[project]'
+---
+
 Update an existing project's campaign files without touching sources or outputs. Use when you've refined the CAMPAIGN_BRIEF or AUTHORING_INSTRUCTIONS in the campaign directory and want to push changes to an existing project.
 
 ## Arguments

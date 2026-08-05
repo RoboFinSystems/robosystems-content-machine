@@ -1,3 +1,8 @@
+---
+description: Quality review of authored output before running the pipeline.
+argument-hint: '[project]'
+---
+
 Post-Cowork quality review before running the pipeline. This is where you spend time reviewing what Claude Cowork produced before committing to API costs (ElevenLabs, Shotstack).
 
 ## Arguments

@@ -1,3 +1,7 @@
+---
+description: Production dashboard — state of all coverage projects.
+---
+
 Production dashboard — show the state of all coverage projects at a glance.
 
 ## Arguments

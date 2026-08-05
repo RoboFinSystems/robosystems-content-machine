@@ -1,3 +1,8 @@
+---
+description: Queue a blog post's LinkedIn and X native cuts to Buffer.
+argument-hint: '[post]'
+---
+
 Queue a blog post's **LinkedIn + X native cuts** to Buffer as **drafts**. These are the no-canonical, no-in-body-link short derivatives of a `blog/<slug>/` essay. The essay itself publishes via `just blog-publish`; you post these drafts from Buffer yourself.
 
 Why this one works on both channels: the blog cuts are pure text (LinkedIn) and a text thread (X), and Buffer handles both. The X limits that kill the research lane (long native video, X Articles) do not apply here, because there is no video and no Article. See [[buffer-drafting]] for the channel reality.

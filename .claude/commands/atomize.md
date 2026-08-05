@@ -1,3 +1,8 @@
+---
+description: Generate standalone social atoms from the area roster.
+argument-hint: '[project-or-area]'
+---
+
 Generate standalone social atoms, drawn from the area roster in `local/CONTENT_AREAS.md` (**private - gitignored vault, never commit it**), grounded in **where the system is now**, and written to a queue that `/buffer-draft-li` schedules.
 
 This is what makes the volume cadence possible: at 1-2 items/day/channel nothing hand-written survives contact.

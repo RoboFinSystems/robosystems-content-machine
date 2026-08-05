@@ -1,3 +1,8 @@
+---
+description: Scaffold all projects for a campaign at once.
+argument-hint: '[campaign]'
+---
+
 Scaffold all projects for a campaign at once. Reads the ticker list from the campaign's tickers.md and runs scout + scaffold for each.
 
 ## Arguments

@@ -1,3 +1,8 @@
+---
+description: Collect source materials for a company coverage project.
+argument-hint: '[ticker]'
+---
+
 Collect source materials for a company coverage project. This is a tag-team process — automate what we can, tell the user what to get manually.
 
 The user will provide a ticker and optionally a project path. If no project path, look for an existing project in `projects/` matching the ticker.
