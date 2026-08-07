@@ -16,17 +16,7 @@
       "Bash(jq:*)",
       "Bash(curl:*)",
       "WebSearch",
-      "WebFetch(domain:github.com)",
-      "mcp__robosystems__read-graph-cypher",
-      "mcp__robosystems__resolve-element",
-      "mcp__robosystems__build-fact-grid",
-      "mcp__robosystems__get-graph-info",
-      "mcp__robosystems__get-graph-schema",
-      "mcp__robosystems__list-workspaces",
-      "mcp__robosystems__switch-workspace",
-      "mcp__Context7__resolve-library-id",
-      "mcp__Context7__get-library-docs",
-      "mcp__sequential-thinking__sequentialthinking"
+      "WebFetch(domain:github.com)"
     ],
     "deny": [
       "Bash(git push:*)",
