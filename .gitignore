@@ -82,4 +82,4 @@ showcase/
 oneoffs/
 
 # transient render worker logs
-render_*.log
+*render_*.log
