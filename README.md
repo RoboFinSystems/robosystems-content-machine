@@ -90,14 +90,21 @@ just postpack PROJECT       # assemble the per-platform publish pack (paste-read
 
 | Step | Command | What it does |
 |------|---------|-------------|
-| **Validate** | `just validate PROJECT` | Checks Cowork outputs exist and the script matches the deck contract |
-| **Slice** | `just slice PROJECT` | Slices the exported deck PDF into per-slide 1920×1080 PNGs (pdftoppm) |
+| **Everything** | `just webdeck-pipeline PROJECT` | Runs the five steps below end to end |
+| **Validate** | `just validate PROJECT` | Checks the authored output against the production contract |
 | **Voiceover** | `just voiceover PROJECT` | Sends narration to ElevenLabs TTS (idempotent; `--force` to regen) |
-| **Assemble** | `just assemble PROJECT` | Uploads assets to S3, builds the Shotstack timeline, renders the MP4 (`--production` for 1080p) |
-| **Short** | `just short PROJECT` | Renders a 9:16 teaser locally with ffmpeg |
-| **Podcast (Q&A)** | `just podcast-qa PROJECT` | Synthesizes the two-voice conversation → MP3 + MP4 |
+| **Build** | `just webdeck PROJECT` | Builds the animated HTML deck from `script.json` + VO durations |
+| **Render** | `just webdeck-render PROJECT` | Renders the deck to frames via headless Chrome (puppeteer-core) |
+| **Mux** | `just webdeck-mux PROJECT` | Muxes narration, and narration + ducked music, with ffmpeg |
+| **Short (9:16)** | `just webdeck-short-pipeline PROJECT` | Same engine at 1080×1920 — purpose-built vertical, not a crop |
 
-Assembly writes `videos/{TICKER}_timestamps.txt` with the actual YouTube chapter times.
+Rendering is **entirely local**: puppeteer-core drives headless Chrome, ffmpeg does the mux.
+There is no cloud render service and no per-render cost. The mux writes
+`videos/{TICKER}_timestamps.txt` with the authoritative YouTube chapter times.
+
+> The earlier path (Claude Design PPTX → `just slice` → Shotstack cloud assembly) was retired
+> on 2026-08-08. `just assemble` and `just pipeline` now exit with a pointer to the commands
+> above; the tools they called remain in git history.
 
 ### Publishing (S3 artifact store)
 
@@ -106,7 +113,8 @@ thumbnail, brief, social copy) to `s3://$AWS_S3_BUCKET/content/{TICKER}/` and pr
 (served via `$AWS_CDN_DOMAIN_URL` when set, else `https://$AWS_S3_BUCKET.s3.amazonaws.com/content/{TICKER}/…`)
 — a durable artifact store, separate from posting to YouTube / Spotify / X. The bucket policy grants
 public read on the **`content/*` + `blog/*` prefixes only** (no user data — the store is public by
-design); Shotstack staging assets elsewhere stay private. The bucket + CloudFront CDN are managed by
+design); everything else in the bucket stays private, including the dormant staging assets left
+over from the retired Shotstack path. The bucket + CloudFront CDN are managed by
 `cloudformation/content.yaml` (`just infra-deploy` — see Infrastructure below).
 
 ### Blog pipeline
@@ -163,7 +171,7 @@ just clean PROJECT         # Remove generated assets (keeps source files)
 - [just](https://github.com/casey/just) — command runner
 - [ffmpeg / ffprobe](https://ffmpeg.org/) — media processing (short, podcast, slicing)
 - [poppler](https://poppler.freedesktop.org/) — `pdftoppm` for slicing the deck PDF + rasterizing the thumbnail
-- [AWS CLI](https://aws.amazon.com/cli/) — S3 uploads for Shotstack
+- [AWS CLI](https://aws.amazon.com/cli/) — S3 uploads for publishing + the CloudFront CDN
 
 ### API Keys
 
@@ -172,7 +180,6 @@ Configure in `.env` after first run:
 | Service | Keys | Purpose |
 |---------|------|---------|
 | [ElevenLabs](https://try.elevenlabs.io/v9z3wzm97gk3) | `ELEVEN_LABS_API_KEY`, `ELEVEN_LABS_VOICE_ID`, `ELEVEN_LABS_INTERVIEWER_VOICE_ID` | Voiceover (narrator) + Q&A interviewer voice + Music API |
-| [Shotstack](https://shotstack.io/) | `SHOTSTACK_API_KEY`, `SHOTSTACK_OWNER_ID` (+ sandbox keys) | Cloud video assembly |
 | AWS | `AWS_PROFILE`, `AWS_REGION`, `AWS_S3_BUCKET`, `AWS_CDN_DOMAIN_URL` (optional), `AWS_ROUTE53_HOSTED_ZONE_ID` (optional, auto-resolved) | Asset uploads + CloudFront CDN |
 
 <sub>The ElevenLabs link above is a referral link.</sub>

@@ -7,8 +7,9 @@ with correct content-types, and prints the public URLs (via AWS_CDN_DOMAIN_URL w
 
 The bucket itself — public-read policy on `content/*` (+ `blog/*`), the GET/HEAD CORS rule,
 and the CloudFront CDN — is now managed by cloudformation/content.yaml (`just infra-deploy`),
-not by ad-hoc CLI. The Shotstack staging assets elsewhere in the bucket stay private. This is
-the separate "S3 artifact" archive — independent of posting to YouTube / Spotify / X.
+not by ad-hoc CLI. Everything else in the bucket stays private, including the dormant staging
+assets left over from the retired Shotstack path (removed 2026-08-08). This is the separate
+"S3 artifact" archive — independent of posting to YouTube / X.
 
 Usage:
     uv run python tools/publish_artifacts.py TRLV

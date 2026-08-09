@@ -35,9 +35,11 @@ social/                                 →  videos/{TICKER}_final.mp4   (16:9 l
 Your job ends at the **written artifacts**. The only thing that makes the video good is a
 complete, accurate script: every `headline` and every `data` value renders on screen verbatim.
 
-**The 16:9 deck path is retired.** `build_deck_brief.py`, `slice_deck.py`, `assemble_video.py`
-(Shotstack) and `DESIGN_INSTRUCTIONS.md` remain in the repo as history and are not part of a
-run. Ignore any instruction to produce a deck brief, a PPTX or a PDF.
+**The 16:9 deck path is retired.** `build_deck_brief.py`, `slice_deck.py` and
+`DESIGN_INSTRUCTIONS.md` remain in the repo as history and are not part of a run.
+`assemble_video.py` and its Shotstack cloud render were **deleted on 2026-08-08** and live only
+in git history; rendering is local now (puppeteer-core + ffmpeg). Ignore any instruction to
+produce a deck brief, a PPTX or a PDF.
 
 ---
 

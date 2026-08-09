@@ -3,15 +3,19 @@
 # =============================================================================
 #
 # QUICK START:
-#   just new NVDA                                # Generic template
+#   just new NVDA                                 # Generic template
 #   just campaign GTBIF cannabis_coverage         # Campaign coverage
-#   just pipeline GTBIF                           # Run full pipeline
+#   just webdeck-pipeline GTBIF                   # Run the full pipeline
 #
 # STEP BY STEP:
-#   just deck-brief TICKER      # Generate the Claude Design hand-off brief
-#   just slice TICKER           # Slice the exported deck PDF into slide PNGs
-#   just voiceover TICKER       # Generate ElevenLabs voiceovers
-#   just assemble TICKER        # Assemble final video via Shotstack
+#   just validate TICKER              # Gate the authored output
+#   just voiceover TICKER             # Generate ElevenLabs voiceovers
+#   just webdeck TICKER               # Build the animated HTML deck
+#   just webdeck-render TICKER        # Render it via headless Chrome
+#   just webdeck-mux TICKER           # Mux narration + ducked music
+#   just webdeck-short-pipeline TICKER  # The 9:16 short, same engine
+#
+# Rendering is entirely local (puppeteer + ffmpeg). No cloud render service.
 #
 # =============================================================================
 
@@ -88,15 +92,19 @@ voiceover project *args:
     @just ensure-env
     UV_ENV_FILE={{_env}} uv run python tools/generate_voiceover_audio.py {{project}} {{args}}
 
-# Assemble final video via Shotstack (add --production to use credits)
+# RETIRED - the Shotstack cloud-render path was torn out 2026-08-08
 assemble project *args:
-    @just ensure-env
-    UV_ENV_FILE={{_env}} uv run python tools/assemble_video.py {{project}} {{args}}
+    @echo "'just assemble' is retired. The Shotstack cloud-render path was removed 2026-08-08."
+    @echo "Rendering is local now: just webdeck-pipeline {{project}}"
+    @echo "(tools/assemble_video.py lives in git history if you ever need it back.)"
+    @exit 1
 
-# Run full deck pipeline: validate → slice → voiceover → assemble
+# RETIRED - the deck path (Claude Design PPTX -> slice -> Shotstack) was torn out 2026-08-08
 pipeline project:
-    @just ensure-env
-    ./tools/run_pipeline.sh {{project}}
+    @echo "'just pipeline' is retired. It rendered via Shotstack, which is no longer used."
+    @echo "Use: just webdeck-pipeline {{project}}   (validate -> voiceover -> build -> render -> mux)"
+    @echo "(tools/run_pipeline.sh lives in git history if you ever need it back.)"
+    @exit 1
 
 # ─── Webdeck (pilot): animated HTML deck → frame render → mux ─
 
