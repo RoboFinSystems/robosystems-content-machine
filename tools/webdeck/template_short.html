@@ -123,12 +123,19 @@ html,body { background:#000; }
   background:#0f1830; border:2px solid var(--border-hairline); border-radius:24px;
   padding:38px 44px; will-change:opacity,transform; }
 .prow.hl { border-color:rgba(59,122,245,.8); box-shadow:var(--glow-accent); }
-.prow .lft { display:flex; align-items:center; gap:26px; min-width:0; }
+.prow .lft { display:flex; align-items:center; gap:26px; min-width:0; flex:1 1 auto; }
 .prow .mk { width:16px; height:16px; border-radius:50%; background:var(--accent); flex:none; }
-.prow .tx { font-size:44px; font-weight:500; color:#dbe3f0; line-height:1.15; }
+/* min-width:0 lets the shrink propagate into the text; without it the label keeps its
+   min-content width and space-between overlaps it with the value. */
+.prow .tx { font-size:44px; font-weight:500; color:#dbe3f0; line-height:1.15;
+  min-width:0; overflow-wrap:break-word; }
 .prow.hl .tx { color:var(--text-primary); font-weight:600; }
 .prow .vl { font-family:var(--font-display); font-weight:700; font-size:62px; white-space:nowrap;
   color:var(--text-primary); letter-spacing:.005em; flex:none; }
+/* Long values ("$167M from $1.53B") step down so the label keeps usable width.
+   Set from the FINAL value string, so the count-up animation cannot resize mid-flight. */
+.prow .vl.vl-md { font-size:52px; }
+.prow .vl.vl-sm { font-size:44px; }
 
 /* ---------- cta ---------- */
 .cta-mark { position:absolute; left:0; right:0; top:560px; display:flex; justify-content:center; }
@@ -346,7 +353,8 @@ function buildPoints(sec, root, tracks) {
     lft.appendChild(el('div','tx', esc(p.text)));
     row.appendChild(lft);
     if (p.value) {
-      const vl = el('div','vl');
+      const vlen = String(p.value).length;
+      const vl = el('div','vl' + (vlen >= 15 ? ' vl-sm' : vlen >= 11 ? ' vl-md' : ''));
       if (p.tone && SCEN[p.tone]) vl.style.color = SCEN[p.tone];
       row.appendChild(vl);
       const d = 0.7 + i*0.22;
