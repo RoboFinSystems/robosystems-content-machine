@@ -231,6 +231,90 @@ def check_brief(project_dir, ticker):
         ok("No unresolved placeholders")
 
 
+# Income tax EXPENSE (us-gaap:IncomeTaxExpenseBenefit / CurrentIncomeTaxExpenseBenefit) is an
+# accrual. Income tax PAID (us-gaap:IncomeTaxesPaid / IncomeTaxesPaidNet) is cash out the door.
+# For 280E filers the two diverge enormously: Trulieve FY2025 was charged $208.1M and paid
+# $1.5M, Vireo was charged $41.6M and paid $1.0M. Writing "paid" over an expense figure
+# overstated the number by up to 143x across six published names before this check existed,
+# and it inverts the actual story, which is that the tax is charged and NOT paid.
+_TAX_PAY_VERB = r"\bpa(?:id|ys|ying)\b"
+# Phrasings that are already correct or explicitly hedged.
+_TAX_PAY_OK = re.compile(
+    r"not paid|unpaid|never paid|has(?:n['’]t| not) paid|paid no\b|pays no\b|"
+    r"stopped paying|isn['’]t paying|is not paying|paid or accrued|would (?:have )?pay|"
+    r"pays? zero|paid zero|paid nothing|rather than paid",
+    re.I)
+
+def _prose_blocks(project_dir, ticker):
+    """Reader-facing prose only: the brief, plus narration and slide copy from the scripts.
+    Raw JSON is not prose - splitting it on sentences yields metadata blobs, not claims."""
+    blocks = []
+    brief = os.path.join(project_dir, "reports", f"{ticker}_brief.md")
+    if os.path.exists(brief):
+        with open(brief, encoding="utf-8") as fh:
+            blocks.append((f"reports/{ticker}_brief.md", fh.read()))
+    for rel in (f"scripts/{ticker}_script.json", f"scripts/{ticker}_short_script.json"):
+        path = os.path.join(project_dir, rel)
+        if not os.path.exists(path):
+            continue
+        try:
+            with open(path, encoding="utf-8") as fh:
+                data = json.load(fh)
+        except (ValueError, OSError):
+            continue
+        parts = []
+        for seg in (data.get("segments") or []):
+            if isinstance(seg.get("narration"), str):
+                parts.append(seg["narration"])
+            slide = seg.get("slide")
+            if isinstance(slide, dict):
+                parts.append(_slide_text(slide))
+        if parts:
+            blocks.append((rel, "\n".join(parts)))
+    return blocks
+
+
+def check_tax_expense_vs_paid(project_dir, ticker):
+    """Surface every claim that a company PAID tax so it can be traced to the right element.
+
+    There is deliberately no automatic pass/fail here. Whether "paid $208M in taxes" is
+    right depends on a value only the graph holds, and the obvious offline heuristic -
+    the figure sitting near the word "expense" - is backwards: a brief that correctly
+    contrasts charged against paid puts both numbers in the same sentence by design,
+    while the published errors discussed the distinction correctly elsewhere in the very
+    same document. So this lists the claims and names the authoritative elements; a human
+    confirms them."""
+    print("\n--- Tax: charged vs paid ---")
+
+    seen, claims = set(), []
+    for rel, text in _prose_blocks(project_dir, ticker):
+        for sent in re.split(r"(?<=[.!?])\s+|\n", text):
+            if not re.search(_TAX_PAY_VERB, sent, re.I):
+                continue
+            if not re.search(r"\btax(?:es|ed)?\b", sent, re.I):
+                continue
+            if _TAX_PAY_OK.search(sent):
+                continue
+            claim = " ".join(sent.split())
+            key = claim.lower()[:90]
+            if key in seen:
+                continue
+            seen.add(key)
+            claims.append((rel, claim[:150]))
+
+    if not claims:
+        ok("No unverified 'taxes paid' claims")
+        return
+
+    warn(f"{len(claims)} claim(s) that tax was PAID. Each must trace to "
+         f"us-gaap:IncomeTaxesPaid / IncomeTaxesPaidNet, NOT IncomeTaxExpenseBenefit or "
+         f"CurrentIncomeTaxExpenseBenefit. For 280E filers these differ by up to 100x.")
+    for rel, claim in claims[:6]:
+        print(f"          {rel}: {claim}")
+    if len(claims) > 6:
+        print(f"          ... and {len(claims) - 6} more")
+
+
 def check_required_files(project_dir, ticker):
     """Check outputs. Only the script is required to render; the rest are publish artifacts."""
     print("\n--- Required Files ---")
@@ -804,8 +888,10 @@ def main():
 
     if args.brief_only:
         check_brief(project_dir, ticker)
+        check_tax_expense_vs_paid(project_dir, ticker)
     else:
         check_required_files(project_dir, ticker)
+        check_tax_expense_vs_paid(project_dir, ticker)
         script = check_script_schema(project_dir, ticker)
         check_deck_contract(project_dir, script)
         check_narration_quality(script)
