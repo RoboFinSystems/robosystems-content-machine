@@ -1,18 +1,26 @@
 #!/usr/bin/env python3
-"""Extract narrative sections from SEC 10-K HTML filings.
+"""Extract narrative sections from SEC 10-K / 10-Q HTML filings.
 
-Pulls just the qualitative content that structured data (XBRL/MCP) can't provide:
-- Item 1: Business overview
-- Item 1A: Risk Factors
-- Item 1C: Cybersecurity (brief)
-- Item 2: Properties
-- Item 7: MD&A
-- Item 7A: Market Risk
+Pulls just the qualitative content that structured data (XBRL/MCP) can't provide.
+
+10-K (default): Item 1 Business, 1A Risk Factors, 1C Cybersecurity, 2 Properties,
+7 MD&A, 7A Market Risk.
+
+10-Q (--form 10-Q): Item 2 MD&A, Item 3 Market Risk, and Part II Item 1A Risk
+Factors. Item numbers do NOT carry their 10-K meanings in a 10-Q, so running the
+default mode over a 10-Q labels the financial statements "Business" and the MD&A
+"Properties" - wrong in a way downstream authoring will quote verbatim.
+
+Section boundaries are heuristic. On filings that lay headings out unusually a
+section can come back drastically short, so CHECK THE REPORTED WORD COUNTS and
+fall back to --full, which skips detection and emits the whole cleaned filing.
+An oversized source file is a nuisance; a silently truncated one gets wrong
+numbers published.
 
 Skips financial tables, XBRL tags, legal boilerplate, and governance sections.
 
 Usage:
-    python3 extract_10k_narrative.py <input.htm> <output.txt> [--ticker TICKER]
+    python3 extract_10k_narrative.py <in.htm> <out.txt> [--ticker T] [--form 10-K|10-Q] [--full]
 """
 
 import re
@@ -93,40 +101,85 @@ def clean_text(text):
     return '\n'.join(cleaned)
 
 
-def find_item_sections(text):
-    """Find the start positions of each Item section (content, not TOC)."""
-    sections = {}
-    target_items = {
+# Item numbers mean different things in a 10-K and a 10-Q. In a 10-Q, Item 1 is
+# the financial statements and Item 2 is the MD&A — labelling those "Business" and
+# "Properties" (the 10-K meanings) hands downstream authoring a mis-sourced quote.
+FORM_SECTIONS = {
+    '10-K': {
         '1': 'Business',
         '1A': 'Risk Factors',
         '1C': 'Cybersecurity',
         '2': 'Properties',
         '7': 'MD&A',
         '7A': 'Market Risk',
-    }
+    },
+    '10-Q': {
+        # Part I
+        '2': 'MD&A',
+        '3': 'Market Risk',
+        # Part II — searched after the PART II boundary (see find_item_sections)
+        '1A': 'Risk Factors',
+    },
+}
+
+# Part II items must be located after the PART II heading; the same item numbers
+# also appear in Part I with different meanings.
+PART_II_ITEMS = {'10-Q': {'1A'}}
+
+
+def find_item_sections(text, form='10-K'):
+    """Find the start positions of each Item section (content, not TOC)."""
+    sections = {}
+    target_items = FORM_SECTIONS.get(form, FORM_SECTIONS['10-K'])
+    part_ii_items = PART_II_ITEMS.get(form, set())
+
+    # Locate the PART II boundary so Part II items aren't matched against Part I.
+    part_ii_pos = 0
+    for m in re.finditer(r'(?:^|\n)\s*(?:PART|Part)\s+II\b', text):
+        after = text[m.start():m.start() + 1000]
+        if len(re.findall(r'ITEM\s+\d', after[50:], re.IGNORECASE)) <= 1:
+            part_ii_pos = m.start()
+            break
 
     for item_num, label in target_items.items():
         # Match "ITEM 1." or "ITEM 1A." — use word boundary after the number
-        # to prevent "ITEM 1" from matching "ITEM 1A"
+        # to prevent "ITEM 1" from matching "ITEM 1A".
         if item_num[-1].isalpha():
-            pattern = rf'ITEM\s+{re.escape(item_num)}[\.\s]'
+            body = rf'ITEM\s+{re.escape(item_num)}[\.\s]'
         else:
-            pattern = rf'ITEM\s+{re.escape(item_num)}(?![A-Z])[\.\s]'
-        matches = list(re.finditer(pattern, text, re.IGNORECASE))
+            body = rf'ITEM\s+{re.escape(item_num)}(?![A-Z])[\.\s]'
+        # A real heading starts a line. Anchoring rejects inline cross-references
+        # such as 'see Item 1A of our Annual Report on Form 10-K', which otherwise
+        # match and capture a forward-looking-statements paragraph instead.
+        matches = list(re.finditer(rf'(?:^|\n)[ \t]*({body})', text, re.IGNORECASE))
+        if not matches:  # fall back to unanchored for filings with odd whitespace
+            matches = list(re.finditer(rf'({body})', text, re.IGNORECASE))
+
+        floor = part_ii_pos if item_num in part_ii_items else 0
 
         # The TOC entry is short (just title + page number).
         # The actual content section is followed by paragraphs of text.
         # Heuristic: look at the next 1000 chars — content sections have
         # long runs of text, TOC entries have other "ITEM" headings nearby.
         for m in matches:
-            after = text[m.start():m.start() + 1000]
+            pos = m.start(1)
+            if pos < floor:
+                continue
+            after = text[pos:pos + 1000]
             # Count how many other ITEM headings appear in the next 1000 chars
             other_items = len(re.findall(r'ITEM\s+\d', after[50:], re.IGNORECASE))
+            # In a 10-Q, "Item 1A ... of our Annual Report on Form 10-K" is a pointer at
+            # a DIFFERENT filing, and matching it captures a forward-looking-statements
+            # paragraph instead of the risk factors. Only a 10-Q can make this mistake;
+            # in a 10-K the same phrase is self-referential and must not be rejected.
+            if form == '10-Q' and re.search(
+                    r'Annual\s+Report\s+on\s+Form\s+10-K', after[:300], re.IGNORECASE):
+                continue
             # TOC has many Item headings clustered together; content has 0-1
             if other_items <= 1:
                 heading = re.sub(r'\s+', ' ', after[:200].split('\n')[0]).strip()
                 sections[item_num] = {
-                    'start': m.start(),
+                    'start': pos,
                     'label': label,
                     'heading': heading
                 }
@@ -143,7 +196,7 @@ def extract_section(text, start, next_start):
 
 def main():
     if len(sys.argv) < 3:
-        print("Usage: python3 extract_10k_narrative.py <input.htm> <output.txt> [--ticker TICKER]")
+        print("Usage: python3 extract_10k_narrative.py <input.htm> <output.txt> [--ticker TICKER] [--full] [--form 10-K|10-Q]")
         sys.exit(1)
 
     input_path = sys.argv[1]
@@ -153,6 +206,14 @@ def main():
         idx = sys.argv.index("--ticker")
         if idx + 1 < len(sys.argv):
             ticker = sys.argv[idx + 1]
+    form = "10-K"
+    if "--form" in sys.argv:
+        idx = sys.argv.index("--form")
+        if idx + 1 < len(sys.argv):
+            form = sys.argv[idx + 1].upper()
+    if form not in FORM_SECTIONS:
+        print(f"ERROR: unsupported --form {form} (expected one of {', '.join(FORM_SECTIONS)})")
+        sys.exit(1)
 
     print(f"Reading {input_path}...")
     with open(input_path, 'r', errors='replace') as f:
@@ -161,11 +222,25 @@ def main():
     print("Stripping HTML...")
     text = html_to_text(html)
 
-    print("Finding sections...")
-    sections = find_item_sections(text)
+    # --full skips section detection entirely. Section boundaries are heuristic and
+    # can silently drop most of an MD&A on filings that lay their headings out oddly;
+    # a too-large source file is a nuisance, a silently truncated one gets bad numbers
+    # published. Prefer --full whenever the sections look short.
+    if "--full" in sys.argv:
+        full = clean_text(text)
+        with open(output_path, 'w') as f:
+            f.write(f"# {ticker} — {form} full text (no section extraction)\n")
+            f.write("# Financial tables are included here; prefer XBRL via RoboSystems MCP for figures.\n\n")
+            f.write(full)
+        print(f"\nTotal: {len(full.split()):,} words → {output_path}")
+        return
+
+    print(f"Finding sections ({form})...")
+    sections = find_item_sections(text, form)
 
     if not sections:
         print("ERROR: Could not find any Item sections in the filing.")
+        print("Re-run with --full to dump the whole filing instead.")
         sys.exit(1)
 
     # Sort sections by position
@@ -189,7 +264,7 @@ def main():
 
     # Extract each section
     output_parts = []
-    output_parts.append(f"# {ticker} — 10-K Narrative Sections (Curated)")
+    output_parts.append(f"# {ticker} — {form} Narrative Sections (Curated)")
     output_parts.append(f"# Auto-extracted from SEC filing — qualitative content only")
     output_parts.append(f"# Financial tables and XBRL data excluded (available via RoboSystems MCP)")
     output_parts.append("")
