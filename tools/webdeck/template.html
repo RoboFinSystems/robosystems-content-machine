@@ -234,6 +234,18 @@ function el(tag, cls, html) {
   if (html !== undefined) e.innerHTML = html;
   return e;
 }
+
+// NEVER read chart categories with a bare Object.entries. JS enumerates integer-like keys
+// numerically before string keys, so {"2026 (6 mo left)","2027","2028","2029","2030 and after"}
+// comes back 2027, 2028, 2029, 2026, 2030 - chronology broken. It hides on all-bare-year
+// charts because those happen to sort correctly. build_webdeck.py records the authored order
+// as slide.dataOrder; fall back to Object.entries for decks built before that existed.
+function dataEntries(slide) {
+  const d = (slide && slide.data) || {};
+  const order = slide && slide.dataOrder;
+  if (Array.isArray(order) && order.length) return order.map(k => [k, d[k]]);
+  return Object.entries(d);
+}
 function esc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
@@ -388,7 +400,7 @@ function buildBarChart(sec, root, tracks) {
 
   const wrap = el('div','bars');
   root.appendChild(wrap);
-  const entries = Object.entries(sec.slide.data);
+  const entries = dataEntries(sec.slide);
   // Scale across the full range so positives and negatives share one zero baseline.
   // Scaling by max alone made a negative value clamp to a stub at the axis, which
   // silently deleted the point of the slide (CALM's Q4 loss, EAF's operating cash burn).
@@ -445,7 +457,7 @@ function buildLineChart(sec, root, tracks) {
 
   const wrap = el('div','linewrap');
   root.appendChild(wrap);
-  const entries = Object.entries(sec.slide.data);
+  const entries = dataEntries(sec.slide);
   const vals = entries.map(([,v]) => +v);
   const lo = Math.min(...vals), hi = Math.max(...vals);
   const W = 1620, H0 = 60, H1 = 330;                 // plot band inside wrap (px from top)
@@ -526,7 +538,7 @@ function buildMetricCards(sec, root, tracks) {
 
   const grid = el('div','cards');
   root.appendChild(grid);
-  Object.entries(sec.slide.data).forEach(([k, obj], i) => {
+  dataEntries(sec.slide).forEach(([k, obj], i) => {
     const hl = k === sec.slide.highlight;
     const card = el('div','card' + (hl ? ' hl' : ''));
     card.appendChild(el('div','lb', esc(k)));
@@ -574,7 +586,7 @@ function buildDual(sec, root, tracks) {
   });
 
   /* right: <=4 entries -> 2x2 minis; >4 -> stat panel */
-  const entries = Object.entries(sec.slide.data || {});
+  const entries = dataEntries(sec.slide);
   if (entries.length <= 4) {
     const grid = el('div','ministats');
     root.appendChild(grid);

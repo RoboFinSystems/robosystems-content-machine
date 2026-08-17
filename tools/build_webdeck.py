@@ -162,6 +162,14 @@ def main() -> int:
             return 1
         dur = float(durations[sid])
         start = 0.0 if not sections else round(audio_cursor - TRANS, 3)
+        slide = dict(seg["slide"])
+        # JS enumerates integer-like object keys numerically BEFORE string keys, whatever
+        # the authored order. A chart keyed {"2026 (6 mo left)", "2027", "2028", "2029",
+        # "2030 and after"} therefore renders 2027, 2028, 2029, 2026, 2030 - chronology
+        # broken, and silently, because all-bare-year charts happen to sort correctly.
+        # Python dicts keep insertion order, so record it here and let the template use it.
+        if isinstance(slide.get("data"), dict):
+            slide["dataOrder"] = list(slide["data"].keys())
         sections.append({
             "id": seg["id"],
             "visual_type": seg["visual_type"],
@@ -170,7 +178,7 @@ def main() -> int:
             "start": start,
             "audioStart": round(audio_cursor, 3),
             "audioDur": round(dur, 3),
-            "slide": seg["slide"],
+            "slide": slide,
         })
         audio_cursor += dur + GAP
 
