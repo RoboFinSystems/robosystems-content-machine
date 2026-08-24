@@ -185,7 +185,7 @@ one narration line plus the **actions** performed while it plays.
 | `dwell` | hold | **elastic**: with no `ms`, absorbs the beat's remaining time |
 | `wait` | `waitForSelector`, emits no frames | |
 | `select` | picks a native `<select>` option | `value`, `label` or `option`; moves the cursor there first |
-| `overlay` | a fixed chat bubble, bottom right | `role: human\|agent` + `text`; for narrating an ask and its answer |
+| `overlay` | a chat panel, bottom right | `role: human\|agent` + `text`; turns stack, `"stack": false` replaces |
 | `overlay-clear` | removes the bubble | |
 | `api` | calls the product API off camera | **emits no frames**; needs `--config`. See below |
 
@@ -230,6 +230,20 @@ Two more things follow. `api` **writes to whatever environment `--config` points
 at**, so aim it at local. And `just demo-stills` runs `api` actions like any
 other, which is deliberate (the still has to show the post-mutation UI) but
 means the 15-second fit check is *not* read-only.
+
+**The overlay is attribution, not an emulator.** RoboLedger is a surface; the
+interface for the full lifecycle is an AI client talking to the MCP server, and
+that client isn't a page the renderer can drive. So the panel stands in for it:
+`"brand": "claude" | "grok" | "chatgpt"` at spec level (or per action), with
+`--brand` overriding, so one episode renders under a different assistant without
+a second spec. Unknown brands warn and fall back to a neutral "Agent".
+
+Name and accent only, deliberately no logos or interface chrome. Naming the
+client you used is ordinary; reproducing another company's mark inside a sales
+asset implies an endorsement you don't have, and their redesigns would age the
+video. If a beat needs the real transcript rather than a stand-in, capture it
+and render it: don't hand-write what an assistant "would" say and present it as
+output.
 
 ### One tool, many demos
 

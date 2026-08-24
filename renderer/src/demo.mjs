@@ -379,6 +379,23 @@ class Recorder {
 // rather than that the timing is wrong.
 // ---------------------------------------------------------------------------
 
+/*
+ * Which assistant the walkthrough is attributed to.
+ *
+ * Name and accent only, deliberately no logos or interface chrome: naming the
+ * client you actually used is ordinary, but reproducing another company's mark
+ * inside a sales asset implies an endorsement that does not exist, and their
+ * redesigns would age the video. Set once per spec ("brand") so one episode
+ * re-renders under a different assistant without touching its beats.
+ */
+const CHAT_BRANDS = {
+  claude:  { label: 'Claude',  accent: '#D97757' },
+  grok:    { label: 'Grok',    accent: '#E4E4E7' },
+  chatgpt: { label: 'ChatGPT', accent: '#10A37F' },
+  agent:   { label: 'Agent',   accent: '#00D1B2' },
+};
+const HUMAN_ACCENT = '#8B5CF6';
+
 const DEFAULT_MS = {
   goto: 500, move: 900, hover: 900, click: 460, zoom: 1100,
   scroll: 1000, dwell: 800, type: 900, wait: 0, key: 240, api: 0, select: 900,
@@ -783,40 +800,69 @@ async function runAction(rec, page, baseUrl, a, warn, ctx = {}) {
       break;
     }
     case 'overlay': {
-      // Fixed bottom-right chat bubble (human ask / agent reply) — must land in frames.
+      // Fixed bottom-right chat panel (human ask / assistant reply). Bubbles
+      // stack so an exchange reads as a conversation rather than two captions;
+      // "stack": false replaces instead.
       const role = String(a.role || 'human').toLowerCase();
-      const label = role === 'agent' ? 'Agent' : 'You';
-      const accent = role === 'agent' ? '#00D1B2' : '#8B5CF6';
-      const text = String(a.text || '');
-      await page.evaluate(({ label, accent, text, role }) => {
+      const brandKey = String(a.brand || ctx.brand || 'agent').toLowerCase();
+      const brand = CHAT_BRANDS[brandKey] || CHAT_BRANDS.agent;
+      if (!CHAT_BRANDS[brandKey]) warn(`unknown chat brand "${brandKey}" - using Agent`);
+      const opts = {
+        text: String(a.text || ''),
+        role,
+        label: role === 'agent' ? brand.label : (a.label || 'You'),
+        accent: role === 'agent' ? brand.accent : HUMAN_ACCENT,
+        width: Number(a.width || ctx.overlayWidth || 620),
+        keep: a.stack === false ? 1 : Number(a.keep || 2),
+      };
+      await page.evaluate(({ label, accent, text, role, width, keep }) => {
         let root = document.getElementById('rs-demo-chat-overlay');
         if (!root) {
           root = document.createElement('div');
           root.id = 'rs-demo-chat-overlay';
           root.style.cssText = [
-            'position:fixed', 'right:28px', 'bottom:28px', 'z-index:2147483646',
-            'max-width:420px', 'pointer-events:none', 'font-family:Inter,system-ui,sans-serif',
+            'position:fixed', 'right:32px', 'bottom:32px', 'z-index:2147483646',
+            'display:flex', 'flex-direction:column', 'gap:10px', 'align-items:flex-end',
+            'pointer-events:none', 'font-family:Inter,system-ui,sans-serif',
           ].join(';');
           document.documentElement.appendChild(root);
         }
-        root.innerHTML = '';
+        root.style.maxWidth = `${width}px`;
+
         const bubble = document.createElement('div');
         bubble.setAttribute('data-rs-overlay-role', role);
         bubble.style.cssText = [
-          'background:rgba(17,24,39,0.94)', 'color:#F9FAFB', 'border:1px solid rgba(255,255,255,0.12)',
-          'border-radius:14px', 'padding:14px 16px', 'box-shadow:0 12px 40px rgba(0,0,0,0.45)',
-          'backdrop-filter:blur(8px)',
+          'background:rgba(17,24,39,0.94)', 'color:#F9FAFB',
+          'border:1px solid rgba(255,255,255,0.12)', 'border-radius:16px',
+          'padding:18px 22px', 'box-shadow:0 16px 48px rgba(0,0,0,0.5)',
+          'backdrop-filter:blur(8px)', 'max-width:100%',
         ].join(';');
         const head = document.createElement('div');
-        head.style.cssText = `font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:${accent};margin-bottom:6px`;
+        head.style.cssText =
+          `font-size:13px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;`
+          + `color:${accent};margin-bottom:8px`;
         head.textContent = label;
         const body = document.createElement('div');
-        body.style.cssText = 'font-size:15px;line-height:1.45;color:#E5E7EB';
+        body.setAttribute('data-rs-overlay-body', '1');
+        body.style.cssText = 'font-size:20px;line-height:1.5;color:#E5E7EB';
         body.textContent = text;
         bubble.appendChild(head);
         bubble.appendChild(body);
         root.appendChild(bubble);
-      }, { label, accent, text, role });
+
+        // Older turns stay for context but recede. Dim the text, never the
+        // element: opacity on the bubble multiplies into its own background and
+        // the page shows straight through the panel.
+        const kids = [...root.children];
+        while (kids.length > keep) kids.shift().remove();
+        kids.forEach((el, i) => {
+          const current = i === kids.length - 1;
+          const b = el.querySelector('[data-rs-overlay-body]');
+          if (b) b.style.color = current ? '#E5E7EB' : '#94A3B8';
+          const h = el.firstElementChild;
+          if (h && h !== b) h.style.filter = current ? 'none' : 'saturate(0.6)';
+        });
+      }, opts);
       await rec.syncCursor();
       await rec.hold(a.frames);
       break;
@@ -914,6 +960,10 @@ export async function demo(args) {
       // Which tenant `api` actions drive. Named per spec, never guessed.
       graphKey: args.graph || spec.graph || null,
       graphId: args['graph-id'] || spec.graphId || null,
+      // Which assistant the chat overlay is attributed to. A flag override means
+      // one episode renders as Claude, Grok and ChatGPT without three specs.
+      brand: args.brand || spec.brand || null,
+      overlayWidth: args['overlay-width'] || spec.overlayWidth || null,
       entity,
     };
 
