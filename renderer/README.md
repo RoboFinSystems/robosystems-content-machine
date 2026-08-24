@@ -135,6 +135,11 @@ measures it, and writes `durationMs` back into the spec. The renderer then fits
 that beat's choreography into exactly that many frames. Audio and video cannot
 drift, however long a sentence turns out to be.
 
+That makes the spec both the script and the timing ledger. The words and the
+choreography they accompany are one object (`{ id, narration, actions }`), and
+`narrationHash` re-synthesises only the beats whose text actually changed:
+editing a line while keeping its old audio is the quiet way to desync a video.
+
 *Waiting happens off camera.* Navigations, network settles and entrance
 animations run to completion **between** frames, never during them. Every frame
 is shot of a settled UI, so the recording has no dead air and the product looks
@@ -242,6 +247,19 @@ Different scenario, different capability, different tenant: all of it is spec.
 `entity` and `graph` are two handles on the same tenant and the tool cannot
 check that they agree, so set them together. `showcase/DEMO_DATA_REQUIREMENTS.md`
 is the contract with the `robosystems` repo for provisioning a new demo graph.
+
+The sound is spec-declared too, so an episode reproduces from its file alone
+rather than from remembered command-line flags. These are read by the Python
+tools either side of the renderer, not by the renderer itself:
+
+| field | tool | default |
+|---|---|---|
+| `voiceId` | `demo_narrate.py` | `$ELEVEN_LABS_VOICE_ID` |
+| `tailMs` | `demo_narrate.py` | `420` (silence after each line) |
+| `music` | `demo_mux.py` | `assets/music/tech_corporate.mp3`; `null` ships without a bed |
+| `musicGain` | `demo_mux.py` | `-22` dB before ducking |
+
+Flags still win over the spec, for trying a voice without editing the file.
 
 **Always run `just demo-stills` first.** It walks the entire choreography and
 writes one framed still per beat in ~15 seconds, reporting the zoom level each

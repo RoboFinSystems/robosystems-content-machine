@@ -10,9 +10,15 @@ video then cannot drift, however long a sentence turns out to be.
 Idempotent - a beat whose mp3 already exists is skipped unless --force, so
 re-timing a spec after an edit only re-bills the beats that changed.
 
+The spec owns its own sound: "voiceId" picks the narrator (falling back to
+$ELEVEN_LABS_VOICE_ID) and "tailMs" the silence after each line, so a series can
+give one scenario a different voice or a different pace without anyone
+remembering a flag at the command line.
+
 Usage:
     uv run python tools/demo_narrate.py showcase/coffee_roaster/driftline.walkthrough.json
     uv run python tools/demo_narrate.py <spec> --force
+    uv run python tools/demo_narrate.py <spec> --voice-id <id>   # try a voice without editing the spec
 """
 
 import argparse
@@ -30,6 +36,21 @@ from generate_voiceover_audio import generate_audio
 DEFAULT_TAIL_MS = 420
 
 
+def resolve(flag, spec, key, default):
+    """Flag beats spec beats default.
+
+    Anything an episode should be able to declare belongs in its spec, so a
+    demo reproduces from the spec alone and does not depend on someone
+    remembering a flag. The flag stays for one-off experiments (trying a
+    different voice without editing the file).
+    """
+    if flag is not None:
+        return flag
+    if key in spec and spec[key] is not None:
+        return spec[key]
+    return default
+
+
 def probe_duration(path):
     out = subprocess.run(
         ["ffprobe", "-v", "error", "-show_entries", "format=duration",
@@ -42,8 +63,10 @@ def main():
     ap = argparse.ArgumentParser(description="Voiceover + timing for a demo walkthrough spec")
     ap.add_argument("spec", help="path to a *.walkthrough.json")
     ap.add_argument("--force", action="store_true", help="regenerate every beat")
-    ap.add_argument("--tail-ms", type=int, default=DEFAULT_TAIL_MS,
-                    help=f"silence appended to each beat (default {DEFAULT_TAIL_MS})")
+    ap.add_argument("--tail-ms", type=int, default=None,
+                    help=f'silence appended to each beat (spec "tailMs", default {DEFAULT_TAIL_MS})')
+    ap.add_argument("--voice-id", default=None,
+                    help='ElevenLabs voice (spec "voiceId", else $ELEVEN_LABS_VOICE_ID)')
     args = ap.parse_args()
 
     spec_path = os.path.abspath(args.spec)
@@ -55,13 +78,16 @@ def main():
     audio_dir = os.path.join(spec_dir, "audio")
     os.makedirs(audio_dir, exist_ok=True)
 
-    voice_id = require_env("ELEVEN_LABS_VOICE_ID")
+    # The voice is part of the episode, not of the machine that renders it: a
+    # series can give one scenario a different narrator without changing env.
+    voice_id = args.voice_id or spec.get("voiceId") or require_env("ELEVEN_LABS_VOICE_ID")
+    tail_ms = resolve(args.tail_ms, spec, "tailMs", DEFAULT_TAIL_MS)
     beats = spec.get("beats") or []
     if not beats:
         print(f"ERROR: {args.spec} has no beats", file=sys.stderr)
         return 1
 
-    print(f"{slug}: {len(beats)} beats\n")
+    print(f"{slug}: {len(beats)} beats  voice {voice_id}  tail {tail_ms}ms\n")
     total = 0.0
     for beat in beats:
         bid = beat.get("id") or f"beat{beats.index(beat)}"
@@ -99,7 +125,7 @@ def main():
 
         beat["audio"] = os.path.relpath(out_path, spec_dir)
         beat["narrationHash"] = digest
-        beat["durationMs"] = int(round(dur * 1000)) + args.tail_ms
+        beat["durationMs"] = int(round(dur * 1000)) + tail_ms
         total += beat["durationMs"] / 1000
 
     with open(spec_path, "w") as f:

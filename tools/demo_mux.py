@@ -10,6 +10,10 @@ Two outputs, matching the webdeck convention:
   renders/<slug>_vo.mp4     VO only, the comparison cut
   renders/<slug>_final.mp4  VO + ducked music, the publish candidate
 
+The bed is part of the episode: "music" (repo-relative or absolute, or null to
+ship without one) and "musicGain" come from the spec, so the publish candidate
+reproduces from the spec alone. Flags still override for a one-off.
+
 Usage:
     uv run python tools/demo_mux.py showcase/coffee_roaster/driftline.walkthrough.json
             [--music assets/music/tech_corporate.mp3] [--music-gain -22] [--skip-music]
@@ -22,6 +26,11 @@ import subprocess
 import sys
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# Demos sit quieter than research videos: the bed is there to kill silence, not
+# to carry the piece.
+DEFAULT_MUSIC = "assets/music/tech_corporate.mp3"
+DEFAULT_MUSIC_GAIN = -22.0
 
 
 def run(cmd):
@@ -42,9 +51,10 @@ def probe_duration(path):
 def main():
     ap = argparse.ArgumentParser(description="Mux VO + music onto a rendered demo walkthrough")
     ap.add_argument("spec", help="path to a *.walkthrough.json")
-    ap.add_argument("--music", default="assets/music/tech_corporate.mp3")
-    ap.add_argument("--music-gain", type=float, default=-22.0,
-                    help="music bed gain in dB before ducking (demos sit quieter than research)")
+    ap.add_argument("--music", default=None,
+                    help=f'bed, repo-relative or absolute (spec "music", default {DEFAULT_MUSIC})')
+    ap.add_argument("--music-gain", type=float, default=None,
+                    help=f'bed gain in dB before ducking (spec "musicGain", default {DEFAULT_MUSIC_GAIN})')
     ap.add_argument("--skip-music", action="store_true")
     ap.add_argument("--silent", default=None, help="override the silent render path")
     args = ap.parse_args()
@@ -54,6 +64,14 @@ def main():
         spec = json.load(f)
     spec_dir = os.path.dirname(spec_path)
     slug = spec.get("slug") or os.path.basename(spec_path).split(".")[0]
+
+    # Flag beats spec beats default, so a demo reproduces from its spec alone
+    # rather than from someone remembering the flags. A spec may declare
+    # "music": null to ship deliberately without a bed.
+    music_rel = args.music if args.music is not None else (
+        spec.get("music") if "music" in spec else DEFAULT_MUSIC)
+    music_gain = args.music_gain if args.music_gain is not None else (
+        spec.get("musicGain") if spec.get("musicGain") is not None else DEFAULT_MUSIC_GAIN)
 
     renders = os.path.join(spec_dir, "renders")
     silent = args.silent or os.path.join(renders, f"{slug}.mp4")
@@ -111,12 +129,14 @@ def main():
          "-t", f"{total}", out_vo])
     print(f"A (VO only):   {os.path.relpath(out_vo, REPO)}")
 
-    if args.skip_music:
+    if args.skip_music or not music_rel:
+        why = "--skip-music" if args.skip_music else 'spec declares no music bed'
+        print(f"  {why} - keeping the VO-only cut")
         return 0
 
-    music = args.music if os.path.isabs(args.music) else os.path.join(REPO, args.music)
+    music = music_rel if os.path.isabs(music_rel) else os.path.join(REPO, music_rel)
     if not os.path.exists(music):
-        print(f"  no music bed at {args.music} - keeping the VO-only cut", file=sys.stderr)
+        print(f"  no music bed at {music_rel} - keeping the VO-only cut", file=sys.stderr)
         return 0
 
     fade_out_start = max(0.0, total - 4.0)
@@ -126,7 +146,7 @@ def main():
           f";[vo]apad,atrim=0:{total}[vop];[vop]asplit=2[voref][vomain]" +
           f";[{len(segs)+1}:a]aresample=48000,atrim=0:{total}," +
           f"afade=t=in:st=0:d=2,afade=t=out:st={fade_out_start}:d=4," +
-          f"volume={args.music_gain}dB[mus]" +
+          f"volume={music_gain}dB[mus]" +
           ";[mus][voref]sidechaincompress=threshold=0.02:ratio=8:attack=180:release=1000[musd]" +
           ";[vomain][musd]amix=inputs=2:normalize=0,apad[aout]")
     run(["ffmpeg", "-y", *inputs, "-i", music,
