@@ -453,6 +453,218 @@ async function tryResolve(rec, page, a, warn) {
   }
 }
 
+/*
+ * `api` support: off-camera calls to the product while the camera holds.
+ *
+ * The transport is general to RoboLedger. Everything episode-specific (which
+ * tenant, which forecast block, which concept, what number) comes from the
+ * spec, and there are no defaults for any of it. A default would not fail the
+ * render; it would quietly drive one company while filming another, or put a
+ * number on camera that nobody authored, in a demo whose entire claim is that
+ * the numbers are right.
+ */
+async function apiSession(ctx) {
+  if (ctx._api) return ctx._api;
+  if (!ctx.configPath) throw new Error('api action needs --config (no configPath in ctx)');
+  const cfg = JSON.parse(await readFile(ctx.configPath, 'utf8'));
+  const baseUrl = String(cfg.base_url || ctx.apiBaseUrl || 'http://localhost:8000').replace(/\/$/, '');
+  ctx._api = { cfg, baseUrl, configPath: ctx.configPath, auth: null };
+  return ctx._api;
+}
+
+// Cached on the session: a walkthrough with three api actions should log in once.
+async function apiAuth(sess) {
+  if (sess.auth) return sess.auth;
+  const { cfg } = sess;
+  if (cfg.api_key) return (sess.auth = { kind: 'key', value: cfg.api_key });
+  if (!cfg.email || !cfg.password) {
+    throw new Error(`api needs api_key or email/password in ${sess.configPath}`);
+  }
+  const res = await fetch(`${sess.baseUrl}/v1/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: cfg.email, password: cfg.password }),
+  });
+  if (!res.ok) throw new Error(`api login failed: HTTP ${res.status} ${await res.text()}`);
+  const body = await res.json();
+  const token = body.token || body.access_token || body.accessToken;
+  if (!token) throw new Error('api login response missing token');
+  return (sess.auth = { kind: 'bearer', value: token });
+}
+
+function apiHeaders(auth) {
+  const h = { 'Content-Type': 'application/json' };
+  if (auth.kind === 'key') h['X-API-Key'] = auth.value;
+  else h.Authorization = `Bearer ${auth.value}`;
+  return h;
+}
+
+/*
+ * Which tenant the off-camera calls hit.
+ *
+ * No default and no first-graph fallback, on purpose. The camera picks its
+ * tenant by entity name and the API picks its own by graph id: those are two
+ * independent handles on the same thing, and a guess makes them disagree
+ * silently. Every spec that uses `api` names its graph.
+ */
+function apiGraphId(a, ctx, sess) {
+  const explicit = a.graph_id || ctx.graphId;
+  if (explicit) return explicit;
+  const graphs = sess.cfg.graphs || {};
+  const keys = Object.keys(graphs).join(', ') || 'none';
+  const key = a.graph || ctx.graphKey;
+  if (!key) {
+    throw new Error(
+      'api action needs a graph: set "graph": "<key>" on the spec (or on the action), '
+      + `or "graphId" for a literal id. Keys in ${sess.configPath}: ${keys}`
+    );
+  }
+  const id = graphs[key]?.graph_id;
+  if (!id) throw new Error(`no graphs.${key}.graph_id in ${sess.configPath} (have: ${keys})`);
+  return id;
+}
+
+async function apiCall(sess, auth, graphId, { path, method = 'POST', body, label }) {
+  const url = `${sess.baseUrl}${path.replace('{graphId}', graphId)}`;
+  const res = await fetch(url, {
+    method,
+    headers: apiHeaders(auth),
+    body: body == null ? undefined : JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`${label} failed: HTTP ${res.status} ${await res.text()}`);
+  return res;
+}
+
+/*
+ * Resolve a forecast Information Block by exact name, and remember it so a
+ * later beat's compute-forecast reuses it instead of asking again.
+ *
+ * Exact match only: fuzzy matching here would compute a different block than
+ * the one just asserted into, and the render would succeed while showing the
+ * wrong forecast.
+ */
+async function apiForecastStructureId(sess, auth, graphId, a, ctx) {
+  if (a.structure_id) return a.structure_id;
+  const want = a.structure_name;
+  const cache = (ctx.forecastStructureIds ||= {});
+  if (!want) {
+    const only = Object.values(cache);
+    if (only.length === 1) return only[0];
+    throw new Error('forecast api op needs "structure_name" (or "structure_id") on the action');
+  }
+  const key = `${graphId}:${want.toLowerCase()}`;
+  if (cache[key]) return cache[key];
+
+  const res = await apiCall(sess, auth, graphId, {
+    path: '/extensions/{graphId}/graphql',
+    body: { query: 'query { informationBlocks(blockType: "forecast") { id name blockType } }' },
+    label: 'forecast structure lookup',
+  });
+  const blocks = (await res.json())?.data?.informationBlocks || [];
+  const hit = blocks.find((b) => String(b.name || '').toLowerCase() === want.toLowerCase());
+  if (!hit?.id) {
+    const found = blocks.map((b) => JSON.stringify(b.name)).join(', ') || 'none';
+    throw new Error(`no forecast block named ${JSON.stringify(want)} in graph ${graphId} (found: ${found})`);
+  }
+  return (cache[key] = hit.id);
+}
+
+// Some ops change data the current page already rendered; Refresh re-reads it
+// on camera. Never fatal: the beat can still be shot from the stale view.
+async function apiClickRefresh(page, warn) {
+  for (const loc of [
+    page.getByRole('button', { name: /^Refresh$/i }).first(),
+    page.locator('button:has-text("Refresh")').first(),
+  ]) {
+    if (!(await loc.count().catch(() => 0))) continue;
+    try {
+      await loc.click({ timeout: 3000 });
+      await settle(page);
+      return;
+    } catch (e) {
+      warn(`api refresh click skipped - ${String(e.message).split('\n')[0]}`);
+      return;
+    }
+  }
+}
+
+/*
+ * Dispatch one `api` action. Named ops carry the behaviour worth reusing
+ * (structure lookup, refresh-after); `path` is the escape hatch for everything
+ * this tool has not been taught yet.
+ */
+async function runApiAction(page, a, ctx, warn) {
+  // Off-camera product ops. Zero frames, because waiting is already off camera.
+  const sess = await apiSession(ctx);
+  const auth = await apiAuth(sess);
+  const graphId = apiGraphId(a, ctx, sess);
+  const op = a.op || a.name;
+  const where = `graph ${graphId}`;
+
+  if (op === 'promote-obligations') {
+    await apiCall(sess, auth, graphId, {
+      path: '/extensions/roboledger/{graphId}/operations/promote-obligations',
+      body: { dispatch_handlers: true },
+      label: op,
+    });
+    console.log(`  · api promote-obligations ok (${where})`);
+    if (a.refresh !== false) await apiClickRefresh(page, warn);
+    return;
+  }
+
+  if (op === 'update-forecast-assert' || op === 'update-information-block') {
+    const structureId = await apiForecastStructureId(sess, auth, graphId, a, ctx);
+    const lineAssertions =
+      a.line_assertions
+      || (a.qname != null && a.value != null ? [{ qname: a.qname, value: Number(a.value) }] : null);
+    if (!lineAssertions?.length) {
+      throw new Error(`${op} needs "line_assertions", or "qname" + "value", on the action`);
+    }
+    const payload = { structure_id: structureId, line_assertions: lineAssertions };
+    if (a.levers) payload.levers = a.levers;  // full lever replace when the beat supplies it
+    await apiCall(sess, auth, graphId, {
+      path: '/extensions/roboledger/{graphId}/operations/update-information-block',
+      body: { block_type: 'forecast', payload },
+      label: op,
+    });
+    const shown = lineAssertions.map((l) => `${l.qname}=${l.value}`).join(' ');
+    console.log(`  · api ${op} ok (${where} ${structureId} ${shown})`);
+    if (a.refresh) await apiClickRefresh(page, warn);
+    return;
+  }
+
+  if (op === 'compute-forecast') {
+    const structureId = await apiForecastStructureId(sess, auth, graphId, a, ctx);
+    await apiCall(sess, auth, graphId, {
+      path: '/extensions/roboledger/{graphId}/operations/compute-forecast',
+      body: { structure_id: structureId },
+      label: op,
+    });
+    console.log(`  · api compute-forecast ok (${where} ${structureId})`);
+    if (a.refresh) await apiClickRefresh(page, warn);
+    return;
+  }
+
+  // Escape hatch: a raw call, so the next capability demo can reach a new
+  // operation without a change to this tool. `{graphId}` interpolates.
+  if (a.path) {
+    await apiCall(sess, auth, graphId, {
+      path: a.path,
+      method: a.method || 'POST',
+      body: a.body,
+      label: op || `${a.method || 'POST'} ${a.path}`,
+    });
+    console.log(`  · api ${a.method || 'POST'} ${a.path} ok (${where})`);
+    if (a.refresh) await apiClickRefresh(page, warn);
+    return;
+  }
+
+  throw new Error(
+    `unknown api op ${JSON.stringify(op)}. Known: promote-obligations, `
+    + 'update-forecast-assert, compute-forecast. Or give "path" for a raw call.'
+  );
+}
+
 async function runAction(rec, page, baseUrl, a, warn, ctx = {}) {
   switch (a.kind) {
     case 'goto': {
@@ -618,160 +830,12 @@ async function runAction(rec, page, baseUrl, a, warn, ctx = {}) {
       break;
     }
     case 'api': {
-      // Off-camera product ops. Zero frames — waiting is already off camera.
-      const op = a.op || a.name;
-      const configPath = ctx.configPath;
-      if (!configPath) throw new Error('api action needs --config (no configPath in ctx)');
-      const cfg = JSON.parse(await readFile(configPath, 'utf8'));
-      const apiBase = String(cfg.base_url || ctx.apiBaseUrl || 'http://localhost:8000').replace(/\/$/, '');
-      const graphId =
-        a.graph_id ||
-        cfg.graphs?.saas_startup?.graph_id ||
-        Object.values(cfg.graphs || {}).find((g) => g?.graph_id)?.graph_id;
-      if (!graphId) throw new Error(`no graph_id in ${configPath} (expected graphs.saas_startup)`);
-
-      async function apiToken() {
-        if (cfg.api_key) return { kind: 'key', value: cfg.api_key };
-        if (!cfg.email || !cfg.password) {
-          throw new Error(`api ${op} needs api_key or email/password in ${configPath}`);
-        }
-        const loginRes = await fetch(`${apiBase}/v1/auth/login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: cfg.email, password: cfg.password }),
-        });
-        if (!loginRes.ok) {
-          throw new Error(`api login failed: HTTP ${loginRes.status} ${await loginRes.text()}`);
-        }
-        const loginBody = await loginRes.json();
-        const token = loginBody.token || loginBody.access_token || loginBody.accessToken;
-        if (!token) throw new Error('api login response missing token');
-        return { kind: 'bearer', value: token };
+      try {
+        await runApiAction(page, a, ctx, warn);
+      } catch (e) {
+        if (!a.optional) throw e;
+        warn(`optional api ${a.op || a.name || a.path} skipped - ${String(e.message).split('\n')[0]}`);
       }
-
-      function authHeaders(auth) {
-        const h = { 'Content-Type': 'application/json' };
-        if (auth.kind === 'key') h['X-API-Key'] = auth.value;
-        else h.Authorization = `Bearer ${auth.value}`;
-        return h;
-      }
-
-      async function discoverForecastStructureId(auth, preferName) {
-        if (a.structure_id) return a.structure_id;
-        const q = {
-          query: 'query { informationBlocks(blockType: "forecast") { id name blockType } }',
-        };
-        const gqlRes = await fetch(`${apiBase}/extensions/${graphId}/graphql`, {
-          method: 'POST',
-          headers: authHeaders(auth),
-          body: JSON.stringify(q),
-        });
-        if (!gqlRes.ok) {
-          throw new Error(`forecast structure discover failed: HTTP ${gqlRes.status} ${await gqlRes.text()}`);
-        }
-        const gql = await gqlRes.json();
-        const blocks = gql?.data?.informationBlocks || [];
-        const want = String(preferName || a.structure_name || 'FY27 Operating Budget').toLowerCase();
-        const hit =
-          blocks.find((b) => String(b.name || '').toLowerCase() === want) ||
-          blocks.find((b) => String(b.name || '').toLowerCase().includes('fy27')) ||
-          blocks.find((b) => String(b.name || '').toLowerCase().includes('operating budget')) ||
-          blocks[0];
-        if (!hit?.id) throw new Error('no forecast information block found to assert against');
-        return hit.id;
-      }
-
-      async function clickPageRefresh() {
-        const refresh = page.getByRole('button', { name: /^Refresh$/i }).first();
-        if (await refresh.count().catch(() => 0)) {
-          try {
-            await refresh.click({ timeout: 3000 });
-            await settle(page);
-            return;
-          } catch (e) {
-            warn(`api refresh click skipped - ${String(e.message).split('\n')[0]}`);
-          }
-        }
-        const alt = page.locator('button:has-text("Refresh")').first();
-        if (await alt.count().catch(() => 0)) {
-          try {
-            await alt.click({ timeout: 3000 });
-            await settle(page);
-          } catch (e) {
-            warn(`api refresh click skipped - ${String(e.message).split('\n')[0]}`);
-          }
-        }
-      }
-
-      if (op === 'promote-obligations') {
-        const auth = await apiToken();
-        const promoRes = await fetch(
-          `${apiBase}/extensions/roboledger/${graphId}/operations/promote-obligations`,
-          {
-            method: 'POST',
-            headers: authHeaders(auth),
-            body: JSON.stringify({ dispatch_handlers: true }),
-          }
-        );
-        if (!promoRes.ok) {
-          throw new Error(`promote-obligations failed: HTTP ${promoRes.status} ${await promoRes.text()}`);
-        }
-        console.log(`  · api promote-obligations ok (graph ${graphId})`);
-        await clickPageRefresh();
-        break;
-      }
-
-      if (op === 'update-forecast-assert' || op === 'update-information-block') {
-        const auth = await apiToken();
-        const structureId = await discoverForecastStructureId(auth, a.structure_name);
-        const qname =
-          a.qname ||
-          'rs-gaap:RevenueFromContractWithCustomerExcludingAssessedTax';
-        const value = a.value != null ? Number(a.value) : 150000;
-        const lineAssertions = a.line_assertions || [{ qname, value }];
-        const payload = { structure_id: structureId, line_assertions: lineAssertions };
-        // Optional full lever replace when the beat supplies it.
-        if (a.levers) payload.levers = a.levers;
-        const updRes = await fetch(
-          `${apiBase}/extensions/roboledger/${graphId}/operations/update-information-block`,
-          {
-            method: 'POST',
-            headers: authHeaders(auth),
-            body: JSON.stringify({ block_type: 'forecast', payload }),
-          }
-        );
-        if (!updRes.ok) {
-          throw new Error(`update-forecast-assert failed: HTTP ${updRes.status} ${await updRes.text()}`);
-        }
-        ctx.forecastStructureId = structureId;
-        console.log(
-          `  · api update-forecast-assert ok (${structureId} ${qname}=${value})`
-        );
-        break;
-      }
-
-      if (op === 'compute-forecast') {
-        const auth = await apiToken();
-        const structureId =
-          a.structure_id ||
-          ctx.forecastStructureId ||
-          (await discoverForecastStructureId(auth, a.structure_name));
-        const computeRes = await fetch(
-          `${apiBase}/extensions/roboledger/${graphId}/operations/compute-forecast`,
-          {
-            method: 'POST',
-            headers: authHeaders(auth),
-            body: JSON.stringify({ structure_id: structureId }),
-          }
-        );
-        if (!computeRes.ok) {
-          throw new Error(`compute-forecast failed: HTTP ${computeRes.status} ${await computeRes.text()}`);
-        }
-        console.log(`  · api compute-forecast ok (${structureId})`);
-        break;
-      }
-
-      warn(`unknown api op "${op}" - skipped`);
       break;
     }
     default:
@@ -839,14 +903,17 @@ export async function demo(args) {
       console.log(`  ${beats.length} beats ≈ ${totalSec.toFixed(1)}s @ ${fps}fps\n`);
     }
 
-    // One ctx for the whole run, not one per beat: `api` actions hand state to
-    // each other through it (update-forecast-assert caches the structure id that
-    // compute-forecast then computes), and those two rarely share a beat. Rebuilt
-    // per beat, the handoff is lost and compute-forecast silently re-discovers,
-    // landing on blocks[0] when the graph holds more than one forecast block.
+    // One ctx for the whole run, not one per beat. `api` actions hand state to
+    // each other through it: a resolved forecast structure id, and the login.
+    // The shipping spec happens to keep both forecast ops inside one beat, so
+    // per-beat rebuilding worked by luck; a spec that splits them across beats
+    // would re-login and re-resolve every time.
     const actionCtx = {
       configPath: args.config || spec.config || null,
       apiBaseUrl: args['api-base'] || spec.apiBaseUrl || null,
+      // Which tenant `api` actions drive. Named per spec, never guessed.
+      graphKey: args.graph || spec.graph || null,
+      graphId: args['graph-id'] || spec.graphId || null,
       entity,
     };
 

@@ -156,7 +156,7 @@ one narration line plus the **actions** performed while it plays.
 ```jsonc
 {
   "slug": "driftline_walkthrough", "width": 1920, "height": 1080, "fps": 30,
-  "theme": "dark", "entity": "Driftline", "maxZoom": 2,
+  "theme": "dark", "entity": "Driftline", "graph": "coffee_roaster", "maxZoom": 2,
   "beats": [
     { "id": "close-detail",
       "narration": "Claude drafts every entry, and each one carries its evidence.",
@@ -196,16 +196,52 @@ the closest matching anchors on that page listed for you. `scroll` and `select`
 honour it for their own failures too, not just a missing target.
 
 **`api` drives the product directly** when a beat needs state the UI can't reach
-in the time available, or when a UI quirk would otherwise block the shot. Ops:
-`promote-obligations` (then clicks Refresh so the Closing Book sees the cleared
-gate), `update-forecast-assert` and `compute-forecast`. It reads `base_url`,
-credentials and `graphs.*.graph_id` from the `--config` json, and emits no
-frames, because waiting is already off camera.
+in the time available, or when a UI quirk would otherwise block the shot. Named
+ops: `promote-obligations` (then clicks Refresh so the Closing Book sees the
+cleared gate), `update-forecast-assert` and `compute-forecast`. Anything else is
+a raw call, so a new capability demo doesn't need a change to this tool:
 
-Two things follow from that. It **writes to whatever environment `--config`
-points at**, so aim it at local. And `just demo-stills` runs `api` actions like
-any other, which is deliberate (the still has to show the post-mutation UI) but
+```jsonc
+{ "kind": "api", "op": "update-forecast-assert", "structure_name": "FY27 Operating Budget",
+  "qname": "rs-gaap:RevenueFromContractWithCustomerExcludingAssessedTax", "value": 150000 }
+{ "kind": "api", "path": "/extensions/roboledger/{graphId}/operations/whatever",
+  "method": "POST", "body": { "...": "..." }, "refresh": true }
+```
+
+`{graphId}` interpolates. `"refresh": true` clicks the page's Refresh afterwards
+so the change lands on camera (on by default for `promote-obligations`;
+`"refresh": false` opts out). `"optional": true` degrades a failed call to a
+warning, same as everywhere else.
+
+**Every spec that uses `api` must name its graph**: `"graph": "<key from the
+config's graphs>"`, or `"graphId"` for a literal, at spec level or per action.
+There is deliberately no default. The camera picks its tenant by `entity` name
+and the API picks its own by graph id, so a guess here does not fail the render,
+it quietly drives one company while filming another. Same reasoning for `qname`,
+`value` and `structure_name`, which are required rather than defaulted, and for
+forecast blocks, which are matched by exact name.
+
+Two more things follow. `api` **writes to whatever environment `--config` points
+at**, so aim it at local. And `just demo-stills` runs `api` actions like any
+other, which is deliberate (the still has to show the post-mutation UI) but
 means the 15-second fit check is *not* read-only.
+
+### One tool, many demos
+
+A demo is a folder under `showcase/`, and nothing about it lives in `renderer/`.
+Different scenario, different capability, different tenant: all of it is spec.
+
+| what varies | where it goes |
+|---|---|
+| which company is on camera | `entity` (the UI switcher) |
+| which graph the `api` actions hit | `graph` / `graphId` |
+| which surfaces, in what order | the beats |
+| which numbers get asserted | `qname` / `value` on the action |
+| a capability with no named op yet | `path` + `body` |
+
+`entity` and `graph` are two handles on the same tenant and the tool cannot
+check that they agree, so set them together. `showcase/DEMO_DATA_REQUIREMENTS.md`
+is the contract with the `robosystems` repo for provisioning a new demo graph.
 
 **Always run `just demo-stills` first.** It walks the entire choreography and
 writes one framed still per beat in ~15 seconds, reporting the zoom level each
