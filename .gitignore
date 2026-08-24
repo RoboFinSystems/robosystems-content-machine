@@ -83,3 +83,9 @@ oneoffs/
 
 # transient render worker logs
 *render_*.log
+
+# Editor / hand-rolled backups (never versioned; git history is the backup)
+*.bak
+*.bak-*
+*.orig
+*.rej
