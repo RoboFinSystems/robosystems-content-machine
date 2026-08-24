@@ -1,7 +1,7 @@
 # @robosystems/content-renderer
 
 Playwright-based **local renderer** for the content machine — the sibling Node
-package to `design-system/`. It does the two jobs the Python pipeline can't:
+package to `design-system/`. It does the jobs the Python pipeline can't:
 
 1. **`capture`** — drive the live **RoboLedger web UI** headlessly (login →
    navigate the demo's money screens → high-res stills/clips). This is the
@@ -35,8 +35,8 @@ or committed except the tool itself.
 
 **Division of labour:** this package emits the *silent visual layer only*. The
 Python pipeline stays the orchestrator and owns **audio** (ElevenLabs VO +
-ducked music) and the final mux. The **long-form deck is authored in Claude
-Design** and is out of scope here — the renderer never touches it.
+ducked music) and the final mux. The **long-form research deck is the webdeck**
+(`just webdeck-pipeline`) and is out of scope here: the renderer never touches it.
 
 ## Setup (once)
 
@@ -179,6 +179,10 @@ one narration line plus the **actions** performed while it plays.
 | `type` / `key` | keyboard input | |
 | `dwell` | hold | **elastic**: with no `ms`, absorbs the beat's remaining time |
 | `wait` | `waitForSelector`, emits no frames | |
+| `select` | picks a native `<select>` option | `value`, `label` or `option`; moves the cursor there first |
+| `overlay` | a fixed chat bubble, bottom right | `role: human\|agent` + `text`; for narrating an ask and its answer |
+| `overlay-clear` | removes the bubble | |
+| `api` | calls the product API off camera | **emits no frames**; needs `--config`. See below |
 
 `target` is a **raw Playwright selector** (`[data-testid="x"]`,
 `button:has-text("Close")`, `text=Deferred revenue`), or `[x, y]`, or
@@ -188,7 +192,20 @@ first-class options.
 
 Add `"optional": true` to an action to degrade a missing target into a hold plus
 a warning instead of killing the render. A missing target otherwise fails with
-the closest matching anchors on that page listed for you.
+the closest matching anchors on that page listed for you. `scroll` and `select`
+honour it for their own failures too, not just a missing target.
+
+**`api` drives the product directly** when a beat needs state the UI can't reach
+in the time available, or when a UI quirk would otherwise block the shot. Ops:
+`promote-obligations` (then clicks Refresh so the Closing Book sees the cleared
+gate), `update-forecast-assert` and `compute-forecast`. It reads `base_url`,
+credentials and `graphs.*.graph_id` from the `--config` json, and emits no
+frames, because waiting is already off camera.
+
+Two things follow from that. It **writes to whatever environment `--config`
+points at**, so aim it at local. And `just demo-stills` runs `api` actions like
+any other, which is deliberate (the still has to show the post-mutation UI) but
+means the 15-second fit check is *not* read-only.
 
 **Always run `just demo-stills` first.** It walks the entire choreography and
 writes one framed still per beat in ~15 seconds, reporting the zoom level each

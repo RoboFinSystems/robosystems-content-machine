@@ -294,9 +294,21 @@ class Recorder {
     const t = targetSpec(target);
     if (!t.selector) return this.hold(frames);
 
+    // Playwright understands :has-text() / nth; querySelector does not.
+    // Tag the resolved node, then animate its scroll container.
+    let loc = this.page.locator(t.selector);
+    if (t.nth != null) loc = loc.nth(t.nth);
+    else loc = loc.first();
+    const handle = await loc.elementHandle({ timeout: t.timeout ?? 4000 }).catch(() => null);
+    if (!handle) return this.hold(frames);
+    await this.page.evaluate((el) => {
+      document.querySelectorAll('[data-rsdemo-scroll-target]').forEach((n) => n.removeAttribute('data-rsdemo-scroll-target'));
+      el.setAttribute('data-rsdemo-scroll-target', '1');
+    }, handle);
+
     const plan = await this.page.evaluate(
       ([sel, blk]) => {
-        const el = document.querySelector(sel);
+        const el = document.querySelector('[data-rsdemo-scroll-target]') || document.querySelector(sel);
         if (!el) return null;
         const scroller = (() => {
           let n = el.parentElement;
@@ -337,6 +349,7 @@ class Recorder {
     await this.page.evaluate(() => {
       const s = document.querySelector('[data-rsdemo-scroller]');
       if (s) s.removeAttribute('data-rsdemo-scroller');
+      document.querySelectorAll('[data-rsdemo-scroll-target]').forEach((n) => n.removeAttribute('data-rsdemo-scroll-target'));
     });
   }
 
@@ -368,20 +381,21 @@ class Recorder {
 
 const DEFAULT_MS = {
   goto: 500, move: 900, hover: 900, click: 460, zoom: 1100,
-  scroll: 1000, dwell: 800, type: 900, wait: 0, key: 240,
+  scroll: 1000, dwell: 800, type: 900, wait: 0, key: 240, api: 0, select: 900,
+  overlay: 1600, 'overlay-clear': 200,
 };
 
 function planBeat(beat, fps, warn, stills = false) {
   const actions = beat.actions || [];
   // Fit-check mode collapses every action to its settled end state.
-  if (stills) return actions.map((a) => ({ ...a, frames: a.kind === 'wait' ? 0 : 1 }));
+  if (stills) return actions.map((a) => ({ ...a, frames: (a.kind === 'wait' || a.kind === 'api') ? 0 : 1 }));
   const total = Math.max(1, Math.round(((beat.durationMs || 3000) / 1000) * fps));
   const f = (ms) => Math.max(1, Math.round((ms / 1000) * fps));
 
   const elastic = [];
   let fixed = 0;
   const planned = actions.map((a, i) => {
-    if (a.kind === 'wait') return { ...a, frames: 0 };
+    if (a.kind === 'wait' || a.kind === 'api') return { ...a, frames: 0 };
     if (a.kind === 'dwell' && a.ms == null) {
       elastic.push(i);
       return { ...a, frames: 0 };
@@ -439,7 +453,7 @@ async function tryResolve(rec, page, a, warn) {
   }
 }
 
-async function runAction(rec, page, baseUrl, a, warn) {
+async function runAction(rec, page, baseUrl, a, warn, ctx = {}) {
   switch (a.kind) {
     case 'goto': {
       await page.goto(`${baseUrl}${a.route}`, { waitUntil: 'domcontentloaded' });
@@ -460,6 +474,14 @@ async function runAction(rec, page, baseUrl, a, warn) {
     case 'hover': {
       const box = await tryResolve(rec, page, a, warn);
       if (!box) return rec.hold(a.frames);
+      if (box.locator) {
+        await box.locator.scrollIntoViewIfNeeded().catch(() => {});
+        const fresh = await box.locator.boundingBox().catch(() => null);
+        if (fresh) {
+          const off = (targetSpec(a.target).offset || [0, 0]);
+          box.point = { x: fresh.x + fresh.width / 2 + (off[0] || 0), y: fresh.y + fresh.height / 2 + (off[1] || 0) };
+        }
+      }
       await rec.move(box.point, a.frames);
       if (a.kind === 'hover') await settle(page, { quietMs: 0, timeout: 2000 });
       break;
@@ -468,6 +490,18 @@ async function runAction(rec, page, baseUrl, a, warn) {
       if (a.target) {
         const box = await tryResolve(rec, page, a, warn);
         if (!box) return rec.hold(a.frames);
+        // Off-screen controls (e.g. Close Period under Draft review) must be
+        // brought into the viewport or the drawn cursor clicks empty space.
+        if (box.locator) {
+          await box.locator.scrollIntoViewIfNeeded().catch(() => {});
+          const fresh = await box.locator.boundingBox().catch(() => null);
+          if (fresh) {
+            box.point = {
+              x: fresh.x + fresh.width / 2 + ((targetSpec(a.target).offset || [0, 0])[0] || 0),
+              y: fresh.y + fresh.height / 2 + ((targetSpec(a.target).offset || [0, 0])[1] || 0),
+            };
+          }
+        }
         const moveF = Math.max(1, Math.round(a.frames * 0.45));
         await rec.move(box.point, moveF);
         await rec.click(a.frames - moveF, { button: a.button });
@@ -480,9 +514,16 @@ async function runAction(rec, page, baseUrl, a, warn) {
       await rec.syncCursor();
       break;
     }
-    case 'scroll':
-      await rec.scrollTo(a.target, a.frames, a.block || 'center');
+    case 'scroll': {
+      try {
+        await rec.scrollTo(a.target, a.frames, a.block || 'center');
+      } catch (e) {
+        if (!a.optional) throw e;
+        warn(`optional scroll skipped - ${String(e.message).split('\n')[0]}`);
+        await rec.hold(a.frames);
+      }
       break;
+    }
     case 'zoom': {
       if (a.target == null) { await rec.zoomTo('reset', a.frames, a.padding); break; }
       const box = await tryResolve(rec, page, a, warn);
@@ -501,6 +542,238 @@ async function runAction(rec, page, baseUrl, a, warn) {
     case 'dwell':
       await rec.hold(a.frames);
       break;
+    case 'select': {
+      // Native <select> by label/value. Visible move + settle so the grid change
+      // lands on camera after the option flips.
+      const box = await tryResolve(rec, page, a, warn);
+      if (!box) return rec.hold(a.frames);
+      const moveF = Math.max(1, Math.min(Math.round(a.frames * 0.35), Math.max(1, a.frames - 1)));
+      await rec.move(box.point, moveF);
+      const t = targetSpec(a.target);
+      let loc = page.locator(t.selector);
+      if (t.nth != null) loc = loc.nth(t.nth);
+      else loc = loc.first();
+      const opt = a.value ?? a.label ?? a.option;
+      if (opt == null) throw new Error('select action requires value, label, or option');
+      try {
+        if (a.label != null || (a.value == null && a.option != null)) {
+          await loc.selectOption({ label: String(a.label ?? a.option) });
+        } else {
+          await loc.selectOption(String(opt));
+        }
+      } catch (e) {
+        if (!a.optional) throw e;
+        warn(`optional select skipped - ${String(e.message).split('\n')[0]}`);
+      }
+      await settle(page);
+      await rec.syncCursor();
+      await rec.hold(Math.max(0, a.frames - moveF));
+      break;
+    }
+    case 'overlay': {
+      // Fixed bottom-right chat bubble (human ask / agent reply) — must land in frames.
+      const role = String(a.role || 'human').toLowerCase();
+      const label = role === 'agent' ? 'Agent' : 'You';
+      const accent = role === 'agent' ? '#00D1B2' : '#8B5CF6';
+      const text = String(a.text || '');
+      await page.evaluate(({ label, accent, text, role }) => {
+        let root = document.getElementById('rs-demo-chat-overlay');
+        if (!root) {
+          root = document.createElement('div');
+          root.id = 'rs-demo-chat-overlay';
+          root.style.cssText = [
+            'position:fixed', 'right:28px', 'bottom:28px', 'z-index:2147483646',
+            'max-width:420px', 'pointer-events:none', 'font-family:Inter,system-ui,sans-serif',
+          ].join(';');
+          document.documentElement.appendChild(root);
+        }
+        root.innerHTML = '';
+        const bubble = document.createElement('div');
+        bubble.setAttribute('data-rs-overlay-role', role);
+        bubble.style.cssText = [
+          'background:rgba(17,24,39,0.94)', 'color:#F9FAFB', 'border:1px solid rgba(255,255,255,0.12)',
+          'border-radius:14px', 'padding:14px 16px', 'box-shadow:0 12px 40px rgba(0,0,0,0.45)',
+          'backdrop-filter:blur(8px)',
+        ].join(';');
+        const head = document.createElement('div');
+        head.style.cssText = `font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:${accent};margin-bottom:6px`;
+        head.textContent = label;
+        const body = document.createElement('div');
+        body.style.cssText = 'font-size:15px;line-height:1.45;color:#E5E7EB';
+        body.textContent = text;
+        bubble.appendChild(head);
+        bubble.appendChild(body);
+        root.appendChild(bubble);
+      }, { label, accent, text, role });
+      await rec.syncCursor();
+      await rec.hold(a.frames);
+      break;
+    }
+    case 'overlay-clear': {
+      await page.evaluate(() => {
+        const root = document.getElementById('rs-demo-chat-overlay');
+        if (root) root.remove();
+      });
+      await rec.hold(a.frames);
+      break;
+    }
+    case 'api': {
+      // Off-camera product ops. Zero frames — waiting is already off camera.
+      const op = a.op || a.name;
+      const configPath = ctx.configPath;
+      if (!configPath) throw new Error('api action needs --config (no configPath in ctx)');
+      const cfg = JSON.parse(await readFile(configPath, 'utf8'));
+      const apiBase = String(cfg.base_url || ctx.apiBaseUrl || 'http://localhost:8000').replace(/\/$/, '');
+      const graphId =
+        a.graph_id ||
+        cfg.graphs?.saas_startup?.graph_id ||
+        Object.values(cfg.graphs || {}).find((g) => g?.graph_id)?.graph_id;
+      if (!graphId) throw new Error(`no graph_id in ${configPath} (expected graphs.saas_startup)`);
+
+      async function apiToken() {
+        if (cfg.api_key) return { kind: 'key', value: cfg.api_key };
+        if (!cfg.email || !cfg.password) {
+          throw new Error(`api ${op} needs api_key or email/password in ${configPath}`);
+        }
+        const loginRes = await fetch(`${apiBase}/v1/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: cfg.email, password: cfg.password }),
+        });
+        if (!loginRes.ok) {
+          throw new Error(`api login failed: HTTP ${loginRes.status} ${await loginRes.text()}`);
+        }
+        const loginBody = await loginRes.json();
+        const token = loginBody.token || loginBody.access_token || loginBody.accessToken;
+        if (!token) throw new Error('api login response missing token');
+        return { kind: 'bearer', value: token };
+      }
+
+      function authHeaders(auth) {
+        const h = { 'Content-Type': 'application/json' };
+        if (auth.kind === 'key') h['X-API-Key'] = auth.value;
+        else h.Authorization = `Bearer ${auth.value}`;
+        return h;
+      }
+
+      async function discoverForecastStructureId(auth, preferName) {
+        if (a.structure_id) return a.structure_id;
+        const q = {
+          query: 'query { informationBlocks(blockType: "forecast") { id name blockType } }',
+        };
+        const gqlRes = await fetch(`${apiBase}/extensions/${graphId}/graphql`, {
+          method: 'POST',
+          headers: authHeaders(auth),
+          body: JSON.stringify(q),
+        });
+        if (!gqlRes.ok) {
+          throw new Error(`forecast structure discover failed: HTTP ${gqlRes.status} ${await gqlRes.text()}`);
+        }
+        const gql = await gqlRes.json();
+        const blocks = gql?.data?.informationBlocks || [];
+        const want = String(preferName || a.structure_name || 'FY27 Operating Budget').toLowerCase();
+        const hit =
+          blocks.find((b) => String(b.name || '').toLowerCase() === want) ||
+          blocks.find((b) => String(b.name || '').toLowerCase().includes('fy27')) ||
+          blocks.find((b) => String(b.name || '').toLowerCase().includes('operating budget')) ||
+          blocks[0];
+        if (!hit?.id) throw new Error('no forecast information block found to assert against');
+        return hit.id;
+      }
+
+      async function clickPageRefresh() {
+        const refresh = page.getByRole('button', { name: /^Refresh$/i }).first();
+        if (await refresh.count().catch(() => 0)) {
+          try {
+            await refresh.click({ timeout: 3000 });
+            await settle(page);
+            return;
+          } catch (e) {
+            warn(`api refresh click skipped - ${String(e.message).split('\n')[0]}`);
+          }
+        }
+        const alt = page.locator('button:has-text("Refresh")').first();
+        if (await alt.count().catch(() => 0)) {
+          try {
+            await alt.click({ timeout: 3000 });
+            await settle(page);
+          } catch (e) {
+            warn(`api refresh click skipped - ${String(e.message).split('\n')[0]}`);
+          }
+        }
+      }
+
+      if (op === 'promote-obligations') {
+        const auth = await apiToken();
+        const promoRes = await fetch(
+          `${apiBase}/extensions/roboledger/${graphId}/operations/promote-obligations`,
+          {
+            method: 'POST',
+            headers: authHeaders(auth),
+            body: JSON.stringify({ dispatch_handlers: true }),
+          }
+        );
+        if (!promoRes.ok) {
+          throw new Error(`promote-obligations failed: HTTP ${promoRes.status} ${await promoRes.text()}`);
+        }
+        console.log(`  · api promote-obligations ok (graph ${graphId})`);
+        await clickPageRefresh();
+        break;
+      }
+
+      if (op === 'update-forecast-assert' || op === 'update-information-block') {
+        const auth = await apiToken();
+        const structureId = await discoverForecastStructureId(auth, a.structure_name);
+        const qname =
+          a.qname ||
+          'rs-gaap:RevenueFromContractWithCustomerExcludingAssessedTax';
+        const value = a.value != null ? Number(a.value) : 150000;
+        const lineAssertions = a.line_assertions || [{ qname, value }];
+        const payload = { structure_id: structureId, line_assertions: lineAssertions };
+        // Optional full lever replace when the beat supplies it.
+        if (a.levers) payload.levers = a.levers;
+        const updRes = await fetch(
+          `${apiBase}/extensions/roboledger/${graphId}/operations/update-information-block`,
+          {
+            method: 'POST',
+            headers: authHeaders(auth),
+            body: JSON.stringify({ block_type: 'forecast', payload }),
+          }
+        );
+        if (!updRes.ok) {
+          throw new Error(`update-forecast-assert failed: HTTP ${updRes.status} ${await updRes.text()}`);
+        }
+        ctx.forecastStructureId = structureId;
+        console.log(
+          `  · api update-forecast-assert ok (${structureId} ${qname}=${value})`
+        );
+        break;
+      }
+
+      if (op === 'compute-forecast') {
+        const auth = await apiToken();
+        const structureId =
+          a.structure_id ||
+          ctx.forecastStructureId ||
+          (await discoverForecastStructureId(auth, a.structure_name));
+        const computeRes = await fetch(
+          `${apiBase}/extensions/roboledger/${graphId}/operations/compute-forecast`,
+          {
+            method: 'POST',
+            headers: authHeaders(auth),
+            body: JSON.stringify({ structure_id: structureId }),
+          }
+        );
+        if (!computeRes.ok) {
+          throw new Error(`compute-forecast failed: HTTP ${computeRes.status} ${await computeRes.text()}`);
+        }
+        console.log(`  · api compute-forecast ok (${structureId})`);
+        break;
+      }
+
+      warn(`unknown api op "${op}" - skipped`);
+      break;
+    }
     default:
       warn(`unknown action kind "${a.kind}" - held for ${a.frames} frames`);
       await rec.hold(a.frames);
@@ -566,10 +839,21 @@ export async function demo(args) {
       console.log(`  ${beats.length} beats ≈ ${totalSec.toFixed(1)}s @ ${fps}fps\n`);
     }
 
+    // One ctx for the whole run, not one per beat: `api` actions hand state to
+    // each other through it (update-forecast-assert caches the structure id that
+    // compute-forecast then computes), and those two rarely share a beat. Rebuilt
+    // per beat, the handoff is lost and compute-forecast silently re-discovers,
+    // landing on blocks[0] when the graph holds more than one forecast block.
+    const actionCtx = {
+      configPath: args.config || spec.config || null,
+      apiBaseUrl: args['api-base'] || spec.apiBaseUrl || null,
+      entity,
+    };
+
     for (const [i, beat] of beats.entries()) {
       const planned = planBeat(beat, fps, warn, stills);
       const at = rec.frame;
-      for (const a of planned) await runAction(rec, page, baseUrl, a, warn);
+      for (const a of planned) await runAction(rec, page, baseUrl, a, warn, actionCtx);
 
       if (stills) {
         const name = `${String(i).padStart(2, '0')}_${String(beat.id || 'beat').replace(/\W+/g, '-')}`;
