@@ -99,6 +99,8 @@ just postpack PROJECT       # assemble the per-platform publish pack (paste-read
 | **Short (9:16)** | `just webdeck-short-pipeline PROJECT` | Same engine at 1080×1920 — purpose-built vertical, not a crop |
 
 Rendering is **entirely local**: puppeteer-core drives headless Chrome, ffmpeg does the mux.
+
+A second capture mode — recording a live AI chat client (ChatGPT, claude.ai, Grok) or the RoboSystems apps using the platform over MCP — is documented in [`docs/chat-demo-recording.md`](docs/chat-demo-recording.md); output lands in `content/demos/<slug>/` like the pipeline's.
 There is no cloud render service and no per-render cost. The mux writes
 `videos/{TICKER}_timestamps.txt` with the authoritative YouTube chapter times.
 
