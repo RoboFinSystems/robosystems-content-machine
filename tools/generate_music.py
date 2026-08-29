@@ -112,7 +112,8 @@ def _append_manifest(out_id, prompt, length_s):
         "source": "ElevenLabs Music API",
     })
     with open(path, "w") as f:
-        json.dump(items, f, indent=2)
+        json.dump(items, f, indent=2, ensure_ascii=False)
+        f.write("\n")
     print(f"    -> appended '{out_id}' to music manifest")
 
 

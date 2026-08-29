@@ -63,7 +63,8 @@ def main():
 
     if added:
         with open(MANIFEST, "w") as f:
-            json.dump(items, f, indent=2)
+            json.dump(items, f, indent=2, ensure_ascii=False)
+            f.write("\n")
         print(f"\nAdded {added} track(s). Fill in mood + description in {MANIFEST}")
     else:
         print("Manifest already in sync — no new tracks.")

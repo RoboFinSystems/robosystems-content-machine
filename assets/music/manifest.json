@@ -3,7 +3,13 @@
     "id": "tech_corporate",
     "file": "tech_corporate.mp3",
     "duration": 510.0,
-    "mood": ["electronic", "edm", "corporate", "clean", "driving"],
+    "mood": [
+      "electronic",
+      "edm",
+      "corporate",
+      "clean",
+      "driving"
+    ],
     "description": "Tech-corporate electronic bed. Confident, modern, not cheesy. Default Short track.",
     "source": "ElevenLabs (download)"
   },
@@ -11,24 +17,60 @@
     "id": "electric_momentum",
     "file": "electric_momentum.mp3",
     "duration": 120.0,
-    "mood": ["electronic", "futuristic", "corporate", "driving", "uplifting", "guitar"],
-    "description": "Inspiring futuristic-corporate instrumental — sleek synths, a steady driving rhythm, and expressive electric-guitar melodies. Motivational and uplifting; good for Shorts and promos.",
+    "mood": [
+      "electronic",
+      "futuristic",
+      "corporate",
+      "driving",
+      "uplifting",
+      "guitar"
+    ],
+    "description": "Inspiring futuristic-corporate instrumental - sleek synths, a steady driving rhythm, and expressive electric-guitar melodies. Motivational and uplifting; good for Shorts and promos.",
     "source": "download"
   },
   {
     "id": "corporate_momentum",
     "file": "corporate_momentum.mp3",
     "duration": 120.0,
-    "mood": ["electro-pop", "corporate", "uplifting", "high-energy", "piano", "synth"],
-    "description": "High-energy motivational corporate electro-pop — punchy drums, driving bassline, bright piano, bold uplifting lead synth. Confident and dynamic; brand videos / product launches / Shorts.",
+    "mood": [
+      "electro-pop",
+      "corporate",
+      "uplifting",
+      "high-energy",
+      "piano",
+      "synth"
+    ],
+    "description": "High-energy motivational corporate electro-pop - punchy drums, driving bassline, bright piano, bold uplifting lead synth. Confident and dynamic; brand videos / product launches / Shorts.",
     "source": "download"
   },
   {
     "id": "corporate_summer",
     "file": "corporate_summer.mp3",
     "duration": 75.7,
-    "mood": ["inspirational", "corporate", "uplifting", "electronic", "driving"],
-    "description": "Inspirational corporate instrumental at 125 BPM — bright kalimbas and gamelans, evolving synth lead with filter sweeps, punchy driving beat, uplifting strings. Bright/warm option for Shorts.",
+    "mood": [
+      "inspirational",
+      "corporate",
+      "uplifting",
+      "electronic",
+      "driving"
+    ],
+    "description": "Inspirational corporate instrumental at 125 BPM - bright kalimbas and gamelans, evolving synth lead with filter sweeps, punchy driving beat, uplifting strings. Bright/warm option for Shorts.",
     "source": "download"
+  },
+  {
+    "id": "mission_cut",
+    "file": "mission_cut.mp3",
+    "duration": 90.0,
+    "mood": [
+      "cinematic",
+      "warm",
+      "slow",
+      "analog",
+      "piano",
+      "serious",
+      "mission-film"
+    ],
+    "description": "Warm analog pads, quiet piano, slow pulse around 80 BPM, lift in the last 20 seconds. Inspired and serious: a mission-film bed, not a product-tour looper, not EDM, not cheesy corporate. No vocals. Built for the ~75s finance film about great books driving great decisions. Not a Shorts or ticker-research track.",
+    "source": "ElevenLabs Music API"
   }
 ]
