@@ -89,3 +89,5 @@ oneoffs/
 *.bak-*
 *.orig
 *.rej
+
+.playwright-mcp
