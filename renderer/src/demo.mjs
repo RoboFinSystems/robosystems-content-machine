@@ -634,17 +634,22 @@ async function runApiAction(page, a, ctx, warn) {
     const lineAssertions =
       a.line_assertions
       || (a.qname != null && a.value != null ? [{ qname: a.qname, value: Number(a.value) }] : null);
-    if (!lineAssertions?.length) {
-      throw new Error(`${op} needs "line_assertions", or "qname" + "value", on the action`);
+    // A lever-only change is a first-class beat: moving DSO and recomputing is the
+    // whole point of the plan section, and it asserts no line items at all.
+    if (!lineAssertions?.length && !a.levers) {
+      throw new Error(`${op} needs "line_assertions", "qname" + "value", or "levers", on the action`);
     }
-    const payload = { structure_id: structureId, line_assertions: lineAssertions };
+    const payload = { structure_id: structureId };
+    if (lineAssertions?.length) payload.line_assertions = lineAssertions;
     if (a.levers) payload.levers = a.levers;  // full lever replace when the beat supplies it
     await apiCall(sess, auth, graphId, {
       path: '/extensions/roboledger/{graphId}/operations/update-information-block',
       body: { block_type: 'forecast', payload },
       label: op,
     });
-    const shown = lineAssertions.map((l) => `${l.qname}=${l.value}`).join(' ');
+    const shown = lineAssertions?.length
+      ? lineAssertions.map((l) => `${l.qname}=${l.value}`).join(' ')
+      : (a.levers || []).map((l) => `${l.qname} levers`).join(' ');
     console.log(`  · api ${op} ok (${where} ${structureId} ${shown})`);
     if (a.refresh) await apiClickRefresh(page, warn);
     return;
