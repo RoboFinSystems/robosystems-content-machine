@@ -803,6 +803,26 @@ def check_publish_metadata(project_dir, ticker, script):
     else:
         ok(f"publish.json: all {len(expected)} expected fields present")
 
+    # youtube_title doubles as the /research page <title> (reindex.py seo_fields, 2026-09-02).
+    # It only qualifies when it names the ticker or company AND a period token; otherwise the
+    # page falls back to a composed "Company (TICK) YEAR Earnings: hook" title.
+    yt = str(pub.get("youtube_title") or "").strip()
+    if yt and not str(pub.get("seo_title") or "").strip():
+        try:
+            with open(os.path.join(project_dir, "scripts", f"{ticker}_script.json")) as f:
+                company = (json.load(f).get("metadata") or {}).get("company") or ""
+        except (OSError, json.JSONDecodeError):
+            company = ""
+        short = company.lower().split(",")[0].strip()
+        names = ticker.lower() in yt.lower() or (len(short) > 2 and short in yt.lower())
+        period = re.search(r"\b(Q[1-4]|FY ?'?\d{2,4}|20\d\d|10-K|10-Q|earnings)\b", yt, re.I)
+        if names and period:
+            ok("youtube_title names the ticker/company and a period: it will be the /research page title")
+        else:
+            lacks = [w for w, hit in (("the ticker or company", names), ("a period token (Q2 2026 / FY2026 / 10-K / Earnings)", period)) if not hit]
+            warn(f"youtube_title lacks {' and '.join(lacks)}; the /research page will get a composed fallback title. "
+                 f"Fix the title or set seo_title in publish.json")
+
     # Fields retired in the 2026-06 distribution rework — nudge to drop them.
     # (LinkedIn is reserved for the technical/blog lane; research analysis doesn't post there.)
     stale = [k for k in ("instagram_caption", "x_first_reply",

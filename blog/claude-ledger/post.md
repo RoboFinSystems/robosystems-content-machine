@@ -2,6 +2,7 @@
 title: 'Claude in Excel vs. Claude in the Ledger: Where to Point AI at Your Books'
 date: '2026-7-26'
 author: 'Joey French'
+site: 'roboledger'
 excerpt: 'Pointing Claude at a spreadsheet export gives it a photograph of your accounting. Pointing it at the ledger gives it the accounting. Here is what actually changes, what it still cannot do, and how to try it on data that is not yours first.'
 metaDescription: 'Claude in Excel reads a snapshot of your books. Connecting Claude to a general ledger over MCP gives it schema, query access, provenance and gated writes.'
 tags:
@@ -22,7 +23,7 @@ keywords:
     'MCP accounting',
     'AI general ledger',
   ]
-canonicalUrl: 'https://robosystems.ai/blog/claude-ledger'
+canonicalUrl: 'https://roboledger.ai/blog/claude-ledger'
 ---
 
 If you work in accounting or finance, you have probably already pointed Claude at a spreadsheet. Export the trial balance, drop the file in, ask what moved. It works. It is genuinely useful, and the instinct behind it is correct: the numbers should be interrogable in plain language, and the person who understands the business should not have to write a formula to ask a question about it.

@@ -55,7 +55,7 @@ defines the slides — their count, their order, and the narration timed to each
     "company": "Green Thumb Industries Inc.",
     "filing_type": "10-K",
     "filing_date": "2026-02-25",
-    "video_title": "Short, engaging YouTube title (under 70 chars)",
+    "video_title": "Short, engaging working title (under 70 chars). NOT the published YouTube title and NOT the /research page title; both come from publish.json youtube_title",
     "video_description": "YouTube description (2-3 sentences, keywords)",
     "tags": ["tag1", "tag2"],
     "campaign": "Optional campaign name"

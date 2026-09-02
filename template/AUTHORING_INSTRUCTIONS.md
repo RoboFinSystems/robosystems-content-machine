@@ -87,7 +87,7 @@ assumed:
 |---|---|---|
 | **YouTube** | ~61% search, browse is negligible | The **searchable query**: Company + Ticker + quarter + the specific metric. Front-load what someone would actually type. |
 | **X** | cashtag / topic feeds | The **contrarian curiosity line** plus an early ` $TICKER`. Small active cashtag communities out-reach marquee names 6-10x; crowded tickers land near the account median. |
-| **/research** | direct link (a prospect we sent) + long-tail SERP | The **brief**. This is the asset a buyer actually reads, so it carries the analytical claim plainly. Page titles come from `seo_title` in `reindex.py`, never from the YouTube hook. |
+| **/research** | direct link (a prospect we sent) + long-tail SERP | The **brief**. This is the asset a buyer actually reads, so it carries the analytical claim plainly. **The page `<title>` is the `youtube_title`** (since 2026-09-02, `reindex.py` `seo_fields`): it is reused there because a search-first title is what a SERP needs too. If the `youtube_title` does not name the ticker or company AND a period token (Q2 2026 / FY2026 / 10-K / 10-Q / Earnings), the page falls back to a composed "Company (TICK) YEAR Earnings: brief hook" title, which is weaker. Set `seo_title` in publish.json only to override deliberately. |
 
 **Never reuse one string across two surfaces.** The `youtube_title` is a query, the X hook is a
 curiosity line, the Short title is a third thing again, and the brief's headline is the
@@ -261,6 +261,19 @@ times, the S3 media links, and flagging any unresolved placeholders). A JSON obj
   angle/metric, then a short curiosity tail. Aim at the specific low-competition long-tail, not
   the crowded bare-ticker term. **Make it DIFFERENT from the X hook**: X rewards the contrarian
   curiosity line, YouTube rewards the searchable query; don't reuse the same string on both.
+  **It is also the `/research` page `<title>`** (Google prints it with " | RoboSystems Research"
+  appended and truncates around 60 characters, so the company/ticker + period must sit in the
+  first ~55). Hard requirements, checked by `just validate`: the string names the **ticker or
+  company** AND carries a **period token** (`Q1`..`Q4`, `FY2026`, `10-K`, `10-Q`, or `Earnings`).
+  A topic-led title for a thin-demand name still satisfies this by closing with the ticker and
+  period in parentheses: "Fastenal: A Double-Digit Comeback the Market Sold (FAST Q2 2026)".
+  Without both, the page gets a composed fallback ("Company (TICK) 2026 Earnings: brief hook"),
+  which is honest but weaker. Why: the old template title ("MGP Ingredients, Inc. (MGPI) SEC
+  Filing Analysis") sat at position 10 for "mgp whiskey q2 sales" with 212 impressions and 0
+  clicks (Search Console, 3 months to 2026-09-02).
+- `seo_title` / `seo_description` (optional) — explicit overrides for the `/research` page
+  `<title>` and meta description. Leave them out unless the `youtube_title` genuinely should
+  differ from the page title; `reindex.py` composes both otherwise.
 - `x_first_comment` — the X first comment under the video post; points to the brief published as an X **Article** (use `[X_ARTICLE_LINK]`). The full long-form is uploaded as native video; no YouTube link on X.
 - `youtube_comment` (optional) — the YouTube first comment, posted automatically at `yt-publish`. Omit it and the tool posts the default written-brief line pointing at the ticker's `/research` page (`[RESEARCH_URL]` resolves to it). Write one only when a bespoke line beats "here is the full written brief" - e.g. a question that invites replies.
 

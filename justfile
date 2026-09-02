@@ -296,9 +296,9 @@ publish-brief project: (validate-brief project)
 
 # ─── Blog Pipeline (markdown essays → S3 blog/ + blog/index.json) ─────────────
 
-# Scaffold a new blog post: blog/<slug>/post.md from the template
-blog-new slug:
-    @bash tools/new_blog.sh {{slug}}
+# Scaffold a new blog post: blog/<slug>/post.md from the template (site: robosystems | roboledger)
+blog-new slug site='robosystems':
+    @bash tools/new_blog.sh {{slug}} {{site}}
 
 # Narrate a post via ElevenLabs TTS → blog/<slug>/<slug>_narration.mp3 (optional)
 blog-narrate slug *args:

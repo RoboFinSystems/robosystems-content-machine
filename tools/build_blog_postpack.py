@@ -18,8 +18,6 @@ import sys
 import blog_common as bc
 from helpers import asset_url
 
-CANONICAL = "https://robosystems.ai/blog/{slug}"
-
 
 def hashtags(tags):
     out = []
@@ -36,7 +34,7 @@ def build(slug):
 
     title = str(meta.get("title") or slug).strip()
     excerpt = bc.excerpt_fallback(meta, body)
-    url = (meta.get("canonicalUrl") or CANONICAL.format(slug=slug)).strip()
+    url = bc.post_url(meta, slug)
     tags = meta.get("tags") or []
 
     def companion(suffix):

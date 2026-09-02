@@ -22,6 +22,16 @@ BLOG = os.path.join(ROOT, "blog")
 
 SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 
+# Which site renders a post. One catalog (blog/index.json) feeds every app; each app keeps
+# the posts whose `site` matches its lane (robosystems-app: the graph/platform essays;
+# roboledger-app: the buyer posts). A post with no `site` is a robosystems.ai post, so the
+# fourteen essays published before the field existed need no edit.
+SITES = {
+    "robosystems": "https://robosystems.ai",
+    "roboledger": "https://roboledger.ai",
+}
+DEFAULT_SITE = "robosystems"
+
 
 def is_valid_slug(slug):
     return bool(SLUG_RE.match(slug or ""))
@@ -94,6 +104,33 @@ def parse_frontmatter(raw):
         meta[key] = _parse_flow_array(buf)
         i += 1
     return meta
+
+
+def post_site(meta):
+    """'robosystems' (default) or 'roboledger'; anything else is a typo, so fail loudly."""
+    site = str(meta.get("site") or DEFAULT_SITE).strip().lower()
+    if site not in SITES:
+        raise ValueError(f"Unknown site '{site}' (expected one of: {', '.join(SITES)})")
+    return site
+
+
+def post_url(meta, slug):
+    """The post's public URL: the frontmatter canonical, else <site origin>/blog/<slug>."""
+    return (meta.get("canonicalUrl") or f"{SITES[post_site(meta)]}/blog/{slug}").strip()
+
+
+def check_canonical(meta, slug):
+    """Return an error string when the canonical points at a different site than `site`
+    does (the app renders the canonical verbatim, so a mismatch tells Google the page
+    lives on the other domain). None when consistent or when no canonical is declared."""
+    canonical = (meta.get("canonicalUrl") or "").strip()
+    if not canonical:
+        return None
+    origin = SITES[post_site(meta)]
+    if canonical.startswith(origin + "/"):
+        return None
+    return (f"blog/{slug}: site is '{post_site(meta)}' but canonicalUrl is {canonical} "
+            f"(expected {origin}/blog/{slug})")
 
 
 def parse_post(slug):

@@ -2,6 +2,7 @@
 title: 'Accounting Runs on a Chain of Exports. That Is Why AI Cannot Do It Yet.'
 date: '2026-07-29'
 author: 'Joey French'
+site: 'roboledger'
 excerpt: 'The depreciation schedule is a spreadsheet. The close checklist is a spreadsheet. The GAAP mapping is a spreadsheet. The model is a spreadsheet. Every one of those is an export, and every export throws away everything except the numbers. That is the actual reason AI keeps failing at accounting, and it is fixable.'
 metaDescription: 'AI-native accounting is not a chat box on top of QuickBooks. It means removing the export chain: schedules that drive the close, mapping in the system, reports as views, models on the ledger.'
 tags:
@@ -24,7 +25,7 @@ keywords:
     'MCP accounting',
     'depreciation schedule automation',
   ]
-canonicalUrl: 'https://robosystems.ai/blog/ai-native-accounting'
+canonicalUrl: 'https://roboledger.ai/blog/ai-native-accounting'
 ---
 
 Your books are in QuickBooks. Almost nothing else is.

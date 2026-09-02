@@ -124,7 +124,9 @@ def detect_campaign(proj: Path) -> str | None:
     return None
 
 
-RESEARCH_URL = "https://robosystems.ai/research/{ticker}"
+# The written brief lives on roboinvestor.ai since 2026-09-02 (site-content-surfaces);
+# robosystems.ai redirects the old path, so comments already posted keep working.
+RESEARCH_URL = "https://roboinvestor.ai/research/{ticker}"
 DEFAULT_COMMENT = ("Full written brief, with every number sourced to the filing: {url}")
 
 

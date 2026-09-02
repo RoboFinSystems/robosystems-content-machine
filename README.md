@@ -126,8 +126,13 @@ A lighter sibling of the research pipeline for markdown essays. A post is one fi
 Narration, cover image, and social copy are all optional and additive; a post with just
 `post.md` publishes cleanly.
 
+One catalog feeds two sites. The frontmatter `site` field (`robosystems`, the default, or
+`roboledger`) says which app renders the post: robosystems-app lists the graph and platform
+essays, roboledger-app lists the buyer posts. Moving a post is one frontmatter line plus a
+reindex; `canonicalUrl` must sit on the same domain (publish refuses a mismatch).
+
 ```bash
-just blog-new <slug>        # scaffold blog/<slug>/post.md from the template
+just blog-new <slug> [site] # scaffold blog/<slug>/post.md from the template (site: robosystems | roboledger)
 just blog-publish <slug>    # auto-narrate (default-on) + upload blog/<slug>/* to S3 + reindex
 just blog-narrate <slug>    # (re)generate narration on its own; --force to redo
 just blog-social <slug>     # optional: paste-ready distribution pack (uses <slug>_x_post.txt if present)

@@ -5,14 +5,21 @@
 # are all optional and added later.
 #
 # Usage:
-#   ./tools/new_blog.sh financial-knowledge-graph-manifesto
+#   ./tools/new_blog.sh financial-knowledge-graph-manifesto              # robosystems.ai
+#   ./tools/new_blog.sh nothing-writes-until-you-post roboledger         # roboledger.ai
 set -euo pipefail
 
-SLUG="${1:?Usage: $0 <slug>   (kebab-case, e.g. my-post-title)}"
+SLUG="${1:?Usage: $0 <slug> [robosystems|roboledger]   (kebab-case slug, e.g. my-post-title)}"
+SITE="${2:-robosystems}"
 if ! printf '%s' "$SLUG" | grep -Eq '^[a-z0-9]+(-[a-z0-9]+)*$'; then
   echo "Error: slug must be kebab-case (lowercase a-z, 0-9, hyphens): got '$SLUG'" >&2
   exit 1
 fi
+case "$SITE" in
+  robosystems) DOMAIN="robosystems.ai" ;;
+  roboledger)  DOMAIN="roboledger.ai" ;;
+  *) echo "Error: site must be robosystems or roboledger: got '$SITE'" >&2; exit 1 ;;
+esac
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DST="$ROOT_DIR/blog/$SLUG"
@@ -25,9 +32,10 @@ fi
 
 mkdir -p "$DST"
 TODAY="$(date +%Y-%m-%d)"
-sed -e "s/{{SLUG}}/$SLUG/g" -e "s/{{DATE}}/$TODAY/g" "$TEMPLATE" > "$DST/post.md"
+sed -e "s/{{SLUG}}/$SLUG/g" -e "s/{{DATE}}/$TODAY/g" \
+    -e "s/{{SITE}}/$SITE/g" -e "s/{{DOMAIN}}/$DOMAIN/g" "$TEMPLATE" > "$DST/post.md"
 
-echo "Created blog/$SLUG/post.md"
+echo "Created blog/$SLUG/post.md  (site: $SITE -> https://$DOMAIN/blog/$SLUG)"
 echo ""
 echo "Next:"
 echo "  1. Edit blog/$SLUG/post.md (frontmatter + body)"

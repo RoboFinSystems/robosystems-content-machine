@@ -91,3 +91,5 @@ oneoffs/
 *.rej
 
 .playwright-mcp
+# Claude Code worktrees checked out inside the repo
+.claude/worktrees/

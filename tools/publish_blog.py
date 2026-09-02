@@ -57,6 +57,9 @@ def publish(slug, narrate=True):
 
     print(f"Publishing blog/{slug} -> s3://{bucket}/{prefix}\n")
     meta, body = bc.parse_post(slug)
+    problem = bc.check_canonical(meta, slug)
+    if problem:
+        sys.exit(f"Error: {problem}")
     urls = []
 
     # Body: upload frontmatter-stripped markdown so the app renders assets.body directly (no
@@ -94,6 +97,7 @@ def publish(slug, narrate=True):
     # post.md but this keeps each S3 folder independently describable.
     meta_obj = {
         "slug": slug,
+        "site": bc.post_site(meta),
         "title": str(meta.get("title") or slug).strip(),
         "date": bc.normalize_date(meta.get("date") or datetime.date.today().isoformat()),
         "author": meta.get("author") or "RoboSystems",

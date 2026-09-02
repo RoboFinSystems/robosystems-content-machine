@@ -2,11 +2,12 @@
 title: 'Your Post Title'
 date: '{{DATE}}'
 author: 'Joey French'
+site: '{{SITE}}'
 excerpt: 'One or two sentences that summarize the post — used in listings and as the SEO description fallback.'
 metaDescription: 'A focused ~150-160 character description for search engines. Falls back to the excerpt if omitted.'
 tags: ['tag-one', 'tag-two']
 keywords: ['keyword one', 'keyword two', 'keyword three']
-canonicalUrl: 'https://robosystems.ai/blog/{{SLUG}}'
+canonicalUrl: 'https://{{DOMAIN}}/blog/{{SLUG}}'
 ---
 
 Open with the idea. The first paragraph or two should stand on their own — they become the

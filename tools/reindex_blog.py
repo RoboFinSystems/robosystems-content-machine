@@ -6,6 +6,10 @@ published S3 blog/ prefix, reads each post's metadata from the local git-version
 blog/<slug>/post.md (the source of truth; falls back to S3 meta.json), and emits ONE
 blog/index.json. A post is included once its post.md is published to s3://…/blog/<slug>/.
 
+Every item carries `site` ("robosystems" unless the frontmatter says "roboledger"); each app
+filters the one catalog to its own lane, so a post moves between sites by editing one
+frontmatter line and re-running this.
+
 Asset URLs are absolute (via helpers.asset_url) — same as the research catalog — so the app's
 shared catalog layer fetches blog + research bodies through one code path, and the CDN cutover
 (AWS_CDN_DOMAIN_URL) flips both at once.
@@ -40,8 +44,13 @@ def build_item(bucket, slug, present_names):
     if f"{slug}_narration.mp3" in present_names:
         assets["narration_mp3"] = asset_url(f"{prefix}{slug}_narration.mp3")
 
+    problem = bc.check_canonical(meta, slug)
+    if problem:
+        print(f"  WARNING: {problem}")
+
     return {
         "slug": slug,
+        "site": bc.post_site(meta),
         "title": str(meta.get("title") or slug).strip(),
         "date": bc.normalize_date(meta.get("date") or datetime.date.today().isoformat()),
         "author": meta.get("author") or "RoboSystems",
@@ -82,7 +91,8 @@ def run():
 
     print(f"Blog catalog: {len(posts)} post(s) -> s3://{bucket}/blog/index.json")
     for p in posts:
-        flags = [f for f, on in (("narrated", "narration_mp3" in p["assets"]),
+        flags = [f for f, on in ((p["site"], p["site"] != bc.DEFAULT_SITE),
+                                 ("narrated", "narration_mp3" in p["assets"]),
                                  ("cover", "cover" in p["assets"])) if on]
         extra = f"  [{', '.join(flags)}]" if flags else ""
         print(f"  {p['date']}  {p['slug']}{extra}")

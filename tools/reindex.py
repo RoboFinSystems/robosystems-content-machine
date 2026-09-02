@@ -175,13 +175,31 @@ def brief_headline(pdir, ticker):
     return strip_md(title), strip_md(body)
 
 
-def seo_fields(ticker, company, brief_summary, editorial_summary):
+PERIOD_RE = re.compile(r"\b(Q[1-4]|FY ?'?\d{2,4}|20\d\d|10-K|10-Q|earnings)\b", re.I)
+
+
+def _names(s, ticker, company):
+    s = s.lower()
+    short = company.lower().split(",")[0].strip()
+    return ticker.lower() in s or (len(short) > 2 and short in s)
+
+
+def seo_fields(ticker, company, date, editorial_title, brief_title, brief_summary, editorial_summary):
     """The search-facing title/description, kept separate from the editorial `title` the
-    page shows. Google prints these verbatim, and the editorial copy is written for a
-    YouTube thumbnail ("The First $100B Software Profit - Is the AI Capex Worth It?"),
-    which matches nothing anyone types: /research ranks ~7 and earns 0.00% CTR across 363
-    impressions (Search Console, 3mo to 2026-07-28). The brief's opening paragraph leads
-    with the concrete numbers, so it beats the video blurb as a snippet.
+    page shows. Google prints these verbatim.
+
+    Title: the long-video title when it already names the company or ticker and a period
+    ("Starbucks SBUX Q3 FY2026 Earnings: Revenue Down 1.4%, Profit Up 87%"). Those are
+    written search-first, and 39 of 59 projects have one. Otherwise compose company (ticker),
+    the year, "Earnings", and the brief's hook. The previous template
+    ("MGP Ingredients, Inc. (MGPI) SEC Filing Analysis") carried no period and no finding:
+    it sat at position ~10 for "mgp whiskey q2 sales" with 212 impressions and 0 clicks
+    (Search Console, 3mo to 2026-09-02). Year, not quarter, in the composed form: `version`
+    is the publish quarter, not the fiscal period covered, and a 10-K labelled "Q3 Earnings"
+    would be a wrong claim.
+
+    Description: the brief's opening paragraph, which leads with the concrete numbers and
+    beats the video blurb as a snippet.
 
     Composed here rather than at publish time so it reaches already-published coverage on
     the next reindex, with meta.json free to override either field per ticker."""
@@ -191,10 +209,34 @@ def seo_fields(ticker, company, brief_summary, editorial_summary):
     # Some catalog names already carry a parenthetical ("GE Aerospace (General Electric
     # Company)"), which would double up against the ticker we append.
     company = re.sub(r"\s*\([^)]*\)\s*$", "", company).strip() or ticker
-    return {
-        "seo_title": f"{company} ({ticker}) SEC Filing Analysis",
-        "seo_description": text,
-    }
+
+    title = ""
+    for cand in (editorial_title, brief_title):
+        cand = strip_md(cand or "").strip()
+        if cand and _names(cand, ticker, company) and PERIOD_RE.search(cand):
+            title = cand
+            break
+    if not title:
+        year = (date or "")[:4]
+        hook = strip_md(brief_title or editorial_title or "").strip()
+        if not re.fullmatch(r"[A-Z.]{1,6}", ticker):
+            # A campaign/sector page ("CANNABIS"), not a filer: the brief's H1 already names
+            # the subject, so keep it and date it.
+            title = hook or f"{company} SEC Filing Analysis"
+            if title and not PERIOD_RE.search(title) and year:
+                title = f"{title} ({year})"
+        else:
+            short = re.sub(r",?\s+(Inc\.?|Corp\.?|Corporation|Ltd\.?|LLC|plc|Co\.?)$", "", company, flags=re.I).strip()
+            base = f"{short} ({ticker})" if short.lower() != ticker.lower() else ticker
+            base = f"{base} {year} Earnings" if year else f"{base} Earnings"
+            # Drop a lead like "Conagra Brands (CAG):", "KB Home (NYSE: KBH):", "Jushi (JUSHF) -"
+            # so the name isn't printed twice.
+            hook = re.sub(rf"^[^:\u2014\u2013]*?\((?:[A-Z]+:\s*)?\$?{re.escape(ticker)}\)\s*[:\u2014\u2013-]\s*",
+                          "", hook, flags=re.I)
+            hook = re.sub(rf"^\s*{re.escape(short)}\s*[:\u2014\u2013-]\s*", "", hook, flags=re.I)
+            title = f"{base}: {hook}" if hook and hook.lower() not in base.lower() \
+                else f"{base}: SEC Filing Analysis"
+    return {"seo_title": title, "seo_description": text}
 
 
 def project_meta(ticker):
@@ -205,7 +247,7 @@ def project_meta(ticker):
     pub = _load(os.path.join(pdir, "social", f"{ticker}_publish.json"))
     campaign = meta.get("campaign")
     b_title, b_summary = brief_headline(pdir, ticker)
-    return {
+    out = {
         "company": meta.get("company") or ticker,
         "title": (pub.get("youtube_title") or meta.get("video_title") or b_title or ticker).strip(),
         "summary": (meta.get("video_description") or b_summary or "").strip(),
@@ -214,6 +256,13 @@ def project_meta(ticker):
         "campaign_slug": "cannabis_coverage" if "cannabis" in (campaign or "").lower() else None,
         "coverage_label": meta.get("coverage_label"),
     }
+    # Deliberate per-ticker overrides for the /research <title> / description, authored in
+    # publish.json. They ride into meta.json at publish and win over seo_fields' composed
+    # defaults (reindex uses setdefault). Absent by default; seo_fields does the work.
+    for k in ("seo_title", "seo_description"):
+        if str(pub.get(k) or "").strip():
+            out[k] = pub[k].strip()
+    return out
 
 
 def map_assets(names, prefix):
@@ -248,9 +297,10 @@ def run(allow_shrink=False):
 
         item = {"ticker": t, **meta, "assets": map_assets(present, flat)}
         # setdefault: a per-ticker override in meta.json wins over the composed default.
-        for k, v in seo_fields(t, item.get("company") or t,
-                               brief_headline(os.path.join(PROJECTS, t), t)[1],
-                               item.get("summary", "")).items():
+        b_title, b_summary = brief_headline(os.path.join(PROJECTS, t), t)
+        for k, v in seo_fields(t, item.get("company") or t, item.get("date", ""),
+                               item.get("title", ""), b_title,
+                               b_summary, item.get("summary", "")).items():
             item.setdefault(k, v)
 
         history = []
