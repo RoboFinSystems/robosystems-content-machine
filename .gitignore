@@ -24,7 +24,7 @@ htmlcov/
 venv/
 
 # Project outputs (generated per-project)
-projects/*/
+projects/*
 
 # Drafts — WIP staging + editorial layer: fully ignored (kept private, like the design-doc
 # vault). Holds the thought-leadership campaign (brief/calendar/ideas) + churny WIP content;
