@@ -75,7 +75,10 @@ You author no slide HTML.
 **Promo code (optional placeholder).** Where copy invites sign-up, add the offer line
 `New customers get 50% off your first month with code [PROMO_CODE].` Keep `[PROMO_CODE]` as a
 literal token (swap in the live Stripe code at post time, or omit the line if no promo is
-running) — never hardcode a real code here, since codes change and expire.
+running) — never hardcode a real code here, since codes change and expire. **Not in the brief**:
+the brief renders on the research page directly above that page's own offer block, so its footer
+is attribution only (see the brief's Footer rule). Social copy and the YouTube description are
+the surfaces that carry a promo.
 
 ## Surface rules - one analysis, framed three ways
 
@@ -143,9 +146,13 @@ quarter results vs. estimates, bull/base/bear DCF scenarios, the multiples re-ra
 segment or regional breakdowns. 1-3 tables per brief is a good target. Keep the prose for
 the story and the tables for the numbers; standard `| a | b |` syntax with a header row.
 
-**Footer (optional CTA).** After the analysis, end with a one-line soft RoboSystems CTA; when a
-promo is running, append `New customers get 50% off your first month with code [PROMO_CODE].`
-Keep it a footer, separate from the analysis — never a sales pitch inside the report.
+**Footer (attribution only — NOT a door).** After the analysis, end with a one-line
+attribution: the numbers came out of the filing itself, via RoboSystems. Keep it a footer,
+separate from the analysis, and **do not close the brief with an offer or a promo code.**
+The research page now carries the offer in its own shell, immediately below the brief
+("Compare your company to {Company}" → roboledger.ai), so a second close inside the markdown
+competes with it and dates the page: a promo code outlives the campaign that minted it, and a
+price named here outlives the price. Say where the numbers came from and stop.
 
 **Quality check:** would you watch a video built on this story? If it reads generic, rewrite
 the hook and financial story until there's a genuine insight. Only then move to the script.
@@ -181,19 +188,22 @@ Editorial guidance for the script:
   > "Nobody wrote this by hand. Every number came out of the filing itself, and the same
   > pipeline runs on any of the ten thousand companies that file with the SEC."
 - **RoboSystems plug** - use ONE of these verbatim (don't rewrite), in a `title` slide
-  (`visual_ref: "cta"`), never over a chart. **The door is the SEC Shared Repository, not the
-  homepage:** name the repository in the narration, put `robosystems.ai/pricing` in the slide
-  subhead, and link it in the YouTube description. Never speak a price - tiers change and the
-  video does not.
+  (`visual_ref: "cta"`), never over a chart. Never speak a price - tiers change and the video
+  does not. The two have different jobs and different doors:
+  - the **mid-video attribution** says where the data came from. Its door is the SEC Shared
+    Repository: name it in the narration, `robosystems.ai/pricing` in the slide subhead.
+  - the **closing CTA** asks the viewer to do something, and what a viewer of a single-company
+    analysis wants is their own company against this one. Its door is the report's own page,
+    `roboinvestor.ai/research/{TICKER}`, which carries the compare offer in its shell — put
+    that URL in the slide subhead and link it in the YouTube description.
   - *Mid-video attribution (best for shorter videos), after citing a specific data point:*
     > "All of the financial data in this analysis comes from the company's actual SEC filing,
     > pulled directly from the RoboSystems SEC Shared Repository. It is a subscription you can
     > point your own tools at, across every public company that files. Link in the description."
   - *Closing CTA (best for longer analyses), as the final or second-to-last slide:*
-    > "This entire analysis was built on the RoboSystems SEC Shared Repository: structured
-    > filing data for every public company that files. Revenue, earnings, balance sheet, cash
-    > flow, segment breakdowns, all queryable, all from the original XBRL. If you want to run
-    > your own deep dives like this one, the link is in the description."
+    > "Every number here came out of the filing itself. The interesting question is how your
+    > own company's margins and growth look next to this one - connect your books, put the SEC
+    > graph beside them, and ask. The link is in the description."
 
 ### 3. X Post (`social/{TICKER}_x_post.txt`)
 A **single post — NOT a numbered thread** (long-form is fine on X; no "1/ 2/ 3/"). Opening
