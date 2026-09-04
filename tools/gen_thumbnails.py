@@ -3,8 +3,9 @@
 Replaces the manual "paste brief into ChatGPT" step. Two stages:
   1. A chat model reads the brief + a RoboSystems style guide and extracts the creative
      elements (company, ticker, the hook stat, a supporting figure, the visual concept).
-  2. gpt-image-2 renders one image per platform aspect; we crop-to-fill the exact target and
-     write assets/{yt,x,spot}.png — where the `slice` step already ingests them.
+  2. gpt-image-2 renders one image per platform aspect; we crop-to-fill the exact target,
+     write assets/{yt,x,spot}.png, then ingest them into charts/png/ — which is where
+     publish_artifacts and reindex look for {TICKER}_thumbnail.png.
 
 Usage:
     uv run python tools/gen_thumbnails.py PEP [--quality high|medium|low] [--dry-run]
@@ -20,6 +21,7 @@ import subprocess
 import sys
 import urllib.error
 import urllib.request
+from shutil import copyfile, which
 
 from helpers import get_project_dir
 
@@ -143,6 +145,80 @@ def crop_to(src, out, w, h):
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", src, "-vf", vf, out], check=True)
 
 
+# ─── Ingest: assets/ -> charts/png/ ──────────────────────────────────────────
+# The generated PNGs land in assets/ at their platform aspect. publish_artifacts and reindex
+# both key off charts/png/{TICKER}_thumbnail.png, so the last step of a thumbnail run is to
+# copy them across. The 16:9 canonical is normalized to exactly 1920x1080; the X (5:2) and
+# square (1:1) variants are copied verbatim, since their aspect is deliberate.
+#   (assets/ source, charts/png/ output template, is_canonical, label)
+WIDTH, HEIGHT = 1920, 1080
+TARGET_RATIO = WIDTH / HEIGHT
+
+THUMBNAIL_SOURCES = [
+    ("yt.png",   "{t}_thumbnail.png",        True,  "16:9 · YouTube + website"),
+    ("x.png",    "{t}_thumbnail_x.png",      False, "5:2 · X"),
+    ("spot.png", "{t}_thumbnail_square.png", False, "1:1 · square"),
+]
+
+
+def _png_size(path):
+    """(width, height) read from a PNG's IHDR chunk — dependency-free. None if not a PNG."""
+    with open(path, "rb") as fh:
+        head = fh.read(24)
+    if head[:8] != b"\x89PNG\r\n\x1a\n":
+        return None
+    return int.from_bytes(head[16:20], "big"), int.from_bytes(head[20:24], "big")
+
+
+def _normalize_png_thumbnail(src, out):
+    """Write a 1920x1080 thumbnail from a source PNG. **Center-crops** to 16:9 (never
+    distorts) when the source isn't 16:9. Uses ffmpeg; copies as-is (with a warning) if
+    ffmpeg is unavailable."""
+    note = ""
+    size = _png_size(src)
+    if size:
+        w, h = size
+        ratio = w / h
+        if abs(ratio - TARGET_RATIO) >= 0.02:
+            note = (f"  [source {w}x{h}, ratio {ratio:.3f} is NOT 16:9 — center-cropped to fit; "
+                    f"eyeball that the hero metric isn't clipped]")
+    if which("ffmpeg"):
+        vf = f"scale={WIDTH}:{HEIGHT}:force_original_aspect_ratio=increase,crop={WIDTH}:{HEIGHT}"
+        subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", src, "-vf", vf, out], check=True)
+    else:
+        copyfile(src, out)
+        note += "  [ffmpeg not found — copied as-is, NOT resized; install ffmpeg to normalize]"
+    src_rel = f"{os.path.basename(os.path.dirname(src))}/{os.path.basename(src)}"
+    print(f"  Thumbnail: {src_rel} -> "
+          f"charts/png/{os.path.basename(out)} ({WIDTH}x{HEIGHT}){note}")
+
+
+def ingest_thumbnails(project_dir, ticker):
+    """Copy the thumbnails in assets/ (yt/x/spot .png) into charts/png/, normalizing the
+    16:9 canonical to 1920x1080 and copying the other aspects verbatim."""
+    assets_dir = os.path.join(project_dir, "assets")
+    png_dir = os.path.join(project_dir, "charts", "png")
+    os.makedirs(png_dir, exist_ok=True)
+
+    found = 0
+    for src_name, out_tmpl, canonical, label in THUMBNAIL_SOURCES:
+        src = os.path.join(assets_dir, src_name)
+        if not os.path.exists(src):
+            continue
+        found += 1
+        out = os.path.join(png_dir, out_tmpl.format(t=ticker))
+        if canonical:
+            _normalize_png_thumbnail(src, out)  # prints its own line (crop-to-fill 1920x1080)
+        else:
+            copyfile(src, out)
+            print(f"  Thumbnail: assets/{src_name} -> charts/png/{os.path.basename(out)} ({label})")
+
+    if not found:
+        print("  Thumbnail: none in assets/ — nothing to ingest")
+    elif not os.path.exists(os.path.join(png_dir, f"{ticker}_thumbnail.png")):
+        print("  WARN: no assets/yt.png (16:9 canonical) — needed for YouTube + the website card")
+
+
 def main():
     ap = argparse.ArgumentParser(description="Generate the 3 platform thumbnails via OpenAI from the brief")
     ap.add_argument("project")
@@ -194,11 +270,6 @@ def main():
     if os.path.exists(tmp):
         os.remove(tmp)
     if not args.dry_run:
-        # Ingest straight into charts/png/ ourselves. This used to be bolted to the end of
-        # `just slice`, which only runs on the retired deck path - so on the one-shot webdeck
-        # path the thumbnail never reached charts/png/ and `just publish` uploaded no image
-        # (publish_artifacts and reindex both key off charts/png/{t}_thumbnail.png).
-        from slice_deck import ingest_thumbnails
         ingest_thumbnails(project_dir, ticker)
         print("\nDone. Thumbnails generated and ingested - ready to publish.")
 
