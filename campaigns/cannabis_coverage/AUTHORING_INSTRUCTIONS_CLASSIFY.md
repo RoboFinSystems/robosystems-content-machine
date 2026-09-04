@@ -1,4 +1,4 @@
-# Cannabis Coverage: Universe Classification - Cowork Instructions (classify mode)
+# Cannabis Coverage: Universe Classification - Authoring Instructions (classify mode)
 
 You are building this campaign's **coverage universe by classification**, not by
 hand. The campaign is keyed to an industry-taxonomy node
@@ -144,7 +144,7 @@ RETURN count(DISTINCT f) AS fact_count,
   "key": "cannabis",
   "resolved": "Consumer Goods > Cannabis",
   "generated_at": "<ISO-8601>",
-  "method": "cowork-classify v1 (crosswalk floor + recall override + SEC-graph verification)",
+  "method": "classify v1 (crosswalk floor + recall override + SEC-graph verification)",
   "members": [
     {
       "cik": "0001795139", "ticker": "GTBIF", "name": "Green Thumb Industries",

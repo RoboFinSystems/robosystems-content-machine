@@ -54,13 +54,13 @@ campaigns:
 open project:
     open projects/{{project}}
 
-# Print the Cowork cold-start prompt for a project (also copies it to the clipboard, ready to paste into Cowork)
+# Print the cold-start authoring prompt for a project (also copies it to the clipboard)
 kickoff project:
     @./tools/kickoff.sh {{project}}
 
 # ─── QA ──────────────────────────────────────────────────────
 
-# Validate cowork outputs before running pipeline
+# Validate the authored outputs before running the pipeline
 validate project:
     @just ensure-env
     UV_ENV_FILE={{_env}} uv run python tools/validate_project.py {{project}}
@@ -226,7 +226,7 @@ analytics *tickers:
     @just ensure-env
     UV_ENV_FILE={{_env}} uv run python tools/pull_analytics.py {{tickers}}
 
-# Channel/account-level reach (YouTube traffic sources + retention, X post impressions) - powers /insights
+# Channel/account-level reach (YouTube traffic sources + retention, X post impressions)
 insights *args:
     @just ensure-env
     UV_ENV_FILE={{_env}} uv run python tools/pull_insights.py {{args}}

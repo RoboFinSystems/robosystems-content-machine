@@ -7,7 +7,7 @@ user-invocable: true
 # RoboSystems Content Design System
 
 This skill dresses the **RoboSystems Content Machine** — the pipeline that turns SEC filings
-into narrated videos, shorts, podcasts, blogs, and social posts. It is the *content* counterpart
+into narrated videos, shorts, blogs, and social posts. It is the *content* counterpart
 to the RoboSystems app design system: dark-first, built for decks and stories, not app screens.
 
 Read **`readme.md`** first — it carries the full brand guide:

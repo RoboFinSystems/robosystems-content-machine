@@ -3,7 +3,7 @@ description: Author the full written output set for a project in this session.
 argument-hint: '[project]'
 ---
 
-Author the full written output set for a project directly in this session - the one-shot Code process that replaces the old claude.ai Cowork handoff. Same artifacts, same contract (`AUTHORING_INSTRUCTIONS.md` + `PRODUCTION_CONTRACT.md`), no clipboard round-trip. `/review` stays the quality gate afterward.
+Author the full written output set for a project directly in this session - one shot, against the contract in `AUTHORING_INSTRUCTIONS.md` + `PRODUCTION_CONTRACT.md`. You produce written artifacts only; the renderer builds every slide from `script.json`. `/review` is the quality gate afterward.
 
 ## Arguments
 - `$ARGUMENTS` — ticker symbol (e.g., NFLX)
@@ -57,9 +57,11 @@ just validate {TICKER}
 Fix and re-run until clean (`just validate-fix` for mechanical schema issues).
 
 ### 5. Hand off
-Tell the user the outputs are ready and recommend `/review {TICKER}` (multi-agent fact + TTS review) before spending render/TTS credits. After review passes, either path works for the long-form:
-- **Deck path (default):** `just deck-brief {TICKER}` → Claude Design → `just pipeline {TICKER}`
-- **Webdeck path (pilot):** `just webdeck-pipeline {TICKER}` — no Claude Design step
+Tell the user the outputs are ready and recommend `/review {TICKER}` (fact + TTS review) before
+spending render/TTS credits. After review passes:
+- **Long-form:** `just webdeck-pipeline {TICKER}` → `videos/{TICKER}_final.mp4`
+- **9:16 short:** `just webdeck-short-pipeline {TICKER}` → `videos/{TICKER}_short.mp4`
 
-The 9:16 short renders on its own: `just webdeck-short-pipeline {TICKER}` → `videos/{TICKER}_short.mp4`.
+Both run the same engine (validate → ElevenLabs VO → build HTML → headless-Chrome frames →
+ffmpeg mux) and are entirely local; the only cost is wall clock.
 Publish/post order (each asset in its best format): **YouTube long-form** (`just yt-upload`) → **YouTube Short** (`just yt-short` — its description auto-links the long-form) → **X**: publish the brief as an Article (`just x-article {TICKER} --publish`) then post the **9:16 short as the native video** (`just x-short`). The 16:9 long-form is not posted natively to X.

@@ -55,7 +55,7 @@ def main():
             "file": fn,
             "duration": dur,
             "mood": [],
-            "description": "TODO: describe the vibe (used by Cowork to pick a track).",
+            "description": "TODO: describe the vibe (used at authoring time to pick a track).",
             "source": "manual",
         })
         added += 1

@@ -1,5 +1,5 @@
 
-# RoboSystems Initiating Coverage: Cannabis Industry — Cowork Instructions
+# RoboSystems Initiating Coverage: Cannabis Industry — Authoring Instructions
 
 You are a financial analyst and content producer. RoboSystems is initiating coverage on the
 US cannabis industry — the most under-covered sector in public markets. Your job is to
@@ -186,7 +186,7 @@ If the card is absent, this is **initiating coverage** — introduce the company
 
 Produce these **4 core outputs** in order (the narrative brief comes FIRST — it's the foundation
 everything else derives from) and the **publish metadata** (#6). (Shorts #5 are backburnered; the Q&A podcast is retired - author neither.) (Schema and slide
-mechanics: see `PRODUCTION_CONTRACT.md`.) The deck is built in Claude Design from the script;
+mechanics: see `PRODUCTION_CONTRACT.md`.) The deck is built by the renderer from the script;
 the thumbnails are made in ChatGPT from the brief. You author no HTML.
 
 **Promo code (optional placeholder).** Where copy invites sign-up, add the offer line
@@ -288,8 +288,8 @@ Cannabis editorial guidance for the script:
   > data for every public company that files. Revenue, earnings, balance sheet, cash flow,
   > segment breakdowns, all queryable, all from the original XBRL. If you want to run your own
   > deep dives like this one, the link is in the description."
-- **Thumbnail block** — fill the script's `thumbnail` block (Claude Design builds it; see
-  `DESIGN_INSTRUCTIONS.md`): **hero = the adjusted P/E post-280E-relief** (the
+- **Thumbnail block** — fill the script's `thumbnail` block (`just thumbnails` builds from it):
+  **hero = the adjusted P/E post-280E-relief** (the
   cognitive-dissonance number); **banner = "INITIATING COVERAGE"** for a new name, or
   **"COVERAGE UPDATE"** if we've already published on this ticker (check tickers.md / prior
   videos — then open the hook with "what's changed since we covered it"); **secondary = 1–2 of**

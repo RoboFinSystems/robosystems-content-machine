@@ -4,7 +4,7 @@
 Complements `just analytics` (per-POST rollup, needs stamped post ids). This pulls the
 whole-CHANNEL and whole-ACCOUNT picture that the APIs expose today, independent of any
 sidecar: YouTube traffic sources + per-video retention + the impression count on every X
-post already published. Feeds the `/insights` skill, which reads this output and interprets it.
+post already published. Emits the raw tables; interpretation is a separate reading step.
 
   YouTube Analytics API  -> totals (28/90/365d), traffic sources, top videos by views + AVD%,
                             daily trend  (needs the yt-analytics.readonly scope; see pull_analytics.py)

@@ -4,11 +4,10 @@ Reference data + the model for keying a **campaign** to an **industry**, and for
 building a campaign's coverage universe by **classifying SEC-registered entities**
 instead of hand-curating a ticker list.
 
-This is a POC of the platform-level SEC industry-classification system. The
-durable design lives in the platform repo's design vault
-(`local/RoboSystems/specs/sec-industry-classification.md`); this folder is where
-we prove the taxonomy and the classification method against a real campaign
-(`campaigns/cannabis_coverage`) before it is built into the SEC data pipeline.
+This is a POC of a platform-level SEC industry-classification system: this folder
+is where the taxonomy and the classification method get proven against a real
+campaign (`campaigns/cannabis_coverage`) before anything is built into the SEC
+data pipeline.
 
 ## The files
 

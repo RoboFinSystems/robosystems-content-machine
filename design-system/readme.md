@@ -2,8 +2,8 @@
 
 A brand + content design system for **RoboSystems** — purpose-built for the
 **RoboSystems Content Machine**: the automated pipeline that turns a company's SEC
-filings into narrated research **videos**, vertical **shorts**, two-voice **podcasts**,
-**blog essays**, and **social posts**.
+filings into narrated research **videos**, vertical **shorts**, **blog essays**, and
+**social posts**.
 
 The base [RoboSystems app design system](#sources) is engineered for a web product
 (Flowbite + Tailwind, app chrome, settings forms). **This system is different**: it
@@ -28,10 +28,9 @@ access, but they are recorded here so you (or a teammate who does) can go deeper
   tokens). A pre-built design-system bundle sits in `ds-bundle/` (Orbitron + Space Grotesk
   TTFs, app component previews).
 - **`robosystems-content-machine/`** (codebase) — the content pipeline this system serves.
-  Key reads: `template/DESIGN_INSTRUCTIONS.md` (how decks + thumbnails are built),
-  `template/PRODUCTION_CONTRACT.md` (the script → deck → video contract, TTS rules, slide
-  kinds), `blog/*/post.md` (published essays), and `projects/<TICKER>/deck/*_deck_brief.md`
-  (real per-video briefs, one per covered ticker).
+  Key reads: `template/PRODUCTION_CONTRACT.md` (the script → deck → video contract, TTS rules,
+  slide kinds), `tools/webdeck/template.html` (how the renderer actually draws a slide), and
+  `blog/*/post.md` (published essays).
 - **GitHub:** [RoboFinSystems/robosystems-content-machine](https://github.com/RoboFinSystems/robosystems-content-machine)
   — the open pipeline (MIT). Explore it to understand how these artifacts are produced and
   assembled. Related: [RoboSystems platform](https://github.com/RoboFinSystems/robosystems),

@@ -1,6 +1,7 @@
 #!/bin/bash
-# Print the Cowork cold-start prompt for a project — {TICKER} resolved to the real
-# ticker — and copy it to the clipboard (macOS pbcopy) ready to paste into Cowork.
+# Print the cold-start authoring prompt for a project — {TICKER} resolved to the real
+# ticker — and copy it to the clipboard (macOS pbcopy). `/author TICKER` covers the same
+# ground in-session; this is for driving a run by hand or handing it to a second session.
 #
 # Reads projects/{PROJECT}/KICKOFF.md (falls back to template/KICKOFF.md) and appends
 # the prior-coverage card (sources/_prior_coverage.md) when one exists. stdout stays the
@@ -29,5 +30,5 @@ printf '%s\n' "$OUT"
 
 if command -v pbcopy >/dev/null 2>&1; then
     printf '%s' "$OUT" | pbcopy
-    printf '\n\033[32m✓ Copied to clipboard (%s chars) — paste into Cowork.\033[0m\n' "${#OUT}" >&2
+    printf '\n\033[32m✓ Copied to clipboard (%s chars).\033[0m\n' "${#OUT}" >&2
 fi

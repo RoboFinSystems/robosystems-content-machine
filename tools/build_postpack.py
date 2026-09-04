@@ -88,7 +88,7 @@ def block(text):
 def finalize_chapters(yt_desc, chapters_text):
     """Replace the hand-drafted chapters block in the YouTube description with the
     authoritative chapters from the render (correct times + the real segment list)
-    and drop any '(draft — finalized after render)' label. Cowork estimates chapter
+    and drop any '(draft — finalized after render)' label. Authoring estimates chapter
     times before the render; only the render knows the real ones, so the description
     must be finalized here or it ships wrong timestamps. Returns paste-ready text."""
     if not yt_desc:

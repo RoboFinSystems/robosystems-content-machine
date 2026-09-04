@@ -2,8 +2,8 @@
   "key": "CANNABIS",
   "resolved": "Consumer Goods > Cannabis",
   "generated_at": "2026-07-15",
-  "method": "cowork-classify v1 (crosswalk floor + recall override + SEC-graph verification)",
-  "_seed_note": "SEED. Classification fields are Claude recall. CIKs are authoritative (SEC EDGAR company_tickers.json, fetched 2026-07-15). Covered members' sec/coverage fields are real (from sources/tickers.md). Discovered + adjacent members have sec.in_graph = null: the Cowork classify session must verify graph membership + loaded XBRL reports per COWORK_INSTRUCTIONS_CLASSIFY.md before these are trusted.",
+  "method": "classify v1 (crosswalk floor + recall override + SEC-graph verification)",
+  "_seed_note": "SEED. Classification fields are Claude recall. CIKs are authoritative (SEC EDGAR company_tickers.json, fetched 2026-07-15). Covered members' sec/coverage fields are real (from sources/tickers.md). Discovered + adjacent members have sec.in_graph = null: the classify session must verify graph membership + loaded XBRL reports per AUTHORING_INSTRUCTIONS_CLASSIFY.md before these are trusted.",
   "members": [
     {
       "cik": "0001795139", "ticker": "GTBIF", "name": "Green Thumb Industries",

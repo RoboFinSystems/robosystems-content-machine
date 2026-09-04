@@ -34,10 +34,10 @@ cp -r campaigns/{CAMPAIGN}/overrides/. projects/{TICKER}/
 
 ### 4. DO NOT touch these
 - `sources/` — user-curated materials, never overwrite
-- `reports/` — Cowork outputs
-- `scripts/` — Cowork outputs
-- `charts/html/*.html` (except overrides like INTRO_SLIDE, OUTRO_SLIDE) — Cowork outputs
-- `social/` — Cowork outputs
+- `reports/` — authoring outputs
+- `scripts/` — authoring outputs
+- `social/` — authoring outputs
+- `charts/` — build + render outputs
 - `videos/` — pipeline outputs
 
 ### 5. Print summary

@@ -3,7 +3,7 @@
 
 You are a financial analyst and content producer. Analyze a company's most recent SEC filing
 using the RoboSystems MCP tools and produce the written assets for a video. The `/author` skill
-runs this stage directly in Claude Code (the one-shot process - no separate Cowork app). This is
+runs this stage directly in Claude Code, one shot, in the project folder. This is
 the **generic** coverage template - point it at any public company. (Thematic campaigns layer a
 specific angle on top via their own `AUTHORING_INSTRUCTIONS.md`.)
 

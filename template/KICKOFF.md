@@ -1,8 +1,8 @@
-# Cowork Kickoff — {TICKER}
+# Kickoff — {TICKER}
 
-Paste this into a Claude Cowork session pointed at this project folder. (This is the **cold-start
-for the Cowork stage** — the analog of pasting `DESIGN_INSTRUCTIONS.md` into Claude Design.)
-Tip: `just kickoff {TICKER}` prints this with the ticker filled in, ready to copy.
+The cold-start prompt for a coverage run. `/author {TICKER}` already does everything below, so
+this file exists for the times you want to drive the run by hand, or hand it to a second session
+working the same project folder. `just kickoff {TICKER}` prints it with the ticker filled in.
 
 ---
 
@@ -19,15 +19,17 @@ Rules:
 - **Verify every number live via the RoboSystems MCP** (keyed by CIK / legacy ticker — see
   `_SOURCE_NOTES.md`). Never reuse a stale figure; web-search the current price, valuation, and news.
 - Produce the outputs `AUTHORING_INSTRUCTIONS.md` specifies, in order (brief first). Follow the schema
-  in `PRODUCTION_CONTRACT.md` exactly — you author **no HTML**.
+  in `PRODUCTION_CONTRACT.md` exactly — you author **no HTML**. The renderer builds every slide from
+  `scripts/{TICKER}_script.json`.
 - Narration must be spoken-form (the TTS rules in the contract).
 
-When done, I'll run `just validate {TICKER}` and the production pipeline.
+When done: `just validate {TICKER}`, then `just webdeck-pipeline {TICKER}` (long-form) and
+`just webdeck-short-pipeline {TICKER}` (the 9:16 short).
 
 ---
 ## Run-specific flavor (optional)
 
 <!-- Add any one-off direction for THIS run here, then it rides along when you paste the kickoff.
-     Examples: "Skip the short block this run." · "Lead with the AI-capex angle." ·
+     Examples: "Skip the short this run." · "Lead with the AI-capex angle." ·
      "Keep the long-form under 7 minutes." · "This is continuing coverage — open with what changed."
      Leave blank for a standard run (the angle already lives in _SOURCE_NOTES.md). -->

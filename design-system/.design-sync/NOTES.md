@@ -5,9 +5,11 @@ Design System"** Claude Design project (`746ae7a4-52ee-439f-a87a-523dbee2f73c`).
 was originally authored *in* Claude Design (no prior local repo); it was pulled down here on
 **2026-06-30** so it can be curated alongside the content pipeline it serves.
 
-It is the brand source of truth for **Stage 2 (Claude Design: deck + thumbnail)** — see the
-repo's `template/DESIGN_INSTRUCTIONS.md`, which points the design task at this project and its
-`video-deck` / `thumbnail` templates.
+It is the brand source of truth for anything composed by hand in Claude Design — one-off
+decks, thumbnails, social cards. **The research pipeline no longer routes through it:** the
+webdeck renderer builds slides directly from `script.json` (see `template/PRODUCTION_CONTRACT.md`),
+and the `video-deck` / `thumbnail` templates here are the brand reference the renderer's own
+styling was derived from.
 
 ## What's here (the curated source)
 - `styles.css`, `fonts.css`, `tokens/*.css` — the design language (link `styles.css`).

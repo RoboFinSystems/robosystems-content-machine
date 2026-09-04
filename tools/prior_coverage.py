@@ -3,7 +3,7 @@ Emit the "previously on..." card for continuing coverage.
 
 On a re-cover, `just recover` archives the prior outputs to projects/{T}/.history/{ver}/
 then calls this to distill them into projects/{T}/sources/_prior_coverage.md — which
-`just kickoff` appends to the Cowork prompt so the new report is written as the next
+`just kickoff` appends it to the authoring prompt so the new report is written as the next
 chapter in a running, multi-quarter coverage thread (not a one-off).
 
 Usage:

@@ -2,12 +2,14 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Automated content pipeline for financial analysis. Turns a company's SEC filings into a narrated **video**, a vertical **teaser short**, a two-voice **Q&A podcast**, and **social posts** — one analysis, multiple formats.
+Automated equity-research content pipeline. Turns a company's SEC filings into a narrated
+**16:9 video**, a purpose-built **9:16 short**, and a written **brief** that publishes as-is -
+one analysis, every surface.
 
-- **Campaign-Driven** — reusable campaign templates define the editorial angle, analytical framework, and output specs; apply them to any ticker.
-- **AI Content Generation** — [Claude Cowork](https://claude.ai) analyzes filings via [RoboSystems](https://robosystems.ai) MCP tools and writes the brief, video script, Q&A script, and social posts.
-- **On-Brand Decks** — slides are composed in [Claude Design](https://claude.ai/design) from the `@robosystems/core` design system (no hand-authored HTML).
-- **Automated Production** — the pipeline slices the deck, synthesizes voiceover, assembles the video, and produces the short + podcast.
+- **Campaign-Driven** - reusable campaign templates define the editorial angle, analytical framework, and output specs; apply them to any ticker.
+- **Authored in Claude Code** - one session reads the filings via [RoboSystems](https://robosystems.ai) MCP tools and writes the brief, the video script, the short, and the social copy. No hand-off to another app.
+- **Rendered locally** - the deck is HTML built from the script, shot frame-by-frame in headless Chrome, and muxed with ffmpeg. No cloud render service, no per-render cost.
+- **No hand-authored slides** - you write numbers into `script.json`; the renderer draws every slide.
 
 > 🎙️ **Voiceover & music run on [ElevenLabs](https://try.elevenlabs.io/v9z3wzm97gk3).** Setting this up? Signing up through our **referral link** costs you nothing extra and directly supports the project. <sub>Affiliate link.</sub>
 
@@ -28,100 +30,128 @@ The first `just` command auto-creates `.env` from `.env.example`. Fill in your A
 
 ## How It Works
 
-Three stages: **research** and **production** automate; the **design** step in the middle is human-in-the-loop (the craft step).
+Three stages: **scaffold**, **author**, **render**. Authoring happens in a Claude Code session
+against a written contract; everything on either side of it is a `just` recipe.
 
 ### 1. Scaffold a Project
 
-Every project starts from the base `template/` (folder structure + stage instructions + assets). Projects are company-centric — sources accumulate over time, each run produces a new set of outputs.
+Every project starts from the base `template/` (folder structure + the authoring contract + assets).
+Projects are company-centric - sources accumulate over time, each run produces a new set of outputs.
 
 ```bash
 just new TICKER                      # base template
 just campaign TICKER campaign_name   # with a campaign overlay
 just campaigns                       # list available campaigns
+just recover TICKER campaign_name    # re-cover for a new quarter (archives prior outputs)
 ```
 
 #### Campaigns
 
-Campaigns add an editorial layer for thematic coverage across many companies — the voice, analytical framework, target tickers, and shared reference data.
+Campaigns add an editorial layer for thematic coverage across many companies - the voice, analytical framework, target tickers, and shared reference data.
 
 ```
 campaigns/
   my_campaign/
-    CAMPAIGN_BRIEF.md        # Editorial strategy and analytical framework
-    AUTHORING_INSTRUCTIONS.md   # Production instructions (overrides base)
-    tickers.md               # Target companies and production calendar
-    sources/                 # Third-party research and reference data (gitignored)
-    overrides/               # File replacements (custom assets/instructions)
+    CAMPAIGN_BRIEF.md           # Editorial strategy and analytical framework
+    AUTHORING_INSTRUCTIONS.md   # Authoring instructions (overrides base)
+    tickers.md                  # Target companies and production calendar
+    sources/                    # Third-party research and reference data (gitignored)
+    overrides/                  # File replacements (custom assets/instructions)
 ```
 
 The base template is applied first, then the campaign overlays its instructions, brief, and shared sources on top.
 
-### 2. Content Generation (Claude Cowork)
+### 2. Author (Claude Code)
 
-Point a Cowork session at the scaffolded project folder. Claude reads the instructions (`AUTHORING_INSTRUCTIONS.md` + `PRODUCTION_CONTRACT.md`) and produces:
+Point a Claude Code session at the repo. The scaffolded project carries its own contract:
+`AUTHORING_INSTRUCTIONS.md` (the editorial brief) and `PRODUCTION_CONTRACT.md` (the schema,
+slide kinds, layout capacity limits, and spoken-form TTS rules). The session reads those plus
+everything in `sources/`, verifies every number against the SEC graph over MCP, and writes:
 
-- **Narrative brief** — the written analysis (Markdown), authored first.
-- **Video script** (`scripts/{TICKER}_script.json`) — the source of truth: ordered segments with narration + per-slide content, the `thumbnail` block, and a `short` block (the teaser).
-- **Q&A script** (`scripts/{TICKER}_qa.json`) — a two-voice interviewer/analyst conversation for the podcast.
-- **Social posts** — X post + YouTube description.
+- **Narrative brief** (`reports/{TICKER}_brief.md`) - the written analysis, authored first. Ships verbatim as a native X Article.
+- **Video script** (`scripts/{TICKER}_script.json`) - the source of truth: ordered segments carrying narration plus the exact numbers each slide draws.
+- **Short script** (`scripts/{TICKER}_short_script.json`) - 5-6 beats for the vertical cut, targeting ~45s.
+- **Social copy** (`social/`) - X post, YouTube description, and `publish.json` (the titles and links the publish step reads).
 
-Cowork authors **no HTML** — slides and the thumbnail are specced in the script and built in Claude Design.
-
-### 3. Design (Claude Design)
-
-Generate the hand-off brief, then compose the deck + thumbnail on-brand:
+The repo ships the research-lane skills that drive this - `/scout`, `/collect`, `/author`,
+`/review`, `/status`, `/batch`, `/refresh` - as `.claude/commands/*.md`. They are conveniences
+around the contract, not a dependency: the contract is the spec, and a session that reads
+`AUTHORING_INSTRUCTIONS.md` + `PRODUCTION_CONTRACT.md` produces the same artifacts without them.
 
 ```bash
-just deck-brief TICKER   # render the Claude Design hand-off from the script
+just validate TICKER    # gate the authored output against the contract before rendering
 ```
 
-Paste the brief into [claude.ai/design](https://claude.ai/design) (on `@robosystems/core`), compose a 16:9 deck and thumbnail, then export **both as PDF** (Claude Design exports PDF only) → `deck/{TICKER}_deck.pdf` and `deck/{TICKER}_thumbnail.pdf`. The `slice` step rasterizes the thumbnail PDF to `charts/png/{TICKER}_thumbnail.png` automatically.
+`validate` is schema-level. It catches missing fields, capacity overruns and duplicate refs; it
+cannot see that a chart is visually wrong, so check the rendered frames too.
 
-### 4. Production Pipeline
+### 3. Render
 
 ```bash
-just pipeline PROJECT       # validate -> slice -> voiceover -> assemble (long-form video)
-just short PROJECT          # 9:16 teaser short (b-roll + music + VO + caption cards)
-just podcast-qa PROJECT     # two-voice Q&A podcast (MP3 for Spotify + MP4 for YouTube)
-just podcast PROJECT        # extract podcast MP3 from the long-form video
-just publish PROJECT        # upload final deliverables to the public S3 artifact store
-just postpack PROJECT       # assemble the per-platform publish pack (paste-ready copy + S3 links)
+just webdeck-pipeline TICKER         # long-form 16:9 -> videos/{TICKER}_final.mp4
+just webdeck-short-pipeline TICKER   # 9:16 short    -> videos/{TICKER}_short.mp4
 ```
 
 | Step | Command | What it does |
 |------|---------|-------------|
-| **Everything** | `just webdeck-pipeline PROJECT` | Runs the five steps below end to end |
-| **Validate** | `just validate PROJECT` | Checks the authored output against the production contract |
-| **Voiceover** | `just voiceover PROJECT` | Sends narration to ElevenLabs TTS (idempotent; `--force` to regen) |
-| **Build** | `just webdeck PROJECT` | Builds the animated HTML deck from `script.json` + VO durations |
-| **Render** | `just webdeck-render PROJECT` | Renders the deck to frames via headless Chrome (puppeteer-core) |
-| **Mux** | `just webdeck-mux PROJECT` | Muxes narration, and narration + ducked music, with ffmpeg |
-| **Short (9:16)** | `just webdeck-short-pipeline PROJECT` | Same engine at 1080×1920 — purpose-built vertical, not a crop |
+| **Everything** | `just webdeck-pipeline TICKER` | Runs the five steps below end to end |
+| **Validate** | `just validate TICKER` | Checks the authored output against the production contract |
+| **Voiceover** | `just voiceover TICKER` | Sends narration to ElevenLabs TTS (idempotent; `--force` to regen) |
+| **Build** | `just webdeck TICKER` | Builds the animated HTML deck from `script.json` + VO durations |
+| **Render** | `just webdeck-render TICKER` | Renders the deck to frames via headless Chrome (puppeteer-core) |
+| **Mux** | `just webdeck-mux TICKER` | Muxes narration, and narration + ducked music, with ffmpeg |
 
-Rendering is **entirely local**: puppeteer-core drives headless Chrome, ffmpeg does the mux.
+The 9:16 short runs the same engine at 1080x1920. It is **purpose-built vertical, not a crop**:
+its own beat kinds (hook / stat / cards / points / cta), burned-in kinetic captions, a progress
+bar and a `$TICKER` chip. One asset serves both X native video and YouTube Shorts.
 
-A second capture mode — recording a live AI chat client (ChatGPT, claude.ai, Grok) or the RoboSystems apps using the platform over MCP — is documented in [`showcase/mcp_series/recording.md`](showcase/mcp_series/recording.md); output lands in `content/demos/<slug>/` like the pipeline's.
-There is no cloud render service and no per-render cost. The mux writes
-`videos/{TICKER}_timestamps.txt` with the authoritative YouTube chapter times.
+Rendering is **entirely local** - puppeteer-core drives headless Chrome, ffmpeg does the mux.
+There is no cloud render service and no per-render cost, so a re-render costs only wall clock.
+The mux writes `videos/{TICKER}_timestamps.txt` with the authoritative YouTube chapter times.
 
-> The earlier path (Claude Design PPTX → `just slice` → Shotstack cloud assembly) was retired
-> on 2026-08-08. `just assemble` and `just pipeline` now exit with a pointer to the commands
-> above; the tools they called remain in git history.
+Two pre-render inspection recipes save a full render when the layout is in question:
+
+```bash
+just webdeck-stills TICKER "3,17,42"        # single frames at given seconds
+just webdeck-short-stills TICKER "1,12,30"
+```
+
+### 4. Thumbnails, publish, post
+
+```bash
+just thumbnails TICKER   # 3 platform thumbnails, generated from the brief via OpenAI
+just publish TICKER      # upload deliverables to the S3 artifact store + reindex the catalog
+just postpack TICKER     # assemble the per-platform publish pack (paste-ready copy + S3 links)
+```
+
+Posting is per-surface, each asset in its best format:
+
+```bash
+just yt-upload TICKER   && just yt-publish TICKER         # long-form (uploads private, then flips)
+just yt-short TICKER    && just yt-short-publish TICKER   # the Short (auto-links the long-form)
+just x-article TICKER                                     # the brief as a native X Article (draft)
+just x-article TICKER --publish
+just x-short TICKER                                       # the 9:16 as X native video
+just x-post TICKER                                        # the text post
+just sync-youtube                                         # capture published URLs into the catalog
+just analytics [tickers] · just insights                  # per-post rollup · channel-level reach
+```
+
+`just yt-auth` and `just x-auth` do the one-time OAuth for the YouTube and X APIs.
 
 ### Publishing (S3 artifact store)
 
-`just publish {TICKER}` uploads the final deliverables (long-form, short, podcast MP3/MP4,
-thumbnail, brief, social copy) to `s3://$AWS_S3_BUCKET/content/{TICKER}/` and prints public URLs
+`just publish {TICKER}` uploads the final deliverables (long-form, short, thumbnail, brief,
+social copy) to `s3://$AWS_S3_BUCKET/content/{TICKER}/` and prints public URLs
 (served via `$AWS_CDN_DOMAIN_URL` when set, else `https://$AWS_S3_BUCKET.s3.amazonaws.com/content/{TICKER}/…`)
-— a durable artifact store, separate from posting to YouTube / Spotify / X. The bucket policy grants
-public read on the **`content/*` + `blog/*` prefixes only** (no user data — the store is public by
-design); everything else in the bucket stays private, including the dormant staging assets left
-over from the retired Shotstack path. The bucket + CloudFront CDN are managed by
-`cloudformation/content.yaml` (`just infra-deploy` — see Infrastructure below).
+- a durable artifact store, separate from posting to YouTube / X. The bucket policy grants
+public read on the **`content/*` + `blog/*` prefixes only** (no user data - the store is public by
+design); everything else in the bucket stays private. The bucket + CloudFront CDN are managed by
+`cloudformation/content.yaml` (`just infra-deploy` - see Infrastructure below).
 
 ### Blog pipeline
 
-A lighter sibling of the research pipeline for markdown essays. A post is one file —
+A lighter sibling of the research pipeline for markdown essays. A post is one file -
 `blog/<slug>/post.md` (YAML frontmatter + body), authored and **git-versioned in this repo**.
 Narration, cover image, and social copy are all optional and additive; a post with just
 `post.md` publishes cleanly.
@@ -136,17 +166,17 @@ just blog-new <slug> [site] # scaffold blog/<slug>/post.md from the template (si
 just blog-publish <slug>    # auto-narrate (default-on) + upload blog/<slug>/* to S3 + reindex
 just blog-narrate <slug>    # (re)generate narration on its own; --force to redo
 just blog-social <slug>     # optional: paste-ready distribution pack (uses <slug>_x_post.txt if present)
+just blog-x-article <slug>  # publish the essay as a native X Article
 just blog-reindex           # rebuild blog/index.json (the catalog the app's /blog routes read)
 ```
 
-**Every post ships with a "Listen to this story" narration** — `blog-publish` auto-narrates any
+**Every post ships with a "Listen to this story" narration** - `blog-publish` auto-narrates any
 post that has no audio yet (pass `--no-audio` to skip), so the feature stays consistent across
-the whole catalog. Narration reuses the same ElevenLabs path as the research voiceover + Q&A
-podcast (one brand voice; body stripped of code/tables, chunked for TTS, concatenated with
-ffmpeg). `blog-publish` also writes a self-describing `meta.json` and refreshes `blog/index.json`
-— a versioned contract (`version: 1`) with absolute CDN asset URLs, the same consumption shape
-the `/research` catalog uses. The app consumes it via SSG/ISR; publishing or editing a post no
-longer needs an app redeploy.
+the whole catalog. Narration reuses the same ElevenLabs path as the research voiceover (one brand
+voice; body stripped of code/tables, chunked for TTS, concatenated with ffmpeg). `blog-publish`
+also writes a self-describing `meta.json` and refreshes `blog/index.json` - a versioned contract
+(`version: 1`) with absolute CDN asset URLs, the same consumption shape the `/research` catalog
+uses. The app consumes it via SSG/ISR; publishing or editing a post no longer needs an app redeploy.
 
 ### Shared Media Libraries
 
@@ -159,7 +189,16 @@ just music-sync     # register new tracks dropped into assets/music/
 just music "<prompt>"   # generate a music bed via the ElevenLabs Music API
 ```
 
-Cowork selects clips/tracks by theme: a `broll_theme` / `music_mood` (tags) or an explicit list. Manifests are tracked; the heavy `.mp4`/`.mp3` binaries are gitignored (local-only).
+Clips and tracks are selected by theme - a `broll_theme` / `music_mood` (tags) or an explicit
+list. Manifests are tracked; the heavy `.mp4`/`.mp3` binaries are gitignored (local-only).
+
+### Product demo capture
+
+A second, separate capture track records the **live product** rather than a deck: a headless
+browser drives the real UI, a drawn cursor travels and clicks, and the page responds. It shares
+this repo's audio and mux stages but none of its deck code. See
+[`renderer/README.md`](renderer/README.md) for `just render-setup`, `render-capture`,
+`demo-probe`, and `demo-pipeline`.
 
 ### Batch Operations
 
@@ -174,11 +213,11 @@ just clean PROJECT         # Remove generated assets (keeps source files)
 
 ### Required Tools
 
-- [uv](https://docs.astral.sh/uv/) — Python package manager
-- [just](https://github.com/casey/just) — command runner
-- [ffmpeg / ffprobe](https://ffmpeg.org/) — media processing (short, podcast, slicing)
-- [poppler](https://poppler.freedesktop.org/) — `pdftoppm` for slicing the deck PDF + rasterizing the thumbnail
-- [AWS CLI](https://aws.amazon.com/cli/) — S3 uploads for publishing + the CloudFront CDN
+- [uv](https://docs.astral.sh/uv/) - Python package manager
+- [just](https://github.com/casey/just) - command runner
+- [ffmpeg / ffprobe](https://ffmpeg.org/) - media processing (render mux, shorts, probing)
+- [Node.js](https://nodejs.org/) - the webdeck renderer (puppeteer-core) and `renderer/`
+- [AWS CLI](https://aws.amazon.com/cli/) - S3 uploads for publishing + the CloudFront CDN
 
 ### API Keys
 
@@ -186,14 +225,21 @@ Configure in `.env` after first run:
 
 | Service | Keys | Purpose |
 |---------|------|---------|
-| [ElevenLabs](https://try.elevenlabs.io/v9z3wzm97gk3) | `ELEVEN_LABS_API_KEY`, `ELEVEN_LABS_VOICE_ID`, `ELEVEN_LABS_INTERVIEWER_VOICE_ID` | Voiceover (narrator) + Q&A interviewer voice + Music API |
-| AWS | `AWS_PROFILE`, `AWS_REGION`, `AWS_S3_BUCKET`, `AWS_CDN_DOMAIN_URL` (optional), `AWS_ROUTE53_HOSTED_ZONE_ID` (optional, auto-resolved) | Asset uploads + CloudFront CDN |
+| [ElevenLabs](https://try.elevenlabs.io/v9z3wzm97gk3) | `ELEVEN_LABS_API_KEY`, `ELEVEN_LABS_VOICE_ID` | Voiceover + the Music API |
+| OpenAI | `OPENAI_API_KEY` | Thumbnail generation (`just thumbnails`) |
+| AWS | `AWS_PROFILE`, `AWS_REGION`, `AWS_S3_BUCKET`, `AWS_CDN_DOMAIN_URL`, `AWS_CLOUDFRONT_DISTRIBUTION_ID` | Asset uploads + CloudFront CDN |
+| YouTube | `YT_CLIENT_ID`, `YT_CLIENT_SECRET`, `YT_REFRESH_TOKEN`, `YT_CHANNEL_ID` | Uploads + analytics (`just yt-auth` writes the refresh token into `.env`) |
+| X | `X_CONSUMER_KEY`, `X_SECRET_KEY`, `X_ACCESS_TOKEN`, `X_ACCESS_SECRET`, `X_HANDLE` | Articles, posts, native video (`just x-auth` verifies) |
 
 <sub>The ElevenLabs link above is a referral link.</sub>
 
-### Claude Cowork + Claude Design
+### Filing data (RoboSystems MCP)
 
-Content generation uses [Claude Desktop](https://claude.ai/download) with the [RoboSystems MCP server](https://github.com/RoboFinSystems/robosystems-mcp-client) configured; the deck is composed in [claude.ai/design](https://claude.ai/design) on the `@robosystems/core` design system.
+Authoring verifies numbers against SEC XBRL filings through the
+[RoboSystems MCP server](https://github.com/RoboFinSystems/robosystems-mcp-client). Configure it
+in your Claude Code session; the `sec` graph is the read-only shared repository the research lane
+queries. `SEC_RAW_BUCKET` (optional) points `/collect` at a store of raw filing archives; without
+it, fetch filings from EDGAR by hand.
 
 ## Infrastructure
 
@@ -205,14 +251,9 @@ Config comes from `.env` (`AWS_PROFILE`, `AWS_S3_BUCKET`, optional `AWS_CDN_DOMA
 ```bash
 just infra-validate    # validate the template
 just infra-deploy      # create the bucket + CDN stack (+ wait, + print outputs)
-just content-migrate   # copy existing content from the legacy bucket into the new one
-just reindex           # rebuild content/index.json on the new bucket (CDN urls)
+just reindex           # rebuild content/index.json (CDN urls)
 just infra-outputs     # show bucket / CDN url / distribution id
 ```
-
-`infra-deploy` creates a **new** bucket (default `robosystems-content`); the legacy
-`robosystems-marketing-assets` bucket is left untouched. After migrating + reindexing, point the apps
-at the CDN (`assets.robosystems.ai`) and retire the old bucket when ready.
 
 ## Resources
 
@@ -230,7 +271,7 @@ at the CDN (`assets.robosystems.ai`) and retire the old bucket when ready.
 
 ## Acknowledgements
 
-Backed by an **[ElevenLabs Grant](https://elevenlabs.io/startup-grants)** — the credits power the voiceover, Q&A interviewer voice, and music generation behind every video this pipeline produces.
+Backed by an **[ElevenLabs Grant](https://elevenlabs.io/startup-grants)** - the credits power the voiceover and music generation behind every video this pipeline produces.
 
 <a href="https://elevenlabs.io/startup-grants">
   <picture>

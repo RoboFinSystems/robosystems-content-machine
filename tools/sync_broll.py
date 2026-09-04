@@ -67,7 +67,7 @@ def main():
             "resolution": f"{w}x{h}",
             "fps": fps,
             "tags": [],
-            "description": "TODO: describe the shot (used by Cowork to pick clips by tag/description).",
+            "description": "TODO: describe the shot (used at authoring time to pick clips by tag/description).",
         })
         added += 1
         print(f"  + {clip_id}  ({w}x{h}, {dur}s)")

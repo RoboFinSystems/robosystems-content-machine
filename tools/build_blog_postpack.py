@@ -2,7 +2,7 @@
 Assemble a paste-ready distribution pack for a blog post -> blog/<slug>/<slug>_postpack.md.
 
 Like tools/build_postpack.py for research: it STITCHES (does not LLM-generate, does not post) the
-post's own metadata + hand/Cowork-authored per-platform cuts into one paste-ready doc. Companion cuts
+post's own metadata + the hand-authored per-platform cuts into one paste-ready doc. Companion cuts
 (all optional): blog/<slug>/<slug>_medium.md (syndicated essay), _linkedin.md (native), _x_post.txt.
 Missing cuts fall back to a starter. Medium section carries the canonical-back-to-blog reminder so
 syndication never cannibalizes the blog's SEO; the URL goes in LinkedIn's first comment, not the body.
@@ -38,7 +38,7 @@ def build(slug):
     tags = meta.get("tags") or []
 
     def companion(suffix):
-        """Read a hand/Cowork-authored per-platform cut blog/<slug>/<slug>_<suffix>, or None."""
+        """Read a hand-authored per-platform cut blog/<slug>/<slug>_<suffix>, or None."""
         p = os.path.join(post_dir, f"{slug}_{suffix}")
         if os.path.exists(p):
             with open(p, encoding="utf-8") as f:

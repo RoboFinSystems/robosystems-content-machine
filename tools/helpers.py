@@ -128,7 +128,7 @@ def strip_angle_brackets(text):
   """YouTube and X reject `<` / `>` (parsed as HTML tags) — pasting copy that contains
   them errors out. In finance copy they're always comparison operators, so spell them
   out: '<1x' -> 'under 1x', '>$740M' -> 'over $740M', capitalizing at a sentence start.
-  A safety net — authored copy should avoid `< >` outright (see COWORK instructions)."""
+  A safety net — authored copy should avoid `< >` outright (see AUTHORING_INSTRUCTIONS)."""
   if not text or ("<" not in text and ">" not in text):
     return text
   out = re.sub(r"<\s*", "under ", text)
