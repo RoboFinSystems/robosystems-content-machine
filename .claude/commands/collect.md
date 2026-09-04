@@ -21,9 +21,11 @@ The user will provide a ticker and optionally a project path. If no project path
 ### 2. SEC Filing — Curated Narrative Extraction (automated)
 - Look up CIK via RoboSystems MCP: `MATCH (e:Entity) WHERE e.ticker = '{TICKER}' RETURN e.cik, e.name`
 - Look up latest filing via MCP: `MATCH (e:Entity)-[:ENTITY_HAS_REPORT]->(r:Report) WHERE e.ticker = '{TICKER}' RETURN r.form, r.filing_date, r.accession_number ORDER BY r.filing_date DESC LIMIT 5`
-- List available ZIPs in S3:
+- List available ZIPs in the raw-filing store (`$SEC_RAW_BUCKET` + `$AWS_PROFILE` from `.env`;
+  if `SEC_RAW_BUCKET` is unset, skip to fetching the filing from EDGAR by hand):
   ```bash
-  AWS_PROFILE=robosystems-sso aws s3 ls s3://robosystems-shared-raw-prod/sec/year={YEAR}/{CIK}/
+  set -a; . ./.env; set +a
+  aws s3 ls "s3://$SEC_RAW_BUCKET/sec/year={YEAR}/{CIK}/"
   ```
 - Download the filing ZIP to `/tmp/{TICKER}/`
 - Unzip and find the main HTML file (largest `.htm` file, usually `{ticker}-{date}.htm`)

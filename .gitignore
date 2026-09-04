@@ -63,6 +63,18 @@ blog/*/*
 .claude/settings.local.json
 CLAUDE.local.md
 
+# Operator skills for the DISTRIBUTION lane - private, like the drafts/ and local/ vaults.
+# These are account-specific (Buffer org + channel ids, personal handles, measured per-post
+# reach, the private area roster, the showcase/ shoot playbooks) and are not portable to
+# anyone else's setup. The RESEARCH lane skills (/author, /review, /collect, /scout,
+# /status, /batch, /refresh) stay tracked: they drive the public template contract.
+.claude/POSTING_TIMES.md
+.claude/commands/atomize.md
+.claude/commands/buffer-draft-li.md
+.claude/commands/buffer-draft-blog.md
+.claude/commands/insights.md
+.claude/commands/chat-demo.md
+
 # Ruff cache
 .ruff_cache/
 
