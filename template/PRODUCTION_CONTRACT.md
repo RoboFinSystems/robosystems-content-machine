@@ -224,10 +224,13 @@ the CTA needs one.
 
 ## Thumbnails (generated, not authored here)
 
-`just thumbnails {TICKER}` reads the brief and generates all three per-platform images via
-OpenAI (gpt-5 writes the prompt, gpt-image-2 renders): `assets/yt.png` (16:9 → YouTube +
-website), `assets/x.png` (5:2 → X), `assets/spot.png` (1:1). Author **no thumbnail block** —
-the brief is the source. They are publish-only assets, not part of the video sequence.
+`just thumbnails {TICKER}` reads the brief and generates the YouTube thumbnail via OpenAI
+(a chat model writes the prompt, gpt-image-2 renders), writing `assets/yt.png` (16:9 → YouTube
++ website) and ingesting it to `charts/png/{TICKER}_thumbnail.png`, which is what publish
+uploads. Two more aspects exist behind flags and are off by default: `--with-x` (5:2, since
+the X Article uses the branded local cover from `gen_article_cover.py` instead) and
+`--with-spot` (1:1, orphaned when the podcast was retired). Author **no thumbnail block** —
+the brief is the source. These are publish-only assets, not part of the video sequence.
 
 ---
 
@@ -242,8 +245,8 @@ the X native-video post and the YouTube Short. Its schema (5-6 beats; `hook` / `
 files it needs: `social/{TICKER}_short_x_post.txt` and `social/{TICKER}_short_youtube.txt`.
 
 The Q&A podcast has been **retired** (2026-07-21): author no `qa.json` and no `podcast_*`
-fields. The avatar-short renderer (`tools/gen_avatar_short.py`, `just short` / `just shorts`)
-is retired too and is not part of a run.
+fields. The HeyGen avatar-short renderer was deleted on 2026-09-04; the 9:16 short above is
+the only short, and it renders locally like the long-form.
 
 ---
 

@@ -119,7 +119,7 @@ just webdeck-short-stills TICKER "1,12,30"
 ### 4. Thumbnails, publish, post
 
 ```bash
-just thumbnails TICKER   # 3 platform thumbnails, generated from the brief via OpenAI
+just thumbnails TICKER   # YouTube thumbnail, generated from the brief via OpenAI
 just publish TICKER      # upload deliverables to the S3 artifact store + reindex the catalog
 just postpack TICKER     # assemble the per-platform publish pack (paste-ready copy + S3 links)
 ```

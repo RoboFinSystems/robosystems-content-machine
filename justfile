@@ -72,17 +72,8 @@ validate-fix project:
 
 # ─── Pipeline Steps ──────────────────────────────────────────
 
-# Generate the Claude Design hand-off brief from the script (deck mode); also copies DESIGN_INSTRUCTIONS + brief to the clipboard
-deck-brief project:
-    @just ensure-env
-    UV_ENV_FILE={{_env}} uv run python tools/build_deck_brief.py {{project}}
-
-# Slice a Claude Design deck PDF into 1920x1080 slide PNGs (deck mode)
-slice project:
-    @just ensure-env
-    UV_ENV_FILE={{_env}} uv run python tools/slice_deck.py {{project}}
-
-# Generate the 3 platform thumbnails via OpenAI (brief -> gpt-image-2 -> assets/{yt,x,spot}.png)
+# Generate the YouTube thumbnail via OpenAI (brief -> gpt-image-2 -> assets/yt.png -> charts/png/)
+# --with-x / --with-spot add the 5:2 and 1:1 variants, both off by default.
 thumbnails project *args:
     @just ensure-env
     UV_ENV_FILE={{_env}} uv run python tools/gen_thumbnails.py {{project}} {{args}}
@@ -249,19 +240,6 @@ music-sync:
 music prompt *args:
     @just ensure-env
     UV_ENV_FILE={{_env}} uv run python tools/generate_music.py "{{prompt}}" {{args}}
-
-# 9:16 avatar short from the brief: HeyGen avatar (our voice) + gpt-image backdrop + word-synced captions.
-# Default = hook short (videos/{T}_short.mp4, teases the long-form); --qa = two-avatar Q&A short
-# (videos/{T}_short_qa.mp4, teases the podcast). Add --test for a free watermarked HeyGen render.
-short project *args:
-    @just ensure-env
-    UV_ENV_FILE={{_env}} uv run python tools/gen_avatar_short.py {{project}} {{args}}
-
-# Generate BOTH shorts for a name: the hook short (-> long-form) and the Q&A short (-> podcast).
-shorts project *args:
-    @just ensure-env
-    UV_ENV_FILE={{_env}} uv run python tools/gen_avatar_short.py {{project}} {{args}}
-    UV_ENV_FILE={{_env}} uv run python tools/gen_avatar_short.py {{project}} --qa {{args}}
 
 
 # Assemble a per-platform publish pack (paste-ready copy + S3 media links)
