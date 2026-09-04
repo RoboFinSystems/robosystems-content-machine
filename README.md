@@ -139,6 +139,20 @@ just analytics [tickers] · just insights                  # per-post rollup · 
 
 `just yt-auth` and `just x-auth` do the one-time OAuth for the YouTube and X APIs.
 
+### Brief-only coverage
+
+Not every name needs a video. A ticker can ship as a written brief alone - published to
+`/research` and posted as an X Article - by skipping the script and render entirely:
+
+```bash
+just validate-brief TICKER   # validate a brief-only project (skips every script/render check)
+just publish-brief TICKER    # validate + publish the brief straight to /research
+just x-article TICKER        # then post it as a native X Article
+```
+
+Useful for covering more filings than you have render time for, and for names where the
+analysis is the whole product.
+
 ### Publishing (S3 artifact store)
 
 `just publish {TICKER}` uploads the final deliverables (long-form, short, thumbnail, brief,
