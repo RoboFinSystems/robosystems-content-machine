@@ -21,6 +21,7 @@ import json
 import os
 import subprocess
 
+import narrate_research
 import reindex
 from helpers import (apply_promo_code, asset_url, get_project_dir, invalidate_cdn,
                      require_env, resolve_promo_code, strip_angle_brackets)
@@ -33,6 +34,7 @@ ARTIFACTS = [
     ("charts/png/{t}_thumbnail_x.png", "image/png"),        # 5:2 — X
     ("charts/png/{t}_thumbnail_square.png", "image/png"),   # 1:1 — Spotify
     ("reports/{t}_brief.md", "text/markdown; charset=utf-8"),
+    ("reports/{t}_narration.mp3", "audio/mpeg"),            # the audio article — a read of the brief
     ("social/{t}_x_post.txt", "text/plain; charset=utf-8"),
     ("social/{t}_youtube_description.txt", "text/plain; charset=utf-8"),
 ]
@@ -60,12 +62,24 @@ def snapshot_prior_version(bucket, ticker):
                     "--recursive", "--exclude", "archive/*", "--only-show-errors"])
 
 
-def publish(project):
+def publish(project, narrate=True):
     bucket = require_env("AWS_S3_BUCKET")
     project_dir = get_project_dir(project)
     ticker = project
     prefix = f"content/{ticker}/"
     print(f"Publishing {ticker} -> s3://{bucket}/{prefix}\n")
+
+    # Default-on narration, matching blog-publish: every research page ships with the
+    # "Listen to this report" audio (pass --no-audio to skip). Resilient — a TTS hiccup
+    # logs a warning and still publishes the report.
+    if narrate and not os.path.exists(os.path.join(project_dir, "reports", f"{ticker}_narration.mp3")):
+        print("Narrating the brief (default-on; --no-audio to skip)...\n")
+        try:
+            narrate_research.narrate(ticker)
+        except (SystemExit, Exception) as e:  # noqa: BLE001
+            print(f"  (narration skipped: {e} — publishing without audio; "
+                  f"re-run later with `just narrate {ticker}`)")
+        print()
 
     snapshot_prior_version(bucket, ticker)
 
@@ -130,7 +144,10 @@ def publish(project):
 def main():
     ap = argparse.ArgumentParser(description="Publish final deliverables to the public S3 store")
     ap.add_argument("project", help="Project name / ticker (e.g., TRLV)")
-    publish(ap.parse_args().project)
+    ap.add_argument("--no-audio", action="store_true",
+                    help="Skip auto-narration of the brief; publish the rest")
+    args = ap.parse_args()
+    publish(args.project, narrate=not args.no_audio)
 
 
 if __name__ == "__main__":

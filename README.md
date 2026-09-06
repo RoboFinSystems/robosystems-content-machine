@@ -3,8 +3,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 Automated equity-research content pipeline. Turns a company's SEC filings into a narrated
-**16:9 video**, a purpose-built **9:16 short**, and a written **brief** that publishes as-is -
-one analysis, every surface.
+**16:9 video**, a purpose-built **9:16 short**, a written **brief** that publishes as-is, and
+an **audio edition** of that brief - one analysis, every surface.
 
 - **Campaign-Driven** - reusable campaign templates define the editorial angle, analytical framework, and output specs; apply them to any ticker.
 - **Authored in Claude Code** - one session reads the filings via [RoboSystems](https://robosystems.ai) MCP tools and writes the brief, the video script, the short, and the social copy. No hand-off to another app.
@@ -120,6 +120,7 @@ just webdeck-short-stills TICKER "1,12,30"
 
 ```bash
 just thumbnails TICKER   # YouTube thumbnail, generated from the brief via OpenAI
+just narrate TICKER      # the audio edition: an ElevenLabs read of the brief (auto-runs on publish)
 just publish TICKER      # upload deliverables to the S3 artifact store + reindex the catalog
 just postpack TICKER     # assemble the per-platform publish pack (paste-ready copy + S3 links)
 ```
@@ -151,12 +152,34 @@ just x-article TICKER        # then post it as a native X Article
 ```
 
 Useful for covering more filings than you have render time for, and for names where the
-analysis is the whole product.
+analysis is the whole product. A brief-only name still ships audio: `publish-brief` narrates
+it like any other, so the page has a written report and a spoken one even with no video.
+
+### The audio edition
+
+**Every report ships a "Listen to this report" narration** - a single-voice ElevenLabs read of
+`reports/{TICKER}_brief.md`, written to `reports/{TICKER}_narration.mp3` and played from a card
+on the `/research` page. It is the same affordance every blog post has, and it took the slot the
+Q&A podcast held before that format was retired (2026-07-21; its assets were deleted 2026-09-05).
+
+```bash
+just narrate TICKER             # generate it on its own
+just narrate TICKER --force     # re-read it (re-bills TTS)
+just narrate TICKER --dry-run   # print the cleaned text, call no API, bill nothing
+just publish TICKER --no-audio  # publish without generating one
+```
+
+`just publish` narrates any report that has no audio yet, so the feature stays consistent across
+the catalog; a TTS failure logs a warning and still publishes the report. The brief is the script -
+nothing extra is authored. Tables are stripped (they read terribly aloud), cashtags lose the `$`
+that would otherwise be read as "dollar S T X", and `[PROMO_CODE]` resolves exactly as it does for
+the published text. Narration shares one engine with the blog (`tools/narrate_common.py`), so both
+lanes use the same brand voice and the same chunk-and-concat path.
 
 ### Publishing (S3 artifact store)
 
 `just publish {TICKER}` uploads the final deliverables (long-form, short, thumbnail, brief,
-social copy) to `s3://$AWS_S3_BUCKET/content/{TICKER}/` and prints public URLs
+narration, social copy) to `s3://$AWS_S3_BUCKET/content/{TICKER}/` and prints public URLs
 (served via `$AWS_CDN_DOMAIN_URL` when set, else `https://$AWS_S3_BUCKET.s3.amazonaws.com/content/{TICKER}/…`)
 - a durable artifact store, separate from posting to YouTube / X. The bucket policy grants
 public read on the **`content/*` + `blog/*` prefixes only** (no user data - the store is public by

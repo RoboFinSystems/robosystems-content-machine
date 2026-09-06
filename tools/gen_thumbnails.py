@@ -228,7 +228,8 @@ def main():
                          "the branded local cover from gen_article_cover.py instead)")
     ap.add_argument("--with-spot", action="store_true",
                     help="also generate the 1:1 square (default off: the Spotify podcast was "
-                         "retired 2026-07-21 and nothing consumes this asset)")
+                         "retired 2026-07-21 and nothing consumes this asset — the narration "
+                         "that replaced it plays inside the /research page and needs no art)")
     ap.add_argument("--dry-run", action="store_true", help="print the extracted elements + prompts, generate nothing")
     args = ap.parse_args()
 

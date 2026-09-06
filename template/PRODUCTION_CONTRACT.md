@@ -250,6 +250,30 @@ the only short, and it renders locally like the long-form.
 
 ---
 
+## Companion format — the narrated brief (generated, not authored)
+
+Every published report ships an **audio edition**: a single-voice ElevenLabs read of
+`reports/{TICKER}_brief.md`, written to `reports/{TICKER}_narration.mp3` and played from a
+"Listen to this report" card on the `/research` page. It took the slot the Q&A podcast used
+to hold, and it is the same affordance every blog post already ships with.
+
+`just publish {TICKER}` generates it automatically when it is missing (`--no-audio` skips);
+`just narrate {TICKER}` runs it alone, `--force` re-reads it, and `--dry-run` prints the
+cleaned text without billing TTS.
+
+**Author nothing for it.** The brief *is* the script, which has two consequences worth
+knowing while writing one:
+
+- **Tables are dropped.** They read terribly aloud, so the narration hears only prose. A
+  sentence that introduces a table ("Here is the table nobody builds:") lands on whatever
+  follows the table. Keep the finding in the prose, not only in the cells — which is how
+  these briefs are written anyway.
+- **Cashtags, promo placeholders and `·` separators are handled for you.** `$STX` loses its
+  `$` (it would read "dollar S T X"), `[PROMO_CODE]` resolves exactly as it does for the
+  published text, and the source-note's `·` become sentence breaks.
+
+---
+
 ## Narration must be spoken-form (for text-to-speech)
 
 `narration` is sent directly to ElevenLabs. Symbols and abbreviations get mispronounced.

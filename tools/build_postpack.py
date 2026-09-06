@@ -21,7 +21,8 @@ Platform model (X-first; research lane) — each asset in the format its surface
     reached via the Article's link.
   - YouTube: the 16:9 long-form, plus the 9:16 Short (its own upload; #Shorts; links the long-form).
     With no {t}_short.mp4 present the pack simply omits the Short.
-  - The Q&A podcast is retired (no Spotify/podcast section).
+  - The Q&A podcast is retired (no Spotify/podcast section). Its replacement, the narrated
+    brief, is a /research page asset rather than a posting surface, so it has no section here.
   - LinkedIn is NOT used for research — it's reserved for the technical/blog lane (build_blog_postpack.py).
   - Instagram is dropped (wrong audience, strips links).
 
@@ -44,7 +45,7 @@ MEDIA = {
     "short":       ("videos/{t}_short.mp4",         "{t}_short.mp4"),   # 9:16 (music variant) -> X post + YT Short
     "thumbnail":    ("charts/png/{t}_thumbnail.png",        "{t}_thumbnail.png"),         # 16:9 YouTube + website
     "thumbnail_x":  ("charts/png/{t}_thumbnail_x.png",      "{t}_thumbnail_x.png"),       # 5:2 X
-    "thumbnail_sq": ("charts/png/{t}_thumbnail_square.png", "{t}_thumbnail_square.png"),  # 1:1 Spotify
+    "thumbnail_sq": ("charts/png/{t}_thumbnail_square.png", "{t}_thumbnail_square.png"),  # 1:1, orphaned with the podcast
 }
 
 # placeholders we expect the human (or a later step) to resolve before posting

@@ -80,8 +80,8 @@ def invalidate_cdn(keys):
 # ─── TTS text normalization ──────────────────────────────────────────────────
 # ElevenLabs mispronounces some finance terms when fed verbatim. We respell them
 # ONLY for the spoken audio — slides, briefs, and on-screen text keep the real
-# spelling. Applied centrally in generate_audio(), so voiceover + podcast + short
-# all inherit it. Add new (pattern, replacement) pairs here as they surface.
+# spelling. Applied centrally in generate_audio(), so the video voiceover, the short and
+# the blog/brief narration all inherit it. Add new (pattern, replacement) pairs as they surface.
 _TTS_SUBSTITUTIONS = [
   (re.compile(r"\bEBITDA\b", re.IGNORECASE), "Ebit-dah"),  # else read letter-by-letter
 ]

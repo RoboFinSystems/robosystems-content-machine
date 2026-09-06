@@ -83,6 +83,13 @@ voiceover project *args:
     @just ensure-env
     UV_ENV_FILE={{_env}} uv run python tools/generate_voiceover_audio.py {{project}} {{args}}
 
+# Narrate the brief via ElevenLabs -> reports/{T}_narration.mp3 (the audio article).
+# Runs automatically on `just publish`; use this to preview or to --force a re-read.
+# --dry-run prints the cleaned text and bills nothing.
+narrate project *args:
+    @just ensure-env
+    UV_ENV_FILE={{_env}} uv run python tools/narrate_research.py {{project}} {{args}}
+
 # RETIRED - the Shotstack cloud-render path was torn out 2026-08-08
 assemble project *args:
     @echo "'just assemble' is retired. The Shotstack cloud-render path was removed 2026-08-08."
@@ -248,9 +255,10 @@ postpack project:
     UV_ENV_FILE={{_env}} uv run python tools/build_postpack.py {{project}}
 
 # Publish a project's final deliverables to the public S3 artifact store
-publish project:
+# (auto-narrates the brief; --no-audio to skip)
+publish project *args:
     @just ensure-env
-    UV_ENV_FILE={{_env}} uv run python tools/publish_artifacts.py {{project}}
+    UV_ENV_FILE={{_env}} uv run python tools/publish_artifacts.py {{project}} {{args}}
 
 # Rebuild the research catalog (content/index.json) the /research portal reads
 reindex:
@@ -268,9 +276,9 @@ validate-brief project:
     UV_ENV_FILE={{_env}} uv run python tools/validate_project.py {{project}} --brief-only
 
 # Validate + publish a brief-only ticker straight to /research
-publish-brief project: (validate-brief project)
+publish-brief project *args: (validate-brief project)
     @just ensure-env
-    UV_ENV_FILE={{_env}} uv run python tools/publish_artifacts.py {{project}}
+    UV_ENV_FILE={{_env}} uv run python tools/publish_artifacts.py {{project}} {{args}}
 
 # ─── Blog Pipeline (markdown essays → S3 blog/ + blog/index.json) ─────────────
 

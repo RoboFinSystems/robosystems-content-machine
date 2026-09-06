@@ -211,7 +211,7 @@ hook; 3-5 key findings with specific numbers; a risk/caveat; closing takeaway; r
 **No link and no promo in the body.** The X post carries **no `robosystems.ai` link and no
 promo-code line** - both suppress reach (X throttles external links, and a discount CTA on every
 post reads as spam and drags engagement). Keep the RoboSystems CTA and any promo to the YouTube
-description and podcast notes, never the X post. Every post leads with substantive text and the
+description and the brief, never the X post. Every post leads with substantive text and the
 cashtag. (An earlier version of this rule claimed link-only captions get a fraction of a text
 post's reach - **retracted 2026-07-26**: that was a measurement artifact which filed native X
 Articles in the same bucket as outbound links. Articles are our HIGHEST-reach format, median 380

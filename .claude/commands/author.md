@@ -46,7 +46,10 @@ Pull the XBRL facts through the robosystems MCP (`financial-statement-analysis`,
    - `social/{TICKER}_short_x_post.txt` — the X post body: substantive, early ` $TICKER` cashtag (`x-short` appends the Article link - that link is native and helps, it is only *outbound* links that suppress), ~200-270 chars, framed as a 60-second clip (distinct from the long-form `x_post`).
    - `social/{TICKER}_short_youtube.txt` - **line 1 = the Short title** (hook-first, DIFFERENT from both the long-form YouTube title and the X hook, ≤100 chars); the rest = description with `[LONGFORM_URL]` (auto-filled from the long-form upload), a `robosystems.ai/pricing` line, and `#Shorts`.
 
-(No `qa.json` - the Q&A podcast is retired.)
+(No `qa.json` - the Q&A podcast is retired. The audio edition that replaced it is *generated*
+from the brief by `just narrate` / `just publish`, so author nothing for it - but write the
+findings into the prose rather than only into table cells, because tables are stripped before
+the read.)
 
 Use subagents for scale where useful (e.g., parallel section drafts), but the fact-check pass belongs to `/review`, not here.
 

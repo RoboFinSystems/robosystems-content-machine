@@ -43,8 +43,15 @@ SUFFIX_MAP = [
     ("_final.mp4", "video"),
     ("_short.mp4", "short"),
     ("_brief.md", "brief"),
+    ("_narration.mp3", "narration"),   # the audio article — a read of the brief
     ("_thumbnail.png", "thumbnail"),
 ]
+
+# Fields a published meta.json may still carry from a retired format. Dropped on the way
+# into the catalog so the portal never sees them, whatever an old S3 object says. The Q&A
+# podcast was retired 2026-07-21 and its narration replacement shipped 2026-09-05; the
+# YouTube uploads and the S3 MP3s are both gone.
+RETIRED_META_FIELDS = {"podcast_youtube_url", "podcast_episode_title"}
 
 
 def quarter(date_str):
@@ -295,6 +302,7 @@ def run(allow_shrink=False):
             date = version_date(listing, t) or datetime.date.today().isoformat()
             meta = {**project_meta(t), "date": date, "version": quarter(date)}
 
+        meta = {k: v for k, v in meta.items() if k not in RETIRED_META_FIELDS}
         item = {"ticker": t, **meta, "assets": map_assets(present, flat)}
         # setdefault: a per-ticker override in meta.json wins over the composed default.
         b_title, b_summary = brief_headline(os.path.join(PROJECTS, t), t)
@@ -308,6 +316,7 @@ def run(allow_shrink=False):
             aprefix = f"{flat}archive/{ver}/"
             anames = {n for n, _ in s3_ls(bucket, aprefix)}
             ameta = s3_get_json(bucket, f"{aprefix}meta.json") or {"version": ver}
+            ameta = {k: v for k, v in ameta.items() if k not in RETIRED_META_FIELDS}
             history.append({**ameta, "version": ameta.get("version", ver),
                             "assets": map_assets(anames, aprefix)})
         item["history"] = history
