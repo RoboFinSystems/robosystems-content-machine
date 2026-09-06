@@ -124,14 +124,29 @@ def apply_promo_code(text, code):
   return text.replace("[PROMO_CODE]", "")
 
 
+# A markdown blockquote marker: a line-initial run of `>`, each followed by a space or the
+# line end. `>$740M` is deliberately NOT one — that's a comparison and still gets spelled out.
+BLOCKQUOTE_PREFIX = re.compile(r"^(\s*>(?:\s*>)*)(?=\s|$)")
+
+
 def strip_angle_brackets(text):
   """YouTube and X reject `<` / `>` (parsed as HTML tags) — pasting copy that contains
   them errors out. In finance copy they're always comparison operators, so spell them
   out: '<1x' -> 'under 1x', '>$740M' -> 'over $740M', capitalizing at a sentence start.
-  A safety net — authored copy should avoid `< >` outright (see AUTHORING_INSTRUCTIONS)."""
+  A safety net — authored copy should avoid `< >` outright (see AUTHORING_INSTRUCTIONS).
+
+  Line-initial blockquote markers are structure, not comparisons, and are left alone:
+  rewriting `> **What 280E does.**` to `Over **What 280E does.**` silently destroys the
+  quote. That shipped in the published CANNABIS brief before this was fixed."""
   if not text or ("<" not in text and ">" not in text):
     return text
-  out = re.sub(r"<\s*", "under ", text)
-  out = re.sub(r">\s*", "over ", out)
+  lines = []
+  for line in text.split("\n"):
+    m = BLOCKQUOTE_PREFIX.match(line)
+    prefix, rest = (m.group(1), line[m.end():]) if m else ("", line)
+    rest = re.sub(r"<\s*", "under ", rest)
+    rest = re.sub(r">\s*", "over ", rest)
+    lines.append(prefix + rest)
+  out = "\n".join(lines)
   # a comparison promoted to sentence-initial should be capitalized
   return re.sub(r"(^|[.!?]\s+)(under|over)\b", lambda m: m.group(1) + m.group(2).capitalize(), out)
