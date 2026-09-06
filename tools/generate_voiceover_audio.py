@@ -106,16 +106,19 @@ def max_internal_gap(path):
     a dropout from a paragraph break — both are just silence — so it is a smoke alarm, not
     a judge. Returns 0.0 if ffmpeg is unavailable so the check degrades to a no-op rather
     than blocking a run.
+
+    stdin=DEVNULL matters: this runs once per generated chunk, and ffmpeg drains stdin
+    looking for interactive keys, which silently eats a caller's stdin-driven work list.
     """
     try:
         out = subprocess.run(
-            ["ffmpeg", "-hide_banner", "-nostats", "-i", str(path),
+            ["ffmpeg", "-nostdin", "-hide_banner", "-nostats", "-i", str(path),
              "-af", "silencedetect=n=-42dB:d=0.4", "-f", "null", "-"],
-            capture_output=True, text=True).stderr
+            capture_output=True, text=True, stdin=subprocess.DEVNULL).stderr
         dur = float(subprocess.run(
             ["ffprobe", "-v", "error", "-show_entries", "format=duration",
              "-of", "default=nw=1:nk=1", str(path)],
-            capture_output=True, text=True).stdout.strip() or 0)
+            capture_output=True, text=True, stdin=subprocess.DEVNULL).stdout.strip() or 0)
     except (OSError, ValueError):
         return 0.0
     starts = [float(x) for x in re.findall(r"silence_start:\s*([\d.]+)", out)]

@@ -51,10 +51,15 @@ def synthesize(chunks, out_path, label="narration"):
                 inputs += ["-i", p]
             concat = "".join(f"[{i}:a]" for i in range(len(parts))) + \
                 f"concat=n={len(parts)}:v=0:a=1[out]"
-            cmd = ["ffmpeg", "-y", *inputs, "-filter_complex", concat,
+            cmd = ["ffmpeg", "-nostdin", "-y", *inputs, "-filter_complex", concat,
                    "-map", "[out]", "-c:a", "libmp3lame", "-b:a", "192k", out_path]
             print("\n  Concatenating chunks -> MP3 ...")
-            subprocess.run(cmd, check=True, capture_output=True)
+            # stdin=DEVNULL (with -nostdin) because ffmpeg reads stdin for its interactive
+            # keys and DRAINS it. Narrating a list of tickers from a shell `while read`
+            # loop therefore ate the next lines of the list: a run over
+            # "FDXF / RELL / AEHR / APLD" went FDXF -> "HR" -> APLD, silently skipping
+            # RELL and mangling AEHR into a ticker that does not exist.
+            subprocess.run(cmd, check=True, capture_output=True, stdin=subprocess.DEVNULL)
 
     print(f"\n  -> {out_path}  ({os.path.getsize(out_path) / 1e6:.1f} MB)")
     return out_path
@@ -74,7 +79,7 @@ def duration_seconds(path):
         out = subprocess.run(
             ["ffprobe", "-v", "error", "-show_entries", "format=duration",
              "-of", "default=nw=1:nk=1", path],
-            capture_output=True, text=True).stdout.strip()
+            capture_output=True, text=True, stdin=subprocess.DEVNULL).stdout.strip()
         return float(out or 0)
     except (OSError, ValueError):
         return 0.0
