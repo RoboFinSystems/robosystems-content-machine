@@ -217,6 +217,11 @@ x-short project *args:
     @just ensure-env
     UV_ENV_FILE={{_env}} uv run python tools/post_x.py post {{project}} --short {{args}}
 
+# Send a free-text company post from a file, no project behind it; reply = the proof link's reply text (--dry-run first)
+x-text file reply="" *args:
+    @just ensure-env
+    UV_ENV_FILE={{_env}} uv run python tools/post_x.py text --file {{file}} {{ if reply != "" { "--reply '" + reply + "'" } else { "" } }} {{args}}
+
 # ─── Analytics (reach/retention feedback loop) ───────────────
 
 # Pull X + YouTube performance into projects/*/analytics.json (all tickers, or named ones)

@@ -526,6 +526,62 @@ def cmd_post(args) -> int:
     return 0
 
 
+def cmd_text(args) -> int:
+    """Free-text post with no project behind it (an announcement, a company cut of a
+    personal post). The proof link goes in --reply, never in the body, per the
+    pre-flight rule. Appends a line to drafts/x_text_posts.jsonl as the record."""
+    if args.file:
+        text = Path(args.file).read_text().strip()
+    elif args.text:
+        text = args.text.strip()
+    else:
+        sys.exit("give --text or --file")
+    reply = args.reply.strip() if args.reply else None
+
+    print(f"post:      {len(text)} chars (280 is the non-Premium cap)")
+    print(f"reply:     {len(reply)} chars" if reply else "reply:     NONE")
+    if args.dry_run:
+        print("--- dry run: post text ---")
+        print(text)
+        if reply:
+            print("--- reply ---")
+            print(reply)
+        return 0
+
+    sess = oauth_session()
+    handle = acting_user_guard(sess)
+
+    r = sess.post(f"{API}/2/tweets", json={"text": text})
+    if r.status_code >= 300:
+        api_error(r, "creating the post (POST /2/tweets)")
+    tweet_id = r.json()["data"]["id"]
+    url = f"https://x.com/{handle}/status/{tweet_id}"
+    print(f"posted: {url}")
+
+    reply_url = None
+    if reply:
+        r2 = sess.post(f"{API}/2/tweets", json={
+            "text": reply, "reply": {"in_reply_to_tweet_id": tweet_id}})
+        if r2.status_code >= 300:
+            api_error(r2, "creating the reply (POST /2/tweets)")
+        reply_url = f"https://x.com/{handle}/status/{r2.json()['data']['id']}"
+        print(f"reply:  {reply_url}")
+
+    from datetime import datetime, timezone
+    log = REPO / "drafts" / "x_text_posts.jsonl"
+    log.parent.mkdir(parents=True, exist_ok=True)
+    with log.open("a") as fh:
+        fh.write(json.dumps({
+            "tweet_id": tweet_id,
+            "url": url,
+            "reply_url": reply_url,
+            "chars": len(text),
+            "source": str(args.file) if args.file else None,
+            "posted_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        }) + "\n")
+    return 0
+
+
 def cmd_auth(_args) -> int:
     at = os.environ.get("X_ACCESS_TOKEN", "").strip()
     if at:
@@ -591,7 +647,15 @@ def main() -> int:
     po.add_argument("--campaign", help="promo-code campaign override")
     po.add_argument("--dry-run", action="store_true")
 
+    tx = sub.add_parser("text", help="send a free-text post with no project (announcements, company cuts)")
+    tx.add_argument("--text", help="the post body")
+    tx.add_argument("--file", help="read the post body from a file instead")
+    tx.add_argument("--reply", help="a follow-up reply posted under it (where the proof link goes)")
+    tx.add_argument("--dry-run", action="store_true")
+
     args = ap.parse_args()
+    if args.cmd == "text":
+        return cmd_text(args)
     if args.cmd == "auth":
         return cmd_auth(args)
     if args.cmd == "article":
