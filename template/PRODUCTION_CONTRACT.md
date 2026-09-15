@@ -261,8 +261,24 @@ to hold, and it is the same affordance every blog post already ships with.
 `just narrate {TICKER}` runs it alone, `--force` re-reads it, and `--dry-run` prints the
 cleaned text without billing TTS.
 
-**Author nothing for it.** The brief *is* the script, which has two consequences worth
-knowing while writing one:
+**Author nothing for it, and do NOT write the brief for the ear.** This section exists so you
+are not surprised by how the audio sounds - it is not licence to pre-clean the prose. The brief
+is a written document first: **use `$`, `%`, `M`/`B` and normal numerals exactly as you would in
+any financial write-up** (`$21.4B`, `13.9%`, `$281M`, `27.4%`).
+
+Be clear about what does and does not happen to that text: `normalize_for_tts` only respells
+`EBITDA`. It does **not** convert `$`, `%`, `M` or `B` - **ElevenLabs reads those symbols itself**,
+and the v3 model handles them well. So the instinct to pre-spell money for the ear is not
+baseless, it is simply the wrong trade: **the page wins.** A brief that reads "1,451 million
+dollars" is worse for every reader in order to be marginally safer for the narrator. If a
+number ever does read badly aloud, fix it in `_TTS_SUBSTITUTIONS`, not in the prose.
+
+Writing `1,451 million dollars` or `thirteen point nine percent` in a brief is a DEFECT. It
+happened on 2026-09-14 across five names authored in parallel - one shipped with zero `$` signs
+in the entire document, tables included - because this section was read as an instruction. The
+spoken-form rules apply to `script.json` `narration` ONLY.
+
+The brief *is* the script for the audio edition, which has two consequences worth knowing:
 
 - **Tables are dropped.** They read terribly aloud, so the narration hears only prose. A
   sentence that introduces a table ("Here is the table nobody builds:") lands on whatever

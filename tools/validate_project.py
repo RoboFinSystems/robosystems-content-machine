@@ -211,6 +211,21 @@ def check_brief(project_dir, ticker):
         text = fh.read()
     ok(f"Brief: reports/{ticker}_brief.md ({len(text):,} bytes)")
 
+    # The brief is a WRITTEN document: $21.4B, 13.9%, $281M. Spoken-form belongs in
+    # script.json narration only - normalize_for_tts converts the brief for the audio
+    # edition, so the author never should. On 2026-09-14 five parallel agents read the
+    # contract's narrated-brief section as an instruction and pre-cleaned the prose; one
+    # shipped with zero "$" in the whole document, tables included.
+    spoken = re.findall(r"\d[\d,.]*\s+(?:million|billion|thousand)\s+dollars?\b"
+                        r"|\d[\d,.]*\s+dollars\b", text, re.I)
+    if spoken:
+        warn(f"{len(spoken)} spoken-form money phrase(s) in the brief - it should read as "
+             f"written prose ($1,451M, not '1,451 million dollars'). TTS conversion is "
+             f"automatic; do not pre-clean. e.g. " + "; ".join(sorted(set(spoken))[:3]))
+    if "$" not in text and re.search(r"\d", text):
+        error("Brief contains no '$' at all - the spoken-form narration rules were applied "
+              "to the brief. Rewrite money in written notation.")
+
     lines = text.splitlines()
     if any(ln.startswith("# ") for ln in lines):
         ok("H1 present (becomes the /research page title)")
