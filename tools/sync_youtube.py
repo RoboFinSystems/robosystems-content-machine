@@ -1,13 +1,18 @@
 """
-Capture YouTube URLs into the research catalog by title-matching the channel's public
-RSS feed — no API key, no OAuth. After you upload to YouTube, run this; it matches each
+Capture YouTube URLs into the research catalog by title-matching the channel's uploads,
+read through the YouTube Data API. After you upload to YouTube, run this; it matches each
 ticker's titles (youtube_title / short_title / short_qa_title from
 publish.json) against the feed and writes youtube_url / short_youtube_url / short_qa_youtube_url
 into the LATEST version's S3 meta.json (content/{T}/meta.json), then reindexes so the portal can
 embed YouTube instead of streaming the S3 MP4.
 
-The feed only holds the ~15 most-recent uploads, so run it within a few uploads of posting.
-Channel id from $YT_CHANNEL_ID (e.g. UChqVvHIxAs_tAZedlV1UVLQ for @robosystems).
+Reads the FULL uploads playlist (paginated), not just recent ones, so it also backfills
+titles uploaded long ago or through YouTube Studio.
+
+Was RSS (youtube.com/feeds/videos.xml) until 2026-09-14, when that endpoint began returning
+404 for this channel while still serving others. It also only ever exposed the ~15 newest
+uploads, so it could never match the older cohort. Auth reuses $YT_REFRESH_TOKEN via
+upload_youtube.get_creds - run `just yt-auth` if it has expired.
 
 Usage:
     uv run python tools/sync_youtube.py            # all published tickers
@@ -20,25 +25,38 @@ import os
 import re
 import subprocess
 import sys
-import urllib.request
-
 import reindex
 from helpers import get_project_dir, require_env
 
-FEED = "https://www.youtube.com/feeds/videos.xml?channel_id={cid}"
-
 
 def fetch_feed(cid):
-    """[(title, video_url)] for the channel's recent uploads."""
-    req = urllib.request.Request(FEED.format(cid=cid), headers={"User-Agent": "Mozilla/5.0"})
-    xml = urllib.request.urlopen(req, timeout=30).read().decode("utf-8", "replace")
-    out = []
-    for entry in xml.split("<entry>")[1:]:
-        vid = re.search(r"<yt:videoId>([^<]+)", entry)
-        title = re.search(r"<title>([^<]+)", entry)
-        if vid and title:
-            out.append((_norm(title.group(1)), f"https://youtu.be/{vid.group(1)}"))
-    return out
+    """[(normalized_title, video_url)] for EVERY upload on the channel.
+
+    cid is accepted for signature compatibility and cross-checked against the
+    authenticated channel, so a stale $YT_CHANNEL_ID surfaces as an error rather
+    than a silent zero-match run.
+    """
+    import upload_youtube
+    from googleapiclient.discovery import build
+
+    yt = build("youtube", "v3", credentials=upload_youtube.get_creds(interactive=False))
+    chan = yt.channels().list(part="contentDetails", mine=True).execute().get("items") or []
+    if not chan:
+        sys.exit("YouTube API returned no channel for these credentials - run `just yt-auth`")
+    if cid and chan[0]["id"] != cid:
+        sys.exit(f"$YT_CHANNEL_ID is {cid} but the authenticated channel is {chan[0]['id']}")
+    uploads = chan[0]["contentDetails"]["relatedPlaylists"]["uploads"]
+
+    out, page = [], None
+    while True:
+        r = yt.playlistItems().list(part="snippet", playlistId=uploads,
+                                    maxResults=50, pageToken=page).execute()
+        for it in r.get("items", []):
+            sn = it["snippet"]
+            out.append((_norm(sn["title"]), f"https://youtu.be/{sn['resourceId']['videoId']}"))
+        page = r.get("nextPageToken")
+        if not page:
+            return out
 
 
 def _norm(s):
