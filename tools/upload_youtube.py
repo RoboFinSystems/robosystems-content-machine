@@ -259,6 +259,20 @@ def build_request_parts(ticker: str, args):
         if pj.exists():
             title = json.loads(pj.read_text()).get("youtube_title") or title
         description = (proj / "social" / f"{ticker}_youtube_description.txt").read_text()
+        # Authoring writes chapter times from duration ESTIMATES, before any render exists;
+        # only the render knows the real ones. build_postpack finalizes them for the paste-ready
+        # pack, but a direct `just yt-upload` bypassed that and shipped the estimates: SLQT was
+        # wrong on 12 of 13 chapters (last one off by 1:28) and INTU on 11 of 13. Chapters are
+        # clickable seek points, so every one lands the viewer in the wrong section, and nothing
+        # in `just validate` checks them. Finalize here, at the only place that always runs.
+        ts_file = proj / "videos" / f"{ticker}_timestamps.txt"
+        if ts_file.exists():
+            import build_postpack
+            fixed = build_postpack.finalize_chapters(description, ts_file.read_text())
+            if fixed != description:
+                print("chapters: rewritten from the render's timestamps "
+                      f"({ts_file.name}) - the authored ones were estimates")
+                description = fixed
         raw_tags = meta.get("tags", [])
         video = Path(args.video) if args.video else proj / "videos" / f"{ticker}_final.mp4"
         thumb = proj / "charts" / "png" / f"{ticker}_thumbnail.png"

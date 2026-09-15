@@ -188,6 +188,16 @@ def _normalize_png_thumbnail(src, out):
     else:
         copyfile(src, out)
         note += "  [ffmpeg not found — copied as-is, NOT resized; install ffmpeg to normalize]"
+    # YouTube rejects custom thumbnails over 2MB. Every 1920x1080 PNG this tool has produced
+    # has landed above it, so upload_youtube silently transcodes to JPEG on the way out. That
+    # works, but it means the file that ships is not the file anyone reviewed. Say so here.
+    try:
+        mb = os.path.getsize(out) / 1e6
+        if mb > 2.0:
+            note += (f"  [{mb:.1f} MB > YouTube's 2 MB cap - yt-upload will transcode "
+                     f"this to JPEG; review the upload, not this PNG]")
+    except OSError:
+        pass
     src_rel = f"{os.path.basename(os.path.dirname(src))}/{os.path.basename(src)}"
     print(f"  Thumbnail: {src_rel} -> "
           f"charts/png/{os.path.basename(out)} ({WIDTH}x{HEIGHT}){note}")

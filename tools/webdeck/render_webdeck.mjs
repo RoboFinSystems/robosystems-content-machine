@@ -16,6 +16,7 @@ import { mkdirSync, writeFileSync, existsSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import path from 'node:path';
 import puppeteer from 'puppeteer-core';
+import os from 'node:os';
 
 const args = {};
 for (let i = 2; i < process.argv.length; i++) {
@@ -26,7 +27,22 @@ for (let i = 2; i < process.argv.length; i++) {
 const HTML = path.resolve(args.html);
 const OUT = path.resolve(args.out);
 const FPS = Number(args.fps || 30);
-const WORKERS = Number(args.workers || 6);
+// Each worker is a headless Chrome. Six of them OOM-killed a render on 2026-09-14 while a VM
+// and an editor were resident (the OS killed it mid-run; zero frames written, no error, and the
+// STALE mp4 was left in place looking valid). Scale the default to free memory instead of
+// assuming a quiet machine; --workers still wins if passed.
+function defaultWorkers() {
+  if (args.workers) return Number(args.workers);
+  const freeGiB = os.freemem() / 1024 ** 3;
+  // Floor of 2: macOS os.freemem() counts only truly-free pages, not reclaimable cache, so it
+  // reads near-zero on a busy machine and would otherwise pin every render to a single worker.
+  // 2 is what completed the INTU re-render under the same pressure that killed 6.
+  const byMem = Math.floor(freeGiB / 1.5);          // ~1.5 GiB of headroom per Chrome
+  const n = Math.max(2, Math.min(6, byMem));
+  if (n < 6) console.log(`workers: ${n} (free memory ${freeGiB.toFixed(1)} GiB; --workers overrides)`);
+  return n;
+}
+const WORKERS = defaultWorkers();
 const W = Number(args.width || 1920);    // stage width  (portrait short: 1080)
 const H = Number(args.height || 1080);   // stage height (portrait short: 1920)
 const CHROME = args.chrome ||
