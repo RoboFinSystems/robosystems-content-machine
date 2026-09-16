@@ -107,85 +107,114 @@ html, body {{ width: {w}px; height: {h}px; overflow: hidden; }}
 
 
 def title_size(title: str) -> int:
-    """Orbitron is wide; step the headline down so long titles stay inside the 800px
-    canvas instead of overflowing it. Deterministic, and close enough by inspection."""
-    n = len(title)
-    return 92 if n <= 28 else 74 if n <= 48 else 60 if n <= 72 else 50 if n <= 100 else 42
+  """Orbitron is wide; step the headline down so long titles stay inside the 800px
+  canvas instead of overflowing it. Deterministic, and close enough by inspection."""
+  n = len(title)
+  return 92 if n <= 28 else 74 if n <= 48 else 60 if n <= 72 else 50 if n <= 100 else 42
 
 
 def _snap(html: str, out: Path) -> Path:
-    out.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.NamedTemporaryFile("w", suffix=".html", delete=False) as f:
-        f.write(html)
-        tmp = f.name
-    subprocess.run(["node", str(SNAP), "--html", tmp, "--out", str(out),
-                    "--width", str(W), "--height", str(H)],
-                   check=True, cwd=SNAP.parent)
-    print(f"cover: {out} ({out.stat().st_size // 1024}KB)")
-    return out
+  out.parent.mkdir(parents=True, exist_ok=True)
+  with tempfile.NamedTemporaryFile("w", suffix=".html", delete=False) as f:
+    f.write(html)
+    tmp = f.name
+  subprocess.run(
+    [
+      "node",
+      str(SNAP),
+      "--html",
+      tmp,
+      "--out",
+      str(out),
+      "--width",
+      str(W),
+      "--height",
+      str(H),
+    ],
+    check=True,
+    cwd=SNAP.parent,
+  )
+  print(f"cover: {out} ({out.stat().st_size // 1024}KB)")
+  return out
 
 
 def build_blog(slug: str, force: bool) -> Path:
-    d = REPO / "blog" / slug
-    if not d.is_dir():
-        sys.exit(f"no blog post at blog/{slug}/")
-    out = d / f"{slug}_article_cover.png"
-    if out.exists() and not force:
-        print(f"exists: {out} (use --force to regenerate)")
-        return out
+  d = REPO / "blog" / slug
+  if not d.is_dir():
+    sys.exit(f"no blog post at blog/{slug}/")
+  out = d / f"{slug}_article_cover.png"
+  if out.exists() and not force:
+    print(f"exists: {out} (use --force to regenerate)")
+    return out
 
-    meta, body = blog_common.parse_post(slug)
-    title = (meta.get("title") or slug.replace("-", " ")).strip()
-    try:
-        d_iso = blog_common.normalize_date(meta.get("date", ""))
-        when = datetime.date.fromisoformat(d_iso).strftime("%B %Y")
-    except ValueError:
-        when = datetime.date.today().strftime("%B %Y")
-    meta_line = f"{when} · {blog_common.reading_time_minutes(body)} min read"
+  meta, body = blog_common.parse_post(slug)
+  title = (meta.get("title") or slug.replace("-", " ")).strip()
+  try:
+    d_iso = blog_common.normalize_date(meta.get("date", ""))
+    when = datetime.date.fromisoformat(d_iso).strftime("%B %Y")
+  except ValueError:
+    when = datetime.date.today().strftime("%B %Y")
+  meta_line = f"{when} · {blog_common.reading_time_minutes(body)} min read"
 
-    html = BLOG_PAGE.format(fonts=FONTS.as_uri(), bg=BACKGROUND.as_uri(), w=W, h=H,
-                            size=title_size(title), title=html_escape(title), meta=meta_line)
-    return _snap(html, out)
+  html = BLOG_PAGE.format(
+    fonts=FONTS.as_uri(),
+    bg=BACKGROUND.as_uri(),
+    w=W,
+    h=H,
+    size=title_size(title),
+    title=html_escape(title),
+    meta=meta_line,
+  )
+  return _snap(html, out)
 
 
 def html_escape(s: str) -> str:
-    return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+  return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
 def build(ticker: str, force: bool) -> Path:
-    proj = REPO / "projects" / ticker
-    out = proj / "charts" / "png" / f"{ticker}_article_cover.png"
-    if out.exists() and not force:
-        print(f"exists: {out} (use --force to regenerate)")
-        return out
+  proj = REPO / "projects" / ticker
+  out = proj / "charts" / "png" / f"{ticker}_article_cover.png"
+  if out.exists() and not force:
+    print(f"exists: {out} (use --force to regenerate)")
+    return out
 
-    meta = json.loads((proj / "scripts" / f"{ticker}_script.json").read_text())["metadata"]
-    company = meta.get("company", ticker)
-    filing = meta.get("filing_type", "")
-    try:
-        d = datetime.date.fromisoformat(meta.get("filing_date", ""))
-        when = d.strftime("%B %Y")
-    except ValueError:
-        when = datetime.date.today().strftime("%B %Y")
-    meta_line = f"{filing} Analysis · {when}" if filing else when
+  meta = json.loads((proj / "scripts" / f"{ticker}_script.json").read_text())[
+    "metadata"
+  ]
+  company = meta.get("company", ticker)
+  filing = meta.get("filing_type", "")
+  try:
+    d = datetime.date.fromisoformat(meta.get("filing_date", ""))
+    when = d.strftime("%B %Y")
+  except ValueError:
+    when = datetime.date.today().strftime("%B %Y")
+  meta_line = f"{filing} Analysis · {when}" if filing else when
 
-    html = PAGE.format(fonts=FONTS.as_uri(), bg=BACKGROUND.as_uri(),
-                       w=W, h=H, ticker=ticker, company=company, meta=meta_line)
-    return _snap(html, out)
+  html = PAGE.format(
+    fonts=FONTS.as_uri(),
+    bg=BACKGROUND.as_uri(),
+    w=W,
+    h=H,
+    ticker=ticker,
+    company=company,
+    meta=meta_line,
+  )
+  return _snap(html, out)
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser()
-    ap.add_argument("target", help="TICKER, or a blog slug with --blog")
-    ap.add_argument("--blog", action="store_true", help="target is a blog slug")
-    ap.add_argument("--force", action="store_true")
-    args = ap.parse_args()
-    if args.blog:
-        build_blog(args.target, args.force)
-    else:
-        build(args.target.upper(), args.force)
-    return 0
+  ap = argparse.ArgumentParser()
+  ap.add_argument("target", help="TICKER, or a blog slug with --blog")
+  ap.add_argument("--blog", action="store_true", help="target is a blog slug")
+  ap.add_argument("--force", action="store_true")
+  args = ap.parse_args()
+  if args.blog:
+    build_blog(args.target, args.force)
+  else:
+    build(args.target.upper(), args.force)
+  return 0
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+  sys.exit(main())

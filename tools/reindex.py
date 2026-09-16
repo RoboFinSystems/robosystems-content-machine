@@ -40,11 +40,11 @@ PROJECTS = os.path.join(ROOT, "projects")
 
 # filename suffix -> catalog asset key
 SUFFIX_MAP = [
-    ("_final.mp4", "video"),
-    ("_short.mp4", "short"),
-    ("_brief.md", "brief"),
-    ("_narration.mp3", "narration"),   # the audio article — a read of the brief
-    ("_thumbnail.png", "thumbnail"),
+  ("_final.mp4", "video"),
+  ("_short.mp4", "short"),
+  ("_brief.md", "brief"),
+  ("_narration.mp3", "narration"),  # the audio article — a read of the brief
+  ("_thumbnail.png", "thumbnail"),
 ]
 
 # Fields a published meta.json may still carry from a retired format. Dropped on the way
@@ -55,316 +55,387 @@ RETIRED_META_FIELDS = {"podcast_youtube_url", "podcast_episode_title"}
 
 
 def quarter(date_str):
-    """'2026-06-22' -> '2026-Q2' (calendar quarter; coverage cadence is quarterly)."""
-    y, m = int(date_str[:4]), int(date_str[5:7])
-    return f"{y}-Q{(m - 1) // 3 + 1}"
+  """'2026-06-22' -> '2026-Q2' (calendar quarter; coverage cadence is quarterly)."""
+  y, m = int(date_str[:4]), int(date_str[5:7])
+  return f"{y}-Q{(m - 1) // 3 + 1}"
 
 
 def version_date(listing, ticker):
-    """Upload date of the artifact that dates a published version: the brief (every
-    ticker has one), falling back to the video for older video-first publishes."""
-    by_name = dict(listing)
-    return by_name.get(f"{ticker}_brief.md") or by_name.get(f"{ticker}_final.mp4")
+  """Upload date of the artifact that dates a published version: the brief (every
+  ticker has one), falling back to the video for older video-first publishes."""
+  by_name = dict(listing)
+  return by_name.get(f"{ticker}_brief.md") or by_name.get(f"{ticker}_final.mp4")
 
 
 def _aws_ls(bucket, prefix):
-    """Raw `aws s3 ls` lines under prefix, with retries.
+  """Raw `aws s3 ls` lines under prefix, with retries.
 
-    An empty listing and a FAILED listing look identical downstream (both used to
-    return []), and the caller reads "no {T}_brief.md" as "not published" and drops
-    the ticker. A rebuild issues 150+ CLI calls back to back, so a throttle or an SSO
-    hiccup on a handful of them silently shrank the live catalog from 53 entries to
-    17 and published it over the good one. Retry, then fail LOUDLY: a partial scan
-    must never be mistaken for a complete one.
-    """
-    last = None
-    for attempt in range(4):
-        r = subprocess.run(["aws", "s3", "ls", f"s3://{bucket}/{prefix}"],
-                           capture_output=True, text=True)
-        if r.returncode == 0:
-            return r.stdout.splitlines()
-        # rc=1 with no stderr is the documented "no objects matched" exit, not an error.
-        if r.returncode == 1 and not r.stderr.strip():
-            return []
-        last = r.stderr.strip() or f"exit {r.returncode}"
-        time.sleep(0.5 * 2 ** attempt)
-    raise RuntimeError(f"`aws s3 ls s3://{bucket}/{prefix}` failed after 4 tries: {last}")
+  An empty listing and a FAILED listing look identical downstream (both used to
+  return []), and the caller reads "no {T}_brief.md" as "not published" and drops
+  the ticker. A rebuild issues 150+ CLI calls back to back, so a throttle or an SSO
+  hiccup on a handful of them silently shrank the live catalog from 53 entries to
+  17 and published it over the good one. Retry, then fail LOUDLY: a partial scan
+  must never be mistaken for a complete one.
+  """
+  last = None
+  for attempt in range(4):
+    r = subprocess.run(
+      ["aws", "s3", "ls", f"s3://{bucket}/{prefix}"], capture_output=True, text=True
+    )
+    if r.returncode == 0:
+      return r.stdout.splitlines()
+    # rc=1 with no stderr is the documented "no objects matched" exit, not an error.
+    if r.returncode == 1 and not r.stderr.strip():
+      return []
+    last = r.stderr.strip() or f"exit {r.returncode}"
+    time.sleep(0.5 * 2**attempt)
+  raise RuntimeError(f"`aws s3 ls s3://{bucket}/{prefix}` failed after 4 tries: {last}")
 
 
 def s3_ls(bucket, prefix):
-    """[(name, date)] for objects directly under prefix; skips 'PRE <dir>/' rows."""
-    rows = []
-    for line in _aws_ls(bucket, prefix):
-        p = line.split()
-        if not p or p[0] == "PRE":
-            continue
-        rows.append((p[-1], p[0]))   # (name, "YYYY-MM-DD")
-    return rows
+  """[(name, date)] for objects directly under prefix; skips 'PRE <dir>/' rows."""
+  rows = []
+  for line in _aws_ls(bucket, prefix):
+    p = line.split()
+    if not p or p[0] == "PRE":
+      continue
+    rows.append((p[-1], p[0]))  # (name, "YYYY-MM-DD")
+  return rows
 
 
 def s3_ls_dirs(bucket, prefix):
-    """Sub-'directory' names (the 'PRE x/' rows) directly under prefix."""
-    return [p.split()[-1].rstrip("/") for p in _aws_ls(bucket, prefix)
-            if p.split() and p.split()[0] == "PRE"]
+  """Sub-'directory' names (the 'PRE x/' rows) directly under prefix."""
+  return [
+    p.split()[-1].rstrip("/")
+    for p in _aws_ls(bucket, prefix)
+    if p.split() and p.split()[0] == "PRE"
+  ]
 
 
 def s3_get_json(bucket, key):
-    """Parsed JSON at key, or None if the key genuinely does not exist.
+  """Parsed JSON at key, or None if the key genuinely does not exist.
 
-    None means "no meta.json yet" and the caller rebuilds meta from the local project -
-    which silently DISCARDS anything only S3 knows, notably the youtube_url that
-    sync-youtube stamps there. So a transient fetch failure must not return None;
-    retry, then raise.
-    """
-    last = None
-    for attempt in range(4):
-        r = subprocess.run(["aws", "s3", "cp", f"s3://{bucket}/{key}", "-"],
-                           capture_output=True, text=True)
-        if r.returncode == 0:
-            if not r.stdout.strip():
-                return None
-            try:
-                return json.loads(r.stdout)
-            except json.JSONDecodeError:
-                return None
-        if "404" in r.stderr or "Not Found" in r.stderr or "NoSuchKey" in r.stderr:
-            return None       # the object really is absent - the legitimate None
-        last = r.stderr.strip() or f"exit {r.returncode}"
-        time.sleep(0.5 * 2 ** attempt)
-    raise RuntimeError(f"fetching s3://{bucket}/{key} failed after 4 tries: {last}")
+  None means "no meta.json yet" and the caller rebuilds meta from the local project -
+  which silently DISCARDS anything only S3 knows, notably the youtube_url that
+  sync-youtube stamps there. So a transient fetch failure must not return None;
+  retry, then raise.
+  """
+  last = None
+  for attempt in range(4):
+    r = subprocess.run(
+      ["aws", "s3", "cp", f"s3://{bucket}/{key}", "-"], capture_output=True, text=True
+    )
+    if r.returncode == 0:
+      if not r.stdout.strip():
+        return None
+      try:
+        return json.loads(r.stdout)
+      except json.JSONDecodeError:
+        return None
+    if "404" in r.stderr or "Not Found" in r.stderr or "NoSuchKey" in r.stderr:
+      return None  # the object really is absent - the legitimate None
+    last = r.stderr.strip() or f"exit {r.returncode}"
+    time.sleep(0.5 * 2**attempt)
+  raise RuntimeError(f"fetching s3://{bucket}/{key} failed after 4 tries: {last}")
 
 
 def s3_put_json(bucket, key, obj):
-    # Short max-age: this catalog/meta is rewritten on every publish + sync-youtube, so the
-    # CDN (CachingOptimized, 24h default) must not serve it stale. Media stays on the long
-    # default TTL — it's large, egress-costly, and only changes on a (rare) re-cover.
-    subprocess.run(
-        ["aws", "s3", "cp", "-", f"s3://{bucket}/{key}",
-         "--content-type", "application/json; charset=utf-8",
-         "--cache-control", "public, max-age=60", "--only-show-errors"],
-        input=json.dumps(obj, indent=2, ensure_ascii=False), text=True, check=True,
-    )
+  # Short max-age: this catalog/meta is rewritten on every publish + sync-youtube, so the
+  # CDN (CachingOptimized, 24h default) must not serve it stale. Media stays on the long
+  # default TTL — it's large, egress-costly, and only changes on a (rare) re-cover.
+  subprocess.run(
+    [
+      "aws",
+      "s3",
+      "cp",
+      "-",
+      f"s3://{bucket}/{key}",
+      "--content-type",
+      "application/json; charset=utf-8",
+      "--cache-control",
+      "public, max-age=60",
+      "--only-show-errors",
+    ],
+    input=json.dumps(obj, indent=2, ensure_ascii=False),
+    text=True,
+    check=True,
+  )
 
 
 def _load(path):
-    try:
-        with open(path, encoding="utf-8") as f:
-            return json.load(f)
-    except (OSError, json.JSONDecodeError):
-        return {}
+  try:
+    with open(path, encoding="utf-8") as f:
+      return json.load(f)
+  except (OSError, json.JSONDecodeError):
+    return {}
 
 
 def strip_md(s):
-    """Inline markdown -> plain text. These strings land in <title>/<meta> tags and SERP
-    snippets, where '**$238.1 million**' renders its asterisks literally."""
-    s = re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", s)   # [text](url) -> text
-    return re.sub(r"\*\*|__|[*_`]", "", s).strip()
+  """Inline markdown -> plain text. These strings land in <title>/<meta> tags and SERP
+  snippets, where '**$238.1 million**' renders its asterisks literally."""
+  s = re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", s)  # [text](url) -> text
+  return re.sub(r"\*\*|__|[*_`]", "", s).strip()
 
 
 def brief_headline(pdir, ticker):
-    """(title, summary) read off the brief's leading '# H1' + the paragraph under it.
-    Brief-only coverage has no script.json/publish.json to take a video title from,
-    and the portal strips this same H1 when it renders the markdown."""
-    try:
-        with open(os.path.join(pdir, "reports", f"{ticker}_brief.md"), encoding="utf-8") as fh:
-            lines = fh.read().splitlines()
-    except OSError:
-        return "", ""
-    title = next((ln.lstrip("# ").strip() for ln in lines if ln.startswith("# ")), "")
-    # First line of actual prose. Briefs commonly open with an italic source-note
-    # ("*RoboSystems Cannabis Coverage · Narrative Brief · Drafted June 29, 2026*"),
-    # which is useless as a search snippet — skip that, headings, quotes, rules,
-    # list/table rows, and anything too short to be a lede.
-    body = next((s for ln in lines
-                 if (s := ln.strip())
-                 and not s.startswith(("#", "*", "_", ">", "-", "|", "!", "`", "["))
-                 and len(s) > 60), "")
-    return strip_md(title), strip_md(body)
+  """(title, summary) read off the brief's leading '# H1' + the paragraph under it.
+  Brief-only coverage has no script.json/publish.json to take a video title from,
+  and the portal strips this same H1 when it renders the markdown."""
+  try:
+    with open(
+      os.path.join(pdir, "reports", f"{ticker}_brief.md"), encoding="utf-8"
+    ) as fh:
+      lines = fh.read().splitlines()
+  except OSError:
+    return "", ""
+  title = next((ln.lstrip("# ").strip() for ln in lines if ln.startswith("# ")), "")
+  # First line of actual prose. Briefs commonly open with an italic source-note
+  # ("*RoboSystems Cannabis Coverage · Narrative Brief · Drafted June 29, 2026*"),
+  # which is useless as a search snippet — skip that, headings, quotes, rules,
+  # list/table rows, and anything too short to be a lede.
+  body = next(
+    (
+      s
+      for ln in lines
+      if (s := ln.strip())
+      and not s.startswith(("#", "*", "_", ">", "-", "|", "!", "`", "["))
+      and len(s) > 60
+    ),
+    "",
+  )
+  return strip_md(title), strip_md(body)
 
 
 PERIOD_RE = re.compile(r"\b(Q[1-4]|FY ?'?\d{2,4}|20\d\d|10-K|10-Q|earnings)\b", re.I)
 
 
 def _names(s, ticker, company):
-    s = s.lower()
-    short = company.lower().split(",")[0].strip()
-    return ticker.lower() in s or (len(short) > 2 and short in s)
+  s = s.lower()
+  short = company.lower().split(",")[0].strip()
+  return ticker.lower() in s or (len(short) > 2 and short in s)
 
 
-def seo_fields(ticker, company, date, editorial_title, brief_title, brief_summary, editorial_summary):
-    """The search-facing title/description, kept separate from the editorial `title` the
-    page shows. Google prints these verbatim.
+def seo_fields(
+  ticker, company, date, editorial_title, brief_title, brief_summary, editorial_summary
+):
+  """The search-facing title/description, kept separate from the editorial `title` the
+  page shows. Google prints these verbatim.
 
-    Title: the long-video title when it already names the company or ticker and a period
-    ("Starbucks SBUX Q3 FY2026 Earnings: Revenue Down 1.4%, Profit Up 87%"). Those are
-    written search-first, and 39 of 59 projects have one. Otherwise compose company (ticker),
-    the year, "Earnings", and the brief's hook. The previous template
-    ("MGP Ingredients, Inc. (MGPI) SEC Filing Analysis") carried no period and no finding:
-    it sat at position ~10 for "mgp whiskey q2 sales" with 212 impressions and 0 clicks
-    (Search Console, 3mo to 2026-09-02). Year, not quarter, in the composed form: `version`
-    is the publish quarter, not the fiscal period covered, and a 10-K labelled "Q3 Earnings"
-    would be a wrong claim.
+  Title: the long-video title when it already names the company or ticker and a period
+  ("Starbucks SBUX Q3 FY2026 Earnings: Revenue Down 1.4%, Profit Up 87%"). Those are
+  written search-first, and 39 of 59 projects have one. Otherwise compose company (ticker),
+  the year, "Earnings", and the brief's hook. The previous template
+  ("MGP Ingredients, Inc. (MGPI) SEC Filing Analysis") carried no period and no finding:
+  it sat at position ~10 for "mgp whiskey q2 sales" with 212 impressions and 0 clicks
+  (Search Console, 3mo to 2026-09-02). Year, not quarter, in the composed form: `version`
+  is the publish quarter, not the fiscal period covered, and a 10-K labelled "Q3 Earnings"
+  would be a wrong claim.
 
-    Description: the brief's opening paragraph, which leads with the concrete numbers and
-    beats the video blurb as a snippet.
+  Description: the brief's opening paragraph, which leads with the concrete numbers and
+  beats the video blurb as a snippet.
 
-    Composed here rather than at publish time so it reaches already-published coverage on
-    the next reindex, with meta.json free to override either field per ticker."""
-    text = (brief_summary or editorial_summary or "").strip()
-    if len(text) > 155:  # Google truncates ~155-160; cut on a word so it reads as prose
-        text = text[:155].rsplit(" ", 1)[0].rstrip(" ,;:-") + "…"
-    # Some catalog names already carry a parenthetical ("GE Aerospace (General Electric
-    # Company)"), which would double up against the ticker we append.
-    company = re.sub(r"\s*\([^)]*\)\s*$", "", company).strip() or ticker
+  Composed here rather than at publish time so it reaches already-published coverage on
+  the next reindex, with meta.json free to override either field per ticker."""
+  text = (brief_summary or editorial_summary or "").strip()
+  if len(text) > 155:  # Google truncates ~155-160; cut on a word so it reads as prose
+    text = text[:155].rsplit(" ", 1)[0].rstrip(" ,;:-") + "…"
+  # Some catalog names already carry a parenthetical ("GE Aerospace (General Electric
+  # Company)"), which would double up against the ticker we append.
+  company = re.sub(r"\s*\([^)]*\)\s*$", "", company).strip() or ticker
 
-    title = ""
-    for cand in (editorial_title, brief_title):
-        cand = strip_md(cand or "").strip()
-        if cand and _names(cand, ticker, company) and PERIOD_RE.search(cand):
-            title = cand
-            break
-    if not title:
-        year = (date or "")[:4]
-        hook = strip_md(brief_title or editorial_title or "").strip()
-        if not re.fullmatch(r"[A-Z.]{1,6}", ticker):
-            # A campaign/sector page ("CANNABIS"), not a filer: the brief's H1 already names
-            # the subject, so keep it and date it.
-            title = hook or f"{company} SEC Filing Analysis"
-            if title and not PERIOD_RE.search(title) and year:
-                title = f"{title} ({year})"
-        else:
-            short = re.sub(r",?\s+(Inc\.?|Corp\.?|Corporation|Ltd\.?|LLC|plc|Co\.?)$", "", company, flags=re.I).strip()
-            base = f"{short} ({ticker})" if short.lower() != ticker.lower() else ticker
-            base = f"{base} {year} Earnings" if year else f"{base} Earnings"
-            # Drop a lead like "Conagra Brands (CAG):", "KB Home (NYSE: KBH):", "Jushi (JUSHF) -"
-            # so the name isn't printed twice.
-            hook = re.sub(rf"^[^:\u2014\u2013]*?\((?:[A-Z]+:\s*)?\$?{re.escape(ticker)}\)\s*[:\u2014\u2013-]\s*",
-                          "", hook, flags=re.I)
-            hook = re.sub(rf"^\s*{re.escape(short)}\s*[:\u2014\u2013-]\s*", "", hook, flags=re.I)
-            title = f"{base}: {hook}" if hook and hook.lower() not in base.lower() \
-                else f"{base}: SEC Filing Analysis"
-    return {"seo_title": title, "seo_description": text}
+  title = ""
+  for cand in (editorial_title, brief_title):
+    cand = strip_md(cand or "").strip()
+    if cand and _names(cand, ticker, company) and PERIOD_RE.search(cand):
+      title = cand
+      break
+  if not title:
+    year = (date or "")[:4]
+    hook = strip_md(brief_title or editorial_title or "").strip()
+    if not re.fullmatch(r"[A-Z.]{1,6}", ticker):
+      # A campaign/sector page ("CANNABIS"), not a filer: the brief's H1 already names
+      # the subject, so keep it and date it.
+      title = hook or f"{company} SEC Filing Analysis"
+      if title and not PERIOD_RE.search(title) and year:
+        title = f"{title} ({year})"
+    else:
+      short = re.sub(
+        r",?\s+(Inc\.?|Corp\.?|Corporation|Ltd\.?|LLC|plc|Co\.?)$",
+        "",
+        company,
+        flags=re.I,
+      ).strip()
+      base = f"{short} ({ticker})" if short.lower() != ticker.lower() else ticker
+      base = f"{base} {year} Earnings" if year else f"{base} Earnings"
+      # Drop a lead like "Conagra Brands (CAG):", "KB Home (NYSE: KBH):", "Jushi (JUSHF) -"
+      # so the name isn't printed twice.
+      hook = re.sub(
+        rf"^[^:\u2014\u2013]*?\((?:[A-Z]+:\s*)?\$?{re.escape(ticker)}\)\s*[:\u2014\u2013-]\s*",
+        "",
+        hook,
+        flags=re.I,
+      )
+      hook = re.sub(
+        rf"^\s*{re.escape(short)}\s*[:\u2014\u2013-]\s*", "", hook, flags=re.I
+      )
+      title = (
+        f"{base}: {hook}"
+        if hook and hook.lower() not in base.lower()
+        else f"{base}: SEC Filing Analysis"
+      )
+  return {"seo_title": title, "seo_description": text}
 
 
 def project_meta(ticker):
-    """Rich metadata from the local project (title, summary, tags, company, campaign).
-    Used for a freshly-published latest that has no meta.json yet, and by publish."""
-    pdir = os.path.join(PROJECTS, ticker)
-    meta = (_load(os.path.join(pdir, "scripts", f"{ticker}_script.json")) or {}).get("metadata", {})
-    pub = _load(os.path.join(pdir, "social", f"{ticker}_publish.json"))
-    campaign = meta.get("campaign")
-    b_title, b_summary = brief_headline(pdir, ticker)
-    out = {
-        "company": meta.get("company") or ticker,
-        "title": (pub.get("youtube_title") or meta.get("video_title") or b_title or ticker).strip(),
-        "summary": (meta.get("video_description") or b_summary or "").strip(),
-        "tags": meta.get("tags") or [],
-        "campaign": campaign,
-        "campaign_slug": "cannabis_coverage" if "cannabis" in (campaign or "").lower() else None,
-        "coverage_label": meta.get("coverage_label"),
-    }
-    # Deliberate per-ticker overrides for the /research <title> / description, authored in
-    # publish.json. They ride into meta.json at publish and win over seo_fields' composed
-    # defaults (reindex uses setdefault). Absent by default; seo_fields does the work.
-    for k in ("seo_title", "seo_description"):
-        if str(pub.get(k) or "").strip():
-            out[k] = pub[k].strip()
-    return out
+  """Rich metadata from the local project (title, summary, tags, company, campaign).
+  Used for a freshly-published latest that has no meta.json yet, and by publish."""
+  pdir = os.path.join(PROJECTS, ticker)
+  meta = (_load(os.path.join(pdir, "scripts", f"{ticker}_script.json")) or {}).get(
+    "metadata", {}
+  )
+  pub = _load(os.path.join(pdir, "social", f"{ticker}_publish.json"))
+  campaign = meta.get("campaign")
+  b_title, b_summary = brief_headline(pdir, ticker)
+  out = {
+    "company": meta.get("company") or ticker,
+    "title": (
+      pub.get("youtube_title") or meta.get("video_title") or b_title or ticker
+    ).strip(),
+    "summary": (meta.get("video_description") or b_summary or "").strip(),
+    "tags": meta.get("tags") or [],
+    "campaign": campaign,
+    "campaign_slug": "cannabis_coverage"
+    if "cannabis" in (campaign or "").lower()
+    else None,
+    "coverage_label": meta.get("coverage_label"),
+  }
+  # Deliberate per-ticker overrides for the /research <title> / description, authored in
+  # publish.json. They ride into meta.json at publish and win over seo_fields' composed
+  # defaults (reindex uses setdefault). Absent by default; seo_fields does the work.
+  for k in ("seo_title", "seo_description"):
+    if str(pub.get(k) or "").strip():
+      out[k] = pub[k].strip()
+  return out
 
 
 def map_assets(names, prefix):
-    """Map a folder's filenames to {asset_key: public_url} by suffix."""
-    out = {}
-    for name in sorted(names):
-        for suf, key in SUFFIX_MAP:
-            if name.endswith(suf) and key not in out:
-                out[key] = asset_url(f"{prefix}{name}")
-                break
-    return out
+  """Map a folder's filenames to {asset_key: public_url} by suffix."""
+  out = {}
+  for name in sorted(names):
+    for suf, key in SUFFIX_MAP:
+      if name.endswith(suf) and key not in out:
+        out[key] = asset_url(f"{prefix}{name}")
+        break
+  return out
 
 
 def run(allow_shrink=False):
-    bucket = require_env("AWS_S3_BUCKET")
-    tickers = sorted(d for d in os.listdir(PROJECTS)
-                     if os.path.isdir(os.path.join(PROJECTS, d))
-                     and not d.startswith(".") and d != "archive")  # archive/ = retired tickers, not a ticker
+  bucket = require_env("AWS_S3_BUCKET")
+  tickers = sorted(
+    d
+    for d in os.listdir(PROJECTS)
+    if os.path.isdir(os.path.join(PROJECTS, d))
+    and not d.startswith(".")
+    and d != "archive"
+  )  # archive/ = retired tickers, not a ticker
 
-    items = []
-    for t in tickers:
-        flat = f"content/{t}/"
-        listing = s3_ls(bucket, flat)
-        present = {n for n, _ in listing}
-        if f"{t}_brief.md" not in present:
-            continue  # not published — skip
+  items = []
+  for t in tickers:
+    flat = f"content/{t}/"
+    listing = s3_ls(bucket, flat)
+    present = {n for n, _ in listing}
+    if f"{t}_brief.md" not in present:
+      continue  # not published — skip
 
-        meta = s3_get_json(bucket, f"{flat}meta.json")
-        if not meta:  # freshly published before meta.json existed — derive from local
-            date = version_date(listing, t) or datetime.date.today().isoformat()
-            meta = {**project_meta(t), "date": date, "version": quarter(date)}
+    meta = s3_get_json(bucket, f"{flat}meta.json")
+    if not meta:  # freshly published before meta.json existed — derive from local
+      date = version_date(listing, t) or datetime.date.today().isoformat()
+      meta = {**project_meta(t), "date": date, "version": quarter(date)}
 
-        meta = {k: v for k, v in meta.items() if k not in RETIRED_META_FIELDS}
-        item = {"ticker": t, **meta, "assets": map_assets(present, flat)}
-        # setdefault: a per-ticker override in meta.json wins over the composed default.
-        b_title, b_summary = brief_headline(os.path.join(PROJECTS, t), t)
-        for k, v in seo_fields(t, item.get("company") or t, item.get("date", ""),
-                               item.get("title", ""), b_title,
-                               b_summary, item.get("summary", "")).items():
-            item.setdefault(k, v)
+    meta = {k: v for k, v in meta.items() if k not in RETIRED_META_FIELDS}
+    item = {"ticker": t, **meta, "assets": map_assets(present, flat)}
+    # setdefault: a per-ticker override in meta.json wins over the composed default.
+    b_title, b_summary = brief_headline(os.path.join(PROJECTS, t), t)
+    for k, v in seo_fields(
+      t,
+      item.get("company") or t,
+      item.get("date", ""),
+      item.get("title", ""),
+      b_title,
+      b_summary,
+      item.get("summary", ""),
+    ).items():
+      item.setdefault(k, v)
 
-        history = []
-        for ver in sorted(s3_ls_dirs(bucket, f"{flat}archive/"), reverse=True):
-            aprefix = f"{flat}archive/{ver}/"
-            anames = {n for n, _ in s3_ls(bucket, aprefix)}
-            ameta = s3_get_json(bucket, f"{aprefix}meta.json") or {"version": ver}
-            ameta = {k: v for k, v in ameta.items() if k not in RETIRED_META_FIELDS}
-            history.append({**ameta, "version": ameta.get("version", ver),
-                            "assets": map_assets(anames, aprefix)})
-        item["history"] = history
-        items.append(item)
+    history = []
+    for ver in sorted(s3_ls_dirs(bucket, f"{flat}archive/"), reverse=True):
+      aprefix = f"{flat}archive/{ver}/"
+      anames = {n for n, _ in s3_ls(bucket, aprefix)}
+      ameta = s3_get_json(bucket, f"{aprefix}meta.json") or {"version": ver}
+      ameta = {k: v for k, v in ameta.items() if k not in RETIRED_META_FIELDS}
+      history.append(
+        {
+          **ameta,
+          "version": ameta.get("version", ver),
+          "assets": map_assets(anames, aprefix),
+        }
+      )
+    item["history"] = history
+    items.append(item)
 
-    index = {
-        "generated": datetime.datetime.now().isoformat(timespec="seconds"),
-        "count": len(items),
-        "items": sorted(items, key=lambda x: x.get("date", ""), reverse=True),
-    }
+  index = {
+    "generated": datetime.datetime.now().isoformat(timespec="seconds"),
+    "count": len(items),
+    "items": sorted(items, key=lambda x: x.get("date", ""), reverse=True),
+  }
 
-    # Backstop for anything that still slips a ticker out of the scan. The catalog only
-    # ever grows (retiring a ticker moves it to projects/archive/, which also drops it
-    # from `tickers` and is the one legitimate shrink). Publishing is destructive - the
-    # portal reads this one file - so a smaller catalog stops here instead of going live.
-    live = s3_get_json(bucket, "content/index.json") or {}
-    lost = {i["ticker"] for i in live.get("items", [])} - {i["ticker"] for i in items}
-    if lost and not allow_shrink:
-        raise SystemExit(
-            f"REFUSING to publish: {len(lost)} ticker(s) in the live catalog are missing "
-            f"from this scan: {', '.join(sorted(lost))}\n"
-            f"  live={len(live.get('items', []))} -> new={len(items)}\n"
-            "  Re-run; if they were deliberately retired, pass --allow-shrink."
-        )
+  # Backstop for anything that still slips a ticker out of the scan. The catalog only
+  # ever grows (retiring a ticker moves it to projects/archive/, which also drops it
+  # from `tickers` and is the one legitimate shrink). Publishing is destructive - the
+  # portal reads this one file - so a smaller catalog stops here instead of going live.
+  live = s3_get_json(bucket, "content/index.json") or {}
+  lost = {i["ticker"] for i in live.get("items", [])} - {i["ticker"] for i in items}
+  if lost and not allow_shrink:
+    raise SystemExit(
+      f"REFUSING to publish: {len(lost)} ticker(s) in the live catalog are missing "
+      f"from this scan: {', '.join(sorted(lost))}\n"
+      f"  live={len(live.get('items', []))} -> new={len(items)}\n"
+      "  Re-run; if they were deliberately retired, pass --allow-shrink."
+    )
 
-    s3_put_json(bucket, "content/index.json", index)
+  s3_put_json(bucket, "content/index.json", index)
 
-    local_copy = os.path.join(ROOT, "local", "content_index.json")
-    os.makedirs(os.path.dirname(local_copy), exist_ok=True)
-    with open(local_copy, "w", encoding="utf-8") as f:
-        json.dump(index, f, indent=2, ensure_ascii=False)
+  local_copy = os.path.join(ROOT, "local", "content_index.json")
+  os.makedirs(os.path.dirname(local_copy), exist_ok=True)
+  with open(local_copy, "w", encoding="utf-8") as f:
+    json.dump(index, f, indent=2, ensure_ascii=False)
 
-    print(f"Catalog: {len(items)} item(s) -> s3://{bucket}/content/index.json")
-    for it in index["items"]:
-        extra = f"  (+{len(it['history'])} archived: {', '.join(h['version'] for h in it['history'])})" \
-            if it["history"] else ""
-        print(f"  {it['ticker']:6} {it.get('version','?')}  {len(it['assets'])} assets{extra}")
-    print(f"Local copy: {local_copy}")
-    return index
+  print(f"Catalog: {len(items)} item(s) -> s3://{bucket}/content/index.json")
+  for it in index["items"]:
+    extra = (
+      f"  (+{len(it['history'])} archived: {', '.join(h['version'] for h in it['history'])})"
+      if it["history"]
+      else ""
+    )
+    print(
+      f"  {it['ticker']:6} {it.get('version', '?')}  {len(it['assets'])} assets{extra}"
+    )
+  print(f"Local copy: {local_copy}")
+  return index
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Rebuild the research catalog (content/index.json)")
-    ap.add_argument("--allow-shrink", action="store_true",
-                    help="publish even though tickers in the live catalog are absent from "
-                         "this scan (use after deliberately retiring one)")
-    run(allow_shrink=ap.parse_args().allow_shrink)
+  ap = argparse.ArgumentParser(
+    description="Rebuild the research catalog (content/index.json)"
+  )
+  ap.add_argument(
+    "--allow-shrink",
+    action="store_true",
+    help="publish even though tickers in the live catalog are absent from "
+    "this scan (use after deliberately retiring one)",
+  )
+  run(allow_shrink=ap.parse_args().allow_shrink)
 
 
 if __name__ == "__main__":
-    main()
+  main()

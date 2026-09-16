@@ -33,116 +33,135 @@ CHAT_PREF = ["gpt-5", "gpt-5-mini", "gpt-4.1", "gpt-4.1-mini", "gpt-4o", "gpt-4o
 # aspect (no crop that would clip the composition) then clean-scale to the final resolution.
 #   (asset, gpt-image render size @ target aspect, final W, H, label)
 PLATFORMS = [
-    ("yt.png",   "1536x864",  1920, 1080, "16:9 · YouTube + website"),
-    ("x.png",    "1440x576",  2000,  800, "5:2 · X"),
-    ("spot.png", "1024x1024", 1440, 1440, "1:1 · Spotify (>=1400)"),
+  ("yt.png", "1536x864", 1920, 1080, "16:9 · YouTube + website"),
+  ("x.png", "1440x576", 2000, 800, "5:2 · X"),
+  ("spot.png", "1024x1024", 1440, 1440, "1:1 · Spotify (>=1400)"),
 ]
 
 STYLE = (
-    "You are the art director for RoboSystems, a financial-analysis video channel. Its thumbnails "
-    "are dark-navy, high-contrast, high-CTR: a bold condensed headline on the left, photorealistic "
-    "imagery relevant to the company on the right, a red stock-chart motif, and one small stat badge. "
-    "Given an equity-research brief, extract the creative elements. Return STRICT JSON with keys: "
-    "company_display, company_upper, ticker, exchange, "
-    "hook_stat (the single most striking metric, 1-4 words, in punchy ALL-CAPS short form with "
-    "symbols - e.g. '4.4% YIELD', '$6B FUEL HIT', '+57% EPS', 'BELOW BOOK' - never spelled out as "
-    "lowercase words like 'nearly six billion dollars'), "
-    "hook_line (a punchy 2-5 word tension phrase, e.g. 'MARKET DOESN'T TRUST IT'), "
-    "key_stat (one supporting figure with a SHORT label for a small badge, punchy short-form with "
-    "symbols - e.g. 'TRASM +12.1%', 'FCF ~$2.3B', 'ROIC 31.4%' - never a full spelled-out sentence), "
-    "visual_concept (a vivid, brand-accurate description of photorealistic imagery for THIS company "
-    "- specific products, buildings, a trading floor, etc.), "
-    "chart_hint (a short stock-chart motif, e.g. 'a red candlestick chart trending sharply down'). "
-    "Be faithful to the brief: copy every number exactly, use ONLY the current (post-split, if the "
-    "brief mentions a split) share price and its stated range, and never mislabel the result (do not "
-    "say 'miss' if the company beat). Prefer a non-price stat (margin, growth, yield, ROIC) for "
-    "hook_stat and key_stat when the share price is volatile or recently split. "
-    "All text must be correctly spelled for rendering. No markdown, JSON only."
+  "You are the art director for RoboSystems, a financial-analysis video channel. Its thumbnails "
+  "are dark-navy, high-contrast, high-CTR: a bold condensed headline on the left, photorealistic "
+  "imagery relevant to the company on the right, a red stock-chart motif, and one small stat badge. "
+  "Given an equity-research brief, extract the creative elements. Return STRICT JSON with keys: "
+  "company_display, company_upper, ticker, exchange, "
+  "hook_stat (the single most striking metric, 1-4 words, in punchy ALL-CAPS short form with "
+  "symbols - e.g. '4.4% YIELD', '$6B FUEL HIT', '+57% EPS', 'BELOW BOOK' - never spelled out as "
+  "lowercase words like 'nearly six billion dollars'), "
+  "hook_line (a punchy 2-5 word tension phrase, e.g. 'MARKET DOESN'T TRUST IT'), "
+  "key_stat (one supporting figure with a SHORT label for a small badge, punchy short-form with "
+  "symbols - e.g. 'TRASM +12.1%', 'FCF ~$2.3B', 'ROIC 31.4%' - never a full spelled-out sentence), "
+  "visual_concept (a vivid, brand-accurate description of photorealistic imagery for THIS company "
+  "- specific products, buildings, a trading floor, etc.), "
+  "chart_hint (a short stock-chart motif, e.g. 'a red candlestick chart trending sharply down'). "
+  "Be faithful to the brief: copy every number exactly, use ONLY the current (post-split, if the "
+  "brief mentions a split) share price and its stated range, and never mislabel the result (do not "
+  "say 'miss' if the company beat). Prefer a non-price stat (margin, growth, yield, ROIC) for "
+  "hook_stat and key_stat when the share price is volatile or recently split. "
+  "All text must be correctly spelled for rendering. No markdown, JSON only."
 )
 
 
 def load_env(path=".env"):
-    env = {}
-    if os.path.exists(path):
-        for line in open(path):
-            line = line.strip()
-            if line and not line.startswith("#") and "=" in line:
-                k, v = line.split("=", 1)
-                env[k.strip()] = v.strip().strip('"').strip("'")
-    return env
+  env = {}
+  if os.path.exists(path):
+    for line in open(path):
+      line = line.strip()
+      if line and not line.startswith("#") and "=" in line:
+        k, v = line.split("=", 1)
+        env[k.strip()] = v.strip().strip('"').strip("'")
+  return env
 
 
 def _post(url, key, payload, timeout=300):
-    req = urllib.request.Request(
-        url, data=json.dumps(payload).encode(),
-        headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"}, method="POST")
-    try:
-        return json.load(urllib.request.urlopen(req, timeout=timeout))
-    except urllib.error.HTTPError as e:
-        sys.exit(f"OpenAI HTTP {e.code}: {e.read().decode()[:400]}")
+  req = urllib.request.Request(
+    url,
+    data=json.dumps(payload).encode(),
+    headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
+    method="POST",
+  )
+  try:
+    return json.load(urllib.request.urlopen(req, timeout=timeout))
+  except urllib.error.HTTPError as e:
+    sys.exit(f"OpenAI HTTP {e.code}: {e.read().decode()[:400]}")
 
 
 def pick_chat_model(key):
-    req = urllib.request.Request(f"{API}/models", headers={"Authorization": f"Bearer {key}"})
-    ids = {m["id"] for m in json.load(urllib.request.urlopen(req, timeout=30))["data"]}
-    for m in CHAT_PREF:
-        if m in ids:
-            return m
-    sys.exit(f"No preferred chat model available. Have: {sorted(i for i in ids if i.startswith('gpt'))[:10]}")
+  req = urllib.request.Request(
+    f"{API}/models", headers={"Authorization": f"Bearer {key}"}
+  )
+  ids = {m["id"] for m in json.load(urllib.request.urlopen(req, timeout=30))["data"]}
+  for m in CHAT_PREF:
+    if m in ids:
+      return m
+  sys.exit(
+    f"No preferred chat model available. Have: {sorted(i for i in ids if i.startswith('gpt'))[:10]}"
+  )
 
 
 def extract_elements(key, model, brief):
-    r = _post(f"{API}/chat/completions", key, {
-        "model": model,
-        "messages": [{"role": "system", "content": STYLE},
-                     {"role": "user", "content": "BRIEF:\n" + brief[:6000]}],
-        "response_format": {"type": "json_object"},
-    }, timeout=120)
-    return json.loads(r["choices"][0]["message"]["content"])
+  r = _post(
+    f"{API}/chat/completions",
+    key,
+    {
+      "model": model,
+      "messages": [
+        {"role": "system", "content": STYLE},
+        {"role": "user", "content": "BRIEF:\n" + brief[:6000]},
+      ],
+      "response_format": {"type": "json_object"},
+    },
+    timeout=120,
+  )
+  return json.loads(r["choices"][0]["message"]["content"])
 
 
 def build_prompt(el, aspect_note):
-    return (
-        f"A high-CTR thumbnail graphic for a stock-analysis video on {el['company_display']}. "
-        f"Dark navy studio background with a soft blue glow. On the right: {el['visual_concept']}. "
-        f"{el['chart_hint']}, upper right, drawn as a PURELY DECORATIVE motif - no axis, no gridlines, "
-        f"no price numbers, no tick labels, no dates, no text of any kind on the chart. "
-        f"On the left, bold condensed headline text stacked: "
-        f"'{el['company_upper']}' in white, '{el['hook_stat']}' in bright blue (#3b7af5), "
-        f"'{el['hook_line']}' in white with the key word in red. A small rounded blue badge lower-left "
-        f"reading '{el['key_stat']}'. Ticker '{el['ticker']} - {el['exchange']}'. "
-        f"CRITICAL: render ONLY the exact text specified above, character for character. Do NOT add, "
-        f"invent, complete, or overlay ANY price, share price, stock value, axis number, percentage, "
-        f"date, or statistic that is not written verbatim in this prompt - in particular never guess a "
-        f"stock's price from memory. "
-        f"Cinematic high-contrast lighting, crisp, professional finance-channel style, no watermark. "
-        f"Spell all text correctly. {aspect_note}"
-    )
+  return (
+    f"A high-CTR thumbnail graphic for a stock-analysis video on {el['company_display']}. "
+    f"Dark navy studio background with a soft blue glow. On the right: {el['visual_concept']}. "
+    f"{el['chart_hint']}, upper right, drawn as a PURELY DECORATIVE motif - no axis, no gridlines, "
+    f"no price numbers, no tick labels, no dates, no text of any kind on the chart. "
+    f"On the left, bold condensed headline text stacked: "
+    f"'{el['company_upper']}' in white, '{el['hook_stat']}' in bright blue (#3b7af5), "
+    f"'{el['hook_line']}' in white with the key word in red. A small rounded blue badge lower-left "
+    f"reading '{el['key_stat']}'. Ticker '{el['ticker']} - {el['exchange']}'. "
+    f"CRITICAL: render ONLY the exact text specified above, character for character. Do NOT add, "
+    f"invent, complete, or overlay ANY price, share price, stock value, axis number, percentage, "
+    f"date, or statistic that is not written verbatim in this prompt - in particular never guess a "
+    f"stock's price from memory. "
+    f"Cinematic high-contrast lighting, crisp, professional finance-channel style, no watermark. "
+    f"Spell all text correctly. {aspect_note}"
+  )
 
 
 ASPECT_NOTE = {
-    "yt.png":   "Format: a 16:9 landscape frame. Fill the whole frame edge to edge; keep every "
-                "letter of the headline and all imagery inside a safe margin so NOTHING is cut off "
-                "at the top, bottom, or sides.",
-    "x.png":    "Format: a very wide 5:2 banner (two-and-a-half times wider than tall). Lay it out "
-                "HORIZONTALLY - headline text on the left, product imagery on the right, everything "
-                "vertically centered. Fill the whole frame edge to edge; keep all content inside a "
-                "safe margin so NOTHING is cut off.",
-    "spot.png": "Format: a 1:1 square frame. Fill the whole frame edge to edge; keep all text and "
-                "imagery inside a safe margin so NOTHING is cut off.",
+  "yt.png": "Format: a 16:9 landscape frame. Fill the whole frame edge to edge; keep every "
+  "letter of the headline and all imagery inside a safe margin so NOTHING is cut off "
+  "at the top, bottom, or sides.",
+  "x.png": "Format: a very wide 5:2 banner (two-and-a-half times wider than tall). Lay it out "
+  "HORIZONTALLY - headline text on the left, product imagery on the right, everything "
+  "vertically centered. Fill the whole frame edge to edge; keep all content inside a "
+  "safe margin so NOTHING is cut off.",
+  "spot.png": "Format: a 1:1 square frame. Fill the whole frame edge to edge; keep all text and "
+  "imagery inside a safe margin so NOTHING is cut off.",
 }
 
 
 def gen_image(key, prompt, size, quality):
-    r = _post(f"{API}/images/generations", key,
-              {"model": IMAGE_MODEL, "prompt": prompt, "size": size, "quality": quality, "n": 1})
-    return base64.b64decode(r["data"][0]["b64_json"])
+  r = _post(
+    f"{API}/images/generations",
+    key,
+    {"model": IMAGE_MODEL, "prompt": prompt, "size": size, "quality": quality, "n": 1},
+  )
+  return base64.b64decode(r["data"][0]["b64_json"])
 
 
 def crop_to(src, out, w, h):
-    """Crop-to-fill the source PNG to exactly w x h (scale to cover, center-crop). Needs ffmpeg."""
-    vf = f"scale={w}:{h}:force_original_aspect_ratio=increase,crop={w}:{h}"
-    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", src, "-vf", vf, out], check=True)
+  """Crop-to-fill the source PNG to exactly w x h (scale to cover, center-crop). Needs ffmpeg."""
+  vf = f"scale={w}:{h}:force_original_aspect_ratio=increase,crop={w}:{h}"
+  subprocess.run(
+    ["ffmpeg", "-y", "-loglevel", "error", "-i", src, "-vf", vf, out], check=True
+  )
 
 
 # ─── Ingest: assets/ -> charts/png/ ──────────────────────────────────────────
@@ -155,135 +174,169 @@ WIDTH, HEIGHT = 1920, 1080
 TARGET_RATIO = WIDTH / HEIGHT
 
 THUMBNAIL_SOURCES = [
-    ("yt.png",   "{t}_thumbnail.png",        True,  "16:9 · YouTube + website"),
-    ("x.png",    "{t}_thumbnail_x.png",      False, "5:2 · X"),
-    ("spot.png", "{t}_thumbnail_square.png", False, "1:1 · square"),
+  ("yt.png", "{t}_thumbnail.png", True, "16:9 · YouTube + website"),
+  ("x.png", "{t}_thumbnail_x.png", False, "5:2 · X"),
+  ("spot.png", "{t}_thumbnail_square.png", False, "1:1 · square"),
 ]
 
 
 def _png_size(path):
-    """(width, height) read from a PNG's IHDR chunk — dependency-free. None if not a PNG."""
-    with open(path, "rb") as fh:
-        head = fh.read(24)
-    if head[:8] != b"\x89PNG\r\n\x1a\n":
-        return None
-    return int.from_bytes(head[16:20], "big"), int.from_bytes(head[20:24], "big")
+  """(width, height) read from a PNG's IHDR chunk — dependency-free. None if not a PNG."""
+  with open(path, "rb") as fh:
+    head = fh.read(24)
+  if head[:8] != b"\x89PNG\r\n\x1a\n":
+    return None
+  return int.from_bytes(head[16:20], "big"), int.from_bytes(head[20:24], "big")
 
 
 def _normalize_png_thumbnail(src, out):
-    """Write a 1920x1080 thumbnail from a source PNG. **Center-crops** to 16:9 (never
-    distorts) when the source isn't 16:9. Uses ffmpeg; copies as-is (with a warning) if
-    ffmpeg is unavailable."""
-    note = ""
-    size = _png_size(src)
-    if size:
-        w, h = size
-        ratio = w / h
-        if abs(ratio - TARGET_RATIO) >= 0.02:
-            note = (f"  [source {w}x{h}, ratio {ratio:.3f} is NOT 16:9 — center-cropped to fit; "
-                    f"eyeball that the hero metric isn't clipped]")
-    if which("ffmpeg"):
-        vf = f"scale={WIDTH}:{HEIGHT}:force_original_aspect_ratio=increase,crop={WIDTH}:{HEIGHT}"
-        subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", src, "-vf", vf, out], check=True)
-    else:
-        copyfile(src, out)
-        note += "  [ffmpeg not found — copied as-is, NOT resized; install ffmpeg to normalize]"
-    # YouTube rejects custom thumbnails over 2MB. Every 1920x1080 PNG this tool has produced
-    # has landed above it, so upload_youtube silently transcodes to JPEG on the way out. That
-    # works, but it means the file that ships is not the file anyone reviewed. Say so here.
-    try:
-        mb = os.path.getsize(out) / 1e6
-        if mb > 2.0:
-            note += (f"  [{mb:.1f} MB > YouTube's 2 MB cap - yt-upload will transcode "
-                     f"this to JPEG; review the upload, not this PNG]")
-    except OSError:
-        pass
-    src_rel = f"{os.path.basename(os.path.dirname(src))}/{os.path.basename(src)}"
-    print(f"  Thumbnail: {src_rel} -> "
-          f"charts/png/{os.path.basename(out)} ({WIDTH}x{HEIGHT}){note}")
+  """Write a 1920x1080 thumbnail from a source PNG. **Center-crops** to 16:9 (never
+  distorts) when the source isn't 16:9. Uses ffmpeg; copies as-is (with a warning) if
+  ffmpeg is unavailable."""
+  note = ""
+  size = _png_size(src)
+  if size:
+    w, h = size
+    ratio = w / h
+    if abs(ratio - TARGET_RATIO) >= 0.02:
+      note = (
+        f"  [source {w}x{h}, ratio {ratio:.3f} is NOT 16:9 — center-cropped to fit; "
+        f"eyeball that the hero metric isn't clipped]"
+      )
+  if which("ffmpeg"):
+    vf = f"scale={WIDTH}:{HEIGHT}:force_original_aspect_ratio=increase,crop={WIDTH}:{HEIGHT}"
+    subprocess.run(
+      ["ffmpeg", "-y", "-loglevel", "error", "-i", src, "-vf", vf, out], check=True
+    )
+  else:
+    copyfile(src, out)
+    note += (
+      "  [ffmpeg not found — copied as-is, NOT resized; install ffmpeg to normalize]"
+    )
+  # YouTube rejects custom thumbnails over 2MB. Every 1920x1080 PNG this tool has produced
+  # has landed above it, so upload_youtube silently transcodes to JPEG on the way out. That
+  # works, but it means the file that ships is not the file anyone reviewed. Say so here.
+  try:
+    mb = os.path.getsize(out) / 1e6
+    if mb > 2.0:
+      note += (
+        f"  [{mb:.1f} MB > YouTube's 2 MB cap - yt-upload will transcode "
+        f"this to JPEG; review the upload, not this PNG]"
+      )
+  except OSError:
+    pass
+  src_rel = f"{os.path.basename(os.path.dirname(src))}/{os.path.basename(src)}"
+  print(
+    f"  Thumbnail: {src_rel} -> "
+    f"charts/png/{os.path.basename(out)} ({WIDTH}x{HEIGHT}){note}"
+  )
 
 
 def ingest_thumbnails(project_dir, ticker):
-    """Copy the thumbnails in assets/ (yt/x/spot .png) into charts/png/, normalizing the
-    16:9 canonical to 1920x1080 and copying the other aspects verbatim."""
-    assets_dir = os.path.join(project_dir, "assets")
-    png_dir = os.path.join(project_dir, "charts", "png")
-    os.makedirs(png_dir, exist_ok=True)
+  """Copy the thumbnails in assets/ (yt/x/spot .png) into charts/png/, normalizing the
+  16:9 canonical to 1920x1080 and copying the other aspects verbatim."""
+  assets_dir = os.path.join(project_dir, "assets")
+  png_dir = os.path.join(project_dir, "charts", "png")
+  os.makedirs(png_dir, exist_ok=True)
 
-    found = 0
-    for src_name, out_tmpl, canonical, label in THUMBNAIL_SOURCES:
-        src = os.path.join(assets_dir, src_name)
-        if not os.path.exists(src):
-            continue
-        found += 1
-        out = os.path.join(png_dir, out_tmpl.format(t=ticker))
-        if canonical:
-            _normalize_png_thumbnail(src, out)  # prints its own line (crop-to-fill 1920x1080)
-        else:
-            copyfile(src, out)
-            print(f"  Thumbnail: assets/{src_name} -> charts/png/{os.path.basename(out)} ({label})")
+  found = 0
+  for src_name, out_tmpl, canonical, label in THUMBNAIL_SOURCES:
+    src = os.path.join(assets_dir, src_name)
+    if not os.path.exists(src):
+      continue
+    found += 1
+    out = os.path.join(png_dir, out_tmpl.format(t=ticker))
+    if canonical:
+      _normalize_png_thumbnail(src, out)  # prints its own line (crop-to-fill 1920x1080)
+    else:
+      copyfile(src, out)
+      print(
+        f"  Thumbnail: assets/{src_name} -> charts/png/{os.path.basename(out)} ({label})"
+      )
 
-    if not found:
-        print("  Thumbnail: none in assets/ — nothing to ingest")
-    elif not os.path.exists(os.path.join(png_dir, f"{ticker}_thumbnail.png")):
-        print("  WARN: no assets/yt.png (16:9 canonical) — needed for YouTube + the website card")
+  if not found:
+    print("  Thumbnail: none in assets/ — nothing to ingest")
+  elif not os.path.exists(os.path.join(png_dir, f"{ticker}_thumbnail.png")):
+    print(
+      "  WARN: no assets/yt.png (16:9 canonical) — needed for YouTube + the website card"
+    )
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Generate the 3 platform thumbnails via OpenAI from the brief")
-    ap.add_argument("project")
-    ap.add_argument("--quality", default="high", choices=["high", "medium", "low"])
-    ap.add_argument("--with-x", action="store_true",
-                    help="also generate the 5:2 X banner (default off: the X Article now uses "
-                         "the branded local cover from gen_article_cover.py instead)")
-    ap.add_argument("--with-spot", action="store_true",
-                    help="also generate the 1:1 square (default off: the Spotify podcast was "
-                         "retired 2026-07-21 and nothing consumes this asset — the narration "
-                         "that replaced it plays inside the /research page and needs no art)")
-    ap.add_argument("--dry-run", action="store_true", help="print the extracted elements + prompts, generate nothing")
-    args = ap.parse_args()
+  ap = argparse.ArgumentParser(
+    description="Generate the 3 platform thumbnails via OpenAI from the brief"
+  )
+  ap.add_argument("project")
+  ap.add_argument("--quality", default="high", choices=["high", "medium", "low"])
+  ap.add_argument(
+    "--with-x",
+    action="store_true",
+    help="also generate the 5:2 X banner (default off: the X Article now uses "
+    "the branded local cover from gen_article_cover.py instead)",
+  )
+  ap.add_argument(
+    "--with-spot",
+    action="store_true",
+    help="also generate the 1:1 square (default off: the Spotify podcast was "
+    "retired 2026-07-21 and nothing consumes this asset — the narration "
+    "that replaced it plays inside the /research page and needs no art)",
+  )
+  ap.add_argument(
+    "--dry-run",
+    action="store_true",
+    help="print the extracted elements + prompts, generate nothing",
+  )
+  args = ap.parse_args()
 
-    key = load_env().get("OPENAI_API_KEY") or os.environ.get("OPENAI_API_KEY")
-    if not key:
-        sys.exit("OPENAI_API_KEY not found in .env")
+  key = load_env().get("OPENAI_API_KEY") or os.environ.get("OPENAI_API_KEY")
+  if not key:
+    sys.exit("OPENAI_API_KEY not found in .env")
 
-    project_dir = get_project_dir(args.project)
-    scripts_dir = os.path.join(project_dir, "scripts")
-    sf = [f for f in os.listdir(scripts_dir) if f.endswith("_script.json")]
-    ticker = json.load(open(os.path.join(scripts_dir, sf[0])))["metadata"]["ticker"] if sf else args.project
-    brief_path = os.path.join(project_dir, "reports", f"{ticker}_brief.md")
-    if not os.path.exists(brief_path):
-        sys.exit(f"No brief at {brief_path}")
-    brief = open(brief_path, encoding="utf-8").read()
+  project_dir = get_project_dir(args.project)
+  scripts_dir = os.path.join(project_dir, "scripts")
+  sf = [f for f in os.listdir(scripts_dir) if f.endswith("_script.json")]
+  ticker = (
+    json.load(open(os.path.join(scripts_dir, sf[0])))["metadata"]["ticker"]
+    if sf
+    else args.project
+  )
+  brief_path = os.path.join(project_dir, "reports", f"{ticker}_brief.md")
+  if not os.path.exists(brief_path):
+    sys.exit(f"No brief at {brief_path}")
+  brief = open(brief_path, encoding="utf-8").read()
 
-    model = pick_chat_model(key)
-    print(f"  chat model: {model}  ·  image model: {IMAGE_MODEL}  ·  quality: {args.quality}")
-    el = extract_elements(key, model, brief)
-    print(f"  hook: {el.get('hook_stat')!r} / {el.get('hook_line')!r}  ·  badge: {el.get('key_stat')!r}")
+  model = pick_chat_model(key)
+  print(
+    f"  chat model: {model}  ·  image model: {IMAGE_MODEL}  ·  quality: {args.quality}"
+  )
+  el = extract_elements(key, model, brief)
+  print(
+    f"  hook: {el.get('hook_stat')!r} / {el.get('hook_line')!r}  ·  badge: {el.get('key_stat')!r}"
+  )
 
-    assets = os.path.join(project_dir, "assets")
-    os.makedirs(assets, exist_ok=True)
-    tmp = os.path.join(assets, "_thumb_raw.png")
+  assets = os.path.join(project_dir, "assets")
+  os.makedirs(assets, exist_ok=True)
+  tmp = os.path.join(assets, "_thumb_raw.png")
 
-    for name, size, w, h, label in PLATFORMS:
-        if name == "x.png" and not args.with_x:
-            continue
-        if name == "spot.png" and not args.with_spot:
-            continue
-        prompt = build_prompt(el, ASPECT_NOTE[name])
-        if args.dry_run:
-            print(f"\n[{name} · {label}]\n{prompt}")
-            continue
-        print(f"  generating {name} ({label}) ...", flush=True)
-        open(tmp, "wb").write(gen_image(key, prompt, size, args.quality))
-        crop_to(tmp, os.path.join(assets, name), w, h)
-        print(f"    -> assets/{name} ({w}x{h})")
-    if os.path.exists(tmp):
-        os.remove(tmp)
-    if not args.dry_run:
-        ingest_thumbnails(project_dir, ticker)
-        print("\nDone. Thumbnails generated and ingested - ready to publish.")
+  for name, size, w, h, label in PLATFORMS:
+    if name == "x.png" and not args.with_x:
+      continue
+    if name == "spot.png" and not args.with_spot:
+      continue
+    prompt = build_prompt(el, ASPECT_NOTE[name])
+    if args.dry_run:
+      print(f"\n[{name} · {label}]\n{prompt}")
+      continue
+    print(f"  generating {name} ({label}) ...", flush=True)
+    open(tmp, "wb").write(gen_image(key, prompt, size, args.quality))
+    crop_to(tmp, os.path.join(assets, name), w, h)
+    print(f"    -> assets/{name} ({w}x{h})")
+  if os.path.exists(tmp):
+    os.remove(tmp)
+  if not args.dry_run:
+    ingest_thumbnails(project_dir, ticker)
+    print("\nDone. Thumbnails generated and ingested - ready to publish.")
 
 
 if __name__ == "__main__":
-    main()
+  main()

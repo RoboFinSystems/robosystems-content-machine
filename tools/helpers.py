@@ -61,17 +61,34 @@ def invalidate_cdn(keys):
     return False
   dist = os.environ.get("AWS_CLOUDFRONT_DISTRIBUTION_ID", "").strip()
   if not dist:
-    print("  ! AWS_CLOUDFRONT_DISTRIBUTION_ID not set — skipping CDN invalidation.\n"
-          "    Republished files may serve the OLD version for up to 24h.")
+    print(
+      "  ! AWS_CLOUDFRONT_DISTRIBUTION_ID not set — skipping CDN invalidation.\n"
+      "    Republished files may serve the OLD version for up to 24h."
+    )
     return False
   paths = ["/" + k.lstrip("/") for k in keys]
   r = subprocess.run(
-    ["aws", "cloudfront", "create-invalidation", "--distribution-id", dist,
-     "--paths", *paths, "--query", "Invalidation.Id", "--output", "text"],
-    capture_output=True, text=True)
+    [
+      "aws",
+      "cloudfront",
+      "create-invalidation",
+      "--distribution-id",
+      dist,
+      "--paths",
+      *paths,
+      "--query",
+      "Invalidation.Id",
+      "--output",
+      "text",
+    ],
+    capture_output=True,
+    text=True,
+  )
   if r.returncode != 0:
-    print(f"  ! CDN invalidation failed (files are published, cache may be stale): "
-          f"{r.stderr.strip()}")
+    print(
+      f"  ! CDN invalidation failed (files are published, cache may be stale): "
+      f"{r.stderr.strip()}"
+    )
     return False
   print(f"  CDN invalidation {r.stdout.strip()} requested for {len(paths)} path(s)")
   return True
@@ -109,7 +126,11 @@ def resolve_promo_code(campaign=None):
   override = os.environ.get("PROMO_CODE", "").strip()
   if override:
     return override
-  key = "PROMO_CODE_CANNABIS" if "cannabis" in (campaign or "").lower() else "PROMO_CODE_DEFAULT"
+  key = (
+    "PROMO_CODE_CANNABIS"
+    if "cannabis" in (campaign or "").lower()
+    else "PROMO_CODE_DEFAULT"
+  )
   return os.environ.get(key, "").strip() or None
 
 
@@ -143,10 +164,12 @@ def strip_angle_brackets(text):
   lines = []
   for line in text.split("\n"):
     m = BLOCKQUOTE_PREFIX.match(line)
-    prefix, rest = (m.group(1), line[m.end():]) if m else ("", line)
+    prefix, rest = (m.group(1), line[m.end() :]) if m else ("", line)
     rest = re.sub(r"<\s*", "under ", rest)
     rest = re.sub(r">\s*", "over ", rest)
     lines.append(prefix + rest)
   out = "\n".join(lines)
   # a comparison promoted to sentence-initial should be capitalized
-  return re.sub(r"(^|[.!?]\s+)(under|over)\b", lambda m: m.group(1) + m.group(2).capitalize(), out)
+  return re.sub(
+    r"(^|[.!?]\s+)(under|over)\b", lambda m: m.group(1) + m.group(2).capitalize(), out
+  )

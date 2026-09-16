@@ -57,611 +57,742 @@ CHUNK = 4 * 1024 * 1024
 
 
 def oauth_session():
-    from requests_oauthlib import OAuth1Session
-    ck = os.environ.get("X_CONSUMER_KEY", "").strip()
-    cs = os.environ.get("X_SECRET_KEY", "").strip()
-    at = os.environ.get("X_ACCESS_TOKEN", "").strip()
-    ats = os.environ.get("X_ACCESS_SECRET", "").strip()
-    if not (ck and cs):
-        sys.exit("X_CONSUMER_KEY / X_SECRET_KEY missing from .env")
-    if not (at and ats):
-        sys.exit("X_ACCESS_TOKEN / X_ACCESS_SECRET missing from .env - "
-                 "run `just x-auth` (see tools/post_x.py docstring)")
-    return OAuth1Session(ck, client_secret=cs,
-                         resource_owner_key=at, resource_owner_secret=ats)
+  from requests_oauthlib import OAuth1Session
+
+  ck = os.environ.get("X_CONSUMER_KEY", "").strip()
+  cs = os.environ.get("X_SECRET_KEY", "").strip()
+  at = os.environ.get("X_ACCESS_TOKEN", "").strip()
+  ats = os.environ.get("X_ACCESS_SECRET", "").strip()
+  if not (ck and cs):
+    sys.exit("X_CONSUMER_KEY / X_SECRET_KEY missing from .env")
+  if not (at and ats):
+    sys.exit(
+      "X_ACCESS_TOKEN / X_ACCESS_SECRET missing from .env - "
+      "run `just x-auth` (see tools/post_x.py docstring)"
+    )
+  return OAuth1Session(
+    ck, client_secret=cs, resource_owner_key=at, resource_owner_secret=ats
+  )
 
 
 def save_env(**pairs):
-    """Idempotently set vars in .env, preserving everything else."""
-    text = ENV_FILE.read_text() if ENV_FILE.exists() else ""
-    for k, v in pairs.items():
-        line = f'{k}="{v}"'
-        if re.search(rf"^{k}=", text, flags=re.M):
-            text = re.sub(rf"^{k}=.*$", line, text, flags=re.M)
-        else:
-            text = text.rstrip("\n") + "\n" + line + "\n"
-    ENV_FILE.write_text(text)
-    print(f"{', '.join(pairs)} written to .env")
+  """Idempotently set vars in .env, preserving everything else."""
+  text = ENV_FILE.read_text() if ENV_FILE.exists() else ""
+  for k, v in pairs.items():
+    line = f'{k}="{v}"'
+    if re.search(rf"^{k}=", text, flags=re.M):
+      text = re.sub(rf"^{k}=.*$", line, text, flags=re.M)
+    else:
+      text = text.rstrip("\n") + "\n" + line + "\n"
+  ENV_FILE.write_text(text)
+  print(f"{', '.join(pairs)} written to .env")
 
 
 def api_error(r, doing):
-    msg = f"X API error while {doing}: HTTP {r.status_code}\n{r.text[:1000]}"
-    # A 429 usually comes back with an EMPTY body, so without the headers there is nothing to
-    # act on - you cannot tell a 15-minute window from a 24-hour one. Surface the reset time so
-    # the retry is scheduled rather than guessed. (Hit 2026-07-30: the 4th Article publish of the
-    # day was rejected with a bare "HTTP 429".)
-    if r.status_code == 429:
-        from datetime import datetime, timezone
-        h = r.headers
-        reset = h.get("x-rate-limit-reset") or h.get("x-user-limit-24hour-reset")
-        limit = h.get("x-rate-limit-limit") or h.get("x-user-limit-24hour-limit")
-        remaining = h.get("x-rate-limit-remaining") or h.get("x-user-limit-24hour-remaining")
-        bits = []
-        if limit is not None:
-            bits.append(f"limit={limit} remaining={remaining}")
-        if reset:
-            try:
-                when = datetime.fromtimestamp(int(reset), tz=timezone.utc).astimezone()
-                mins = max(0, round((when - datetime.now(when.tzinfo)).total_seconds() / 60))
-                bits.append(f"resets {when:%H:%M %Z} (~{mins} min)")
-            except (ValueError, TypeError):
-                bits.append(f"reset={reset}")
-        if h.get("retry-after"):
-            bits.append(f"retry-after={h['retry-after']}s")
-        msg += "\nRATE LIMIT: " + ("; ".join(bits) if bits else
-                                   "no rate-limit headers returned - retry in ~15 min, then back off to hourly")
-    sys.exit(msg)
+  msg = f"X API error while {doing}: HTTP {r.status_code}\n{r.text[:1000]}"
+  # A 429 usually comes back with an EMPTY body, so without the headers there is nothing to
+  # act on - you cannot tell a 15-minute window from a 24-hour one. Surface the reset time so
+  # the retry is scheduled rather than guessed. (Hit 2026-07-30: the 4th Article publish of the
+  # day was rejected with a bare "HTTP 429".)
+  if r.status_code == 429:
+    from datetime import datetime, timezone
+
+    h = r.headers
+    reset = h.get("x-rate-limit-reset") or h.get("x-user-limit-24hour-reset")
+    limit = h.get("x-rate-limit-limit") or h.get("x-user-limit-24hour-limit")
+    remaining = h.get("x-rate-limit-remaining") or h.get(
+      "x-user-limit-24hour-remaining"
+    )
+    bits = []
+    if limit is not None:
+      bits.append(f"limit={limit} remaining={remaining}")
+    if reset:
+      try:
+        when = datetime.fromtimestamp(int(reset), tz=timezone.utc).astimezone()
+        mins = max(0, round((when - datetime.now(when.tzinfo)).total_seconds() / 60))
+        bits.append(f"resets {when:%H:%M %Z} (~{mins} min)")
+      except (ValueError, TypeError):
+        bits.append(f"reset={reset}")
+    if h.get("retry-after"):
+      bits.append(f"retry-after={h['retry-after']}s")
+    msg += "\nRATE LIMIT: " + (
+      "; ".join(bits)
+      if bits
+      else "no rate-limit headers returned - retry in ~15 min, then back off to hourly"
+    )
+  sys.exit(msg)
 
 
 def acting_user(sess):
-    r = sess.get(f"{API}/2/users/me")
-    if r.status_code != 200:
-        api_error(r, "checking the acting account (GET /2/users/me)")
-    d = r.json()["data"]
-    return d["username"], d["id"], d.get("name", "")
+  r = sess.get(f"{API}/2/users/me")
+  if r.status_code != 200:
+    api_error(r, "checking the acting account (GET /2/users/me)")
+  d = r.json()["data"]
+  return d["username"], d["id"], d.get("name", "")
 
 
 def acting_user_guard(sess):
-    """Print the account this token acts as; abort on X_HANDLE mismatch.
-    Same lesson as YouTube: the token binds to whoever granted it - pin the
-    handle in .env so a personal-account token can never post as the brand."""
-    handle, uid, name = acting_user(sess)
-    print(f"account:   @{handle} ({name}, id {uid})")
-    want = os.environ.get("X_HANDLE", "").strip().lstrip("@")
-    if want and handle.lower() != want.lower():
-        sys.exit(f"ABORT: token acts as @{handle} but .env pins X_HANDLE={want}. "
-                 "Re-run `just x-auth` logged in as the right account.")
-    return handle
+  """Print the account this token acts as; abort on X_HANDLE mismatch.
+  Same lesson as YouTube: the token binds to whoever granted it - pin the
+  handle in .env so a personal-account token can never post as the brand."""
+  handle, uid, name = acting_user(sess)
+  print(f"account:   @{handle} ({name}, id {uid})")
+  want = os.environ.get("X_HANDLE", "").strip().lstrip("@")
+  if want and handle.lower() != want.lower():
+    sys.exit(
+      f"ABORT: token acts as @{handle} but .env pins X_HANDLE={want}. "
+      "Re-run `just x-auth` logged in as the right account."
+    )
+  return handle
 
 
 def detect_campaign(proj: Path) -> str | None:
-    pub = next(iter(proj.glob("social/*_publish.json")), None)
-    if pub:
-        try:
-            c = json.loads(pub.read_text()).get("campaign")
-            if c:
-                return str(c)
-        except (json.JSONDecodeError, OSError):
-            pass
-    return None
+  pub = next(iter(proj.glob("social/*_publish.json")), None)
+  if pub:
+    try:
+      c = json.loads(pub.read_text()).get("campaign")
+      if c:
+        return str(c)
+    except (json.JSONDecodeError, OSError):
+      pass
+  return None
 
 
 # ── media upload (split v2 endpoints) ────────────────────────────────────────
 
+
 def upload_media(sess, path: Path, media_type: str, category: str) -> str:
-    total = path.stat().st_size
-    r = sess.post(f"{UPLOAD}/initialize", json={
-        "media_type": media_type, "total_bytes": total, "media_category": category,
-    })
-    if r.status_code >= 300:
-        api_error(r, "initialize media upload")
-    media_id = str(r.json()["data"]["id"])
+  total = path.stat().st_size
+  r = sess.post(
+    f"{UPLOAD}/initialize",
+    json={
+      "media_type": media_type,
+      "total_bytes": total,
+      "media_category": category,
+    },
+  )
+  if r.status_code >= 300:
+    api_error(r, "initialize media upload")
+  media_id = str(r.json()["data"]["id"])
 
-    sent, idx = 0, 0
-    with open(path, "rb") as f:
-        while chunk := f.read(CHUNK):
-            r = sess.post(f"{UPLOAD}/{media_id}/append",
-                          data={"segment_index": idx},
-                          files={"media": chunk})
-            if r.status_code >= 300:
-                api_error(r, f"append segment {idx}")
-            sent += len(chunk)
-            idx += 1
-            if total > CHUNK:
-                print(f"  upload {int(sent / total * 100)}%")
+  sent, idx = 0, 0
+  with open(path, "rb") as f:
+    while chunk := f.read(CHUNK):
+      r = sess.post(
+        f"{UPLOAD}/{media_id}/append",
+        data={"segment_index": idx},
+        files={"media": chunk},
+      )
+      if r.status_code >= 300:
+        api_error(r, f"append segment {idx}")
+      sent += len(chunk)
+      idx += 1
+      if total > CHUNK:
+        print(f"  upload {int(sent / total * 100)}%")
 
-    r = sess.post(f"{UPLOAD}/{media_id}/finalize")
+  r = sess.post(f"{UPLOAD}/{media_id}/finalize")
+  if r.status_code >= 300:
+    api_error(r, "finalize media upload")
+  info = r.json()["data"].get("processing_info")
+
+  while info and info.get("state") in ("pending", "in_progress"):
+    wait = info.get("check_after_secs", 5)
+    print(f"  processing ({info['state']}) - checking in {wait}s")
+    time.sleep(wait)
+    r = sess.get(UPLOAD, params={"command": "STATUS", "media_id": media_id})
     if r.status_code >= 300:
-        api_error(r, "finalize media upload")
+      api_error(r, "poll processing status")
     info = r.json()["data"].get("processing_info")
-
-    while info and info.get("state") in ("pending", "in_progress"):
-        wait = info.get("check_after_secs", 5)
-        print(f"  processing ({info['state']}) - checking in {wait}s")
-        time.sleep(wait)
-        r = sess.get(UPLOAD, params={"command": "STATUS", "media_id": media_id})
-        if r.status_code >= 300:
-            api_error(r, "poll processing status")
-        info = r.json()["data"].get("processing_info")
-    if info and info.get("state") != "succeeded":
-        sys.exit(f"media processing failed: {json.dumps(info)}\n"
-                 "(a >2:20 video needs X Premium on the posting account)")
-    return media_id
+  if info and info.get("state") != "succeeded":
+    sys.exit(
+      f"media processing failed: {json.dumps(info)}\n"
+      "(a >2:20 video needs X Premium on the posting account)"
+    )
+  return media_id
 
 
 # ── markdown -> DraftJS content_state (for the Article body) ─────────────────
 
+
 def u16len(s: str) -> int:
-    """DraftJS offsets count UTF-16 code units, not codepoints."""
-    return len(s.encode("utf-16-le")) // 2
+  """DraftJS offsets count UTF-16 code units, not codepoints."""
+  return len(s.encode("utf-16-le")) // 2
 
 
-INLINE = re.compile(r"\[([^\]]+)\]\(([^)\s]+)\)"    # [text](url)
-                    r"|\*\*([^*]+)\*\*"             # **bold**
-                    r"|\*([^*\n]+)\*")              # *italic*
+INLINE = re.compile(
+  r"\[([^\]]+)\]\(([^)\s]+)\)"  # [text](url)
+  r"|\*\*([^*]+)\*\*"  # **bold**
+  r"|\*([^*\n]+)\*"
+)  # *italic*
 
 
 def parse_inline(md: str):
-    """Strip inline markdown, returning (plain text, style ranges, link ranges)."""
-    parts, styles, links = [], [], []
-    pos = off = 0
-    for m in INLINE.finditer(md):
-        lead = md[pos:m.start()]
-        parts.append(lead)
-        off += u16len(lead)
-        if m.group(1) is not None:
-            t = m.group(1)
-            links.append((off, u16len(t), m.group(2)))
-        elif m.group(3) is not None:
-            t = m.group(3)
-            styles.append((off, u16len(t), "bold"))
-        else:
-            t = m.group(4)
-            styles.append((off, u16len(t), "italic"))
-        parts.append(t)
-        off += u16len(t)
-        pos = m.end()
-    parts.append(md[pos:])
-    return "".join(parts), styles, links
+  """Strip inline markdown, returning (plain text, style ranges, link ranges)."""
+  parts, styles, links = [], [], []
+  pos = off = 0
+  for m in INLINE.finditer(md):
+    lead = md[pos : m.start()]
+    parts.append(lead)
+    off += u16len(lead)
+    if m.group(1) is not None:
+      t = m.group(1)
+      links.append((off, u16len(t), m.group(2)))
+    elif m.group(3) is not None:
+      t = m.group(3)
+      styles.append((off, u16len(t), "bold"))
+    else:
+      t = m.group(4)
+      styles.append((off, u16len(t), "italic"))
+    parts.append(t)
+    off += u16len(t)
+    pos = m.end()
+  parts.append(md[pos:])
+  return "".join(parts), styles, links
 
 
 def md_to_content_state(md: str):
-    """Convert brief markdown to (title, DraftJS content_state).
-    The first H1 becomes the article title, not a body block."""
-    blocks, entities = [], []
-    title = None
+  """Convert brief markdown to (title, DraftJS content_state).
+  The first H1 becomes the article title, not a body block."""
+  blocks, entities = [], []
+  title = None
 
-    def add(text, btype):
-        plain, styles, links = parse_inline(text)
-        blk = {"text": plain, "type": btype}
-        if styles:
-            blk["inline_style_ranges"] = [
-                {"offset": o, "length": ln, "style": s} for o, ln, s in styles]
-        if links:
-            ranges = []
-            for o, ln, url in links:
-                # entities[].key is a string, but entity_ranges[].key must be
-                # the INTEGER index (API rejects strings despite the docs)
-                idx = len(entities)
-                entities.append({"key": str(idx), "value": {
-                    "type": "link", "mutability": "mutable", "data": {"url": url}}})
-                ranges.append({"key": idx, "offset": o, "length": ln})
-            blk["entity_ranges"] = ranges
-        blocks.append(blk)
+  def add(text, btype):
+    plain, styles, links = parse_inline(text)
+    blk = {"text": plain, "type": btype}
+    if styles:
+      blk["inline_style_ranges"] = [
+        {"offset": o, "length": ln, "style": s} for o, ln, s in styles
+      ]
+    if links:
+      ranges = []
+      for o, ln, url in links:
+        # entities[].key is a string, but entity_ranges[].key must be
+        # the INTEGER index (API rejects strings despite the docs)
+        idx = len(entities)
+        entities.append(
+          {
+            "key": str(idx),
+            "value": {"type": "link", "mutability": "mutable", "data": {"url": url}},
+          }
+        )
+        ranges.append({"key": idx, "offset": o, "length": ln})
+      blk["entity_ranges"] = ranges
+    blocks.append(blk)
 
-    para = []
-    table = []
+  para = []
+  table = []
 
-    def flush():
-        if para:
-            add(" ".join(para), "unstyled")
-            para.clear()
+  def flush():
+    if para:
+      add(" ".join(para), "unstyled")
+      para.clear()
 
-    def flush_table():
-        # Undocumented but verified 2026-07-20: an atomic block whose entity is
-        # type "markdown" renders a real table from the markdown it carries
-        # (same mechanism as the editor's paste-markdown-to-table trick).
-        if table:
-            idx = len(entities)
-            entities.append({"key": str(idx), "value": {
-                "type": "markdown", "mutability": "immutable",
-                "data": {"markdown": "\n".join(table)}}})
-            blocks.append({"text": " ", "type": "atomic",
-                           "entity_ranges": [{"key": idx, "offset": 0, "length": 1}]})
-            table.clear()
+  def flush_table():
+    # Undocumented but verified 2026-07-20: an atomic block whose entity is
+    # type "markdown" renders a real table from the markdown it carries
+    # (same mechanism as the editor's paste-markdown-to-table trick).
+    if table:
+      idx = len(entities)
+      entities.append(
+        {
+          "key": str(idx),
+          "value": {
+            "type": "markdown",
+            "mutability": "immutable",
+            "data": {"markdown": "\n".join(table)},
+          },
+        }
+      )
+      blocks.append(
+        {
+          "text": " ",
+          "type": "atomic",
+          "entity_ranges": [{"key": idx, "offset": 0, "length": 1}],
+        }
+      )
+      table.clear()
 
-    for raw in md.splitlines():
-        st = raw.strip()
-        if st.startswith("|") and st.endswith("|") and st.count("|") >= 2:
-            flush()
-            table.append(st)
-            continue
-        flush_table()
-        if not st:
-            flush()
-        elif re.fullmatch(r"-{3,}|\*{3,}|_{3,}", st):
-            flush()  # horizontal rule - no DraftJS equivalent
-        elif st.startswith("# "):
-            flush()
-            if title is None:
-                title = parse_inline(st[2:])[0]
-            else:
-                add(st[2:], "header-one")
-        elif st.startswith("## "):
-            flush()
-            add(st[3:], "header-two")
-        elif st.startswith("### "):
-            flush()
-            add(st[4:], "header-three")
-        elif re.match(r"^[-*•]\s+", st):
-            flush()
-            add(re.sub(r"^[-*•]\s+", "", st), "unordered-list-item")
-        elif re.match(r"^\d+[.)]\s+", st):
-            flush()
-            add(re.sub(r"^\d+[.)]\s+", "", st), "ordered-list-item")
-        elif st.startswith("> "):
-            flush()
-            add(st[2:], "blockquote")
-        else:
-            para.append(st)
-    flush()
+  for raw in md.splitlines():
+    st = raw.strip()
+    if st.startswith("|") and st.endswith("|") and st.count("|") >= 2:
+      flush()
+      table.append(st)
+      continue
     flush_table()
-    return title, {"blocks": blocks, "entities": entities}
+    if not st:
+      flush()
+    elif re.fullmatch(r"-{3,}|\*{3,}|_{3,}", st):
+      flush()  # horizontal rule - no DraftJS equivalent
+    elif st.startswith("# "):
+      flush()
+      if title is None:
+        title = parse_inline(st[2:])[0]
+      else:
+        add(st[2:], "header-one")
+    elif st.startswith("## "):
+      flush()
+      add(st[3:], "header-two")
+    elif st.startswith("### "):
+      flush()
+      add(st[4:], "header-three")
+    elif re.match(r"^[-*•]\s+", st):
+      flush()
+      add(re.sub(r"^[-*•]\s+", "", st), "unordered-list-item")
+    elif re.match(r"^\d+[.)]\s+", st):
+      flush()
+      add(re.sub(r"^\d+[.)]\s+", "", st), "ordered-list-item")
+    elif st.startswith("> "):
+      flush()
+      add(st[2:], "blockquote")
+    else:
+      para.append(st)
+  flush()
+  flush_table()
+  return title, {"blocks": blocks, "entities": entities}
 
 
 # ── commands ─────────────────────────────────────────────────────────────────
 
+
 def article_sidecar(proj: Path, ticker: str) -> Path:
-    return proj / "social" / f"{ticker}_x_article.json"
+  return proj / "social" / f"{ticker}_x_article.json"
 
 
 class ArticleSource(NamedTuple):
-    """Everything an X Article needs, resolved from either a ticker project or a blog
-    post. The two differ only in where the markdown, the cover and the sidecar live, so
-    cmd_article takes one of these rather than a ticker.
+  """Everything an X Article needs, resolved from either a ticker project or a blog
+  post. The two differ only in where the markdown, the cover and the sidecar live, so
+  cmd_article takes one of these rather than a ticker.
 
-    Blog posts get this path because the X Article is the best-performing format on the
-    account (median 380 vs 189 plain text) and it was reachable only by ticker content -
-    while the concept/education lane is the one with measured search demand behind it.
-    """
-    kind: str              # "ticker" | "blog"
-    name: str              # TICKER or slug: used in messages and the --publish hint
-    text: str              # markdown body, frontmatter already stripped
-    title: str | None      # explicit title (blog frontmatter); None = take the body's H1
-    sidecar: Path
-    cover: Path | None
-    campaign: str | None
-    recipe: str            # the `just` recipe that produced it, for the next-step hints
+  Blog posts get this path because the X Article is the best-performing format on the
+  account (median 380 vs 189 plain text) and it was reachable only by ticker content -
+  while the concept/education lane is the one with measured search demand behind it.
+  """
+
+  kind: str  # "ticker" | "blog"
+  name: str  # TICKER or slug: used in messages and the --publish hint
+  text: str  # markdown body, frontmatter already stripped
+  title: str | None  # explicit title (blog frontmatter); None = take the body's H1
+  sidecar: Path
+  cover: Path | None
+  campaign: str | None
+  recipe: str  # the `just` recipe that produced it, for the next-step hints
 
 
 def resolve_article_source(args) -> ArticleSource:
-    if args.blog:
-        slug = args.target
-        d = REPO / "blog" / slug
-        if not d.is_dir():
-            sys.exit(f"no blog post at blog/{slug}/ - `just blog-new {slug}` first")
-        meta, body = blog_common.parse_post(slug)
-        cover = d / f"{slug}_article_cover.png"
-        return ArticleSource(
-            kind="blog", name=slug, text=body,
-            # The blog's frontmatter title is authoritative; the body often has no H1.
-            title=(meta.get("title") or "").strip() or None,
-            sidecar=d / f"{slug}_x_article.json",
-            cover=cover if cover.exists() else None,
-            campaign=args.campaign, recipe="blog-x-article")
-
-    ticker = args.target.upper()
-    proj = REPO / "projects" / ticker
-    brief = proj / "reports" / f"{ticker}_brief.md"
-    if not brief.exists():
-        sys.exit(f"brief not found: {brief}")
-    cover = proj / "charts" / "png" / f"{ticker}_article_cover.png"   # branded masthead
-    if not cover.exists():
-        cover = proj / "charts" / "png" / f"{ticker}_thumbnail_x.png"  # legacy gpt-image 5:2
+  if args.blog:
+    slug = args.target
+    d = REPO / "blog" / slug
+    if not d.is_dir():
+      sys.exit(f"no blog post at blog/{slug}/ - `just blog-new {slug}` first")
+    meta, body = blog_common.parse_post(slug)
+    cover = d / f"{slug}_article_cover.png"
     return ArticleSource(
-        kind="ticker", name=ticker, text=brief.read_text(), title=None,
-        sidecar=article_sidecar(proj, ticker),
-        cover=cover if cover.exists() else None,
-        campaign=args.campaign or detect_campaign(proj), recipe="x-article")
+      kind="blog",
+      name=slug,
+      text=body,
+      # The blog's frontmatter title is authoritative; the body often has no H1.
+      title=(meta.get("title") or "").strip() or None,
+      sidecar=d / f"{slug}_x_article.json",
+      cover=cover if cover.exists() else None,
+      campaign=args.campaign,
+      recipe="blog-x-article",
+    )
+
+  ticker = args.target.upper()
+  proj = REPO / "projects" / ticker
+  brief = proj / "reports" / f"{ticker}_brief.md"
+  if not brief.exists():
+    sys.exit(f"brief not found: {brief}")
+  cover = proj / "charts" / "png" / f"{ticker}_article_cover.png"  # branded masthead
+  if not cover.exists():
+    cover = (
+      proj / "charts" / "png" / f"{ticker}_thumbnail_x.png"
+    )  # legacy gpt-image 5:2
+  return ArticleSource(
+    kind="ticker",
+    name=ticker,
+    text=brief.read_text(),
+    title=None,
+    sidecar=article_sidecar(proj, ticker),
+    cover=cover if cover.exists() else None,
+    campaign=args.campaign or detect_campaign(proj),
+    recipe="x-article",
+  )
 
 
 def cmd_article(args) -> int:
-    src = resolve_article_source(args)
-    sidecar = src.sidecar
+  src = resolve_article_source(args)
+  sidecar = src.sidecar
 
-    if args.publish:
-        if args.id:
-            article_id = args.id
-        elif sidecar.exists():
-            article_id = json.loads(sidecar.read_text())["article_id"]
-        else:
-            sys.exit(f"no {sidecar.name} found - run `just {src.recipe} {src.name}` first "
-                     "(or pass --id ARTICLE_ID)")
-        sess = oauth_session()
-        handle = acting_user_guard(sess)
-        r = sess.post(f"{API}/2/articles/{article_id}/publish")
-        if r.status_code >= 300:
-            api_error(r, "publishing the article")
-        post_id = r.json()["data"]["post_id"]
-        url = f"https://x.com/{handle}/status/{post_id}"
-        print(f"ARTICLE LIVE: {url}")
-        data = json.loads(sidecar.read_text()) if sidecar.exists() else {"article_id": article_id}
-        from datetime import datetime, timezone
-        data.update(status="published", post_id=post_id, url=url,
-                    published_at=datetime.now(timezone.utc).isoformat(timespec="seconds"))
-        sidecar.write_text(json.dumps(data, indent=2) + "\n")
-        if src.kind == "ticker":
-            print(f"next: just x-post {src.name} (picks up the Article link automatically)")
-        return 0
-
-    text = helpers.apply_promo_code(src.text, helpers.resolve_promo_code(src.campaign))
-    h1_title, content_state = md_to_content_state(text)
-    title = src.title or h1_title
-    if not title:
-        sys.exit(f"{src.name} has no title - the first `# ` line becomes the Article title"
-                 + (" (or set `title:` in the frontmatter)" if src.kind == "blog" else ""))
-
-    cover = src.cover if (src.cover and not args.no_cover) else None
-
-    kinds = {}
-    for b in content_state["blocks"]:
-        kinds[b["type"]] = kinds.get(b["type"], 0) + 1
-    print(f"title:     {title}")
-    print(f"blocks:    {sum(kinds.values())} ({', '.join(f'{v} {k}' for k, v in kinds.items())})")
-    print(f"entities:  {len(content_state['entities'])}")
-    print(f"cover:     {cover if cover else 'NONE'}")
-    if args.dry_run:
-        print("--- dry run: first blocks ---")
-        for b in content_state["blocks"][:4]:
-            print(f"[{b['type']}] {b['text'][:110]}")
-        return 0
-
+  if args.publish:
+    if args.id:
+      article_id = args.id
+    elif sidecar.exists():
+      article_id = json.loads(sidecar.read_text())["article_id"]
+    else:
+      sys.exit(
+        f"no {sidecar.name} found - run `just {src.recipe} {src.name}` first "
+        "(or pass --id ARTICLE_ID)"
+      )
     sess = oauth_session()
-    acting_user_guard(sess)
-    payload = {"title": title, "content_state": content_state}
-    if cover:
-        payload["cover_media"] = {
-            "media_category": "tweet_image",
-            "media_id": upload_media(sess, cover, "image/png", "tweet_image"),
-        }
-    r = sess.post(f"{API}/2/articles/draft", json=payload)
+    handle = acting_user_guard(sess)
+    r = sess.post(f"{API}/2/articles/{article_id}/publish")
     if r.status_code >= 300:
-        api_error(r, "creating the article draft")
-    article_id = r.json()["data"]["id"]
-    print(f"DRAFT created: article {article_id}")
-
+      api_error(r, "publishing the article")
+    post_id = r.json()["data"]["post_id"]
+    url = f"https://x.com/{handle}/status/{post_id}"
+    print(f"ARTICLE LIVE: {url}")
+    data = (
+      json.loads(sidecar.read_text())
+      if sidecar.exists()
+      else {"article_id": article_id}
+    )
     from datetime import datetime, timezone
-    sidecar.write_text(json.dumps({
+
+    data.update(
+      status="published",
+      post_id=post_id,
+      url=url,
+      published_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),
+    )
+    sidecar.write_text(json.dumps(data, indent=2) + "\n")
+    if src.kind == "ticker":
+      print(f"next: just x-post {src.name} (picks up the Article link automatically)")
+    return 0
+
+  text = helpers.apply_promo_code(src.text, helpers.resolve_promo_code(src.campaign))
+  h1_title, content_state = md_to_content_state(text)
+  title = src.title or h1_title
+  if not title:
+    sys.exit(
+      f"{src.name} has no title - the first `# ` line becomes the Article title"
+      + (" (or set `title:` in the frontmatter)" if src.kind == "blog" else "")
+    )
+
+  cover = src.cover if (src.cover and not args.no_cover) else None
+
+  kinds = {}
+  for b in content_state["blocks"]:
+    kinds[b["type"]] = kinds.get(b["type"], 0) + 1
+  print(f"title:     {title}")
+  print(
+    f"blocks:    {sum(kinds.values())} ({', '.join(f'{v} {k}' for k, v in kinds.items())})"
+  )
+  print(f"entities:  {len(content_state['entities'])}")
+  print(f"cover:     {cover if cover else 'NONE'}")
+  if args.dry_run:
+    print("--- dry run: first blocks ---")
+    for b in content_state["blocks"][:4]:
+      print(f"[{b['type']}] {b['text'][:110]}")
+    return 0
+
+  sess = oauth_session()
+  acting_user_guard(sess)
+  payload = {"title": title, "content_state": content_state}
+  if cover:
+    payload["cover_media"] = {
+      "media_category": "tweet_image",
+      "media_id": upload_media(sess, cover, "image/png", "tweet_image"),
+    }
+  r = sess.post(f"{API}/2/articles/draft", json=payload)
+  if r.status_code >= 300:
+    api_error(r, "creating the article draft")
+  article_id = r.json()["data"]["id"]
+  print(f"DRAFT created: article {article_id}")
+
+  from datetime import datetime, timezone
+
+  sidecar.write_text(
+    json.dumps(
+      {
         "article_id": article_id,
         "title": title,
         "status": "draft",
         "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-    }, indent=2) + "\n")
-    print("review it in the X Articles editor (x.com -> Premium -> Articles), then:")
-    print(f"  just {src.recipe} {src.name} --publish")
-    return 0
+      },
+      indent=2,
+    )
+    + "\n"
+  )
+  print("review it in the X Articles editor (x.com -> Premium -> Articles), then:")
+  print(f"  just {src.recipe} {src.name} --publish")
+  return 0
 
 
 def resolve_article_url(proj: Path, ticker: str, args) -> str | None:
-    if args.article_url:
-        return args.article_url
-    sidecar = article_sidecar(proj, ticker)
-    if sidecar.exists():
-        data = json.loads(sidecar.read_text())
-        if data.get("status") == "published" and data.get("url"):
-            return data["url"]
-        print(f"NOTE: article draft exists but is unpublished - "
-              f"run `just x-article {ticker} --publish` first for the link")
-    return None
+  if args.article_url:
+    return args.article_url
+  sidecar = article_sidecar(proj, ticker)
+  if sidecar.exists():
+    data = json.loads(sidecar.read_text())
+    if data.get("status") == "published" and data.get("url"):
+      return data["url"]
+    print(
+      f"NOTE: article draft exists but is unpublished - "
+      f"run `just x-article {ticker} --publish` first for the link"
+    )
+  return None
 
 
 def build_post_text(ticker: str, args, article_url: str | None) -> str:
-    proj = REPO / "projects" / ticker
-    fname = f"{ticker}_short_x_post.txt" if getattr(args, "short", False) else f"{ticker}_x_post.txt"
-    src = proj / "social" / fname
-    if not src.exists():
-        sys.exit(f"post copy not found: {src}")
-    # Same assembly as postpack: native video replaces any [YOUTUBE_LINK] line,
-    # and the Article link (internal, so no external-link throttle) goes last.
-    lines = [ln for ln in src.read_text().splitlines() if "[YOUTUBE_LINK]" not in ln]
-    text = re.sub(r"\n{3,}", "\n\n", "\n".join(lines)).strip()
-    code = helpers.resolve_promo_code(args.campaign or detect_campaign(proj))
-    text = helpers.apply_promo_code(text, code)
-    if article_url:
-        text += f"\n\n📄 Full brief: {article_url}"
-    elif "[X_ARTICLE_LINK]" in text:
-        sys.exit("copy contains [X_ARTICLE_LINK] but there is no published article - "
-                 f"run `just x-article {ticker}` / --publish, or pass --article-url")
-    return text
+  proj = REPO / "projects" / ticker
+  fname = (
+    f"{ticker}_short_x_post.txt"
+    if getattr(args, "short", False)
+    else f"{ticker}_x_post.txt"
+  )
+  src = proj / "social" / fname
+  if not src.exists():
+    sys.exit(f"post copy not found: {src}")
+  # Same assembly as postpack: native video replaces any [YOUTUBE_LINK] line,
+  # and the Article link (internal, so no external-link throttle) goes last.
+  lines = [ln for ln in src.read_text().splitlines() if "[YOUTUBE_LINK]" not in ln]
+  text = re.sub(r"\n{3,}", "\n\n", "\n".join(lines)).strip()
+  code = helpers.resolve_promo_code(args.campaign or detect_campaign(proj))
+  text = helpers.apply_promo_code(text, code)
+  if article_url:
+    text += f"\n\n📄 Full brief: {article_url}"
+  elif "[X_ARTICLE_LINK]" in text:
+    sys.exit(
+      "copy contains [X_ARTICLE_LINK] but there is no published article - "
+      f"run `just x-article {ticker}` / --publish, or pass --article-url"
+    )
+  return text
 
 
 def cmd_post(args) -> int:
-    ticker = args.ticker.upper()
-    proj = REPO / "projects" / ticker
-    article_url = resolve_article_url(proj, ticker, args)
-    text = build_post_text(ticker, args, article_url)
+  ticker = args.ticker.upper()
+  proj = REPO / "projects" / ticker
+  article_url = resolve_article_url(proj, ticker, args)
+  text = build_post_text(ticker, args, article_url)
 
-    video = None
-    if not args.no_video:
-        default = f"{ticker}_short.mp4" if getattr(args, "short", False) else f"{ticker}_final.mp4"
-        video = Path(args.video) if args.video else proj / "videos" / default
-        if not video.exists():
-            sys.exit(f"video not found: {video} (use --video, or --no-video for text-only)")
+  video = None
+  if not args.no_video:
+    default = (
+      f"{ticker}_short.mp4" if getattr(args, "short", False) else f"{ticker}_final.mp4"
+    )
+    video = Path(args.video) if args.video else proj / "videos" / default
+    if not video.exists():
+      sys.exit(f"video not found: {video} (use --video, or --no-video for text-only)")
 
-    print(f"post:      {len(text)} chars (280 is the non-Premium cap)")
-    print(f"video:     {video} ({video.stat().st_size/1e6:.1f} MB)" if video else "video:     NONE")
-    print(f"article:   {article_url or 'NONE'}")
-    if args.dry_run:
-        print("--- dry run: post text ---")
-        print(text)
-        return 0
+  print(f"post:      {len(text)} chars (280 is the non-Premium cap)")
+  print(
+    f"video:     {video} ({video.stat().st_size / 1e6:.1f} MB)"
+    if video
+    else "video:     NONE"
+  )
+  print(f"article:   {article_url or 'NONE'}")
+  if args.dry_run:
+    print("--- dry run: post text ---")
+    print(text)
+    return 0
 
-    sess = oauth_session()
-    handle = acting_user_guard(sess)
+  sess = oauth_session()
+  handle = acting_user_guard(sess)
 
-    payload = {"text": text}
-    if video:
-        payload["media"] = {"media_ids": [
-            upload_media(sess, video, "video/mp4", "tweet_video")]}
-        print("video processed")
-    r = sess.post(f"{API}/2/tweets", json=payload)
-    if r.status_code >= 300:
-        api_error(r, "creating the post (POST /2/tweets)")
-    tweet_id = r.json()["data"]["id"]
-    url = f"https://x.com/{handle}/status/{tweet_id}"
-    print(f"posted: {url}")
+  payload = {"text": text}
+  if video:
+    payload["media"] = {
+      "media_ids": [upload_media(sess, video, "video/mp4", "tweet_video")]
+    }
+    print("video processed")
+  r = sess.post(f"{API}/2/tweets", json=payload)
+  if r.status_code >= 300:
+    api_error(r, "creating the post (POST /2/tweets)")
+  tweet_id = r.json()["data"]["id"]
+  url = f"https://x.com/{handle}/status/{tweet_id}"
+  print(f"posted: {url}")
 
-    from datetime import datetime, timezone
-    sc_name = f"{ticker}_short_x.json" if getattr(args, "short", False) else f"{ticker}_x.json"
-    sidecar = proj / "videos" / sc_name
-    sidecar.parent.mkdir(parents=True, exist_ok=True)
-    sidecar.write_text(json.dumps({
+  from datetime import datetime, timezone
+
+  sc_name = (
+    f"{ticker}_short_x.json" if getattr(args, "short", False) else f"{ticker}_x.json"
+  )
+  sidecar = proj / "videos" / sc_name
+  sidecar.parent.mkdir(parents=True, exist_ok=True)
+  sidecar.write_text(
+    json.dumps(
+      {
         "tweet_id": tweet_id,
         "url": url,
         "article_url": article_url,
         "chars": len(text),
         "video": str(video) if video else None,
         "posted_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-    }, indent=2) + "\n")
-    return 0
+      },
+      indent=2,
+    )
+    + "\n"
+  )
+  return 0
 
 
 def cmd_text(args) -> int:
-    """Free-text post with no project behind it (an announcement, a company cut of a
-    personal post). The proof link goes in --reply, never in the body, per the
-    pre-flight rule. Appends a line to drafts/x_text_posts.jsonl as the record."""
-    if args.file:
-        text = Path(args.file).read_text().strip()
-    elif args.text:
-        text = args.text.strip()
-    else:
-        sys.exit("give --text or --file")
-    reply = args.reply.strip() if args.reply else None
+  """Free-text post with no project behind it (an announcement, a company cut of a
+  personal post). The proof link goes in --reply, never in the body, per the
+  pre-flight rule. Appends a line to drafts/x_text_posts.jsonl as the record."""
+  if args.file:
+    text = Path(args.file).read_text().strip()
+  elif args.text:
+    text = args.text.strip()
+  else:
+    sys.exit("give --text or --file")
+  reply = args.reply.strip() if args.reply else None
 
-    print(f"post:      {len(text)} chars (280 is the non-Premium cap)")
-    print(f"reply:     {len(reply)} chars" if reply else "reply:     NONE")
-    if args.dry_run:
-        print("--- dry run: post text ---")
-        print(text)
-        if reply:
-            print("--- reply ---")
-            print(reply)
-        return 0
-
-    sess = oauth_session()
-    handle = acting_user_guard(sess)
-
-    r = sess.post(f"{API}/2/tweets", json={"text": text})
-    if r.status_code >= 300:
-        api_error(r, "creating the post (POST /2/tweets)")
-    tweet_id = r.json()["data"]["id"]
-    url = f"https://x.com/{handle}/status/{tweet_id}"
-    print(f"posted: {url}")
-
-    reply_url = None
+  print(f"post:      {len(text)} chars (280 is the non-Premium cap)")
+  print(f"reply:     {len(reply)} chars" if reply else "reply:     NONE")
+  if args.dry_run:
+    print("--- dry run: post text ---")
+    print(text)
     if reply:
-        r2 = sess.post(f"{API}/2/tweets", json={
-            "text": reply, "reply": {"in_reply_to_tweet_id": tweet_id}})
-        if r2.status_code >= 300:
-            api_error(r2, "creating the reply (POST /2/tweets)")
-        reply_url = f"https://x.com/{handle}/status/{r2.json()['data']['id']}"
-        print(f"reply:  {reply_url}")
-
-    from datetime import datetime, timezone
-    log = REPO / "drafts" / "x_text_posts.jsonl"
-    log.parent.mkdir(parents=True, exist_ok=True)
-    with log.open("a") as fh:
-        fh.write(json.dumps({
-            "tweet_id": tweet_id,
-            "url": url,
-            "reply_url": reply_url,
-            "chars": len(text),
-            "source": str(args.file) if args.file else None,
-            "posted_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-        }) + "\n")
+      print("--- reply ---")
+      print(reply)
     return 0
+
+  sess = oauth_session()
+  handle = acting_user_guard(sess)
+
+  r = sess.post(f"{API}/2/tweets", json={"text": text})
+  if r.status_code >= 300:
+    api_error(r, "creating the post (POST /2/tweets)")
+  tweet_id = r.json()["data"]["id"]
+  url = f"https://x.com/{handle}/status/{tweet_id}"
+  print(f"posted: {url}")
+
+  reply_url = None
+  if reply:
+    r2 = sess.post(
+      f"{API}/2/tweets",
+      json={"text": reply, "reply": {"in_reply_to_tweet_id": tweet_id}},
+    )
+    if r2.status_code >= 300:
+      api_error(r2, "creating the reply (POST /2/tweets)")
+    reply_url = f"https://x.com/{handle}/status/{r2.json()['data']['id']}"
+    print(f"reply:  {reply_url}")
+
+  from datetime import datetime, timezone
+
+  log = REPO / "drafts" / "x_text_posts.jsonl"
+  log.parent.mkdir(parents=True, exist_ok=True)
+  with log.open("a") as fh:
+    fh.write(
+      json.dumps(
+        {
+          "tweet_id": tweet_id,
+          "url": url,
+          "reply_url": reply_url,
+          "chars": len(text),
+          "source": str(args.file) if args.file else None,
+          "posted_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        }
+      )
+      + "\n"
+    )
+  return 0
 
 
 def cmd_auth(_args) -> int:
-    at = os.environ.get("X_ACCESS_TOKEN", "").strip()
-    if at:
-        sess = oauth_session()
-        handle, uid, name = acting_user(sess)
-        print(f"auth OK - token acts as: @{handle} ({name}, id {uid})")
-        if not os.environ.get("X_HANDLE", "").strip():
-            print(f'pin it: add X_HANDLE="{handle}" to .env so posts refuse any '
-                  "other account; then try `just x-post TICKER --dry-run`")
-        return 0
-
-    # PIN-based OAuth 1.0a - needs a TTY for the PIN paste: run as `! just x-auth`
-    from requests_oauthlib import OAuth1Session
-    ck = os.environ.get("X_CONSUMER_KEY", "").strip()
-    cs = os.environ.get("X_SECRET_KEY", "").strip()
-    if not (ck and cs):
-        sys.exit("X_CONSUMER_KEY / X_SECRET_KEY missing from .env")
-    sess = OAuth1Session(ck, client_secret=cs, callback_uri="oob")
-    try:
-        sess.fetch_request_token(f"{API}/oauth/request_token")
-    except Exception as e:
-        sys.exit(f"request_token failed ({e}).\nThe app needs 'User authentication "
-                 "settings' configured (permissions: Read and write) in the "
-                 "developer portal - or skip this flow entirely by generating the "
-                 "Access Token and Secret in Keys and tokens (see docstring).")
-    print("Visit this URL logged in as the POSTING account (@RoboFinSystems):")
-    print(sess.authorization_url(f"{API}/oauth/authorize"))
-    pin = input("PIN: ").strip()
-    tok = sess.fetch_access_token(f"{API}/oauth/access_token", verifier=pin)
-    save_env(X_ACCESS_TOKEN=tok["oauth_token"], X_ACCESS_SECRET=tok["oauth_token_secret"])
-    os.environ["X_ACCESS_TOKEN"] = tok["oauth_token"]
-    os.environ["X_ACCESS_SECRET"] = tok["oauth_token_secret"]
-    handle, uid, name = acting_user(oauth_session())
+  at = os.environ.get("X_ACCESS_TOKEN", "").strip()
+  if at:
+    sess = oauth_session()
+    handle, uid, name = acting_user(sess)
     print(f"auth OK - token acts as: @{handle} ({name}, id {uid})")
-    print(f'pin it: add X_HANDLE="{handle}" to .env')
+    if not os.environ.get("X_HANDLE", "").strip():
+      print(
+        f'pin it: add X_HANDLE="{handle}" to .env so posts refuse any '
+        "other account; then try `just x-post TICKER --dry-run`"
+      )
     return 0
+
+  # PIN-based OAuth 1.0a - needs a TTY for the PIN paste: run as `! just x-auth`
+  from requests_oauthlib import OAuth1Session
+
+  ck = os.environ.get("X_CONSUMER_KEY", "").strip()
+  cs = os.environ.get("X_SECRET_KEY", "").strip()
+  if not (ck and cs):
+    sys.exit("X_CONSUMER_KEY / X_SECRET_KEY missing from .env")
+  sess = OAuth1Session(ck, client_secret=cs, callback_uri="oob")
+  try:
+    sess.fetch_request_token(f"{API}/oauth/request_token")
+  except Exception as e:
+    sys.exit(
+      f"request_token failed ({e}).\nThe app needs 'User authentication "
+      "settings' configured (permissions: Read and write) in the "
+      "developer portal - or skip this flow entirely by generating the "
+      "Access Token and Secret in Keys and tokens (see docstring)."
+    )
+  print("Visit this URL logged in as the POSTING account (@RoboFinSystems):")
+  print(sess.authorization_url(f"{API}/oauth/authorize"))
+  pin = input("PIN: ").strip()
+  tok = sess.fetch_access_token(f"{API}/oauth/access_token", verifier=pin)
+  save_env(X_ACCESS_TOKEN=tok["oauth_token"], X_ACCESS_SECRET=tok["oauth_token_secret"])
+  os.environ["X_ACCESS_TOKEN"] = tok["oauth_token"]
+  os.environ["X_ACCESS_SECRET"] = tok["oauth_token_secret"]
+  handle, uid, name = acting_user(oauth_session())
+  print(f"auth OK - token acts as: @{handle} ({name}, id {uid})")
+  print(f'pin it: add X_HANDLE="{handle}" to .env')
+  return 0
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser()
-    sub = ap.add_subparsers(dest="cmd", required=True)
-    sub.add_parser("auth", help="verify (or mint via PIN flow) the user token")
+  ap = argparse.ArgumentParser()
+  sub = ap.add_subparsers(dest="cmd", required=True)
+  sub.add_parser("auth", help="verify (or mint via PIN flow) the user token")
 
-    ar = sub.add_parser("article", help="create (or --publish) a brief or blog post as an X Article")
-    ar.add_argument("target", help="TICKER, or a blog slug with --blog")
-    ar.add_argument("--blog", action="store_true",
-                    help="target is a blog slug (blog/<slug>/post.md) rather than a ticker")
-    ar.add_argument("--publish", action="store_true",
-                    help="publish the draft from the sidecar (the post-review step)")
-    ar.add_argument("--id", help="explicit article id (else the sidecar next to the source)")
-    ar.add_argument("--no-cover", action="store_true", help="skip the 5:2 cover image")
-    ar.add_argument("--campaign", help="promo-code campaign override")
-    ar.add_argument("--dry-run", action="store_true")
+  ar = sub.add_parser(
+    "article", help="create (or --publish) a brief or blog post as an X Article"
+  )
+  ar.add_argument("target", help="TICKER, or a blog slug with --blog")
+  ar.add_argument(
+    "--blog",
+    action="store_true",
+    help="target is a blog slug (blog/<slug>/post.md) rather than a ticker",
+  )
+  ar.add_argument(
+    "--publish",
+    action="store_true",
+    help="publish the draft from the sidecar (the post-review step)",
+  )
+  ar.add_argument(
+    "--id", help="explicit article id (else the sidecar next to the source)"
+  )
+  ar.add_argument("--no-cover", action="store_true", help="skip the 5:2 cover image")
+  ar.add_argument("--campaign", help="promo-code campaign override")
+  ar.add_argument("--dry-run", action="store_true")
 
-    po = sub.add_parser("post", help="send the single X post with native video")
-    po.add_argument("ticker")
-    po.add_argument("--short", action="store_true",
-                    help="post the 9:16 short natively (videos/{T}_short.mp4 + "
-                         "social/{T}_short_x_post.txt, its own {T}_short_x.json sidecar)")
-    po.add_argument("--article-url", help="override the Article link (else the sidecar)")
-    po.add_argument("--video", help="explicit video path (e.g. webdeck _music variant)")
-    po.add_argument("--no-video", action="store_true", help="text-only post")
-    po.add_argument("--campaign", help="promo-code campaign override")
-    po.add_argument("--dry-run", action="store_true")
+  po = sub.add_parser("post", help="send the single X post with native video")
+  po.add_argument("ticker")
+  po.add_argument(
+    "--short",
+    action="store_true",
+    help="post the 9:16 short natively (videos/{T}_short.mp4 + "
+    "social/{T}_short_x_post.txt, its own {T}_short_x.json sidecar)",
+  )
+  po.add_argument("--article-url", help="override the Article link (else the sidecar)")
+  po.add_argument("--video", help="explicit video path (e.g. webdeck _music variant)")
+  po.add_argument("--no-video", action="store_true", help="text-only post")
+  po.add_argument("--campaign", help="promo-code campaign override")
+  po.add_argument("--dry-run", action="store_true")
 
-    tx = sub.add_parser("text", help="send a free-text post with no project (announcements, company cuts)")
-    tx.add_argument("--text", help="the post body")
-    tx.add_argument("--file", help="read the post body from a file instead")
-    tx.add_argument("--reply", help="a follow-up reply posted under it (where the proof link goes)")
-    tx.add_argument("--dry-run", action="store_true")
+  tx = sub.add_parser(
+    "text", help="send a free-text post with no project (announcements, company cuts)"
+  )
+  tx.add_argument("--text", help="the post body")
+  tx.add_argument("--file", help="read the post body from a file instead")
+  tx.add_argument(
+    "--reply", help="a follow-up reply posted under it (where the proof link goes)"
+  )
+  tx.add_argument("--dry-run", action="store_true")
 
-    args = ap.parse_args()
-    if args.cmd == "text":
-        return cmd_text(args)
-    if args.cmd == "auth":
-        return cmd_auth(args)
-    if args.cmd == "article":
-        return cmd_article(args)
-    return cmd_post(args)
+  args = ap.parse_args()
+  if args.cmd == "text":
+    return cmd_text(args)
+  if args.cmd == "auth":
+    return cmd_auth(args)
+  if args.cmd == "article":
+    return cmd_article(args)
+  return cmd_post(args)
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+  sys.exit(main())
