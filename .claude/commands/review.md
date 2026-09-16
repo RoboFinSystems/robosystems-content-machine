@@ -66,7 +66,7 @@ figure back is how the original error survived review.
 | Brief H1 length | **≤ 100 chars.** Over-long returns a valid-looking draft id that was never persisted, and fails later with a misleading "not found or not owned" |
 | Cashtag in hook | space-preceded ` $TICKER`, never `($TICKER)` |
 | Cashtags per X post | **exactly 1.** X allows one cashtag per post; demote any second ticker or ETF to a hashtag |
-| Em/en dashes | **zero** in every deliverable. (`template/blog/post.md` has two in its placeholder text — scaffold, not authored, safe to ignore) |
+| Em/en dashes | **zero** in every deliverable. ⚠️ **Scope the scan to authored files only**: `reports/{T}_brief.md`, `scripts/*.json`, `social/*`. Scanning the whole project dir always reports ~102 hits from the SCAFFOLDED contract docs (`AUTHORING_INSTRUCTIONS.md`, `PRODUCTION_CONTRACT.md`, `KICKOFF.md`, `sources/README.md`, `blog/post.md`) - template text, not authored, and identical in every project. A count that is the same for every ticker is the tell. |
 | Duplicate `visual_ref` | none |
 | `cta` segment | present |
 
