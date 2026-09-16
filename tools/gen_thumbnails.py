@@ -286,6 +286,15 @@ def main():
     action="store_true",
     help="print the extracted elements + prompts, generate nothing",
   )
+  # The copy model compresses the brief's headline, and compression can turn a
+  # correctly-scoped claim into a false one: PANW's brief said "99.9% OF IT booked
+  # as goodwill" (of the purchase price) and the thumbnail rendered "99.9%
+  # INTANGIBLES", which asserts something untrue about the company. Re-running just
+  # produces the same hook, and the brief is not the thing that is wrong. These let a
+  # reviewer correct the art without distorting the analysis.
+  ap.add_argument("--hook", help="override hook_stat (the big blue line)")
+  ap.add_argument("--hook-line", help="override hook_line (the tension phrase)")
+  ap.add_argument("--badge", help="override key_stat (the small lower-left badge)")
   args = ap.parse_args()
 
   key = load_env().get("OPENAI_API_KEY") or os.environ.get("OPENAI_API_KEY")
@@ -310,6 +319,12 @@ def main():
     f"  chat model: {model}  ·  image model: {IMAGE_MODEL}  ·  quality: {args.quality}"
   )
   el = extract_elements(key, model, brief)
+  for flag, field in (("hook", "hook_stat"), ("hook_line", "hook_line"),
+                      ("badge", "key_stat")):
+    override = getattr(args, flag.replace("-", "_"), None)
+    if override:
+      print(f"  override {field}: {el.get(field)!r} -> {override!r}")
+      el[field] = override
   print(
     f"  hook: {el.get('hook_stat')!r} / {el.get('hook_line')!r}  ·  badge: {el.get('key_stat')!r}"
   )
