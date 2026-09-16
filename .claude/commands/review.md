@@ -35,7 +35,9 @@ The validator cannot tell whether a number is *true*, only whether it looks susp
 here, where the filing is one call away.
 
 ```
-load_filing  {source: "{TICKER} 10-K"}     # a plain ticker resolves stale symbols on its own
+load_filing  {source: "cik:accession"}     # ACCESSION for a just-filed report: the ticker
+                                           # shorthand can return LAST year's 10-K.
+                                           # Check period_end in the receipt before trusting it.
 fact_grid    {elements: [...], period_type: "duration"}
 ```
 

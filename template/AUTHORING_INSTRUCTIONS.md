@@ -72,6 +72,13 @@ the detail. `fact_grid` for values, `search_text` / `read_text` for prose. Never
 name, `resolve_element` first. `disclosures` before `information_block` always: the latter is the
 expensive call and costs 15,000-30,000 characters.
 
+> **⚠️ For a just-filed report, `load_filing` by ACCESSION, not by ticker.** The ticker shorthand
+> (`UNFI 10-K`) resolves through an index that can lag a day or two behind EDGAR, so for a filing
+> that landed this week it may silently return **last year's** annual report. Confirmed on UNFI
+> 2026-09-15: `UNFI 10-K` loaded FY2025, not the FY2026 filed the day before. Get the accession
+> from `search_filings` and load `cik:accession`, then **check `period_end` and `fiscal_year` in
+> the load receipt before using a single number.**
+
 Two things it does that the graph cannot:
 
 - `fact_grid` reports an **`excluded`** list naming concepts the filer *did* tag whose facts your
