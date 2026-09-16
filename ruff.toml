@@ -1,0 +1,29 @@
+# Mirrors the robosystems / robosystems-python-client house style so `just lint`
+# gives the same answer on every machine (no reliance on a user-level ruff config).
+exclude = [
+  ".git",
+  ".ruff_cache",
+  ".venv",
+  "venv",
+  "node_modules",
+  ".claude/worktrees",  # scratch worktrees carry stale copies of tools/
+  "local/archive",      # retired pipeline stages kept for reference only
+  "projects",           # generated per-ticker output, gitignored
+]
+
+line-length = 88
+indent-width = 2
+target-version = "py313"
+
+[lint]
+select = ["E4", "E7", "E9", "F"]
+ignore = []
+fixable = ["ALL"]
+unfixable = []
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"

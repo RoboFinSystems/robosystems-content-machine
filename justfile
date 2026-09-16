@@ -2,6 +2,9 @@
 # ROBOSYSTEMS CONTENT MACHINE — VIDEO CONTENT PIPELINE
 # =============================================================================
 #
+# FIRST RUN:
+#   just venv                                     # .venv + Python/Node deps + .env
+#
 # QUICK START:
 #   just new NVDA                                 # Generic template
 #   just campaign GTBIF cannabis_coverage         # Campaign coverage
@@ -27,6 +30,50 @@ default:
 [private]
 ensure-env:
     @test -f {{_env}} || cp .env.example {{_env}}
+
+# ─── Environment (first run + maintenance) ───────────────────
+
+# First run: create .venv, install Python + Node deps, seed .env (idempotent)
+venv:
+    uv venv
+    @just install
+
+# Install Python deps from uv.lock (incl. the dev group: ruff) + the webdeck renderer's Node deps
+install:
+    @just ensure-env
+    uv sync
+    @just install-node
+
+# renderer/ and design-system/ are optional lanes with their own installs
+# (just render-setup, just design-build); only the core pipeline's Node deps live here.
+
+# Node deps for the headless-Chrome webdeck renderer (tools/webdeck)
+install-node:
+    cd tools/webdeck && npm ci --no-audit --no-fund --silent
+
+# Upgrade deps to the newest versions the manifests allow, re-lock, and sync
+update:
+    uv lock --upgrade
+    uv sync
+    cd tools/webdeck && npm update --no-audit --no-fund --silent
+
+# Lint + format check (ruff.toml pins the robosystems house style)
+lint:
+    uv run ruff check .
+    uv run ruff format --check .
+
+# Format code
+format:
+    uv run ruff format .
+
+# Clean dev caches (project assets are `just clean TICKER`)
+clean-dev:
+    rm -rf .ruff_cache
+    find . -path ./.venv -prune -o -path '*/node_modules' -prune -o -type d -name __pycache__ -exec rm -rf {} +
+
+# Show help
+help:
+    @just --list
 
 # ─── Coverage Setup ──────────────────────────────────────────
 

@@ -18,6 +18,7 @@ an **audio edition** of that brief - one analysis, every surface.
 ```bash
 git clone https://github.com/RoboFinSystems/robosystems-content-machine.git
 cd robosystems-content-machine
+just venv          # .venv + Python/Node deps + a starter .env
 
 # Scaffold a project from a campaign
 just campaign TICKER campaign_name
@@ -27,6 +28,8 @@ just new TICKER
 ```
 
 The first `just` command auto-creates `.env` from `.env.example`. Fill in your API keys (see [Setup](#setup)).
+Day to day: `just install` re-syncs from the lockfiles, `just update` upgrades and re-locks them,
+`just lint` / `just format` run ruff.
 
 ## How It Works
 

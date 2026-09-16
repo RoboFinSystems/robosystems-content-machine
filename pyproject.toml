@@ -12,3 +12,8 @@ dependencies = [
     "google-auth-oauthlib>=1.2",
     "requests-oauthlib>=2.0",
 ]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.12",
+]
