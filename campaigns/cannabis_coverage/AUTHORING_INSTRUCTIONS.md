@@ -120,14 +120,58 @@ miss revenue/net_income — if `build-fact-grid` returns nothing, fall back to `
 searching `ifrs-full:` elements by fact count. FY2025 40-Fs for Curaleaf, Cresco, and Glass House
 are now loaded (the previously-"blocked" names).
 
+### xbrlkit: the verification pillar (one filing, read from the source)
+
+`mcp__xbrlkit__*` is a second, complementary MCP server. Use both; they are not interchangeable.
+
+- **The graph is the corpus.** Indexed, curated, many filers and many periods. Right for
+  discovery, multi-year trends and cross-company comps.
+- **xbrlkit is one filing**, parsed in memory and read from the source. No index and no curation,
+  so it sees everything the filer actually tagged, including their own extension concepts and the
+  details tables a consolidated view never surfaces.
+
+**Use xbrlkit whenever a number is load-bearing.** Anything that lands in the hook, on a slide, in
+a headline claim or in the thesis gets confirmed against the filing before you write it down.
+
+Loop: `load_filing` (takes a plain ticker and resolves the stale-symbol problem itself: `TRLV 10-K`
+loads Trulieve under CIK 0001754195) then `describe_filing` for period keys and networks, then
+`disclosures` with a topic for the cheap family index, then `information_block` on ONE block id for
+the detail. `fact_grid` for values, `search_text` / `read_text` for prose. Never guess a concept
+name, `resolve_element` first. `disclosures` before `information_block` always: the latter is the
+expensive call and costs 15,000-30,000 characters.
+
+Two things it does that the graph cannot:
+
+- `fact_grid` reports an **`excluded`** list naming concepts the filer *did* tag whose facts your
+  filter dropped. "The filer never reported it" stops looking identical to "my query missed it".
+- `information_block` returns the **calculation arcs with a per-period footing check**, so a
+  subtotal that does not foot gets flagged instead of being copied into the brief.
+
+Worked example of why this matters: Trulieve tags a detail table called *Schedule of Cash Payment
+for Income Taxes (Net) of Refunds Received*. The consolidated view gives you "$1.46M of cash tax".
+The filer's own table gives you "federal was **negative** $303 thousand, a refund, and every dollar
+paid was state and local, mostly Pennsylvania". Green Thumb tags no such table, which is itself
+worth knowing. When a tax or cash claim is load-bearing, read the filer's detail table.
+
 ## Cannabis-Specific Analysis Requirements
 
 Beyond standard analysis, every cannabis video MUST address:
 
-1. **280E tax burden** *(the single most important metric)* — effective tax rate = Income Tax
-   Expense ÷ Pretax Income; compare to a normal ~21-25%; the **280E penalty** in dollars =
-   (effective − normal) × pretax income; the multi-year trend; and what margins would look
-   like if 280E went away.
+1. **280E tax burden** *(the single most important metric)*. **Pull two numbers, not one.**
+   *Charged* is `us-gaap:IncomeTaxExpenseBenefit`, an accrual. *Paid* is
+   `us-gaap:IncomeTaxesPaidNet`, cash out the door. For 280E filers these diverge enormously and
+   the cash number is usually the real story: Trulieve FY2025 was charged **$208.1M** and paid
+   **$1.46M**, of which federal was *negative* $303K, a refund. Report the effective tax rate
+   (Income Tax Expense ÷ Pretax Income) against a normal ~21-25%, the **280E penalty** in dollars
+   = (effective − normal) × pretax income, the multi-year trend, and what margins would look like
+   if 280E went away. Then state **what was actually paid in cash**, and where the gap went: almost
+   always a growing uncertain-tax-benefit reserve, so pull `us-gaap:UnrecognizedTaxBenefits` as an
+   instant and size it against the cash balance.
+   **Language rule: write "charged" or "taxed", never "paid", over an expense figure.** "Paid or
+   accrued" is NOT an acceptable hedge, it reads as "paid" to a viewer. If you mean the accrual,
+   say charged. Six published names got this wrong, overstating by up to 143x and inverting the
+   actual story, which is that the tax is charged and largely **not** paid. Verify both figures
+   with xbrlkit, and check whether the filer tagged a jurisdiction-level cash-tax table.
 2. **Goodwill & impairment** — total goodwill/intangibles; cumulative impairments since the
    2021-22 peak; % of boom-era acquisition value written off; remaining goodwill as % of assets.
 3. **Debt & survival** — total debt + maturity schedule (`search-documents` for "long-term debt

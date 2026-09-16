@@ -52,6 +52,39 @@ is the actual value in base units (revenue $23.7B is stored as `23739000000`) â€
 high-level tools usually handle this; if `build-fact-grid` returns nothing for revenue/net_income,
 fall back to `read-graph-cypher` searching `ifrs-full:` elements by fact count.
 
+### xbrlkit: the verification pillar (one filing, read from the source)
+
+`mcp__xbrlkit__*` is a second, complementary MCP server. Use both; they are not interchangeable.
+
+- **The graph is the corpus.** Indexed, curated, many filers and many periods. Right for
+  discovery, multi-year trends and cross-company comps.
+- **xbrlkit is one filing**, parsed in memory and read from the source. No index and no curation,
+  so it sees everything the filer actually tagged, including their own extension concepts and the
+  details tables a consolidated view never surfaces.
+
+**Use xbrlkit whenever a number is load-bearing.** Anything that lands in the hook, on a slide, in
+a headline claim or in the thesis gets confirmed against the filing before you write it down.
+
+Loop: `load_filing` (takes a plain ticker and resolves the stale-symbol problem itself: `TRLV 10-K`
+loads Trulieve under CIK 0001754195) then `describe_filing` for period keys and networks, then
+`disclosures` with a topic for the cheap family index, then `information_block` on ONE block id for
+the detail. `fact_grid` for values, `search_text` / `read_text` for prose. Never guess a concept
+name, `resolve_element` first. `disclosures` before `information_block` always: the latter is the
+expensive call and costs 15,000-30,000 characters.
+
+Two things it does that the graph cannot:
+
+- `fact_grid` reports an **`excluded`** list naming concepts the filer *did* tag whose facts your
+  filter dropped. "The filer never reported it" stops looking identical to "my query missed it".
+- `information_block` returns the **calculation arcs with a per-period footing check**, so a
+  subtotal that does not foot gets flagged instead of being copied into the brief.
+
+**Charged is not paid.** Income tax *expense* (`us-gaap:IncomeTaxExpenseBenefit`) is an accrual.
+Income tax *paid* (`us-gaap:IncomeTaxesPaidNet`) is cash. For any filer under a punitive or
+disputed tax regime these diverge by orders of magnitude. Write "charged" or "taxed" over an
+expense figure and reserve "paid" for the cash figure, and if the two differ materially, say so
+and explain where the gap went. "Paid or accrued" is not an acceptable hedge.
+
 ## Continuing coverage (if `sources/_prior_coverage.md` exists)
 
 If `sources/_prior_coverage.md` is present, this is **not a first look â€” it's the next chapter** in an ongoing, quarterly coverage thread. Read that card first, then:

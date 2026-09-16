@@ -29,7 +29,36 @@ highest-stakes artifact. Show at minimum the H1 and the hook. Check:
 - Is the **generalization beat** present near the close (no analyst wrote this; the same pipeline
   runs on any SEC filer)? Ending at the ticker conclusion is the recurring miss.
 
-### 3. Mechanical checks (script these, do not eyeball)
+### 3. Verify the load-bearing numbers against the filing (xbrlkit)
+
+The validator cannot tell whether a number is *true*, only whether it looks suspicious. Do that
+here, where the filing is one call away.
+
+```
+load_filing  {source: "{TICKER} 10-K"}     # a plain ticker resolves stale symbols on its own
+fact_grid    {elements: [...], period_type: "duration"}
+```
+
+Confirm every figure that carries weight: whatever is in the hook, on a slide, or in the thesis.
+Pull the whole set in ONE `fact_grid` call rather than one call per number.
+
+**The tax pair is mandatory whenever tax is part of the story.** Pull
+`us-gaap:IncomeTaxExpenseBenefit` (charged, an accrual) and `us-gaap:IncomeTaxesPaidNet` (paid,
+cash) together, then check the brief uses the right word for each. This is the single most
+repeated defect in published work: six names asserted "paid" over an expense figure and
+overstated by up to 143x. Treat **"paid or accrued" as a failure, not a hedge** - it reads as
+"paid" to a viewer.
+
+Where the two diverge, find where the gap went: `us-gaap:UnrecognizedTaxBenefits` as an instant,
+sized against the cash balance. Then run `disclosures {topic: "income tax"}` and check whether
+the filer tagged a jurisdiction-level cash-tax table. If they did, read it: the consolidated
+total hides which government actually got paid.
+
+**Report each number as confirmed against the filing, or as a mismatch with the filing's value.
+Never report a number as checked unless you actually queried it** - repeating the brief's own
+figure back is how the original error survived review.
+
+### 4. Mechanical checks (script these, do not eyeball)
 | Check | Rule |
 |---|---|
 | Brief H1 length | **≤ 100 chars.** Over-long returns a valid-looking draft id that was never persisted, and fails later with a misleading "not found or not owned" |
@@ -39,7 +68,7 @@ highest-stakes artifact. Show at minimum the H1 and the hook. Check:
 | Duplicate `visual_ref` | none |
 | `cta` segment | present |
 
-### 4. Script and short summary
+### 5. Script and short summary
 From `scripts/{TICKER}_script.json` and `scripts/{TICKER}_short_script.json`:
 - segment count, narration word count, estimated duration (≈ narration chars ÷ 16)
 - breakdown by `visual_type` (title / chart / callout / dual)
@@ -48,7 +77,7 @@ From `scripts/{TICKER}_script.json` and `scripts/{TICKER}_short_script.json`:
 Long-form running past the 3-5 minute guide is a judgment call, not an error. Say so and let the
 user decide.
 
-### 5. Narration TTS spot-check
+### 6. Narration TTS spot-check
 Look for raw symbols (`$ % x /`) that should be spoken, numbers not rounded for speech, and
 sentences over ~45 words.
 
@@ -56,7 +85,7 @@ sentences over ~45 words.
 so ElevenLabs says the letters rather than "sek" and "ex-brl", the same convention as
 `EBITDA → Ebit-dah`. Flagging these as errors is a false positive.
 
-### 6. Print a summary and offer to fix
+### 7. Print a summary and offer to fix
 Report per ticker: validator, segments, duration, brief words, H1 length, X post chars, and the
 count of real issues. Then:
 

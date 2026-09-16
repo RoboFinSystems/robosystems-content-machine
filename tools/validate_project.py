@@ -256,7 +256,7 @@ _TAX_PAY_VERB = r"\bpa(?:id|ys|ying)\b"
 # Phrasings that are already correct or explicitly hedged.
 _TAX_PAY_OK = re.compile(
     r"not paid|unpaid|never paid|has(?:n['’]t| not) paid|paid no\b|pays no\b|"
-    r"stopped paying|isn['’]t paying|is not paying|paid or accrued|would (?:have )?pay|"
+    r"stopped paying|isn['’]t paying|is not paying|would (?:have )?pay|"
     r"pays? zero|paid zero|paid nothing|rather than paid",
     re.I)
 
@@ -292,13 +292,21 @@ def _prose_blocks(project_dir, ticker):
 def check_tax_expense_vs_paid(project_dir, ticker):
     """Surface every claim that a company PAID tax so it can be traced to the right element.
 
-    There is deliberately no automatic pass/fail here. Whether "paid $208M in taxes" is
-    right depends on a value only the graph holds, and the obvious offline heuristic -
-    the figure sitting near the word "expense" - is backwards: a brief that correctly
-    contrasts charged against paid puts both numbers in the same sentence by design,
-    while the published errors discussed the distinction correctly elsewhere in the very
-    same document. So this lists the claims and names the authoritative elements; a human
-    confirms them."""
+    There is deliberately no automatic pass/fail here, and this stays a fast offline
+    linter. Whether "paid $208M in taxes" is right depends on a value that lives in the
+    filing, and the obvious offline heuristic - the figure sitting near the word
+    "expense" - is backwards: a brief that correctly contrasts charged against paid puts
+    both numbers in the same sentence by design, while the published errors discussed the
+    distinction correctly elsewhere in the very same document. So this lists the claims
+    and names the authoritative elements.
+
+    The authoritative check now has a home: `/review` step 3 loads the filing over xbrlkit
+    and compares IncomeTaxExpenseBenefit against IncomeTaxesPaidNet directly. Fetching and
+    parsing a 10-K does not belong in `just validate`, which must stay fast and offline, so
+    the division is deliberate: this flags the claim, review confirms the number.
+
+    Note "paid or accrued" is NOT whitelisted. It reads as "paid" to a viewer, and it is
+    the exact phrasing that carried a 143x overstatement through review on TRLV."""
     print("\n--- Tax: charged vs paid ---")
 
     seen, claims = set(), []
@@ -323,7 +331,11 @@ def check_tax_expense_vs_paid(project_dir, ticker):
 
     warn(f"{len(claims)} claim(s) that tax was PAID. Each must trace to "
          f"us-gaap:IncomeTaxesPaid / IncomeTaxesPaidNet, NOT IncomeTaxExpenseBenefit or "
-         f"CurrentIncomeTaxExpenseBenefit. For 280E filers these differ by up to 100x.")
+         f"CurrentIncomeTaxExpenseBenefit. For 280E filers these differ by up to 143x.\n"
+         f"          Verify with xbrlkit, not by re-reading the brief:\n"
+         f"            load_filing {{source: '{ticker} 10-K'}}\n"
+         f"            fact_grid {{elements: ['us-gaap:IncomeTaxExpenseBenefit',"
+         f" 'us-gaap:IncomeTaxesPaidNet'], period_type: 'duration'}}")
     for rel, claim in claims[:6]:
         print(f"          {rel}: {claim}")
     if len(claims) > 6:
