@@ -9,6 +9,7 @@ exclude = [
   ".claude/worktrees",  # scratch worktrees carry stale copies of tools/
   "local/archive",      # retired pipeline stages kept for reference only
   "projects",           # generated per-ticker output, gitignored
+  "*.md",               # ruff formats Python fences in Markdown; prose keeps its own style
 ]
 
 line-length = 88
