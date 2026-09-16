@@ -7,7 +7,7 @@ Automated equity-research content pipeline. Turns a company's SEC filings into a
 an **audio edition** of that brief - one analysis, every surface.
 
 - **Campaign-Driven** - reusable campaign templates define the editorial angle, analytical framework, and output specs; apply them to any ticker.
-- **Authored in Claude Code** - one session reads the filings via [RoboSystems](https://robosystems.ai) MCP tools and writes the brief, the video script, the short, and the social copy. No hand-off to another app.
+- **Authored in Claude Code** - one session reads the filings over MCP ([RoboSystems](https://robosystems.ai) for the corpus, [xbrlkit](https://github.com/RoboFinSystems/xbrlkit) to confirm a figure against the filing itself) and writes the brief, the video script, the short, and the social copy. No hand-off to another app.
 - **Rendered locally** - the deck is HTML built from the script, shot frame-by-frame in headless Chrome, and muxed with ffmpeg. No cloud render service, no per-render cost.
 - **No hand-authored slides** - you write numbers into `script.json`; the renderer draws every slide.
 
@@ -66,7 +66,8 @@ The base template is applied first, then the campaign overlays its instructions,
 Point a Claude Code session at the repo. The scaffolded project carries its own contract:
 `AUTHORING_INSTRUCTIONS.md` (the editorial brief) and `PRODUCTION_CONTRACT.md` (the schema,
 slide kinds, layout capacity limits, and spoken-form TTS rules). The session reads those plus
-everything in `sources/`, verifies every number against the SEC graph over MCP, and writes:
+everything in `sources/`, verifies every number against the SEC filings over MCP (the `sec`
+graph for discovery and comps, xbrlkit to confirm a figure against the filing itself), and writes:
 
 - **Narrative brief** (`reports/{TICKER}_brief.md`) - the written analysis, authored first. Ships verbatim as a native X Article.
 - **Video script** (`scripts/{TICKER}_script.json`) - the source of truth: ordered segments carrying narration plus the exact numbers each slide draws.
@@ -82,8 +83,11 @@ around the contract, not a dependency: the contract is the spec, and a session t
 just validate TICKER    # gate the authored output against the contract before rendering
 ```
 
-`validate` is schema-level. It catches missing fields, capacity overruns and duplicate refs; it
-cannot see that a chart is visually wrong, so check the rendered frames too.
+`validate` is schema-level and deliberately offline. It catches missing fields, capacity
+overruns and duplicate refs; it cannot see that a chart is visually wrong, so check the rendered
+frames too, and it cannot tell whether a number is *true*. That check lives in `/review`, which
+loads the filing over xbrlkit and compares the figures the brief asserts. The division is
+intentional: `validate` flags a claim, `/review` confirms it.
 
 ### 3. Render
 
@@ -270,13 +274,43 @@ Configure in `.env` after first run:
 
 <sub>The ElevenLabs link above is a referral link.</sub>
 
-### Filing data (RoboSystems MCP)
+### Filing data (RoboSystems MCP + xbrlkit)
 
-Authoring verifies numbers against SEC XBRL filings through the
-[RoboSystems MCP server](https://github.com/RoboFinSystems/robosystems-mcp-client). Configure it
-in your Claude Code session; the `sec` graph is the read-only shared repository the research lane
-queries. `SEC_RAW_BUCKET` (optional) points `/collect` at a store of raw filing archives; without
-it, fetch filings from EDGAR by hand.
+Authoring verifies numbers against SEC XBRL filings through two complementary MCP servers.
+Configure both in your Claude Code session; neither replaces the other.
+
+**[RoboSystems MCP](https://robosystems.ai) is the corpus.** The `sec` graph is a read-only
+shared repository of curated, indexed XBRL filings across many filers and periods. Use it for
+discovery, multi-year trends and cross-company comparisons. Every graph is an MCP server speaking
+the Streamable HTTP transport, so there is nothing to install: the URL picks the graph, and you
+authenticate with OAuth or an `X-API-Key` header (never a key in the URL).
+
+```bash
+# OAuth - sign in and choose the graph the connection covers
+claude mcp add --transport http robosystems https://api.robosystems.ai/v1/mcp
+
+# Or an API key against the public SEC repository directly
+claude mcp add --transport http robosystems-sec \
+  https://api.robosystems.ai/v1/graphs/sec/mcp \
+  --header "X-API-Key: <your key>"
+```
+
+**[xbrlkit](https://github.com/RoboFinSystems/xbrlkit) is one filing, read from the source.**
+It parses a single filing in memory, with no index and no curation, so it sees everything the
+filer actually tagged: their own extension concepts, and the details tables a consolidated view
+never surfaces. Use it to confirm any figure that carries weight, and to read a filer's own
+breakdowns. It loads from a plain ticker, a local path, a URL or an EDGAR `cik:accession`, and
+handles IFRS and ESEF as well as US GAAP. It runs locally rather than as a service:
+
+```bash
+claude mcp add xbrlkit -- uvx --from "xbrlkit[mcp]" xbrlkit serve --transport stdio
+```
+
+Set `SEC_GOV_USER_AGENT` to a string identifying you with contact info; the SEC requires it and
+will refuse requests without one.
+
+`SEC_RAW_BUCKET` (optional) points `/collect` at a store of raw filing archives; without it,
+fetch filings from EDGAR by hand.
 
 ## Infrastructure
 
@@ -296,8 +330,8 @@ just infra-outputs     # show bucket / CDN url / distribution id
 
 - [RoboSystems Platform](https://robosystems.ai)
 - [GitHub Repository](https://github.com/RoboFinSystems/robosystems)
-- [MCP Client](https://github.com/RoboFinSystems/robosystems-mcp-client)
 - [Python Client](https://github.com/RoboFinSystems/robosystems-python-client)
+- [xbrlkit](https://github.com/RoboFinSystems/xbrlkit) - work with XBRL filings above Arelle ([viewer](https://xbrlkit.com))
 
 ## Support
 
