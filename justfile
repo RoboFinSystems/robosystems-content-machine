@@ -121,9 +121,12 @@ validate-fix project:
 
 # Generate the YouTube thumbnail via OpenAI (brief -> gpt-image-2 -> assets/yt.png -> charts/png/)
 # --with-x / --with-spot add the 5:2 and 1:1 variants, both off by default.
+# Positional arguments so override text survives the shell intact: --hook '$238M FROM EBAY'
+# used to expand `$2` and fail with "unbound variable".
+[positional-arguments]
 thumbnails project *args:
     @just ensure-env
-    UV_ENV_FILE={{_env}} uv run python tools/gen_thumbnails.py {{project}} {{args}}
+    UV_ENV_FILE={{_env}} uv run python tools/gen_thumbnails.py "$@"
 
 # Generate voiceover audio via ElevenLabs
 voiceover project *args:
