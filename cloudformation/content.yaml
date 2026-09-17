@@ -127,6 +127,8 @@ Resources:
             Resource:
               - !Sub ${ContentBucket.Arn}/content/*
               - !Sub ${ContentBucket.Arn}/blog/*
+              # The docs catalog, published by the robosystems repo's Publish Docs workflow
+              - !Sub ${ContentBucket.Arn}/docs/*
             Condition:
               StringEquals:
                 AWS:SourceArn: !Sub arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}
