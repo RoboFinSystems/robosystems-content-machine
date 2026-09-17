@@ -317,6 +317,12 @@ reindex:
     @just ensure-env
     UV_ENV_FILE={{_env}} uv run python tools/reindex.py
 
+# Backfill the card-sized webps for thumbnails published before they existed
+# (dry run; --apply to write, then `just reindex`)
+backfill-card-thumbnails *args:
+    @just ensure-env
+    UV_ENV_FILE={{_env}} uv run python tools/backfill_card_thumbnails.py {{args}}
+
 # ─── Tier 1: brief-only coverage (volume → /research + SEO, no video) ─────────
 # The brief admits a ticker to the catalog, so a /research page needs no render,
 # no voiceover and no upload. Reserve the video treatment (webdeck-pipeline +

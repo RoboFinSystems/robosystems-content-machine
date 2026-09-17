@@ -21,6 +21,7 @@ import json
 import os
 import subprocess
 
+import card_thumbnails
 import narrate_research
 import reindex
 from helpers import (
@@ -40,7 +41,13 @@ ARTIFACTS = [
     "videos/{t}_short.mp4",
     "video/mp4",
   ),  # 9:16 webdeck short (music variant) -> X + YT Shorts
-  ("charts/png/{t}_thumbnail.png", "image/png"),  # 16:9 — YouTube + website card
+  (
+    "charts/png/{t}_thumbnail.png",
+    "image/png",
+  ),  # 16:9 - YouTube, social + search image
+  # Card-sized webps the /research grid loads straight from the CDN (card_thumbnails.py)
+  ("charts/png/{t}_thumbnail_card_800.webp", "image/webp"),
+  ("charts/png/{t}_thumbnail_card_1200.webp", "image/webp"),
   ("charts/png/{t}_thumbnail_x.png", "image/png"),  # 5:2 — X
   ("charts/png/{t}_thumbnail_square.png", "image/png"),  # 1:1 — Spotify
   ("reports/{t}_brief.md", "text/markdown; charset=utf-8"),
@@ -116,6 +123,12 @@ def publish(project, narrate=True):
     print()
 
   snapshot_prior_version(bucket, ticker)
+
+  # The card webps are derived from the thumbnail, so they are rebuilt here on every
+  # publish and can never lag a re-rendered PNG.
+  thumbnail = os.path.join(project_dir, "charts", "png", f"{ticker}_thumbnail.png")
+  if os.path.exists(thumbnail):
+    card_thumbnails.write_card_webps(thumbnail)
 
   # Resolve [PROMO_CODE] in text artifacts before they go public — the brief is
   # uploaded straight to the portal with no human fill-in step, so an unresolved

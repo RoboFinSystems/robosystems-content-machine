@@ -45,6 +45,9 @@ SUFFIX_MAP = [
   ("_brief.md", "brief"),
   ("_narration.mp3", "narration"),  # the audio article — a read of the brief
   ("_thumbnail.png", "thumbnail"),
+  # card-sized webps next to the PNG, loaded straight from the CDN by the portal's cards
+  ("_thumbnail_card_800.webp", "thumbnail_card_800"),
+  ("_thumbnail_card_1200.webp", "thumbnail_card_1200"),
 ]
 
 # Fields a published meta.json may still carry from a retired format. Dropped on the way
