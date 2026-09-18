@@ -192,17 +192,25 @@ def brief_headline(pdir, ticker):
   except OSError:
     return "", ""
   title = next((ln.lstrip("# ").strip() for ln in lines if ln.startswith("# ")), "")
-  # First line of actual prose. Briefs commonly open with an italic source-note
+  # Paragraphs, not physical lines: a hard-wrapped brief's first line ends mid-sentence,
+  # and that fragment became the snippet (UNFI, EGAN). A blank line or a heading ends one.
+  paragraphs, cur = [], []
+  for ln in lines + [""]:
+    s = ln.strip()
+    if s and not s.startswith("#"):
+      cur.append(s)
+    elif cur:
+      paragraphs.append(" ".join(cur))
+      cur = []
+  # First paragraph of actual prose. Briefs commonly open with an italic source-note
   # ("*RoboSystems Cannabis Coverage · Narrative Brief · Drafted June 29, 2026*"),
-  # which is useless as a search snippet — skip that, headings, quotes, rules,
-  # list/table rows, and anything too short to be a lede.
+  # which is useless as a search snippet: skip that, quotes, rules, list/table rows,
+  # and anything too short to be a lede.
   body = next(
     (
-      s
-      for ln in lines
-      if (s := ln.strip())
-      and not s.startswith(("#", "*", "_", ">", "-", "|", "!", "`", "["))
-      and len(s) > 60
+      p
+      for p in paragraphs
+      if not p.startswith(("*", "_", ">", "-", "|", "!", "`", "[")) and len(p) > 60
     ),
     "",
   )
@@ -241,7 +249,9 @@ def seo_fields(
   the next reindex, with meta.json free to override either field per ticker."""
   text = (brief_summary or editorial_summary or "").strip()
   if len(text) > 155:  # Google truncates ~155-160; cut on a word so it reads as prose
-    text = text[:155].rsplit(" ", 1)[0].rstrip(" ,;:-") + "…"
+    text = text[:155].rsplit(" ", 1)[0].rstrip(" ,;:-")
+    if not text.endswith((".", "!", "?")):  # a cut on a sentence end is not a cut
+      text += "…"
   # Some catalog names already carry a parenthetical ("GE Aerospace (General Electric
   # Company)"), which would double up against the ticker we append.
   company = re.sub(r"\s*\([^)]*\)\s*$", "", company).strip() or ticker
