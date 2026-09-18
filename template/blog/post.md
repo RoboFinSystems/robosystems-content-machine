@@ -22,4 +22,9 @@ read aloud, so keep prose self-contained and avoid relying on a table to carry t
 - Bullets are fine
 - They are unwrapped for narration
 
+Link out before you close. A lesson in a series links the lesson before it. When this one
+ships, edit that earlier lesson to link forward to it. Every post also links one product page
+on its own site: the homepage, or a page such as /platform, /pricing or /docs. A post that links
+nowhere is a dead end for readers and crawlers alike.
+
 Close with the takeaway.
