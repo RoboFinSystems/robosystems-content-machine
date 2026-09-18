@@ -341,6 +341,12 @@ publish-brief project *args: (validate-brief project)
     @just ensure-env
     UV_ENV_FILE={{_env}} uv run python tools/publish_artifacts.py {{project}} {{args}}
 
+# Correct an already-published brief in place: re-uploads the brief alone and rebuilds
+# the catalog, leaving the page's date, media and narration untouched
+republish-brief project: (validate-brief project)
+    @just ensure-env
+    UV_ENV_FILE={{_env}} uv run python tools/republish_brief.py {{project}}
+
 # ─── Blog Pipeline (markdown essays → S3 blog/ + blog/index.json) ─────────────
 
 # Scaffold a new blog post: blog/<slug>/post.md from the template (site: robosystems | roboledger)

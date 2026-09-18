@@ -357,6 +357,76 @@ def check_brief(project_dir, ticker):
     ok("No unresolved placeholders")
 
 
+# The half-restored money form. On 2026-09-15, briefs pre-cleaned for narration were turned
+# back into written prose only partly: "dollars" came off every figure, and the "$" went
+# back on the first of a pair and nowhere else. EGAN read "net income of $8.9M, down 72%
+# from 32.3 million" and "diluted EPS went from $1.13 to 0.32"; GWRE and INTU carried it
+# through about 95 figures. check_brief's spoken-form checks miss it, because every
+# paragraph still holds one "$" and no figure says "dollars".
+_YEAR = r"(?:19|20)\d\d\b"
+# "24.1" in "to 24.1." - never the full stop, and never "9" out of "9.3%"
+_NUM = r"\d+(?:[.,]\d+)*(?![.,]?\d)"
+# Words after a bare figure that say it was never money.
+_NON_MONEY = (
+  r"%|percent|x\b|times\b|basis\b|bps\b|points?\b|pts\b|shares?\b|days?\b|"
+  r"weeks?\b|months?\b|quarters?\b|years?\b"
+)
+_MONTH = re.compile(
+  r"(?:January|February|March|April|May|June|July|August|September|October|November|"
+  r"December)\s+$"
+)
+_UNIT_DROPPED = [
+  # "$4.4M to 8.0 million", "$1.13 to 0.32": the second figure lost its "$"
+  re.compile(
+    rf"\$\d[\d,.]*(?:\s?(?:[MBK]\b|million\b|billion\b|thousand\b))?\s+"
+    rf"(?:to|from|versus|vs\.)\s+(?!{_YEAR})({_NUM})(?!\s*(?:{_NON_MONEY}))",
+    re.I,
+  ),
+  # "to 24.1% from 20.0,": the second figure lost its "%". Only where the phrase ends
+  # on the figure - "17.6% to 14.3 million orders" is a count, not a lost unit.
+  re.compile(
+    rf"\d[\d.]*%\s+(?:to|from)\s+(?!{_YEAR})({_NUM})"
+    rf"(?=[,.;:)]|\s+(?:and|in|for|on|at|over|the|while|with|as|but|a|an)\b|\s*$)",
+    re.I,
+  ),
+  # "86 to $87M", "2 to $3M": a range with its "$" on the end only
+  re.compile(rf"(?<![$\w.,])(?!{_YEAR})({_NUM})\s+to\s+\$\d"),
+]
+
+
+def check_money_units(project_dir, ticker):
+  """Money and percentages keep their unit on every figure of a pair, not only the
+  first. Prose only: a table carries its unit in the header."""
+  print("\n--- Money units ---")
+  path = os.path.join(project_dir, "reports", f"{ticker}_brief.md")
+  if not os.path.exists(path):
+    return
+  with open(path, encoding="utf-8") as fh:
+    lines = fh.read().splitlines()
+  # Rejoin hard-wrapped paragraphs so "$4.4M to 8.0" / "million" reads as one phrase.
+  prose = " ".join(
+    ln.strip() if ln.strip() and not ln.lstrip().startswith("|") else "\n"
+    for ln in lines
+  )
+  # A date ahead of a range is not a figure: "January 31 to $5,060.3M".
+  dropped = sorted(
+    {
+      " ".join(m.group(0).split())
+      for pattern in _UNIT_DROPPED
+      for m in pattern.finditer(prose)
+      if not _MONTH.search(prose[max(0, m.start() - 12) : m.start()])
+    }
+  )
+  if not dropped:
+    ok("Money and percentages carry their units")
+    return
+  warn(
+    f"{len(dropped)} figure(s) lost the unit the figure beside them carries. Write "
+    f"'$4.4M to $8.0M', not '$4.4M to 8.0 million'. Where one slipped, more usually "
+    f"did: read every figure in the brief. e.g. " + "; ".join(dropped[:4])
+  )
+
+
 # Income tax EXPENSE (us-gaap:IncomeTaxExpenseBenefit / CurrentIncomeTaxExpenseBenefit) is an
 # accrual. Income tax PAID (us-gaap:IncomeTaxesPaid / IncomeTaxesPaidNet) is cash out the door.
 # For 280E filers the two diverge enormously: Trulieve FY2025 was charged $208.1M and paid
@@ -1139,9 +1209,11 @@ def main():
 
   if args.brief_only:
     check_brief(project_dir, ticker)
+    check_money_units(project_dir, ticker)
     check_tax_expense_vs_paid(project_dir, ticker)
   else:
     check_required_files(project_dir, ticker)
+    check_money_units(project_dir, ticker)
     check_tax_expense_vs_paid(project_dir, ticker)
     script = check_script_schema(project_dir, ticker)
     check_deck_contract(project_dir, script)
