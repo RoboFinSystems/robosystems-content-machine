@@ -22,7 +22,7 @@ Public companies have filed their financial statements in a machine-readable for
 
 What's missing is a layer. I call it financial intelligence. It's what anything has to know before it touches a number: what the number measures, what period it covers, how precise it is, what the documents around it say, and what was already decided about it. People who do this work carry that in their heads. If an AI is going to work on a company's books, and not just talk about them, the layer has to be built: a knowledge graph for the numbers, a knowledge base for the documents, a memory for the decisions, and a small set of defined tools to reach each one.
 
-I build RoboSystems, an open-source platform that is that layer. We proved it out on SEC filings, then put it to work. This is the first of eight lessons on what it's made of, and it starts with why a file isn't enough.
+I build RoboSystems, an open-source platform that is that layer. We proved it out on SEC filings, then put it to work. What follows is an eight-part series on what the layer is made of, and this first one starts with why a file isn't enough.
 
 ## Why we started with SEC filings
 
@@ -92,7 +92,7 @@ A person stays in that loop on purpose, and the layer is what makes their job po
 
 The first half covers the data: why the substrate is a graph, why a number on its own means nothing, why a chart of accounts is a vocabulary. The second half covers running a ledger on it: why events come before balances, why you author a schedule and render a statement, and where the line sits between what a model may decide and what it may not.
 
-One more number before lesson two. Loading that 3M PDF into a model costs about a dollar at list price, and with prompt caching each question after that costs cents. For one filing, that's a perfectly good answer. The trouble starts at the second filing, when the dollar gets paid again. That's why the numbers get pulled out in the first place, and it's where lesson two picks up.
+One more number before part two. Loading that 3M PDF into a model costs about a dollar at list price, and with prompt caching each question after that costs cents. For one filing, that's a perfectly good answer. The trouble starts at the second filing, when the dollar gets paid again. That's why the numbers get pulled out in the first place, and it's where part two picks up.
 
 An earlier take on this, from the tools side, is [AI Agents for Financial Analysis: Beyond ChatGPT](https://robosystems.ai/blog/ai-agents-financial-analysis). The platform itself is at [robosystems.ai/platform](https://robosystems.ai/platform).
 
