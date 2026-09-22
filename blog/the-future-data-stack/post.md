@@ -251,7 +251,7 @@ The future of data engineering isn't more tools. It's better foundations.
 
 ---
 
-_Ready to build on foundations designed for the next decade? [Deploy RoboSystems in your own AWS account](https://github.com/RoboFinSystems/robosystems/wiki/Bootstrap-Guide) and own your data infrastructure._
+_Ready to build on foundations designed for the next decade? [Deploy RoboSystems in your own AWS account](https://robosystems.ai/docs/technical/bootstrap-guide) and own your data infrastructure._
 
 _Want to see the orchestration in action? [Explore our Dagster implementation](https://github.com/RoboFinSystems/robosystems/tree/main/robosystems/dagster) and see how asset-centric pipelines actually work._
 

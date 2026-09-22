@@ -339,7 +339,7 @@ just infra-outputs     # show bucket / CDN url / distribution id
 ## Support
 
 - [Issues](https://github.com/RoboFinSystems/robosystems-content-machine/issues)
-- [Wiki](https://github.com/RoboFinSystems/robosystems/wiki)
+- [Documentation](https://robosystems.ai/docs/technical)
 - [Projects](https://github.com/orgs/RoboFinSystems/projects)
 - [Discussions](https://github.com/orgs/RoboFinSystems/discussions)
 
