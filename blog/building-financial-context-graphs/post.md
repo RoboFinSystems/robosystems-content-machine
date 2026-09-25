@@ -88,7 +88,7 @@ This is where we come in. RoboSystems is an open-source platform for building fi
 
 ### Your Data, Your Infrastructure
 
-We don't ask you to upload your financial data to our servers. RoboSystems runs in your AWS account, on your infrastructure. You fork the repository, deploy with CloudFormation, and your data never leaves your control.
+You choose where it runs. Use the hosted service, or fork the repository and deploy it into your own AWS account with CloudFormation, where your data never leaves your control.
 
 This isn't just about compliance—though it helps with that. It's about building systems you can trust with your most sensitive information. When your AI agent is analyzing cash flow projections or M&A scenarios, you need to know exactly where that data is and who can access it.
 
@@ -96,21 +96,20 @@ This isn't just about compliance—though it helps with that. It's about buildin
 
 Most companies already have their financial data somewhere—QuickBooks, ERPs, banking APIs, spreadsheets. RoboSystems includes adapters for common sources:
 
-- **QuickBooks:** Full OAuth integration. Chart of accounts, transactions, trial balance—automatically transformed into graph nodes and relationships.
+- **QuickBooks:** Full OAuth integration. Chart of accounts, transactions, trial balance, automatically transformed into graph nodes and relationships. This is what [RoboLedger](https://roboledger.ai) is built on: your books as a context graph that Claude, ChatGPT, or any MCP client can query, with nothing written back until you post.
 - **SEC XBRL:** Import 10-K and 10-Q filings for any public company. Structured facts become queryable graph elements.
-- **Banking data (via Plaid):** Transaction feeds with automatic categorization.
 
 And because the platform is open source, you can build adapters for anything else. The patterns are documented. The architecture is designed for extension.
 
 ### Shared Context for Market Intelligence
 
-Some context is universal. SEC filings, for example, are public data—but transforming them into a queryable context graph is non-trivial. That's why RoboSystems maintains a shared SEC repository: 4,000+ public companies, 100,000+ XBRL filings, updated daily.
+Some context is universal. SEC filings, for example, are public data—but transforming them into a queryable context graph is non-trivial. That's why RoboSystems maintains a shared SEC repository: 8,500+ public companies and 77,000+ XBRL filings, updated daily.
 
 Subscribe once, and your AI agents can answer questions like "How does our R&D spending compare to industry peers?" or "Which competitors have mentioned supply chain issues in their recent 10-Qs?" The shared repository provides market context; your private graph provides operational context. Together, they give AI the full picture.
 
 ### AI-Native by Design
 
-Context graphs aren't useful if AI can't access them. RoboSystems implements the Model Context Protocol (MCP), which means Claude, Cursor, Windsurf, and other AI tools can query your graph directly.
+Context graphs aren't useful if AI can't access them. RoboSystems implements the Model Context Protocol (MCP), which means Claude, ChatGPT, Cursor, or any MCP client can query your graph directly.
 
 No custom integrations. No middleware. Your AI asks a question in natural language, and the MCP tools translate it to Cypher queries, traverse the graph, and return structured results.
 
@@ -137,6 +136,7 @@ RoboSystems is open source. You can:
 1. **Fork and deploy** to your own AWS account with our CloudFormation templates
 2. **Start locally** with Docker Compose to explore the platform
 3. **Subscribe to the SEC repository** for instant access to market intelligence
+4. **Connect QuickBooks in [RoboLedger](https://roboledger.ai)** to turn your own books into a context graph
 
 The documentation is on GitHub. The community is on GitHub Discussions. The roadmap is public.
 
