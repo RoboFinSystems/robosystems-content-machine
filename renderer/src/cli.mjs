@@ -14,6 +14,8 @@
  *
  *   rs-render probe   [--routes /ledger/close,/reports,/plan] [--out FILE] [--shots DIR]
  *
+ *   rs-render motion  --html drafts/x/x.html [--out DIR] [--stills 1,5,30] [--keep-frames]
+ *
  * Python stays the orchestrator and owns audio (VO/music); this emits the
  * silent visual layer (stills for `capture`, an mp4 for `short` and `demo`).
  */
@@ -21,6 +23,7 @@ import { capture } from './capture.mjs';
 import { short } from './short.mjs';
 import { demo } from './demo.mjs';
 import { probe } from './probe.mjs';
+import { motion } from './motion.mjs';
 
 function parseArgs(argv) {
   const args = { _: [] };
@@ -60,11 +63,15 @@ async function main() {
     case 'probe':
       await probe(args);
       break;
+    case 'motion':
+      await motion(args);
+      break;
     default:
       console.error(
         `Unknown command: ${cmd ?? '(none)'}\n` +
           `Usage:\n  rs-render capture [options]\n  rs-render short --spec <file> [options]\n` +
-          `  rs-render demo --spec <file> [options]\n  rs-render probe [--routes ...] [options]`
+          `  rs-render demo --spec <file> [options]\n  rs-render probe [--routes ...] [options]\n` +
+          `  rs-render motion --html <file> [--stills t1,t2] [options]`
       );
       process.exit(1);
   }
