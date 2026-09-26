@@ -437,6 +437,37 @@ render-capture config company entity="" scenes="home,transactions,close,statemen
 render-short spec:
     node renderer/src/cli.mjs short --spec {{spec}}
 
+# Render a self-contained HTML composition (the __init/__total/__seek contract) to a silent mp4.
+# The roboledger-app landing demos render from the app's public/ folder:
+# e.g. just render-motion ~/Projects/roboledger-app/public/demos/render.html "demo=hero" ~/Projects/roboledger-app/public
+#      just render-motion ~/Projects/roboledger-app/public/demos/render.html "demo=hero&phone=1" ~/Projects/roboledger-app/public 720 1080
+render-motion html query="" root="" width="1920" height="1080" *args="":
+    node renderer/src/cli.mjs motion --html {{html}} --width {{width}} --height {{height}} {{ if query != "" { "--query '" + query + "'" } else { "" } }} {{ if root != "" { "--root " + root } else { "" } }} {{args}}
+
+# ─── Motion QA + sound (tools/motion, vendored from ferndesk/no-slop-motion; see its README) ───
+
+# Pops, flashes and black dips that are not planned cuts. e.g. just motion-pops renders/hero.mp4 --cuts 3.6,8.0
+motion-pops video *args="":
+    uv run --with numpy python tools/motion/qa/pop-scan.py {{video}} {{args}}
+
+# Frame grid every N seconds (or densely around cuts) for review.
+motion-sheet video *args="":
+    uv run python tools/motion/qa/contact_sheet.py {{video}} {{args}}
+
+# Rank voice takes (word accuracy, range, pace), then split the winner at real silences.
+motion-score-takes *args="":
+    uv run --with librosa --with numpy --with faster-whisper python tools/motion/audio/score_takes.py --no-emotion {{args}}
+
+motion-split-takes *args="":
+    uv run --with librosa --with numpy --with soundfile --with faster-whisper python tools/motion/audio/split_takes.py {{args}}
+
+# Join or shorten music takes on matching downbeats; check must-hits against the beat.
+motion-join-music *args="":
+    uv run --with librosa --with numpy --with soundfile python tools/motion/music/join_on_downbeats.py {{args}}
+
+motion-cue-sheet *args="":
+    uv run --with librosa --with numpy --with soundfile python tools/motion/music/cue_sheet.py {{args}}
+
 # ─── Product demos (live UI walkthrough: real cursor, real clicks, component zoom) ───
 
 # List the anchors a walkthrough can aim at, read off the RUNNING app rather than
