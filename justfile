@@ -444,6 +444,15 @@ render-short spec:
 render-motion html query="" root="" width="1920" height="1080" *args="":
     node renderer/src/cli.mjs motion --html {{html}} --width {{width}} --height {{height}} {{ if query != "" { "--query '" + query + "'" } else { "" } }} {{ if root != "" { "--root " + root } else { "" } }} {{args}}
 
+# Render a video template (motion/: intro, outro, slide) from its data, reusing the
+# landing kit, fonts and logo from roboledger-app ($ROBOLEDGER_PUBLIC overrides the path).
+# See motion/README.md for the data shapes.
+# e.g. just motion-template slide plan-title '{"kind":"title","eyebrow":"Step 3","headline":"Plan from it."}' out/
+_rl_public := env_var_or_default("ROBOLEDGER_PUBLIC", home_directory() / "Projects/roboledger-app/public")
+
+motion-template t name data out *args="":
+    node renderer/src/cli.mjs motion --root motion --html motion/render.html --mount "/demos/={{_rl_public}}/demos,/fonts/={{_rl_public}}/fonts,/images/={{_rl_public}}/images" --query "t={{t}}&data=$(python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1]))' '{{data}}')" --name {{name}} --out {{out}} {{args}}
+
 # ─── Motion QA + sound (tools/motion, vendored from ferndesk/no-slop-motion; see its README) ───
 
 # Pops, flashes and black dips that are not planned cuts. e.g. just motion-pops renders/hero.mp4 --cuts 3.6,8.0
