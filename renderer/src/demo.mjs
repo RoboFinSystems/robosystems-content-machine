@@ -172,9 +172,15 @@ class Recorder {
     if (this.stills) { this.frame++; return; }
     const buf = await this.page.screenshot({ clip: this.clip(), animations: 'allow' });
     const file = path.join(this.framesDir, `frame-${String(this.frame++).padStart(5, '0')}.png`);
-    this.pending.push(
-      sharp(buf).resize(this.W, this.H, { fit: 'fill' }).png({ compressionLevel: 3 }).toFile(file)
-    );
+    let img = sharp(buf).resize(this.W, this.H, { fit: 'fill' });
+    if (this.fade && this.fade.left > 0) {
+      // the previous page dissolves over the new one instead of a hard cut
+      const k = this.fade.left / (this.fade.total + 1);
+      this.fade.left--;
+      const over = await sharp(this.fade.from).removeAlpha().ensureAlpha(k).png().toBuffer();
+      img = sharp(await img.png().toBuffer()).composite([{ input: over }]);
+    }
+    this.pending.push(img.png({ compressionLevel: 3 }).toFile(file));
     if (this.pending.length >= 8) {
       await Promise.all(this.pending);
       this.pending = [];
@@ -184,6 +190,18 @@ class Recorder {
   async flush() {
     await Promise.all(this.pending);
     this.pending = [];
+  }
+
+  /*
+   * Start a crossfade from the last written frame into whatever is shot next,
+   * over n frames. Called before a navigation so the cut between two pages is a
+   * dissolve rather than a one-frame pop.
+   */
+  async fadeFromLast(n) {
+    if (this.stills || this.frame === 0 || n <= 0) return;
+    await this.flush();
+    const last = path.join(this.framesDir, `frame-${String(this.frame - 1).padStart(5, '0')}.png`);
+    this.fade = { from: await readFile(last), left: n, total: n };
   }
 
   /* Write one framed still, named for the beat it closes. */
@@ -402,6 +420,33 @@ const DEFAULT_MS = {
   overlay: 1600, 'overlay-clear': 200,
 };
 
+/*
+ * The beat's narration words with their start times (tools/demo_align.py writes
+ * them beside the beat's mp3). Absent until the beat is aligned, and then cues
+ * are simply ignored with a warning: a spec renders either way.
+ */
+async function loadWords(specDir, beat) {
+  if (!beat.audio) return null;
+  const file = path.join(specDir, beat.audio.replace(/\.mp3$/, '_words.json'));
+  try {
+    return JSON.parse(await readFile(file, 'utf8')).tokens;
+  } catch {
+    return null;
+  }
+}
+
+const normWord = (w) => String(w).toLowerCase().replace(/[^a-z0-9]/g, '');
+
+/* When the narration starts saying `phrase`, in seconds from the beat's start. */
+function cueTime(words, phrase) {
+  const want = String(phrase).split(/\s+/).map(normWord).filter(Boolean);
+  const got = words.map(([w]) => normWord(w));
+  for (let i = 0; i + want.length <= got.length; i++) {
+    if (want.every((w, k) => got[i + k] === w)) return words[i][1];
+  }
+  return null;
+}
+
 function planBeat(beat, fps, warn, stills = false) {
   const actions = beat.actions || [];
   // Fit-check mode collapses every action to its settled end state.
@@ -409,17 +454,34 @@ function planBeat(beat, fps, warn, stills = false) {
   const total = Math.max(1, Math.round(((beat.durationMs || 3000) / 1000) * fps));
   const f = (ms) => Math.max(1, Math.round((ms / 1000) * fps));
 
+  // An action with a `cue` starts on the frame where the narration says it. The
+  // time before it becomes a hold, and elastic dwells only share what is left
+  // after the last cued action, so the cues are never pushed off their words.
+  const lastCue = actions.reduce((k, a, i) => (a.cue ? i : k), -1);
   const elastic = [];
   let fixed = 0;
-  const planned = actions.map((a, i) => {
-    if (a.kind === 'wait' || a.kind === 'api') return { ...a, frames: 0 };
+  const planned = [];
+  actions.forEach((a, i) => {
+    if (a.cue) {
+      const at = beat._words ? cueTime(beat._words, a.cue) : null;
+      if (at == null) {
+        warn(`beat "${beat.id}": cue ${JSON.stringify(a.cue)} ${beat._words ? 'is not in the narration' : 'has no word timings (run demo-align)'} - playing in order instead`);
+      } else if (f(at * 1000) > fixed) {
+        const gap = f(at * 1000) - fixed;
+        planned.push({ kind: 'dwell', frames: gap, cueHold: true });
+        fixed += gap;
+      } else if (f(at * 1000) < fixed - 2) {
+        warn(`beat "${beat.id}": cue ${JSON.stringify(a.cue)} is spoken at ${at.toFixed(2)}s but the actions before it run to ${(fixed / fps).toFixed(2)}s - it lands late`);
+      }
+    }
+    if (a.kind === 'wait' || a.kind === 'api') return planned.push({ ...a, frames: 0 });
     if (a.kind === 'dwell' && a.ms == null) {
-      elastic.push(i);
-      return { ...a, frames: 0 };
+      if (i > lastCue) elastic.push(planned.length);
+      return planned.push({ ...a, frames: 0 });
     }
     const n = f(a.ms ?? DEFAULT_MS[a.kind] ?? 700);
     fixed += n;
-    return { ...a, frames: n };
+    planned.push({ ...a, frames: n });
   });
 
   let slack = total - fixed;
@@ -690,6 +752,8 @@ async function runApiAction(page, a, ctx, warn) {
 async function runAction(rec, page, baseUrl, a, warn, ctx = {}) {
   switch (a.kind) {
     case 'goto': {
+      // dissolve from the page we are leaving (default 0.4s; "fade": 0 for a hard cut)
+      await rec.fadeFromLast(Math.min(a.frames, Math.round(((a.fade ?? 400) / 1000) * rec.fps)));
       await page.goto(`${baseUrl}${a.route}`, { waitUntil: 'domcontentloaded' });
       await settle(page);
       // A camera rect from the previous page points at nothing on this one, so
@@ -895,6 +959,9 @@ async function runAction(rec, page, baseUrl, a, warn, ctx = {}) {
   }
 }
 
+// exported for tests (renderer/test/demo-plan.test.mjs)
+export { planBeat, cueTime, Recorder }
+
 export async function demo(args) {
   if (!args.spec) throw new Error('demo requires --spec <file.json>');
   const specPath = path.resolve(args.spec);
@@ -973,6 +1040,7 @@ export async function demo(args) {
     };
 
     for (const [i, beat] of beats.entries()) {
+      beat._words = await loadWords(specDir, beat);
       const planned = planBeat(beat, fps, warn, stills);
       const at = rec.frame;
       for (const a of planned) await runAction(rec, page, baseUrl, a, warn, actionCtx);

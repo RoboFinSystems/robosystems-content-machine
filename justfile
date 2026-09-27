@@ -501,11 +501,15 @@ demo-mux spec *args="":
 
 # The whole demo pipeline. Needs the RoboLedger UI running (default localhost:3001).
 # e.g. just demo-pipeline showcase/coffee_roaster/driftline.walkthrough.json ~/Projects/robosystems/.local/config.json
-demo-pipeline spec config: (demo-narrate spec) (demo-render spec config) (demo-mux spec)
+demo-pipeline spec config: (demo-narrate spec) (demo-align spec) (demo-render spec config) (demo-pops spec) (demo-mux spec)
 
 # Single-frame fit check before committing to a full render (~10s vs minutes).
 # Shoots the first frame of each beat so a bad zoom target is caught early.
 demo-stills spec config:
+# 1b. Word timings for each beat, so an action with "cue": "phrase" starts on that word.
+demo-align spec *args="":
+    uv run --with faster-whisper python tools/demo_align.py {{spec}} {{args}}
+
     node renderer/src/cli.mjs demo --spec {{spec}} --config {{config}} --stills
 
 # ─── Utilities ────────────────────────────────────────────────
@@ -515,6 +519,11 @@ play project:
     open projects/{{project}}/videos/*_final.mp4
 
 # Get media durations via ffprobe
+# 2b. Pops, flashes and black dips in the silent render (rules: tools/motion/README.md).
+# Reads the spec's slug to find showcase/<company>/renders/<slug>.mp4.
+demo-pops spec *args="":
+    uv run --with numpy python tools/motion/qa/pop-scan.py "$(dirname {{spec}})/renders/$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1])).get("slug", "demo"))' {{spec}}).mp4" {{args}}
+
 durations project:
     ./tools/durations.sh {{project}}
 

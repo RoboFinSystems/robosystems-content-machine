@@ -176,7 +176,7 @@ one narration line plus the **actions** performed while it plays.
 
 | action | does | notes |
 |---|---|---|
-| `goto` | navigate, settle off camera, hold | resets the camera unless `keepZoom` |
+| `goto` | navigate, settle off camera, hold | resets the camera unless `keepZoom`; dissolves from the previous page over 0.4s (`"fade": ms`, `0` for a hard cut) |
 | `move` / `hover` | pointer travels along a bowed path | the real mouse moves too, so hover styles fire |
 | `click` | press, click for real, ride the ripple out | settles the consequence off camera |
 | `scroll` | eases the element's own scroll container | finds the scroller rather than assuming the document |
@@ -188,6 +188,14 @@ one narration line plus the **actions** performed while it plays.
 | `overlay` | a chat panel, bottom right | `role: human\|agent` + `text`; turns stack, `"stack": false` replaces |
 | `overlay-clear` | removes the bubble | |
 | `api` | calls the product API off camera | **emits no frames**; needs `--config`. See below |
+
+**Land an action on a word with `cue`.** `{ "kind": "click", "target": "text=Approve", "cue": "approve" }`
+starts the click on the frame where the narration says "approve", using the word timings
+`just demo-align` writes beside each beat's mp3 (faster-whisper, cached; the same alignment the
+webdeck uses). The time before a cued action becomes a hold, and elastic `dwell`s share only
+what is left after the last cue. A cue the narration does not contain, or a beat not yet
+aligned, warns and plays in order. `just demo-pipeline` runs narrate, align, render, a pop scan
+(`just demo-pops`) and the mux, in that order.
 
 `target` is a **raw Playwright selector** (`[data-testid="x"]`,
 `button:has-text("Close")`, `text=Deferred revenue`), or `[x, y]`, or
