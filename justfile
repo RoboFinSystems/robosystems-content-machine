@@ -501,6 +501,15 @@ motion-cue-sheet *args="":
 demo-probe config entity="" routes="/home,/ledger/close,/ledger/statements,/reports,/plan":
     node renderer/src/cli.mjs probe --config {{config}} --routes "{{routes}}" {{ if entity != "" { "--entity '" + entity + "'" } else { "" } }}
 
+# Start a showcase episode: showcase/<episode>/ with the outline template and LOVES-HATES.md.
+# Fill OUTLINE.md and get the words approved before recording anything.
+demo-new episode:
+    mkdir -p showcase/{{episode}}/audio showcase/{{episode}}/renders && sed "s/{EPISODE}/{{episode}}/g" template/SHOWCASE_OUTLINE.md > showcase/{{episode}}/OUTLINE.md && printf '# {{episode}} - loves and hates\n\n## Loves (keep)\n\n-\n\n## Hates (fix)\n\n-\n' > showcase/{{episode}}/LOVES-HATES.md && echo "showcase/{{episode}}/OUTLINE.md"
+
+# Remake an episode: archive it to .history/vN, keep LOVES-HATES.md, write REDO.md + a fresh outline.
+demo-redo episode:
+    ./tools/demo_redo.sh {{episode}}
+
 # 1. Voiceover + timing. Writes durationMs into the spec so narration owns the clock.
 demo-narrate spec *args="":
     @just ensure-env
