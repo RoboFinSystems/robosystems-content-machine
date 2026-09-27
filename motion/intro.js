@@ -4,7 +4,8 @@
  *
  * data: { kicker, title, sub?, duration? }
  */
-import { blurIn, eio, seg, tile } from '/demos/kit.js'
+import { blurIn, eio, seg } from './runtime.js'
+import { tile } from '/demos/kit.js'
 import { BACKDROP, BRAND_CSS, envelope, H, W, words } from './brand.js'
 
 export default function intro(data) {

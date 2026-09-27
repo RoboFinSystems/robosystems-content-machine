@@ -15,7 +15,7 @@ and do not read it for structure.
 
 ## What you write, from scratch
 
-1. `OUTLINE.md` from `template/SHOWCASE_OUTLINE.md`: the frame, the spine, and the narration
+1. `OUTLINE.md` from `tools/showcase_outline.md`: the frame, the spine, and the narration
    beat by beat. Get the words approved read aloud before anything else.
 2. The walkthrough spec(s) for the live beats, with a `cue` on every action the narration names.
 3. The data for each motion shot (`just motion-template`).

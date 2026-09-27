@@ -61,6 +61,7 @@ update:
 lint:
     uv run ruff check .
     uv run ruff format --check .
+    ./tools/motion_sync.sh --check
 
 # Format code
 format:
@@ -178,7 +179,7 @@ webdeck project *args: (webdeck-align project)
 # re-voiced segments.
 # Word timings for each voiceover (faster-whisper, cached per segment)
 webdeck-align project *args:
-    uv run --with faster-whisper python tools/webdeck/align_words.py {{project}} {{args}}
+    uv run --with faster-whisper python tools/align_words.py {{project}} {{args}}
 
 # A count-up changes digits every frame by design, so expect flags on callout and card
 # numbers. Advisory: the scan exits 1 on any flag, and the leading '-' keeps that from
@@ -467,6 +468,10 @@ render-motion html query="" root="" width="1920" height="1080" *args="":
 # e.g. just motion-template slide plan-title '{"kind":"title","eyebrow":"Step 3","headline":"Plan from it."}' out/
 _rl_public := env_var_or_default("ROBOLEDGER_PUBLIC", home_directory() / "Projects/roboledger-app/public")
 
+# Vendor the motion runtime from @robosystems/core at the pinned version (or pass one to move the pin)
+motion-sync *args="":
+    ./tools/motion_sync.sh {{args}}
+
 motion-template t name data out *args="":
     node renderer/src/cli.mjs motion --root motion --html motion/render.html --mount "/demos/={{_rl_public}}/demos,/fonts/={{_rl_public}}/fonts,/images/={{_rl_public}}/images" --query "t={{t}}&data=$(python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1]))' '{{data}}')" --name {{name}} --out {{out}} {{args}}
 
@@ -505,7 +510,7 @@ demo-probe config entity="" routes="/home,/ledger/close,/ledger/statements,/repo
 # Start a showcase episode: showcase/<episode>/ with the outline template and LOVES-HATES.md.
 # Fill OUTLINE.md and get the words approved before recording anything.
 demo-new episode:
-    mkdir -p showcase/{{episode}}/audio showcase/{{episode}}/renders && sed "s/{EPISODE}/{{episode}}/g" template/SHOWCASE_OUTLINE.md > showcase/{{episode}}/OUTLINE.md && printf '# {{episode}} - loves and hates\n\n## Loves (keep)\n\n-\n\n## Hates (fix)\n\n-\n' > showcase/{{episode}}/LOVES-HATES.md && echo "showcase/{{episode}}/OUTLINE.md"
+    mkdir -p showcase/{{episode}}/audio showcase/{{episode}}/renders && sed "s/{EPISODE}/{{episode}}/g" tools/showcase_outline.md > showcase/{{episode}}/OUTLINE.md && printf '# {{episode}} - loves and hates\n\n## Loves (keep)\n\n-\n\n## Hates (fix)\n\n-\n' > showcase/{{episode}}/LOVES-HATES.md && echo "showcase/{{episode}}/OUTLINE.md"
 
 # Assemble an episode from showcase/<episode>/episode.json: motion shots, recorded walkthroughs
 # and chat takes, voiced (ElevenLabs, cached), dissolved together, music ducked under the voice,
@@ -540,7 +545,7 @@ demo-mux spec *args="":
 # 2b. Pops, flashes and black dips in the silent render (rules: tools/motion/README.md).
 # Reads the spec's slug to find showcase/<company>/renders/<slug>.mp4.
 demo-pops spec *args="":
-    uv run --with numpy python tools/motion/qa/pop-scan.py "$(dirname {{spec}})/renders/$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1])).get("slug", "demo"))' {{spec}}).mp4" {{args}}
+    -uv run --with numpy python tools/motion/qa/pop-scan.py "$(dirname {{spec}})/renders/$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1])).get("slug", "demo"))' {{spec}}).mp4" {{args}}
 
 # The whole demo pipeline. Needs the RoboLedger UI running (default localhost:3001).
 # e.g. just demo-pipeline showcase/coffee_roaster/driftline.walkthrough.json ~/Projects/robosystems/.local/config.json

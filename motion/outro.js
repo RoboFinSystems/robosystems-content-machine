@@ -4,7 +4,8 @@
  *
  * data: { line?, cta?, note?, duration? }
  */
-import { blurIn, seg, tile } from '/demos/kit.js'
+import { blurIn, seg } from './runtime.js'
+import { tile } from '/demos/kit.js'
 import { BACKDROP, BRAND_CSS, envelope, H, W } from './brand.js'
 
 export default function outro(data = {}) {

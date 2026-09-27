@@ -6,7 +6,7 @@
 #
 # The showcase twin of redo_video.sh. An episode's renders, audio, walkthrough specs and
 # outline move to showcase/<episode>/.history/v{N}/, and the next session writes a new
-# outline and specs against the current frame (template/SHOWCASE_OUTLINE.md), templates and
+# outline and specs against the current frame (tools/showcase_outline.md), templates and
 # motion rules. It must NOT open the archive: the one thing v{N+1} takes from v{N} is
 # LOVES-HATES.md, the notes on what to keep and what to fix, in the words they were given.
 
@@ -61,7 +61,7 @@ fi
 
 sed "s/{EPISODE}/${EP}/g; s/{N}/${N}/g; s/{NEXT}/$((N + 1))/g" \
     "$SCRIPT_DIR/demo_redo_template.md" > "$P/REDO.md"
-sed "s/{EPISODE}/${EP}/g" "$ROOT_DIR/template/SHOWCASE_OUTLINE.md" > "$P/OUTLINE.md"
+sed "s/{EPISODE}/${EP}/g" "$ROOT_DIR/tools/showcase_outline.md" > "$P/OUTLINE.md"
 
 echo ""
 echo "Redo ready. v$N is in .history/v$N/."

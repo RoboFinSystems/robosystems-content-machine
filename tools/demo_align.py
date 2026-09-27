@@ -4,7 +4,7 @@ Word timings for a showcase walkthrough's narration, so actions can land on the 
 
 For each beat voiced by demo_narrate.py, faster-whisper transcribes the beat's mp3 with word
 timestamps and the words are aligned back onto the beat's narration (the same alignment the
-webdeck uses, tools/webdeck/align_words.py). The recorder then starts an action marked
+webdeck uses, tools/align_words.py). The recorder then starts an action marked
 `"cue": "phrase"` on the frame where the narration says that phrase, instead of at a guessed
 offset.
 
@@ -22,8 +22,7 @@ import os
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent / "webdeck"))
-from align_words import align, tokens_of  # noqa: E402
+from align_words import align, tokens_of
 
 
 def main() -> int:

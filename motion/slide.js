@@ -10,7 +10,7 @@
  *   flow     { eyebrow?, nodes[], caption? }
  * plus duration? (seconds, default 4.5)
  */
-import { blurIn, eio, eo, rise, seg } from '/demos/kit.js'
+import { blurIn, eio, eo, rise, seg } from './runtime.js'
 import { BACKDROP, BRAND_CSS, envelope, H, W, words } from './brand.js'
 
 const fmt = (v, d, prefix = '', suffix = '') =>

@@ -319,8 +319,11 @@ def main():
     f"  chat model: {model}  ·  image model: {IMAGE_MODEL}  ·  quality: {args.quality}"
   )
   el = extract_elements(key, model, brief)
-  for flag, field in (("hook", "hook_stat"), ("hook_line", "hook_line"),
-                      ("badge", "key_stat")):
+  for flag, field in (
+    ("hook", "hook_stat"),
+    ("hook_line", "hook_line"),
+    ("badge", "key_stat"),
+  ):
     override = getattr(args, flag.replace("-", "_"), None)
     if override:
       print(f"  override {field}: {el.get(field)!r} -> {override!r}")

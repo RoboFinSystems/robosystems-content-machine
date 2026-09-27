@@ -10,7 +10,9 @@ a cue phrase among the script tokens, which is exact, instead of searching a tra
 Output: videos/audio/{T}_segment_{id}_words.json  ->  {"tokens": [[word, start], ...]}
 Cached per segment: re-aligned only when the mp3 or the narration is newer / different.
 
-Usage: uv run --with faster-whisper python tools/webdeck/align_words.py TICKER [--short]
+Shared with the showcase lane: tools/demo_align.py aligns walkthrough beats with the same align().
+
+Usage: uv run --with faster-whisper python tools/align_words.py TICKER
 """
 
 import argparse
@@ -21,7 +23,7 @@ import re
 import sys
 from pathlib import Path
 
-REPO = Path(__file__).resolve().parents[2]
+REPO = Path(__file__).resolve().parents[1]
 
 
 def norm(w: str) -> str:
@@ -60,33 +62,21 @@ def align(script_tokens: list[str], heard: list[tuple[str, float]], dur: float):
 def main() -> int:
   ap = argparse.ArgumentParser()
   ap.add_argument("ticker")
-  ap.add_argument("--short", action="store_true", help="align the 9:16 short's beats")
   ap.add_argument("--whisper", default="small.en")
   ap.add_argument("--force", action="store_true")
   args = ap.parse_args()
   t = args.ticker.upper()
   proj = REPO / "projects" / t
 
-  if args.short:
-    script = json.loads((proj / "scripts" / f"{t}_short_script.json").read_text())
-    items = [
-      (
-        b["id"],
-        b["narration"],
-        proj / "videos" / "audio" / f"{t}_short_beat_{b['id']}_voiceover.mp3",
-      )
-      for b in script["beats"]
-    ]
-  else:
-    script = json.loads((proj / "scripts" / f"{t}_script.json").read_text())
-    items = [
-      (
-        s["id"],
-        s["narration"],
-        proj / "videos" / "audio" / f"{t}_segment_{s['id']}_voiceover.mp3",
-      )
-      for s in script["segments"]
-    ]
+  script = json.loads((proj / "scripts" / f"{t}_script.json").read_text())
+  items = [
+    (
+      s["id"],
+      s["narration"],
+      proj / "videos" / "audio" / f"{t}_segment_{s['id']}_voiceover.mp3",
+    )
+    for s in script["segments"]
+  ]
 
   model = None
   for sid, narration, mp3 in items:

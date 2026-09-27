@@ -1,10 +1,12 @@
 /*
  * The RoboLedger video look, shared by the intro, the end card and the slides:
  * the landing hero's backdrop (flat brand gradient over the site's grid) and
- * the type the landing demos use. The runtime and helpers come from the landing
- * kit (roboledger-app/public/demos/kit.js), mounted at /demos/ by the renderer.
+ * the type the landing demos use. The easings and moves come from ./runtime.js,
+ * the motion runtime vendored from @robosystems/core (just motion-sync) that the
+ * landing demos and the research deck also run; the RoboLedger chrome (tile, fonts,
+ * logo) comes from roboledger-app, mounted at /demos/ by the renderer.
  */
-import { eio, seg } from '/demos/kit.js'
+import { eio, seg } from './runtime.js'
 
 export const W = 1920
 export const H = 1080

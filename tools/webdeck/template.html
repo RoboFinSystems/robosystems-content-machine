@@ -228,12 +228,15 @@ html,body { background:#000; }
 <script>
 const DATA = {{DATA_JSON}};
 
-/* ---------- easing + helpers (pure) ---------- */
-const clamp01 = x => x < 0 ? 0 : x > 1 ? 1 : x;
-const eoc = x => 1 - Math.pow(1 - clamp01(x), 3);        // easeOutCubic
+/* ---------- the motion runtime ----------
+   motion/runtime.js, vendored from @robosystems/core (just motion-sync): the same
+   easings, blurIn and rise the landing demos and the showcase run. The deck adds only
+   what a timeline of tracks needs on top of it. */
+{{MOTION_RUNTIME}}
+
 const eoq = x => 1 - Math.pow(1 - clamp01(x), 5);        // easeOutQuint
-const eio = x => { x = clamp01(x); return x < .5 ? 4*x*x*x : 1 - Math.pow(-2*x + 2, 3) / 2; };
-const seg = (t, d, dur) => clamp01((t - d) / dur);        // 0..1 window
+/* 0..1 across [delay, delay + dur]; the runtime's win(t, a, b) takes start and end */
+const win = (t, d, dur) => seg(t, d, d + dur);
 
 function el(tag, cls, html) {
   const e = document.createElement(tag);
@@ -274,26 +277,21 @@ function countText(spec, p) {
 
 
 /* ---------- motion primitives (tracks: fn(localT) per section) ---------- */
-function rise(node, delay, dur=0.6, dist=26) {
-  return t => { const p = eoc(seg(t, delay, dur));
-    node.style.opacity = p;
-    node.style.transform = `translateY(${(1-p)*dist}px)`; };
+/* track factories: each schedules one of the runtime's moves at a delay */
+function riseAt(node, delay, dur=0.6, dist=26) {
+  return t => rise(node, eo(win(t, delay, dur)), dist);
 }
-function fadeIn(node, delay, dur=0.5) {
-  return t => { node.style.opacity = eoc(seg(t, delay, dur)); };
+function fadeAt(node, delay, dur=0.5) {
+  return t => { node.style.opacity = eo(win(t, delay, dur)); };
 }
-/* headline entrance: blur to sharp, rising (the landing kit's blurIn) */
-function blurIn(node, delay, dur=0.65, dist=22) {
-  return t => { const x = seg(t, delay, dur), e = eoc(x);
-    node.style.opacity = clamp01(x * 1.4);
-    node.style.filter = e < 1 ? `blur(${(1-e)*14}px)` : '';
-    node.style.transform = `translateY(${(1-e)*dist}px)`; };
+function blurAt(node, delay, dur=0.65, dist=22) {
+  return t => blurIn(node, win(t, delay, dur), dist);
 }
 function countUp(node, target, delay, dur=1.15) {
   const spec = parseCountable(target);
-  if (!spec) { node.textContent = target; return fadeIn(node, delay, 0.5); }
+  if (!spec) { node.textContent = target; return fadeAt(node, delay, 0.5); }
   node.textContent = target;   // final text present at build so autofit sees worst case
-  return t => { const p = eoc(seg(t, delay, dur));
+  return t => { const p = eo(win(t, delay, dur));
     node.style.opacity = p === 0 ? 0 : 1;
     node.textContent = p >= 1 ? target : countText(spec, p); };
 }
@@ -364,8 +362,8 @@ function focusTrack(items, times, holdIdx, settle) {
      from `settle` on, only holdIdx (the authored highlight) keeps it */
   return t => items.forEach((it, i) => {
     const a = times[i], b = i + 1 < times.length ? times[i + 1] : settle;
-    let w = eoc(seg(t, a, 0.35)) * (1 - eoc(seg(t, b, 0.35)));
-    if (i === holdIdx) w = Math.max(w, eoc(seg(t, settle, 0.5)));
+    let w = eo(win(t, a, 0.35)) * (1 - eo(win(t, b, 0.35)));
+    if (i === holdIdx) w = Math.max(w, eo(win(t, settle, 0.5)));
     it.fill.style.opacity = w;
     if (it.edge) it.edge.style.opacity = w;
   });
@@ -389,7 +387,7 @@ function buildValue(node, main, delay, dur, tracks) {
   if (m && m[1] && parseCountable(m[2])) {
     node.innerHTML = `<span class="pre">${esc(m[1])}</span><span class="ct"></span>`;
     tracks.push(countUp(node.querySelector('.ct'), m[2], delay, dur));
-    tracks.push(fadeIn(node, delay, 0.4));
+    tracks.push(fadeAt(node, delay, 0.4));
   } else {
     tracks.push(countUp(node, main, delay, dur));
   }
@@ -402,7 +400,7 @@ function addEyebrow(root, tracks, sec) {
   const e = el('div','eyebrow',
     `<span class="num">${esc(num)}</span><span class="sep">/</span><span class="lbl">${esc(lbl)}</span>`);
   root.appendChild(e);
-  tracks.push(blurIn(e, 0.15, 0.6, 12));
+  tracks.push(blurAt(e, 0.15, 0.6, 12));
 }
 function addFooter(root, tracks, sec, delay=1.15) {
   if (!sec.slide.source && !DATA.lockupSrc) return;
@@ -413,7 +411,7 @@ function addFooter(root, tracks, sec, delay=1.15) {
   row.appendChild(el('div','lockup', `<img src="${DATA.markSrc}"><span>RoboSystems</span>`));
   f.appendChild(row);
   root.appendChild(f);
-  tracks.push(fadeIn(f, delay, 0.6));
+  tracks.push(fadeAt(f, delay, 0.6));
 }
 function addHeadline(root, tracks, sec, cls, top) {
   const h = el('div', cls);
@@ -423,7 +421,7 @@ function addHeadline(root, tracks, sec, cls, top) {
     const s = el('span','w', esc(w));
     h.appendChild(s);
     if (k < words.length - 1) h.appendChild(document.createTextNode(' '));
-    tracks.push(blurIn(s, 0.2 + k*0.07, 0.65, 22));
+    tracks.push(blurAt(s, 0.2 + k*0.07, 0.65, 22));
   });
   root.appendChild(h);
   h.classList.add('autofit');
@@ -432,7 +430,7 @@ function addHeadline(root, tracks, sec, cls, top) {
 function addSubhead(root, tracks, sec) {
   const sub = el('div','c-subhead', esc(sec.slide.subhead || ''));
   root.appendChild(sub);
-  tracks.push(blurIn(sub, 0.6, 0.6, 14));
+  tracks.push(blurAt(sub, 0.6, 0.6, 14));
 }
 /* when the voice is done with the list: the focus hands back to the highlight */
 const settleAt = (sec, times) =>
@@ -452,7 +450,7 @@ function buildTitle(sec, root, tracks, cam) {
     const lab = el('div','watch-label','WATCH FROM HERE');
     lab.style.top = '560px';
     root.appendChild(lab);
-    tracks.push(blurIn(lab, 0.85, 0.5, 12));
+    tracks.push(blurAt(lab, 0.85, 0.5, 12));
     const chips = el('div','watch-chips');
     chips.style.top = '634px';
     root.appendChild(chips);
@@ -461,7 +459,7 @@ function buildTitle(sec, root, tracks, cam) {
     const items = labels.map((c, k) => {
       const chip = el('div','watch-chip', esc(c));
       chips.appendChild(chip);
-      tracks.push(rise(chip, times[k], 0.55, 22));
+      tracks.push(riseAt(chip, times[k], 0.55, 22));
       cam.push({ el: chip, at: times[k] });
       return addFocus(chip, false);
     });
@@ -470,12 +468,12 @@ function buildTitle(sec, root, tracks, cam) {
     const sub = el('div','t-subhead', esc(sec.slide.subhead || ''));
     sub.style.top = '560px';
     root.appendChild(sub);
-    tracks.push(blurIn(sub, 0.75, 0.6, 14));
+    tracks.push(blurAt(sub, 0.75, 0.6, 14));
     if (sec.slide.highlight) {
       const pill = el('div','t-pill', esc(sec.slide.highlight));
       pill.style.top = '668px';
       root.appendChild(pill);
-      tracks.push(rise(pill, 1.1, 0.6, 16));
+      tracks.push(riseAt(pill, 1.1, 0.6, 16));
     }
   }
   addFooter(root, tracks, sec, 1.35);
@@ -507,7 +505,7 @@ function buildBarChart(sec, root, tracks, cam) {
     wrap.appendChild(zl);
     tracks.push(t => {
       zl.style.bottom = (56 + zeroFrac * (wrap.clientHeight - 56 - 60)) + 'px';
-      zl.style.opacity = eoq(seg(t, 0.6, 0.5));
+      zl.style.opacity = eoq(win(t, 0.6, 0.5));
     });
   }
   const times = cueTimes(sec, entries.map(([k]) => k));
@@ -526,7 +524,7 @@ function buildBarChart(sec, root, tracks, cam) {
     const d = times[i];
     cam.push({ el: col, at: d });
     tracks.push(t => {
-      const p = eoq(seg(t, d, 1.0));
+      const p = eoq(win(t, d, 1.0));
       const hMax = col.clientHeight - 56 - 60;      // reserve label + x row
       const zero = 56 + zeroFrac * hMax;           // baseline, above the x-label row
       const h = Math.max(4, frac * hMax * p);
@@ -539,7 +537,7 @@ function buildBarChart(sec, root, tracks, cam) {
       val.style.opacity = p < 0.15 ? 0 : 1;
       val.textContent = fmtBarValue(+v * p);
     });
-    tracks.push(fadeIn(x, 0.7 + i*0.08, 0.5));   // the axis is there before the bars
+    tracks.push(fadeAt(x, 0.7 + i*0.08, 0.5));   // the axis is there before the bars
   });
   const hold = entries.findIndex(([k]) => k === sec.slide.highlight);
   tracks.push(focusTrack(items, times, hold, settleAt(sec, times)));
@@ -604,7 +602,7 @@ function buildLineChart(sec, root, tracks, cam) {
     x.style.left = (X(i) / W * 100) + '%';
     if (i === entries.length - 1) { x.style.left=''; x.style.right='0'; x.style.transform='none'; }
     xrow.appendChild(x);
-    tracks.push(fadeIn(x, 0.7 + i*0.08, 0.5));
+    tracks.push(fadeAt(x, 0.7 + i*0.08, 0.5));
     cam.push({ el: x, at: times[i] });
   });
 
@@ -621,17 +619,17 @@ function buildLineChart(sec, root, tracks, cam) {
     /* the line reaches point i at its cue, and the dot rides its head */
     let k = 0; while (k + 1 < times.length && t >= times[k + 1]) k++;
     const span = k + 1 < times.length ? times[k+1] - times[k] : 1;
-    const f = t < times[0] ? 0 : k + 1 < times.length ? eio(seg(t, times[k], Math.min(span, 1.2))) : 1;
+    const f = t < times[0] ? 0 : k + 1 < times.length ? eio(win(t, times[k], Math.min(span, 1.2))) : 1;
     const len = t < times[0] ? 0 : (cum[k] + (k + 1 < cum.length ? (cum[k+1] - cum[k]) * f : 0)) / L;
     path.style.strokeDashoffset = String(1 - len);
     const i1 = Math.min(k + 1, pts.length - 1);
     const hx = pts[k][0] + (pts[i1][0] - pts[k][0]) * (i1 === k ? 0 : f);
     const hy = pts[k][1] + (pts[i1][1] - pts[k][1]) * (i1 === k ? 0 : f);
     dot.setAttribute('cx', hx); dot.setAttribute('cy', hy);
-    dot.setAttribute('r', String(11 * eoc(seg(t, times[0], 0.3))));
-    const dp = eoc(seg(t, tEnd + 0.3, 0.5));
+    dot.setAttribute('r', String(11 * eo(win(t, times[0], 0.3))));
+    const dp = eo(win(t, tEnd + 0.3, 0.5));
     lbl.style.opacity = dp;
-    lbl.textContent = countText(spec, eoc(seg(t, tEnd + 0.3, 0.6)));
+    lbl.textContent = countText(spec, eo(win(t, tEnd + 0.3, 0.6)));
   });
   addFooter(root, tracks, sec, 1.6);
 }
@@ -663,9 +661,9 @@ function buildMetricCards(sec, root, tracks, cam) {
     grid.appendChild(card);
     const d = times[i];
     cam.push({ el: card, at: d });
-    tracks.push(rise(card, d, 0.6, 30));
+    tracks.push(riseAt(card, d, 0.6, 30));
     tracks.push(countUp(vl, obj.value, d + 0.15, 1.1));
-    tracks.push(fadeIn(ch, d + 0.9, 0.45));
+    tracks.push(fadeAt(ch, d + 0.9, 0.45));
     return addFocus(card, false);
   });
   const hold = entries.findIndex(([k]) => k === sec.slide.highlight);
@@ -699,7 +697,7 @@ function buildDual(sec, root, tracks, cam) {
     list.appendChild(item);
     const d = bTimes[i];
     cam.push({ el: item, at: d });
-    tracks.push(t => { const p = eoc(seg(t, d, 0.6));
+    tracks.push(t => { const p = eo(win(t, d, 0.6));
       item.style.opacity = p;
       item.style.transform = `translateX(${(1-p)*-30}px)`; });
     return addFocus(item, false);
@@ -733,17 +731,17 @@ function buildDual(sec, root, tracks, cam) {
       if (st.note) {
         const sb = el('div','sb' + (/\d/.test(st.note) ? ' warm' : ''), esc(st.note));
         m.appendChild(sb);
-        tracks.push(fadeIn(sb, d + 0.55, 0.45));
+        tracks.push(fadeAt(sb, d + 0.55, 0.45));
       }
       grid.appendChild(m);
       cam.push({ el: m, at: d });
-      tracks.push(rise(m, d, 0.6, 30));
+      tracks.push(riseAt(m, d, 0.6, 30));
       return addFocus(m, false);
     });
   } else {
     const panel = el('div','statpanel');
     root.appendChild(panel);
-    tracks.push(rise(panel, Math.max(0.9, sTimes[0] - 0.4), 0.6, 24));
+    tracks.push(riseAt(panel, Math.max(0.9, sTimes[0] - 0.4), 0.6, 24));
     sItems = entries.map(([k, v], i) => {
       const hl = sec.slide.highlight === k;
       const row = el('div','staterow' + (hl ? ' hl' : ''));
@@ -755,7 +753,7 @@ function buildDual(sec, root, tracks, cam) {
       row.appendChild(vl);
       panel.appendChild(row);
       cam.push({ el: row, at: sTimes[i] });
-      tracks.push(rise(row, sTimes[i], 0.55, 18));
+      tracks.push(riseAt(row, sTimes[i], 0.55, 18));
       return addFocus(row, false);
     });
   }
@@ -788,9 +786,9 @@ function buildTable(sec, root, tracks, cam) {
   wrap.appendChild(head);
   const rule = el('div','tbl-rule');
   wrap.appendChild(rule);
-  tracks.push(rise(head, 0.8, 0.5, 14));
+  tracks.push(riseAt(head, 0.8, 0.5, 14));
   tracks.push(t => { rule.style.transformOrigin = 'left';
-    rule.style.transform = `scaleX(${eio(seg(t, 0.9, 0.7))})`; });
+    rule.style.transform = `scaleX(${eio(win(t, 0.9, 0.7))})`; });
 
   /* Fit the rows to the space between the table top (430px) and the footer rule.
      The old fixed ramp stopped shrinking at 6 rows, so a 7-row table overflowed and
@@ -819,7 +817,7 @@ function buildTable(sec, root, tracks, cam) {
     if (hl) row.style.background = toneBg;
     wrap.appendChild(row);
     cam.push({ el: row, at: times[i] });
-    tracks.push(t => { const p = eoc(seg(t, times[i], 0.55));
+    tracks.push(t => { const p = eo(win(t, times[i], 0.55));
       row.style.opacity = p;
       row.style.transform = `translateX(${(1-p)*-24}px)`; });
     return f;
@@ -843,7 +841,7 @@ function buildCallout(sec, root, tracks, cam) {
   const kicker = el('div','k-kicker', esc((sec.slide.subhead || '').toUpperCase()));
   kicker.style.top = '308px';
   root.appendChild(kicker);
-  tracks.push(blurIn(kicker, 0.35, 0.6, 14));
+  tracks.push(blurAt(kicker, 0.35, 0.6, 14));
 
   const big = el('div','k-big', esc(sec.slide.headline));
   big.style.top = '392px';
@@ -854,9 +852,9 @@ function buildCallout(sec, root, tracks, cam) {
   const spec = parseCountable(sec.slide.headline);
   if (spec) {
     tracks.push(t => {
-      const p = eoc(seg(t, 0.65, 1.3));
+      const p = eo(win(t, 0.65, 1.3));
       big.style.opacity = clamp01(p * 3);
-      big.style.transform = `translateY(${(1 - eoc(seg(t, 0.65, 0.6))) * 30}px)`;
+      big.style.transform = `translateY(${(1 - eo(win(t, 0.65, 0.6))) * 30}px)`;
       big.textContent = p >= 1 ? sec.slide.headline : countText(spec, p);
     });
   } else {
@@ -867,18 +865,18 @@ function buildCallout(sec, root, tracks, cam) {
       s.style.display = 'inline-block';
       big.appendChild(s);
       if (k < all.length - 1) big.appendChild(document.createTextNode(' '));
-      tracks.push(blurIn(s, 0.65 + k*0.1, 0.7, 26));
+      tracks.push(blurAt(s, 0.65 + k*0.1, 0.7, 26));
     });
   }
   const rule = el('div','k-rule');
   rule.style.top = '628px';
   root.appendChild(rule);
-  tracks.push(t => { rule.style.transform = `scaleX(${eio(seg(t, 1.7, 0.6))})`; });
+  tracks.push(t => { rule.style.transform = `scaleX(${eio(win(t, 1.7, 0.6))})`; });
 
   const ctx = el('div','k-ctx', esc(sec.slide.data && sec.slide.data.context || ''));
   ctx.style.top = '672px';
   root.appendChild(ctx);
-  tracks.push(blurIn(ctx, 1.9, 0.7, 16));
+  tracks.push(blurAt(ctx, 1.9, 0.7, 16));
   addFooter(root, tracks, sec, 2.2);
 }
 
@@ -887,29 +885,29 @@ function buildCTA(sec, root, tracks, cam) {
   mark.style.top = '212px';
   mark.innerHTML = `<img src="${DATA.markSrc}">`;
   root.appendChild(mark);
-  tracks.push(rise(mark, 0.25, 0.7, 24));
+  tracks.push(riseAt(mark, 0.25, 0.7, 24));
 
   const word = el('div','cta-word', esc(sec.slide.headline));
   word.style.top = '392px';
   root.appendChild(word);
   word.classList.add('autofit');
   cam.push({ el: word, at: 0 });
-  tracks.push(blurIn(word, 0.5, 0.7, 24));
+  tracks.push(blurAt(word, 0.5, 0.7, 24));
 
   const sub = el('div','cta-sub', esc(sec.slide.subhead || ''));
   sub.style.top = '596px';
   root.appendChild(sub);
-  tracks.push(blurIn(sub, 0.9, 0.6, 16));
+  tracks.push(blurAt(sub, 0.9, 0.6, 16));
 
   const btn = el('div','cta-btn');
   btn.style.top = '760px';
   btn.innerHTML = `<span>${esc(sec.slide.headline)}</span>`;
   root.appendChild(btn);
-  tracks.push(rise(btn, 1.3, 0.6, 18));
+  tracks.push(riseAt(btn, 1.3, 0.6, 18));
 
   const fine = el('div','cta-fine','Not investment advice · No price targets · Every number from the filings');
   root.appendChild(fine);
-  tracks.push(fadeIn(fine, 1.7, 0.6));
+  tracks.push(fadeAt(fine, 1.7, 0.6));
 }
 
 const BUILDERS = {
@@ -958,10 +956,10 @@ function camPose(s, lt) {
   let ox = 960, oy = 560;
   for (const sh of s.shots) {
     if (lt < sh.at) break;
-    const k = eio(seg(lt, sh.at, PAN));
+    const k = eio(win(lt, sh.at, PAN));
     ox += (sh.x - ox) * k; oy += (sh.y - oy) * k;
   }
-  const k = PUSH * eio(seg(lt, 0.2, s.dur));
+  const k = PUSH * eio(win(lt, 0.2, s.dur));
   s.cam.style.transformOrigin = `${ox.toFixed(1)}px ${oy.toFixed(1)}px`;
   s.cam.style.transform = `scale(${(1 + k).toFixed(5)})`;
 }
@@ -1017,10 +1015,10 @@ window.__seek = function(t) {
     const lt = i === 0 && DATA.posterHold > 0 ? t - DATA.posterHold - 0.2 : t - s.start;
     s.node.style.display = 'block';
     let o = 1;
-    if (i === a && i > 0) o = eoc(clamp01(lt / TRANS));
-    if (i === a - 1) o = 1 - eoc(clamp01((t - sections[a].start) / TRANS));
+    if (i === a && i > 0) o = eo(clamp01(lt / TRANS));
+    if (i === a - 1) o = 1 - eo(clamp01((t - sections[a].start) / TRANS));
     /* the last shot fades its content into the backdrop, never to black */
-    if (i === sections.length - 1) o *= 1 - eio(seg(t, DATA.total - 0.9, 0.9));
+    if (i === sections.length - 1) o *= 1 - eio(win(t, DATA.total - 0.9, 0.9));
     s.node.style.opacity = o;
     camPose(s, lt);
     s.tracks.forEach(fn => fn(lt));
@@ -1030,7 +1028,7 @@ window.__seek = function(t) {
   const poster = document.getElementById('poster');
   if (DATA.posterHold > 0 && t < DATA.posterHold + 0.35) {
     poster.style.display = 'block';
-    poster.style.opacity = 1 - eio(seg(t, DATA.posterHold, 0.35));
+    poster.style.opacity = 1 - eio(win(t, DATA.posterHold, 0.35));
   } else {
     poster.style.display = 'none';
   }
