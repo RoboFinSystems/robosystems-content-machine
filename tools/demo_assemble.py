@@ -23,7 +23,7 @@ showcase/<episode>/renders/:
 
   <slug>_silent.mp4   picture only, for the pop scan
   <slug>_vo.mp4       voice only, the comparison cut
-  <slug>_final.mp4    voice + ducked music, the publish candidate
+  <slug>_final.mp4    voice + ducked music at -14 LUFS (YouTube's target), the publish candidate
 
 Usage:
   uv run python tools/demo_assemble.py showcase/pilot/episode.json [--no-voice] [--skip-music]
@@ -137,6 +137,9 @@ def normalize(
   else:
     cmd += ["-f", "lavfi", "-i", "anullsrc=r=48000:cl=stereo"]
   vf = f"scale={W}:{H}:force_original_aspect_ratio=decrease,pad={W}:{H}:(ow-iw)/2:(oh-ih)/2:color=black,fps={FPS},format=yuv420p"
+  if length:
+    # a line longer than its clip holds the clip's last frame rather than ending early
+    vf += f",tpad=stop_mode=clone:stop_duration={length:.3f}"
   a_src = "0:a" if keep_audio else "1:a"
   cmd += [
     "-filter_complex",
@@ -310,7 +313,7 @@ def main() -> int:
         f"[0:a]asplit=2[vomain][voref];[1:a]aresample=48000,volume={gain}dB,"
         f"afade=t=in:d=1.5,afade=t=out:st={max(0, t - 2):.2f}:d=2[mus];"
         "[mus][voref]sidechaincompress=threshold=0.02:ratio=8:attack=180:release=1000[musd];"
-        "[vomain][musd]amix=inputs=2:normalize=0[aout]",
+        "[vomain][musd]amix=inputs=2:normalize=0,loudnorm=I=-14:TP=-1.5:LRA=11[aout]",
         "-map",
         "0:v",
         "-map",

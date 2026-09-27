@@ -275,7 +275,7 @@ class Recorder {
   }
 
   /* Press, click for real, then ride the ripple out. */
-  async click(frames, { button = 'left' } = {}) {
+  async click(frames, { button = 'left', fade = 0 } = {}) {
     const pressF = Math.max(1, Math.min(Math.round(frames * 0.28), frames - 1));
     const rippleF = frames - pressF;
     const { x, y } = this.cursor;
@@ -288,6 +288,8 @@ class Recorder {
     }
     await this.page.mouse.up({ button });
     await this.page.evaluate(() => window.__rsCursor && window.__rsCursor.press(0));
+    // whatever the click changes paints during the ripple: dissolve into it from the press
+    await this.fadeFromLast(Math.min(fade, rippleF));
 
     for (let i = 0; i < rippleF; i++) {
       const t = (i + 1) / rippleF;
@@ -785,6 +787,7 @@ async function runAction(rec, page, baseUrl, a, warn, ctx = {}) {
       break;
     }
     case 'click': {
+      const fadeF = Math.round(((a.fade ?? 400) / 1000) * rec.fps);
       if (a.target) {
         const box = await tryResolve(rec, page, a, warn);
         if (!box) return rec.hold(a.frames);
@@ -802,13 +805,15 @@ async function runAction(rec, page, baseUrl, a, warn, ctx = {}) {
         }
         const moveF = Math.max(1, Math.round(a.frames * 0.45));
         await rec.move(box.point, moveF);
-        await rec.click(a.frames - moveF, { button: a.button });
+        await rec.click(a.frames - moveF, { button: a.button, fade: fadeF });
       } else {
-        await rec.click(a.frames, { button: a.button });
+        await rec.click(a.frames, { button: a.button, fade: fadeF });
       }
       // The consequence of the click settles between frames, so the cut lands
-      // on a finished UI rather than a spinner.
+      // on a finished UI rather than a spinner, and dissolves into it (0.4s by
+      // default, "fade": 0 for an instant change) instead of popping.
       await settle(page);
+      await rec.fadeFromLast(fadeF);
       await rec.syncCursor();
       break;
     }

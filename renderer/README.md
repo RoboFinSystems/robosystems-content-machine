@@ -178,7 +178,7 @@ one narration line plus the **actions** performed while it plays.
 |---|---|---|
 | `goto` | navigate, settle off camera, hold | resets the camera unless `keepZoom`; dissolves from the previous page over 0.4s (`"fade": ms`, `0` for a hard cut) |
 | `move` / `hover` | pointer travels along a bowed path | the real mouse moves too, so hover styles fire |
-| `click` | press, click for real, ride the ripple out | settles the consequence off camera |
+| `click` | press, click for real, ride the ripple out | settles the consequence off camera, then dissolves into it over 0.4s (`"fade"`, `0` for instant) |
 | `scroll` | eases the element's own scroll container | finds the scroller rather than assuming the document |
 | `zoom` | animates the camera to a component | no `target` means back to full frame |
 | `type` / `key` | keyboard input | |
