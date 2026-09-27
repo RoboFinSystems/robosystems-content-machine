@@ -181,10 +181,11 @@ webdeck-align project *args:
     uv run --with faster-whisper python tools/webdeck/align_words.py {{project}} {{args}}
 
 # A count-up changes digits every frame by design, so expect flags on callout and card
-# numbers only. Rules: tools/motion/README.md.
+# numbers. Advisory: the scan exits 1 on any flag, and the leading '-' keeps that from
+# stopping webdeck-pipeline before the mux. Rules: tools/motion/README.md.
 # Pops, flashes and black dips in the long-form's silent render
 webdeck-pops project *args:
-    uv run --with numpy python tools/motion/qa/pop-scan.py projects/{{project}}/webdeck/render/silent.mp4 --sheet projects/{{project}}/webdeck/render/pops.png {{args}}
+    -uv run --with numpy python tools/motion/qa/pop-scan.py projects/{{project}}/webdeck/render/silent.mp4 --sheet projects/{{project}}/webdeck/render/pops.png {{args}}
 
 # Render the webdeck to silent.mp4, frame by frame via headless Chrome (1080p30)
 webdeck-render project *args:
