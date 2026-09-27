@@ -70,11 +70,12 @@ figure back is how the original error survived review.
 | Duplicate `visual_ref` | none |
 | `cta` segment | present |
 
-### 5. Script and short summary
-From `scripts/{TICKER}_script.json` and `scripts/{TICKER}_short_script.json`:
+### 5. Script summary
+From `scripts/{TICKER}_script.json`:
 - segment count, narration word count, estimated duration (≈ narration chars ÷ 16)
 - breakdown by `visual_type` (title / chart / callout / dual)
-- short: beat count and estimated seconds (**target ~45s**)
+- chart and dual slides whose narration does not name their rows, bars or cards: the deck
+  builds each element on its spoken label, so suggest `cues` where the words differ
 
 Long-form running past the 3-5 minute guide is a judgment call, not an error. Say so and let the
 user decide.
@@ -93,8 +94,7 @@ count of real issues. Then:
 
 ```
 Ready for pipeline?
-→ just webdeck-pipeline {TICKER}     (long-form)
-→ just webdeck-short-pipeline {TICKER}   (9:16 short)
+→ just webdeck-pipeline {TICKER}
 ```
 
 Do **not** auto-fix. The user has creative discretion over content.

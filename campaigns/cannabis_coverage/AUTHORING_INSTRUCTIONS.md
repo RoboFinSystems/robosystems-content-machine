@@ -367,16 +367,10 @@ off your first month with code [PROMO_CODE]` line under the links; **timestamps*
 bullets with numbers; a 2-3 sentence **280E explainer** (many viewers land cold); disclaimer
 ("This is not investment advice. … No paid promotions. No price targets."); hashtags.
 
-### 5. Shorts - BACKBURNERED (author nothing)
-Shorts are paused **for this campaign**. Do **not** author a `short` block in
-`{TICKER}_script.json` or any `short_*` fields in the publish metadata; the postpack only
-includes a short if its MP4 exists.
-
-⚠️ **This pause predates the current short pipeline and is worth revisiting.** It was set when
-shorts meant the paid HeyGen avatar renderer (deleted 2026-09-04). The base contract now makes
-the 9:16 short REQUIRED on every name, and it renders locally for free via
-`just webdeck-short-pipeline {TICKER}` off `scripts/{TICKER}_short_script.json`. If you lift
-the pause, drop this section and follow `template/PRODUCTION_CONTRACT.md`.
+### 5. Shorts - RETIRED (author nothing)
+No short, no `short_*` publish fields. The base contract retired the 9:16 short on 2026-09-26
+(`template/AUTHORING_INSTRUCTIONS.md` #5 has the numbers), so this campaign's older pause and
+the base contract now agree.
 
 ### 6. Publish metadata (`social/{TICKER}_publish.json`)
 The per-platform native copy that lives nowhere else — you author it; `just postpack {TICKER}`

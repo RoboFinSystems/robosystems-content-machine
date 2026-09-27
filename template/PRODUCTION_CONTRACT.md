@@ -19,17 +19,16 @@ the loop — no hand-off to a design app, no clipboard round-trip. You do **not*
 slide HTML or do any layout: the renderer builds every slide from your `script.json`.
 
 ```
-/author  (this session)                    Code (just webdeck-pipeline / webdeck-short-pipeline)
+/author  (this session)                    Code (just webdeck-pipeline)
 ──────────────────────                     ────────────────────────────────────────────────
 reports/{TICKER}_brief.md          ──►  validate
-scripts/{TICKER}_script.json       ──►  voiceover (ElevenLabs)  →  build_webdeck (HTML)
-scripts/{TICKER}_short_script.json ──►  headless-Chrome frame render  →  ffmpeg mux
-social/                                 →  videos/{TICKER}_final.mp4   (16:9 long-form)
-                                        →  videos/{TICKER}_short.mp4   (9:16 short)
+scripts/{TICKER}_script.json       ──►  voiceover (ElevenLabs)  →  word timings  →  build_webdeck (HTML)
+social/                                 →  headless-Chrome frame render  →  pop scan  →  ffmpeg mux
+                                        →  videos/{TICKER}_final.mp4   (16:9 long-form)
                                         thumbnails: just thumbnails {TICKER} (OpenAI)
                                               │
                                               ▼
-                                        publish → yt-upload / yt-short / x-article / x-short
+                                        publish → yt-upload / x-article
 ```
 
 Your job ends at the **written artifacts**. The only thing that makes the video good is a
