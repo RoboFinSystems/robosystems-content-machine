@@ -506,6 +506,14 @@ demo-probe config entity="" routes="/home,/ledger/close,/ledger/statements,/repo
 demo-new episode:
     mkdir -p showcase/{{episode}}/audio showcase/{{episode}}/renders && sed "s/{EPISODE}/{{episode}}/g" template/SHOWCASE_OUTLINE.md > showcase/{{episode}}/OUTLINE.md && printf '# {{episode}} - loves and hates\n\n## Loves (keep)\n\n-\n\n## Hates (fix)\n\n-\n' > showcase/{{episode}}/LOVES-HATES.md && echo "showcase/{{episode}}/OUTLINE.md"
 
+# Assemble an episode from showcase/<episode>/episode.json: motion shots, recorded walkthroughs
+# and chat takes, voiced (ElevenLabs, cached), dissolved together, music ducked under the voice,
+# then pop-scanned with the joins as planned cuts. --no-voice builds a silent timing cut.
+demo-assemble episode *args="":
+    @just ensure-env
+    UV_ENV_FILE={{_env}} uv run python tools/demo_assemble.py showcase/{{episode}}/episode.json {{args}}
+    uv run --with numpy python tools/motion/qa/pop-scan.py showcase/{{episode}}/renders/$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1])).get("slug") or sys.argv[2])' showcase/{{episode}}/episode.json {{episode}})_silent.mp4 --cuts "$(cat showcase/{{episode}}/renders/*_cuts.txt)" --sheet none
+
 # Remake an episode: archive it to .history/vN, keep LOVES-HATES.md, write REDO.md + a fresh outline.
 demo-redo episode:
     ./tools/demo_redo.sh {{episode}}

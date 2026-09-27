@@ -35,6 +35,22 @@ so it can do X, Y and Z, and you get your time and money back.** One sentence, s
 Motion shots come from `motion/` (see `motion/README.md`). Live shots are walkthrough beats
 (`renderer/README.md`, `just demo-pipeline`) or chat takes (`showcase/mcp_series/recording.md`).
 
+The cut is `showcase/{EPISODE}/episode.json`, one segment per shot, and `just demo-assemble
+{EPISODE}` builds it:
+
+```jsonc
+{ "slug": "{EPISODE}", "music": "assets/music/tech_corporate.mp3", "segments": [
+  { "id": "open", "kind": "motion", "template": "intro", "data": { "kicker": "For finance leads", "title": "..." }, "narration": "..." },
+  { "id": "what", "kind": "motion", "template": "slide", "data": { "kind": "flow", "nodes": ["QuickBooks", "RoboLedger", "Your AI"] }, "narration": "..." },
+  { "id": "ask",  "kind": "walkthrough", "spec": "ask.walkthrough.json" },
+  { "id": "chat", "kind": "clip", "file": "takes/chat.mp4", "in": 12.0, "out": 27.5, "narration": "..." },
+  { "id": "end",  "kind": "motion", "template": "outro", "data": {} }
+] }
+```
+
+Motion shots take the length of their narration; walkthroughs bring their own (render them first
+with `just demo-pipeline`). `--no-voice` builds a silent timing cut from each shot's `duration`.
+
 ## Rules
 
 - The motion rules in `tools/motion/README.md` hold for every shot.
