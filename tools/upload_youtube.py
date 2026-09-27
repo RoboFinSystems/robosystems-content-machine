@@ -3,6 +3,7 @@
 
 One-time:  just yt-auth              interactive browser OAuth; writes YT_REFRESH_TOKEN to .env
 Then:      just yt-upload TICKER     upload + thumbnail + chapters/tags, PRIVATE by default
+           just yt-showcase EPISODE  a showcase film from showcase/<ep>/youtube.json, + captions
 
 All credentials live in .env (same as every other service in this repo):
   YT_CLIENT_ID / YT_CLIENT_SECRET   the OAuth client (from the GCP console)
@@ -537,6 +538,84 @@ def cmd_auth(_args) -> int:
   return 0
 
 
+def cmd_showcase(args) -> int:
+  """Upload a showcase episode: showcase/<episode>/youtube.json holds the title, description,
+  tags and category; the video, captions and thumbnail default to the episode's renders.
+  Showcase films are product videos, not research, so there is no promo code and no first
+  comment. The result is written to showcase/<episode>/youtube_upload.json."""
+  ep = REPO / "showcase" / args.episode
+  meta = json.loads((ep / "youtube.json").read_text())
+  video = ep / meta.get("video", f"renders/{args.episode}_final.mp4")
+  thumb = ep / meta.get("thumbnail", "renders/thumbnail.png")
+  captions = ep / meta.get("captions", f"renders/{args.episode}.en.srt")
+  title, description = meta["title"], "\n".join(meta["description"])
+  if len(title) > 100:
+    sys.exit(f"title is {len(title)} chars (YouTube max 100): {title}")
+  if len(description.encode()) > 5000:
+    sys.exit(f"description is {len(description.encode())} bytes (YouTube max 5000)")
+  for f in (video, thumb, captions):
+    if not f.exists():
+      sys.exit(f"missing: {f}")
+  privacy = "public" if args.public else "unlisted" if args.unlisted else "private"
+  body = {
+    "snippet": {
+      "title": title,
+      "description": description,
+      "tags": meta.get("tags", []),
+      "categoryId": str(meta.get("category", 28)),
+      "defaultLanguage": "en",
+      "defaultAudioLanguage": "en",
+    },
+    "status": {"privacyStatus": privacy, "selfDeclaredMadeForKids": False},
+  }
+  print(f"video:     {video} ({video.stat().st_size / 1e6:.1f} MB)")
+  print(f"title:     {title}")
+  print(f"privacy:   {privacy}")
+  print(f"captions:  {captions.name}   thumbnail: {thumb.name}")
+  if args.dry_run:
+    print("--- dry run: description ---")
+    print(description)
+    return 0
+
+  from datetime import datetime, timezone
+
+  from googleapiclient.discovery import build
+  from googleapiclient.http import MediaFileUpload
+
+  yt = build("youtube", "v3", credentials=get_creds(interactive=False))
+  acting_channel_guard(yt)
+  media = MediaFileUpload(str(video), chunksize=8 * 1024 * 1024, resumable=True)
+  req = yt.videos().insert(part="snippet,status", body=body, media_body=media)
+  resp = None
+  while resp is None:
+    status, resp = req.next_chunk()
+    if status:
+      print(f"  upload {int(status.progress() * 100)}%")
+  vid = resp["id"]
+  print(f"uploaded: https://youtu.be/{vid}")
+  record = {
+    "video_id": vid,
+    "url": f"https://youtu.be/{vid}",
+    "privacy": privacy,
+    "title": title,
+    "uploaded_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+  }
+  sidecar = ep / "youtube_upload.json"
+  sidecar.write_text(json.dumps(record, indent=2) + "\n")
+  yt.thumbnails().set(videoId=vid, media_body=str(prepared_thumbnail(thumb))).execute()
+  print("thumbnail set")
+  yt.captions().insert(
+    part="snippet",
+    body={"snippet": {"videoId": vid, "language": "en", "name": "English", "isDraft": False}},
+    media_body=MediaFileUpload(str(captions), mimetype="application/octet-stream"),
+  ).execute()
+  print("captions set")
+  record.update(thumbnail=True, captions=True)
+  sidecar.write_text(json.dumps(record, indent=2) + "\n")
+  print(f"wrote {sidecar.relative_to(REPO)}")
+  return 0
+
+
 def main() -> int:
   ap = argparse.ArgumentParser()
   sub = ap.add_subparsers(dest="cmd", required=True)
@@ -574,7 +653,14 @@ def main() -> int:
     help="post even if the sidecar already records a comment_id",
   )
   cm.add_argument("--dry-run", action="store_true")
+  sc = sub.add_parser("showcase", help="upload a showcase episode (showcase/<ep>/youtube.json)")
+  sc.add_argument("episode")
+  sc.add_argument("--public", action="store_true")
+  sc.add_argument("--unlisted", action="store_true")
+  sc.add_argument("--dry-run", action="store_true")
   args = ap.parse_args()
+  if args.cmd == "showcase":
+    return cmd_showcase(args)
   if args.cmd == "auth":
     return cmd_auth(args)
   if args.cmd == "publish":

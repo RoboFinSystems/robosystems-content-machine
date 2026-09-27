@@ -259,6 +259,12 @@ yt-comment project *args:
     @just ensure-env
     UV_ENV_FILE={{_env}} uv run python tools/upload_youtube.py comment {{project}} {{args}}
 
+# Upload a showcase episode from showcase/<episode>/youtube.json: video, thumbnail and captions,
+# private by default (--public / --unlisted); records the id in showcase/<episode>/youtube_upload.json
+yt-showcase episode *args:
+    @just ensure-env
+    UV_ENV_FILE={{_env}} uv run python tools/upload_youtube.py showcase {{episode}} {{args}}
+
 # ─── X (API v2) ──────────────────────────────────────────────
 
 # One-time X auth: verify the user token in .env (or mint one via the PIN flow - run as `! just x-auth`)
