@@ -89,6 +89,10 @@ campaign ticker campaign_name:
 recover ticker campaign_name="":
     ./tools/new_project.sh {{ticker}} "{{campaign_name}}" --recover
 
+# Redo a ticker's video from scratch: keeps the brief, archives the video to .history/video-vN
+redo ticker:
+    ./tools/redo_video.sh {{ticker}}
+
 # List all coverage projects
 projects:
     @ls -1 projects/ 2>/dev/null || echo "No projects yet. Run: just new TICKER"
@@ -159,16 +163,28 @@ pipeline project:
 # Full webdeck pipeline: validate → voiceover → build → render → mux (no PPTX, no Shotstack)
 # Validates with --pre-render: the render-freshness check would otherwise refuse to let
 # the pipeline run precisely when a re-render is what the project needs.
-webdeck-pipeline project: (validate-pre-render project) (voiceover project) (webdeck project) (webdeck-render project) (webdeck-mux project)
+webdeck-pipeline project: (validate-pre-render project) (voiceover project) (webdeck project) (webdeck-render project) (webdeck-pops project) (webdeck-mux project)
 
 # Validate everything except render freshness (used as the pipeline's pre-render gate)
 validate-pre-render project:
     @just ensure-env
     UV_ENV_FILE={{_env}} uv run python tools/validate_project.py {{project}} --pre-render
 
-# Build the animated webdeck HTML from script.json + VO durations
-webdeck project *args:
+# Build the animated webdeck HTML from script.json + VO durations + word timings
+webdeck project *args: (webdeck-align project)
     python3 tools/build_webdeck.py {{project}} {{args}}
+
+# The deck builds every row, bar and card as the narration names it; re-runs only for
+# re-voiced segments.
+# Word timings for each voiceover (faster-whisper, cached per segment)
+webdeck-align project *args:
+    uv run --with faster-whisper python tools/webdeck/align_words.py {{project}} {{args}}
+
+# A count-up changes digits every frame by design, so expect flags on callout and card
+# numbers only. Rules: tools/motion/README.md.
+# Pops, flashes and black dips in the long-form's silent render
+webdeck-pops project *args:
+    uv run --with numpy python tools/motion/qa/pop-scan.py projects/{{project}}/webdeck/render/silent.mp4 --sheet projects/{{project}}/webdeck/render/pops.png {{args}}
 
 # Render the webdeck to silent.mp4, frame by frame via headless Chrome (1080p30)
 webdeck-render project *args:
@@ -490,6 +506,10 @@ demo-narrate spec *args="":
     @just ensure-env
     UV_ENV_FILE={{_env}} uv run python tools/demo_narrate.py {{spec}} {{args}}
 
+# 1b. Word timings for each beat, so an action with "cue": "phrase" starts on that word.
+demo-align spec *args="":
+    uv run --with faster-whisper python tools/demo_align.py {{spec}} {{args}}
+
 # 2. Record the walkthrough against the live UI -> silent mp4 in showcase/<company>/renders/.
 demo-render spec config *args="":
     node renderer/src/cli.mjs demo --spec {{spec}} --config {{config}} {{args}}
@@ -499,6 +519,11 @@ demo-mux spec *args="":
     @just ensure-env
     UV_ENV_FILE={{_env}} uv run python tools/demo_mux.py {{spec}} {{args}}
 
+# 2b. Pops, flashes and black dips in the silent render (rules: tools/motion/README.md).
+# Reads the spec's slug to find showcase/<company>/renders/<slug>.mp4.
+demo-pops spec *args="":
+    uv run --with numpy python tools/motion/qa/pop-scan.py "$(dirname {{spec}})/renders/$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1])).get("slug", "demo"))' {{spec}}).mp4" {{args}}
+
 # The whole demo pipeline. Needs the RoboLedger UI running (default localhost:3001).
 # e.g. just demo-pipeline showcase/coffee_roaster/driftline.walkthrough.json ~/Projects/robosystems/.local/config.json
 demo-pipeline spec config: (demo-narrate spec) (demo-align spec) (demo-render spec config) (demo-pops spec) (demo-mux spec)
@@ -506,10 +531,6 @@ demo-pipeline spec config: (demo-narrate spec) (demo-align spec) (demo-render sp
 # Single-frame fit check before committing to a full render (~10s vs minutes).
 # Shoots the first frame of each beat so a bad zoom target is caught early.
 demo-stills spec config:
-# 1b. Word timings for each beat, so an action with "cue": "phrase" starts on that word.
-demo-align spec *args="":
-    uv run --with faster-whisper python tools/demo_align.py {{spec}} {{args}}
-
     node renderer/src/cli.mjs demo --spec {{spec}} --config {{config}} --stills
 
 # ─── Utilities ────────────────────────────────────────────────
@@ -519,11 +540,6 @@ play project:
     open projects/{{project}}/videos/*_final.mp4
 
 # Get media durations via ffprobe
-# 2b. Pops, flashes and black dips in the silent render (rules: tools/motion/README.md).
-# Reads the spec's slug to find showcase/<company>/renders/<slug>.mp4.
-demo-pops spec *args="":
-    uv run --with numpy python tools/motion/qa/pop-scan.py "$(dirname {{spec}})/renders/$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1])).get("slug", "demo"))' {{spec}}).mp4" {{args}}
-
 durations project:
     ./tools/durations.sh {{project}}
 

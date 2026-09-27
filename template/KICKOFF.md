@@ -23,13 +23,12 @@ Rules:
   `scripts/{TICKER}_script.json`.
 - Narration must be spoken-form (the TTS rules in the contract).
 
-When done: `just validate {TICKER}`, then `just webdeck-pipeline {TICKER}` (long-form) and
-`just webdeck-short-pipeline {TICKER}` (the 9:16 short).
+When done: `just validate {TICKER}`, then `just webdeck-pipeline {TICKER}`.
 
 ---
 ## Run-specific flavor (optional)
 
 <!-- Add any one-off direction for THIS run here, then it rides along when you paste the kickoff.
-     Examples: "Skip the short this run." · "Lead with the AI-capex angle." ·
+     Examples: "Lead with the AI-capex angle." ·
      "Keep the long-form under 7 minutes." · "This is continuing coverage — open with what changed."
      Leave blank for a standard run (the angle already lives in _SOURCE_NOTES.md). -->

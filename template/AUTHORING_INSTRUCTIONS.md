@@ -106,8 +106,8 @@ If the card is absent, this is **initiating coverage** — introduce the company
 ## What You Produce
 
 Produce the **4 core outputs** in order (brief FIRST - it's the foundation everything else
-derives from), the **9:16 short** (#5) and the **publish metadata** (#6). (The Q&A podcast is
-retired - author no `qa.json`.) Schema and slide mechanics: see `PRODUCTION_CONTRACT.md`.
+derives from) and the **publish metadata** (#6). (The 9:16 short and the Q&A podcast are
+retired - author no `short_script.json` and no `qa.json`.) Schema and slide mechanics: see `PRODUCTION_CONTRACT.md`.
 Downstream the visuals render from your `script.json` via the animated **webdeck**
 (`just webdeck-pipeline`), and thumbnails auto-generate from the brief (`just thumbnails`).
 You author no slide HTML.
@@ -133,8 +133,8 @@ assumed:
 | **/research** | direct link (a prospect we sent) + long-tail SERP | The **brief**. This is the asset a buyer actually reads, so it carries the analytical claim plainly. **The page `<title>` is the `youtube_title`** (since 2026-09-02, `reindex.py` `seo_fields`): it is reused there because a search-first title is what a SERP needs too. If the `youtube_title` does not name the ticker or company AND a period token (Q2 2026 / FY2026 / 10-K / 10-Q / Earnings), the page falls back to a composed "Company (TICK) YEAR Earnings: brief hook" title, which is weaker. Set `seo_title` in publish.json only to override deliberately. |
 
 **Never reuse one string across two surfaces.** The `youtube_title` is a query, the X hook is a
-curiosity line, the Short title is a third thing again, and the brief's headline is the
-analytical claim. A single string copied across all four reads as automated and underperforms on
+curiosity line, and the brief's headline is the analytical claim. A single string copied
+across all three reads as automated and underperforms on
 at least two of them.
 
 **The niche rule inverts between X and YouTube, so do not apply one rule to both.** On X an
@@ -277,29 +277,12 @@ key-finding bullets with specific numbers; a 1-2 sentence plain-English explaine
 metric or term a cold viewer needs; disclaimer ("This is not investment advice. No price
 targets."); relevant `$TICKER` and topic hashtags.
 
-### 5. The 9:16 short (REQUIRED - three files)
-Every name ships a vertical short. It is **not** a crop of the 16:9 video: it is its own
-purpose-built piece, rendered by the same engine at 1080x1920, and one asset serves both the
-X native-video post and the YouTube Short.
-
-- `scripts/{TICKER}_short_script.json` - 5-6 beats. **Aim ~630 narration characters for a ~45s
-  short.** Measured on real renders: ElevenLabs runs ~15-16 characters per second and the
-  finished video lands ~1.1x the narration once transitions and holds are added.
-  `metadata{ticker, company, quarter, tags}`; each
-  segment `{id, kind, narration, slide}` with `kind` one of:
-  - `hook` - `slide{headline, punch, tone}`: the surprising turn
-  - `stat` - `slide{kicker, big, context, tone}`: one huge number
-  - `cards` - `slide{eyebrow, headline, cards:[{label,value,change}], highlight}`: 2-3 metric cards
-  - `points` - `slide{eyebrow, headline, points:[{text,value,tone,highlight}], footnote}`: 3-4 rows
-  - `cta` - `slide{headline, subhead}`: the SEC Shared Repository, subhead `robosystems.ai/pricing`
-
-  Narration is spoken-form (captions derive from it automatically). Reuse the already-verified
-  long-form numbers. Arc: hook -> the number -> the turn -> why -> valuation -> CTA.
-- `social/{TICKER}_short_x_post.txt` - the X post body: substantive, early ` $TICKER` cashtag,
-  ~200-270 chars, framed as a 60-second clip and distinct from the long-form `x_post`.
-- `social/{TICKER}_short_youtube.txt` - **line 1 = the Short title** (hook-first, different from
-  both the long-form YouTube title and the X hook, under 100 chars); the rest is the
-  description with `[LONGFORM_URL]`, a `robosystems.ai/pricing` line, and `#Shorts`.
+### 5. The 9:16 short (RETIRED 2026-09-26)
+Author no short. Measured over 365 days, the Shorts feed brought 17% of the channel's views
+but 0.5% of its watch time (27 minutes all year, about 3 seconds a view), 2 subscribers, and
+no measurable traffic to the long-form, while each short spent the same YouTube upload quota
+as a long-form video. The channel grows on search to the long-form. The short tooling
+(`webdeck-short-*`) still runs for a one-off if one is ever wanted.
 
 ### 6. Publish metadata (`social/{TICKER}_publish.json`)
 The per-platform native copy that lives nowhere else — you author it; `just postpack {TICKER}`
@@ -327,7 +310,7 @@ times, the S3 media links, and flagging any unresolved placeholders). A JSON obj
 - `x_first_comment` — the X first comment under the video post; points to the brief published as an X **Article** (use `[X_ARTICLE_LINK]`). The full long-form is uploaded as native video; no YouTube link on X.
 - `youtube_comment` (optional) — the YouTube first comment, posted automatically at `yt-publish`. Omit it and the tool posts the default written-brief line pointing at the ticker's `/research` page (`[RESEARCH_URL]` resolves to it). Write one only when a bespoke line beats "here is the full written brief" - e.g. a question that invites replies.
 
-_No LinkedIn for research - LinkedIn is the technical/blog lane, not a research channel. The 9:16 short carries its own copy in the two `social/` files above (#5), not in `publish.json`. The Q&A podcast is retired - no `podcast_*` fields, no `qa.json`._
+_No LinkedIn for research - LinkedIn is the technical/blog lane, not a research channel. The 9:16 short is retired (#5) - no `short_*` social files. The Q&A podcast is retired - no `podcast_*` fields, no `qa.json`._
 
 Same placeholder rules as the rest (`[YOUTUBE_LINK]`, `[PROMO_CODE]`) — never hardcode the live URL or code.
 
@@ -338,7 +321,7 @@ Same placeholder rules as the rest (`[YOUTUBE_LINK]`, `[PROMO_CODE]`) — never 
 across 3+ years, segment breakdowns, derived metrics (margins, growth, FCF, ROE/ROA/ROIC).
 5. Web search for price, valuation ratios, analyst consensus, peer context, recent news.
 6. Synthesize the 3-5 most compelling stories. 7. Produce the 4 core outputs in order (brief
-first), then the 9:16 short (#5) and the publish metadata (#6). 8. Verify completeness — all
+first), then the publish metadata (#6). 8. Verify completeness — all
 files exist and `just validate {TICKER}` passes.
 
 ## Important Rules

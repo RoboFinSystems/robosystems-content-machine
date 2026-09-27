@@ -4,7 +4,8 @@
 # ground in-session; this is for driving a run by hand or handing it to a second session.
 #
 # Reads projects/{PROJECT}/KICKOFF.md (falls back to template/KICKOFF.md) and appends
-# the prior-coverage card (sources/_prior_coverage.md) when one exists. stdout stays the
+# the prior-coverage card (sources/_prior_coverage.md) when one exists, or REDO.md when
+# `just redo` has set the project up to remake its video. stdout stays the
 # clean prompt; the clipboard confirmation goes to stderr so pipes/redirects are unaffected.
 #
 # Usage:
@@ -22,7 +23,11 @@ SRC="${ROOT_DIR}/projects/${PROJECT}/KICKOFF.md"
 OUT="$(sed "s/{TICKER}/${PROJECT}/g" "$SRC")"
 
 PRIOR="${ROOT_DIR}/projects/${PROJECT}/sources/_prior_coverage.md"
-if [ -f "$PRIOR" ]; then
+REDO="${ROOT_DIR}/projects/${PROJECT}/REDO.md"
+if [ -f "$REDO" ]; then
+    # a redo remakes the video only; the brief and its coverage thread are already done
+    OUT="$OUT"$'\n\n---\n\n'"$(cat "$REDO")"
+elif [ -f "$PRIOR" ]; then
     OUT="$OUT"$'\n\n---\n\n'"$(cat "$PRIOR")"
 fi
 

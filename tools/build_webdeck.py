@@ -130,6 +130,17 @@ def load_durations(proj: Path, ticker: str, segments) -> dict:
   return durations
 
 
+def load_words(proj: Path, ticker: str, seg, offset: float) -> list:
+  """The segment's narration tokens with section-local start times, so the deck can
+  build each row, bar or card as the voice names it. Written by align_words.py; a deck
+  built without them still works, spreading its reveals across the narration instead."""
+  path = proj / "videos" / "audio" / f"{ticker}_segment_{seg['id']}_words.json"
+  if not path.exists():
+    return []
+  tokens = json.loads(path.read_text())["tokens"]
+  return [[w, round(t + offset, 3)] for w, t in tokens]
+
+
 def eyebrow_for(seg, position: int, sidecar: dict):
   """Per-segment eyebrow: script.json field first, sidecar file second,
   a label derived from visual_ref last. CTA slides get none."""
@@ -196,6 +207,7 @@ def main() -> int:
         "audioStart": round(audio_cursor, 3),
         "audioDur": round(dur, 3),
         "slide": slide,
+        "words": load_words(proj, ticker, seg, audio_cursor - start),
       }
     )
     audio_cursor += dur + GAP

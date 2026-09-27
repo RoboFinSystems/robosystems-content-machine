@@ -147,9 +147,9 @@ Vary the kinds for rhythm — never run many `chart` slides back to back. A good
 | `visual_type` | Use for | `slide` fields to fill |
 |---|---|---|
 | `title` | The hook, section breaks, the closing line. Big text, little/no data. | `headline` (required), `subhead`, optional one `highlight` stat |
-| `chart` | A data visualization. | `headline`, `chart_type` (`bar`/`line`/`table`/`metric_cards`), `data` (the numbers/rows), `highlight`, `visual_takeaway` (one line: what the chart must make obvious), `source` |
+| `chart` | A data visualization. | `headline`, `chart_type` (`bar`/`line`/`table`/`metric_cards`), `data` (the numbers/rows), `highlight`, `visual_takeaway` (one line: what the chart must make obvious), `source`, optional `cues` |
 | `callout` | One big number that tells the story ("280E cost: $147M / year"). | `headline` (the big value), `subhead` (label above), `slide.data.context` (line below), optional `tone`: `positive`/`negative`/`neutral`/`warning` |
-| `dual` | "What this means" — explanation + supporting data side by side. | `headline`, `bullets` (left, 2-4 short points), `data` (right, compact metrics/rows), `source` |
+| `dual` | "What this means" — explanation + supporting data side by side. | `headline`, `bullets` (left, 2-4 short points), `data` (right, compact metrics/rows), `source`, optional `cues` (for the bullets) |
 
 **`data` shape by chart_type:**
 - `bar` / `line`: an ordered map of label → number (`{"FY2022": 1017375000, …}`), or for
@@ -161,6 +161,31 @@ Vary the kinds for rhythm — never run many `chart` slides back to back. A good
 glance ("up five years straight," "one segment negative," "flat until the last bar"). Write it
 honestly: a flat series should say so rather than being framed as growth, and a series with
 negatives needs one, because the renderer will draw exactly what the numbers say.
+
+### `cues` - build each element as the narration says it
+
+The deck does not put a slide up whole. Each table row, bar, line point, metric card, `dual`
+bullet and `dual` stat appears at the moment the narration names it, takes a focus fill while
+the voice is on it, and the camera drifts toward it. The timing comes from the voiceover
+itself (word timings, `just webdeck-align`), so **write narration that walks the slide in
+order**: the row labels, bar labels and card labels are what the renderer listens for.
+
+It matches each element on the first meaningful word of its label ("Operating income" is
+cued on "operating"). Where the narration calls an element something else, give the slide a
+`cues` list: one phrase per element, in element order, quoted exactly from the narration.
+An empty string keeps label matching for that element.
+
+```jsonc
+"slide": {
+  "chart_type": "table",
+  "data": { "rows": [["Operating income", …], ["eBay derivative gain", …], …] },
+  "cues": ["", "the eBay option position", …]   // narration says "option position", not "derivative gain"
+}
+```
+
+For a `dual` slide, `cues` covers the bullets; the stats on the right match on their labels.
+`just validate` fails a cue the narration does not contain in that order. Elements nothing
+matches are spread across the narration, so a slide never breaks, it just builds on a guess.
 
 ### ⚠️ Layout capacity - hard limits the renderer will not tell you about
 

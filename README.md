@@ -3,11 +3,11 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 Automated equity-research content pipeline. Turns a company's SEC filings into a narrated
-**16:9 video**, a purpose-built **9:16 short**, a written **brief** that publishes as-is, and
-an **audio edition** of that brief - one analysis, every surface.
+**16:9 video**, a written **brief** that publishes as-is, and an **audio edition** of that
+brief - one analysis, every surface.
 
 - **Campaign-Driven** - reusable campaign templates define the editorial angle, analytical framework, and output specs; apply them to any ticker.
-- **Authored in Claude Code** - one session reads the filings over MCP ([RoboSystems](https://robosystems.ai) for the corpus, [xbrlkit](https://github.com/RoboFinSystems/xbrlkit) to confirm a figure against the filing itself) and writes the brief, the video script, the short, and the social copy. No hand-off to another app.
+- **Authored in Claude Code** - one session reads the filings over MCP ([RoboSystems](https://robosystems.ai) for the corpus, [xbrlkit](https://github.com/RoboFinSystems/xbrlkit) to confirm a figure against the filing itself) and writes the brief, the video script, and the social copy. No hand-off to another app.
 - **Rendered locally** - the deck is HTML built from the script, shot frame-by-frame in headless Chrome, and muxed with ffmpeg. No cloud render service, no per-render cost.
 - **No hand-authored slides** - you write numbers into `script.json`; the renderer draws every slide.
 
@@ -46,6 +46,7 @@ just new TICKER                      # base template
 just campaign TICKER campaign_name   # with a campaign overlay
 just campaigns                       # list available campaigns
 just recover TICKER campaign_name    # re-cover for a new quarter (archives prior outputs)
+just redo TICKER                     # remake the video from scratch, keeping the published brief
 ```
 
 #### Campaigns
@@ -74,7 +75,6 @@ graph for discovery and comps, xbrlkit to confirm a figure against the filing it
 
 - **Narrative brief** (`reports/{TICKER}_brief.md`) - the written analysis, authored first. Ships verbatim as a native X Article.
 - **Video script** (`scripts/{TICKER}_script.json`) - the source of truth: ordered segments carrying narration plus the exact numbers each slide draws.
-- **Short script** (`scripts/{TICKER}_short_script.json`) - 5-6 beats for the vertical cut, targeting ~45s.
 - **Social copy** (`social/`) - X post, YouTube description, and `publish.json` (the titles and links the publish step reads).
 
 The repo ships the research-lane skills that drive this - `/scout`, `/collect`, `/author`,
@@ -96,21 +96,27 @@ intentional: `validate` flags a claim, `/review` confirms it.
 
 ```bash
 just webdeck-pipeline TICKER         # long-form 16:9 -> videos/{TICKER}_final.mp4
-just webdeck-short-pipeline TICKER   # 9:16 short    -> videos/{TICKER}_short.mp4
 ```
 
 | Step | Command | What it does |
 |------|---------|-------------|
-| **Everything** | `just webdeck-pipeline TICKER` | Runs the five steps below end to end |
+| **Everything** | `just webdeck-pipeline TICKER` | Runs the steps below end to end |
 | **Validate** | `just validate TICKER` | Checks the authored output against the production contract |
 | **Voiceover** | `just voiceover TICKER` | Sends narration to ElevenLabs TTS (idempotent; `--force` to regen) |
-| **Build** | `just webdeck TICKER` | Builds the animated HTML deck from `script.json` + VO durations |
+| **Build** | `just webdeck TICKER` | Times each voiceover's words (faster-whisper, cached), then builds the animated HTML deck from `script.json` |
 | **Render** | `just webdeck-render TICKER` | Renders the deck to frames via headless Chrome (puppeteer-core) |
+| **QA** | `just webdeck-pops TICKER` | Flags pops, flashes and black dips in the render |
 | **Mux** | `just webdeck-mux TICKER` | Muxes narration, and narration + ducked music, with ffmpeg |
 
-The 9:16 short runs the same engine at 1080x1920. It is **purpose-built vertical, not a crop**:
-its own beat kinds (hook / stat / cards / points / cta), burned-in kinetic captions, a progress
-bar and a `$TICKER` chip. One asset serves both X native video and YouTube Shorts.
+The deck builds to the voice. Each table row, bar, card and bullet appears as the narration
+names it, holds a focus fill while the voice is on it, and a slow push drifts toward it; the
+headlines blur in and every cut fades into one shared backdrop. It follows the motion rules
+the landing demos use (`tools/motion/README.md`), and slides can pin an element to a phrase
+with `cues` (see `PRODUCTION_CONTRACT.md`).
+
+The engine can also render a purpose-built 9:16 short (`just webdeck-short-pipeline`), but
+the lane stopped making them in September 2026: the Shorts feed brought views and almost no
+watch time, and each upload spent the same YouTube quota as a long-form video.
 
 Rendering is **entirely local** - puppeteer-core drives headless Chrome, ffmpeg does the mux.
 There is no cloud render service and no per-render cost, so a re-render costs only wall clock.
@@ -136,10 +142,8 @@ Posting is per-surface, each asset in its best format:
 
 ```bash
 just yt-upload TICKER   && just yt-publish TICKER         # long-form (uploads private, then flips)
-just yt-short TICKER    && just yt-short-publish TICKER   # the Short (auto-links the long-form)
 just x-article TICKER                                     # the brief as a native X Article (draft)
 just x-article TICKER --publish
-just x-short TICKER                                       # the 9:16 as X native video
 just x-post TICKER                                        # the text post
 just sync-youtube                                         # capture published URLs into the catalog
 just analytics [tickers] · just insights                  # per-post rollup · channel-level reach
@@ -185,7 +189,7 @@ lanes use the same brand voice and the same chunk-and-concat path.
 
 ### Publishing (S3 artifact store)
 
-`just publish {TICKER}` uploads the final deliverables (long-form, short, thumbnail, brief,
+`just publish {TICKER}` uploads the final deliverables (long-form, thumbnail, brief,
 narration, social copy) to `s3://$AWS_S3_BUCKET/content/{TICKER}/` and prints public URLs
 (served via `$AWS_CDN_DOMAIN_URL` when set, else `https://$AWS_S3_BUCKET.s3.amazonaws.com/content/{TICKER}/…`)
 - a durable artifact store, separate from posting to YouTube / X. The bucket policy grants
