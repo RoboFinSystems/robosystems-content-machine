@@ -258,19 +258,14 @@ the brief is the source. These are publish-only assets, not part of the video se
 
 ---
 
-## Companion format — the 9:16 short (REQUIRED)
+## Companion format - the 9:16 short (RETIRED 2026-09-26)
 
-Every name ships a vertical short alongside the long-form. It is **not** a crop of the 16:9
-video: it is a purpose-built vertical piece from its own script,
-`scripts/{TICKER}_short_script.json`, rendered by the same engine at 1080x1920 via
-`just webdeck-short-pipeline {TICKER}` → `videos/{TICKER}_short.mp4`. One asset serves both
-the X native-video post and the YouTube Short. Its schema (5-6 beats; `hook` / `stat` /
-`cards` / `points` / `cta`) is specified in the `/author` skill, along with the two social
-files it needs: `social/{TICKER}_short_x_post.txt` and `social/{TICKER}_short_youtube.txt`.
+Author no short: no `scripts/{TICKER}_short_script.json` and no `short_*` social files. The
+reasoning is in `AUTHORING_INSTRUCTIONS.md` #5. The `webdeck-short-*` tooling still runs for a
+one-off if one is ever wanted.
 
 The Q&A podcast has been **retired** (2026-07-21): author no `qa.json` and no `podcast_*`
-fields. The HeyGen avatar-short renderer was deleted on 2026-09-04; the 9:16 short above is
-the only short, and it renders locally like the long-form.
+fields. The HeyGen avatar-short renderer was deleted on 2026-09-04.
 
 ---
 
@@ -366,7 +361,6 @@ reads wrong.)*
 - **Data on the slide must match the narration.** If the voice says "1.2 billion," the
   slide's `data`/`headline` shows that same number. Slide and words are one unit.
 - **Completeness check before finishing:** confirm `script.json` is valid (every required
-  field, `deck.slide_count` == segment count, unique ordered `visual_ref`s), that
-  `scripts/{TICKER}_short_script.json` and its two `social/` files exist, and that every
+  field, `deck.slide_count` == segment count, unique ordered `visual_ref`s) and that every
   output your `AUTHORING_INSTRUCTIONS.md` lists exists. The task isn't done until all files
   are saved.

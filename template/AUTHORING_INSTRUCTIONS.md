@@ -227,6 +227,8 @@ Editorial guidance for the script:
   Write it fresh per name so it hangs off that company's specific finding, e.g.
   > "Nobody wrote this by hand. Every number came out of the filing itself, and the same
   > pipeline runs on any of the ten thousand companies that file with the SEC."
+  **The brief carries this beat too**, as a short paragraph in its Bottom Line: the brief ships
+  verbatim as the X Article, and a beat that lives only in the script never reaches it.
 - **RoboSystems plug** - use ONE of these verbatim (don't rewrite), in a `title` slide
   (`visual_ref: "cta"`), never over a chart. Never speak a price - tiers change and the video
   does not. The two have different jobs and different doors:
