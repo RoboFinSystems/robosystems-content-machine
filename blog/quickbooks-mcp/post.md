@@ -1,22 +1,22 @@
 ---
-title: 'QuickBooks MCP: Three Doors, and What Each One Is Actually For'
+title: "Claude and QuickBooks: Intuit's Connector, Its MCP Server, and What a Ledger Adds"
 date: '2026-09-22'
 author: 'Joey French'
 site: 'roboledger'
 excerpt: 'Intuit ships an official QuickBooks MCP server and an official Claude connector, and both are better at running the business than anything we build. What neither does is map your accounts to a reporting framework, and that is the whole difference between an assistant that works your books and one that reports on them.'
-metaDescription: 'QuickBooks MCP compared: Intuit official MCP server, the Intuit Claude connector, and RoboLedger. What each one can do, what it writes, and which job it is for.'
+metaDescription: "Claude and QuickBooks, compared: Intuit's Claude connector, its MCP server, and RoboLedger. What each can do, what it writes, and which job it's for."
 tags:
   [
-    'quickbooks mcp',
     'claude quickbooks',
+    'quickbooks mcp',
     'MCP',
     'ai accounting',
     'chart of accounts',
   ]
 keywords:
   [
-    'quickbooks mcp',
-    'quickbooks mcp server',
+    'claude quickbooks',
+    'quickbooks claude connector',
     'claude quickbooks connector',
     'claude quickbooks integration',
     'quickbooks claude',
@@ -25,17 +25,17 @@ keywords:
 canonicalUrl: 'https://roboledger.ai/blog/quickbooks-mcp'
 ---
 
-A year ago, connecting QuickBooks to an AI assistant meant exporting a report and pasting it into a chat. Today there are at least three ways to do it properly, two of them built by Intuit. They do genuinely different jobs, and the guides that rank for "QuickBooks MCP" mostly don't say which.
+A year ago, connecting QuickBooks to an AI assistant meant exporting a report and pasting it into a chat. Today there are at least three ways to do it properly, two of them built by Intuit. They do genuinely different jobs, and the guides on connecting Claude to QuickBooks mostly don't say which.
 
 So here is the honest version, including the parts where we lose.
 
-## The three doors
+## Three ways to connect Claude to QuickBooks
 
 **Intuit's official QuickBooks Online MCP server.** It lives at [github.com/intuit/quickbooks-online-mcp-server](https://github.com/intuit/quickbooks-online-mcp-server) and it is not small: 145 tools across 29 entity types, plus 11 financial reports. Full create, read, update and delete, with environment variables to switch the write paths off if you want it read-only. It runs as a local subprocess on your own machine, which means it is a developer's tool: you register an app on the Intuit Developer Portal, you supply OAuth credentials as environment variables, and production needs a public HTTPS callback for the first handshake.
 
 **Intuit's Claude connector.** Hosted, consumer-ready, and around 74 tools. This is the one most people mean. It creates, updates, sends, duplicates and schedules invoices and estimates. It adds customers, products and employees, sets base pay, sends payment links and reminders, and imports transactions from a CSV, a PDF or a photograph. It reads out a profit and loss, a cash flow, a balance sheet, A/R aging, and sales broken down by customer or product. It benchmarks you against similar businesses in your industry and region. It asks before it sends or changes anything.
 
-**RoboLedger**, which is ours. One MCP endpoint, OAuth, and your books sit in a knowledge graph on the other side of it.
+**RoboLedger**, which is ours. [One MCP address](https://roboledger.ai/quickbooks-mcp), OAuth, and your books sit in a knowledge graph on the other side of it.
 
 ## What Intuit is better at, and it isn't close
 
@@ -79,4 +79,4 @@ Whichever you pick, ask it the question you already know the answer to. Pull las
 
 That is the test that actually separates these tools, and it takes about four minutes.
 
-If you want the RoboLedger side of it, the setup is in [connect your books to your AI assistant](https://roboledger.ai/docs/connect-your-books), and the argument underneath all of this is [Accounting Runs on a Chain of Exports](https://roboledger.ai/blog/ai-native-accounting).
+If you want the RoboLedger side of it, start at [the QuickBooks MCP server](https://roboledger.ai/quickbooks-mcp); the full setup is in [connect your books to your AI assistant](https://roboledger.ai/docs/connect-your-books), and the argument underneath all of this is [Accounting Runs on a Chain of Exports](https://roboledger.ai/blog/ai-native-accounting).
