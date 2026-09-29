@@ -35,7 +35,7 @@ So here is the honest version, including the parts where we lose.
 
 **Intuit's Claude connector.** Hosted, consumer-ready, and around 74 tools. This is the one most people mean. It creates, updates, sends, duplicates and schedules invoices and estimates. It adds customers, products and employees, sets base pay, sends payment links and reminders, and imports transactions from a CSV, a PDF or a photograph. It reads out a profit and loss, a cash flow, a balance sheet, A/R aging, and sales broken down by customer or product. It benchmarks you against similar businesses in your industry and region. It asks before it sends or changes anything.
 
-**RoboLedger**, which is ours. [One MCP address](https://roboledger.ai/quickbooks-mcp), OAuth, and your books sit in a knowledge graph on the other side of it.
+**RoboLedger**, which is ours. One MCP endpoint, OAuth, and your books sit in a knowledge graph on the other side of it.
 
 ## What Intuit is better at, and it isn't close
 
@@ -79,4 +79,4 @@ Whichever you pick, ask it the question you already know the answer to. Pull las
 
 That is the test that actually separates these tools, and it takes about four minutes.
 
-If you want the RoboLedger side of it, start at [the QuickBooks MCP server](https://roboledger.ai/quickbooks-mcp); the full setup is in [connect your books to your AI assistant](https://roboledger.ai/docs/connect-your-books), and the argument underneath all of this is [Accounting Runs on a Chain of Exports](https://roboledger.ai/blog/ai-native-accounting).
+If you want the RoboLedger side of it, the setup is in [connect your books to your AI assistant](https://roboledger.ai/docs/connect-your-books), and the argument underneath all of this is [Accounting Runs on a Chain of Exports](https://roboledger.ai/blog/ai-native-accounting).
