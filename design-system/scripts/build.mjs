@@ -1,11 +1,9 @@
 #!/usr/bin/env node
 /*
- * Regenerate _ds_bundle.js from the component sources, in the exact format the
- * Claude Design project (window.RoboSystemsContentDesignSystem_746ae7) consumes:
- * a Babel-transpiled (classic React.createElement runtime) IIFE that registers
- * each component on the namespace, wrapped per-component in a try/catch, with an
- * `@ds-bundle` header carrying sourceHashes. This is what makes component .jsx
- * edits round-trip — rebuild, then push _ds_bundle.js back via DesignSync.
+ * Regenerate _ds_bundle.js from the component sources: a Babel-transpiled
+ * (classic React.createElement runtime) IIFE that registers each component on
+ * window.RoboSystemsContentDesignSystem_746ae7, wrapped per-component in a
+ * try/catch, with an `@ds-bundle` header carrying sourceHashes.
  *
  *   npm run build      (or: just design-build)
  */

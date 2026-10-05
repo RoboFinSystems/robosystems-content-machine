@@ -435,11 +435,10 @@ content-migrate from="robosystems-marketing-assets":
     @just ensure-env
     @bash tools/migrate_content.sh {{from}}
 
-# ─── Content design system (design-system/ ↔ Claude Design project 746ae7a4) ──
+# ─── Content design system (design-system/) ────────────────────────────────────
 
 # Rebuild design-system/_ds_bundle.js from the component sources. Run after editing
-# components/*.jsx, then push the bundle (+ any changed files) back to Claude Design via
-# DesignSync / the /design-sync skill. Tokens, CSS, and templates push as-is — no build.
+# components/*.jsx; the renderer's short path mounts the bundle.
 design-build:
     cd design-system && npm install --no-audit --no-fund --silent && npm run build
 
