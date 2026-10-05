@@ -19,14 +19,11 @@ a vocabulary aimed at slides and stories instead of app screens.
 
 ## Sources
 
-This system was reverse-engineered from materials the user provided. You may not have
-access, but they are recorded here so you (or a teammate who does) can go deeper:
+The brand sources this system was derived from:
 
 - **`robosystems-app/`** (codebase) — the production Next.js app. The brand truth lives in
-  `src/app/globals.css` (the `@theme` primary-blue override + `@font-face` rules) and
-  `src/lib/core/.ds-compiled.css` (the full Flowbite/Tailwind palette + `--blue-*`, `--gray-*`
-  tokens). A pre-built design-system bundle sits in `ds-bundle/` (Orbitron + Space Grotesk
-  TTFs, app component previews).
+  `src/app/globals.css` (the `@theme` primary-blue override + `@font-face` rules) and the
+  `@robosystems/core` package it installs (the shared components and the cross-app brand map).
 - **`robosystems-content-machine/`** (codebase) — the content pipeline this system serves.
   Key reads: `template/PRODUCTION_CONTRACT.md` (the script → deck → video contract, TTS rules,
   slide kinds), `tools/webdeck/template.html` (how the renderer actually draws a slide), and
@@ -183,8 +180,7 @@ reports.
 
 ## Index — what's in this system
 
-The Design System tab shows every registered specimen, component, and template card. Map of the
-repository:
+Map of the directory:
 
 - **`styles.css`** — global entry point (link this one file). `@import`s fonts + all tokens.
 - **`fonts.css`** — `@font-face` for Orbitron + Space Grotesk; JetBrains Mono via Google Fonts CDN.
@@ -192,18 +188,10 @@ repository:
 - **`assets/`** — `robosystems_mark.svg` (currentColor) + `robosystems_mark_white.svg`,
   `robosystems_logo_72.png`, lockups, sub-brand logos (`roboledger.png`, `roboinvestor.png`),
   partner/source logos (`sec.png`, `quickbooks.svg`, `claude.svg`), `grid.svg` texture.
-- **`guidelines/`** — foundation specimen cards (Colors, Type, Spacing, Brand groups).
 - **`components/`** — reusable React content primitives:
   - `brand/` — **Eyebrow**, **Badge**, **BrandMark**, **SourceFooter**
   - `data/` — **MetricCard**, **Callout**, **BarChart**, **ComparisonTable**
   - `controls/` — **Button**
-- **`templates/`** — copy-ready content starting points (each a `.dc.html` consuming projects
-  can adopt):
-  - `video-deck/` — **Video Deck** (title / metric-cards / bar / callout / bull-vs-bear / CTA)
-  - `thumbnail/` — **YouTube Thumbnail** (hero metric + banner + secondary stats)
-  - `blog-post/` — **Blog Post** (light-surface long-form essay)
-  - `social-card/` — **Social Card** (1080-square stat card for X / LinkedIn)
-- **`SKILL.md`** — Agent-Skill manifest for using this system in Claude Code.
 
-> **Component namespace:** in card/template HTML, read components via
-> `const { Eyebrow, MetricCard, … } = window.RoboSystemsContentDesignSystem_746ae7`.
+> **Component namespace:** `_ds_bundle.js` registers the components on
+> `window.RoboSystemsContentDesignSystem_746ae7`, e.g. `const { Eyebrow, MetricCard, … } = window.RoboSystemsContentDesignSystem_746ae7`.
