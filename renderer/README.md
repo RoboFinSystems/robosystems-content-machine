@@ -50,9 +50,9 @@ Requires system `ffmpeg` (already a content-machine dependency).
 
 ```bash
 # UI must be running (default http://localhost:3001); creds from a robosystems config.json
-just render-capture /Users/you/Projects/robosystems/.local/config.json
+just render-capture /Users/you/Projects/robosystems/.local/config.json <company>
 # or a subset:
-just render-capture <config> close,statements,reports
+just render-capture <config> <company> "" close,statements,reports
 ```
 
 Scenes → routes (the demo beats):
@@ -299,8 +299,8 @@ robosystems UI  ──login + routes──►  renderer (capture)  ──►  st
 
 ## Notes / next
 
-- **Theme** ✅ — `--theme dark` (default). Forces the app's stored Flowbite theme
-  (`flowbite-theme-mode` via an init script) + emulates `prefers-color-scheme`,
+- **Theme** ✅ — `--theme dark` (default). Forces the app's stored theme mode
+  (the `flowbite-theme-mode` key, via an init script) + emulates `prefers-color-scheme`,
   so cutaways are on-brand dark and deterministic.
 - **Entity** ✅ — `--entity Driftline` drives the header switcher; the selection
   is persisted server-side (JWT session), so every scene navigation reflects it.
