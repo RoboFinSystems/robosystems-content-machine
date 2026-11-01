@@ -43,3 +43,13 @@ updates:
         applies-to: 'security-updates'
         patterns:
           - '*'
+    ignore:
+      # renderer/src/short.mjs serves React's UMD builds and calls
+      # ReactDOM.render; React 19 removed both, so `short` crashes on it. Lift
+      # this when short.mjs moves off them, and move both packages together.
+      - dependency-name: 'react'
+        update-types:
+          - 'version-update:semver-major'
+      - dependency-name: 'react-dom'
+        update-types:
+          - 'version-update:semver-major'
