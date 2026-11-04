@@ -7,6 +7,13 @@ import { readFile } from 'node:fs/promises';
 
 export async function resolveCreds(args) {
   if (args.email && args.password) return { email: args.email, password: args.password };
+  // tools/demo_signin_server.py answers once with the demo account's sign-in.
+  if (args.signin) {
+    const res = await fetch(args.signin);
+    if (!res.ok) throw new Error(`--signin ${args.signin} answered ${res.status}`);
+    const { e, p } = await res.json();
+    return { email: e, password: p };
+  }
   if (args.config) {
     const cfg = JSON.parse(await readFile(args.config, 'utf8'));
     if (!cfg.email || !cfg.password) {
@@ -79,9 +86,17 @@ export async function switchEntity(page, target) {
     if (opt) { opt.click(); return (opt.innerText || '').trim().split('\n')[0]; }
     return null;
   }, target);
-  if (!picked) throw new Error(`entity "${target}" not found in the switcher`);
-  await page.waitForTimeout(900); // let the server persist + the app settle
-  return picked;
+  if (picked) {
+    await page.waitForTimeout(900); // let the server persist + the app settle
+    return picked;
+  }
+  // The switcher leaves out a group's consolidation entity; its row in Entities selects it.
+  await page.keyboard.press('Escape');
+  await page.goto(new URL('/entities', page.url()).href, { waitUntil: 'networkidle' });
+  const row = page.locator('tr', { hasText: target }).first();
+  await row.getByRole('button', { name: 'Select' }).click({ timeout: 15000 });
+  await page.waitForTimeout(1500);
+  return target;
 }
 
 /*

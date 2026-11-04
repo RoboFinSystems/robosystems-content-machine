@@ -452,7 +452,7 @@ function cueTime(words, phrase) {
 function planBeat(beat, fps, warn, stills = false) {
   const actions = beat.actions || [];
   // Fit-check mode collapses every action to its settled end state.
-  if (stills) return actions.map((a) => ({ ...a, frames: (a.kind === 'wait' || a.kind === 'api') ? 0 : 1 }));
+  if (stills) return actions.map((a) => ({ ...a, frames: (a.kind === 'wait' || a.kind === 'api' || a.offCamera) ? 0 : 1 }));
   const total = Math.max(1, Math.round(((beat.durationMs || 3000) / 1000) * fps));
   const f = (ms) => Math.max(1, Math.round((ms / 1000) * fps));
 
@@ -476,7 +476,7 @@ function planBeat(beat, fps, warn, stills = false) {
         warn(`beat "${beat.id}": cue ${JSON.stringify(a.cue)} is spoken at ${at.toFixed(2)}s but the actions before it run to ${(fixed / fps).toFixed(2)}s - it lands late`);
       }
     }
-    if (a.kind === 'wait' || a.kind === 'api') return planned.push({ ...a, frames: 0 });
+    if (a.kind === 'wait' || a.kind === 'api' || a.offCamera) return planned.push({ ...a, frames: 0 });
     if (a.kind === 'dwell' && a.ms == null) {
       if (i > lastCue) elastic.push(planned.length);
       return planned.push({ ...a, frames: 0 });
@@ -752,6 +752,16 @@ async function runApiAction(page, a, ctx, warn) {
 }
 
 async function runAction(rec, page, baseUrl, a, warn, ctx = {}) {
+  // Staged before the shot: no frames, no cursor, so the beat opens on the settled result.
+  if (a.offCamera) {
+    if (a.kind === 'goto') await page.goto(new URL(a.route, baseUrl).href, { waitUntil: 'networkidle' });
+    else if (a.kind === 'click') await page.click(a.target);
+    else if (a.kind === 'select') await page.selectOption(a.target, a.value);
+    else if (a.kind === 'fill') { await page.fill(a.target, a.value); await page.locator(a.target).blur(); }
+    else throw new Error(`offCamera does not support ${a.kind}`);
+    await settle(page);
+    return;
+  }
   switch (a.kind) {
     case 'goto': {
       // dissolve from the page we are leaving (default 0.4s; "fade": 0 for a hard cut)
@@ -836,6 +846,12 @@ async function runAction(rec, page, baseUrl, a, warn, ctx = {}) {
     }
     case 'type':
       await rec.type(a.text || '', a.frames);
+      break;
+    case 'fill':
+      await page.fill(a.target, a.value);
+      await page.locator(a.target).blur();
+      await settle(page);
+      await rec.hold(a.frames);
       break;
     case 'key':
       await page.keyboard.press(a.key);
@@ -1016,6 +1032,10 @@ export async function demo(args) {
     await login(page, baseUrl, { email, password });
     console.log(`✓ authenticated  (theme: ${theme}, ${W}x${H}@${dsf}x, zoom cap ${maxZoom}x)`);
     if (entity) console.log(`✓ entity → ${await switchEntity(page, entity)}`);
+    if (spec.collapseSidebar) {
+      await page.getByRole('button', { name: 'Toggle sidebar' }).first().click();
+      await page.waitForTimeout(700);
+    }
 
     const rec = new Recorder(page, { W, H, fps, dsf, maxZoom, framesDir, stills });
 
