@@ -31,8 +31,8 @@ the *hub* that ties together our individual `/research/{TICKER}` coverage of the
 Cross-company grid queries time out — **and so does `financial-statement-analysis` (25s) on these names.**
 Use **raw Cypher via `read-graph-cypher`** (it returns in ~2s). The seed report's scorecard is your
 reference, and each name's **published brief is in `sources/_briefs/`** (start from it for the qualitative
-read, then verify the numbers live). For **each of the nine** (key by legacy ticker / CIK — see
-`sources/ticker_crosswalk.md`; e.g. Trulieve = **TCNNF**, Verano = **VRNO**), run these two proven queries
+read, then verify the numbers live). For **each of the nine** (key by current ticker / CIK — see
+`sources/ticker_crosswalk.md`; e.g. Trulieve = **TRLV**, Verano = **VRNO**), run these two proven queries
 (swap the `e.ticker` value), then `search-documents`:
 
 **(a) Income statement + cash flow (annual, FY2025):**
@@ -40,7 +40,7 @@ read, then verify the numbers live). For **each of the nine** (key by legacy tic
 MATCH (f:Fact)-[:FACT_HAS_ELEMENT]->(el:Element),
       (f)-[:FACT_HAS_PERIOD]->(p:Period),
       (f)-[:FACT_HAS_ENTITY]->(e:Entity)
-WHERE e.ticker = 'TCNNF'
+WHERE e.ticker = 'TRLV'
   AND el.qname IN ['us-gaap:Revenues','us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax',
     'us-gaap:GrossProfit','us-gaap:OperatingIncomeLoss','us-gaap:IncomeTaxExpenseBenefit',
     'us-gaap:NetIncomeLoss','us-gaap:NetCashProvidedByUsedInOperatingActivities',
@@ -55,7 +55,7 @@ RETURN el.qname AS element, f.numeric_value AS value, p.end_date AS period_end O
 MATCH (f:Fact)-[:FACT_HAS_ELEMENT]->(el:Element),
       (f)-[:FACT_HAS_PERIOD]->(p:Period),
       (f)-[:FACT_HAS_ENTITY]->(e:Entity)
-WHERE e.ticker = 'TCNNF'
+WHERE e.ticker = 'TRLV'
   AND el.qname IN ['us-gaap:CashAndCashEquivalentsAtCarryingValue','us-gaap:Assets','us-gaap:Liabilities',
     'us-gaap:Goodwill','us-gaap:StockholdersEquity',
     'us-gaap:StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest',
@@ -102,7 +102,7 @@ The nine operators, period ending 12/31/2025, every figure from SEC XBRL via the
   income, income tax, net income, cash, equity, goodwill, unrecognized tax benefits, adj. EBITDA,
   net debt, maturity wall, revenue mix, re-rating band, tier).
 - **The nine (with their published coverage slugs):** Trulieve (TRLV), Green Thumb (GTBIF), Verano
-  (VRNOF), Ascend Wellness (AAWH), Vireo Growth (VREOF), Jushi (JUSHF), TerrAscend (TSNDF), MariMed
+  (VRNO), Ascend Wellness (AAWH), Vireo Growth (VREOF), Jushi (JUSH), TerrAscend (TSNDF), MariMed
   (MRMD), Planet 13 (PLNH). Each has a full report at `robosystems.ai/research/{TICKER}`.
 
 **Stance (unchanged):** fact-based reference report, not advice, no price targets. Implied values are
@@ -134,7 +134,7 @@ for rhythm, fill exact numbers in every `slide.data`):
 7. `chart` **survival** — `chart_type: table` — who can wait: Cash, Equity (flag Ascend −$47M / Jushi −$115M negative equity), Maturity wall.
 8. `dual` **catalyst** — the switch, half-flipped: Stage 1 medical-only relief (April 2026, done) vs Stage 2 broad DEA order (contested).
 9. `chart` **rerating** — `metric_cards` or `table` — 280E-normalized EBITDA × CPG multiples (≈10–14×) → implied re-rating; framed as scenario bands.
-10. `dual` **tiers** — the three tiers: Survivors (GTBIF, TRLV) / Operating machines (VRNOF, TSNDF, JUSHF) / High-beta options (AAWH, VREOF, MRMD, PLNH).
+10. `dual` **tiers** — the three tiers: Survivors (GTBIF, TRLV) / Operating machines (VRNO, TSNDF, JUSH) / High-beta options (AAWH, VREOF, MRMD, PLNH).
 11. `title`/`callout` **bottom_line** — "Strip out one line of the tax code and these nine earn 2.3 billion dollars of gross profit a year…"
 12. `title` **cta** — the RoboSystems plug (verbatim, below).
 13. `title` **coverage** — "Full coverage on all nine — robosystems dot AI slash research." (the hub→spoke close)

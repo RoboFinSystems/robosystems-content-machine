@@ -80,11 +80,11 @@ Use the RoboSystems MCP for SEC filing data — **the numbers AND the narrative*
 
 **Start with the high-level tools — they handle XBRL element variation across companies:**
 
-> **Keying — read first.** RoboSystems is keyed by **CIK / legacy OTC ticker**, NOT the new
-> exchange symbol. Look the company up in `sources/ticker_crosswalk.md` and query with the legacy
-> ticker (e.g. Trulieve = **TCNNF**, not TRLV) or the CIK. `financial-statement-analysis` wants
-> the (legacy) `ticker`; `build-fact-grid`'s `entity` also accepts a CIK. The "D"-suffix symbols
-> (CURLD/VRNOD/VREOD) are temporary and won't resolve.
+> **Keying — read first.** RoboSystems follows EDGAR's current ticker for each **CIK**. Look the
+> company up in `sources/ticker_crosswalk.md` and query with the current ticker (e.g. Trulieve =
+> **TRLV**) or the CIK. `financial-statement-analysis` wants the `ticker` and still resolves an old
+> one; raw Cypher on `e.ticker` does not. `build-fact-grid`'s `entity` also accepts a CIK. The
+> "D"-suffix symbols (CURLD/VRNOD/VREOD) are temporary and won't resolve.
 
 | Tool | Purpose |
 |------|---------|
@@ -102,7 +102,7 @@ throughout** for the qualitative spine (tax-dispute language, legal proceedings,
 MD&A, debt maturities). Numbers and narrative are co-equal — not numbers-then-maybe-prose.
 
 ```
-financial-statement-analysis {ticker:"TCNNF", statement_type:"income_statement", period_type:"annual"}
+financial-statement-analysis {ticker:"TRLV", statement_type:"income_statement", period_type:"annual"}
 build-fact-grid {canonical_concepts:["revenue","net_income"], entity:"0001754195", period_type:"annual"}
 ```
 Verify the canonical-concept names you need via `get-example-queries`/`resolve-element` first —
@@ -277,7 +277,7 @@ posts derive from it. Structure:
 **X Article cashtag (required, in the Hook).** The brief is published verbatim as a native X
 **Article**, and an early cashtag is key to the algorithm picking the Article up for the
 cashtag/topic feeds. Work `$TICKER` into **The Hook** at the first mention of the company name
-(e.g. `Trulieve $TCNNF reported...`), so the cashtag lands in the first paragraph - not the
+(e.g. `Trulieve $TRLV reported...`), so the cashtag lands in the first paragraph - not the
 closing CTA. Same hygiene as the X post: a space must precede the `$` (never `($TICKER)` - a
 leading paren kills both the link and the cashtag-feed indexing; for a parenthetical use the
 bare `(TICKER)` without the `$`). One early cashtag is the requirement; after that, refer to

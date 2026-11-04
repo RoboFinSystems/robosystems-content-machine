@@ -291,15 +291,15 @@ FY2025 revenue and net income below are pulled from the RoboSystems SEC graph (1
 | Company (legacy OTC) | FY2025 Revenue | YoY | FY2025 Net Income | Most recent filing |
 |---|---:|---:|---:|---|
 | Green Thumb (GTBIF) | $1,175.3M | +3.4% | +$114.2M | Q1 FY26 10-Q (May 6, 2026) |
-| Trulieve (TCNNF) | $1,181.2M | -0.4% | -$116.4M | Q1 FY26 10-Q (May 7, 2026) |
+| Trulieve (TRLV) | $1,181.2M | -0.4% | -$116.4M | Q1 FY26 10-Q (May 7, 2026) |
 | Curaleaf (CURLF)¹ | ~$1.3B | ~flat | net loss | FY2025 40-F (Feb 27, 2026) |
 | Verano (VRNO) | $821.5M | -6.5% | -$257.9M | Q1 FY26 10-Q (Apr 30, 2026) |
 | Cresco (CRLBF)¹ | ~$656M | down | net loss | FY2025 40-F (Mar 6, 2026) |
 | Vireo (VREOF) | $268.8M | +170% | -$68.1M | Q1 FY26 10-Q (May 12, 2026) |
-| Jushi (JUSHF) | $262.9M | +2.1% | -$68.6M | FY2025 10-K (Mar 31, 2026) |
+| Jushi (JUSH) | $262.9M | +2.1% | -$68.6M | FY2025 10-K (Mar 31, 2026) |
 | TerrAscend (TSNDF) | $260.6M | down ~13%² | -$81.3M | Q1 FY26 10-Q (May 7, 2026) |
 | Ascend (AAWH) | $500.6M | -10.9% | -$118.2M | Q1 FY26 10-Q (May 13, 2026) |
-| Glass House (GLASF)¹ | see comps | growth | — | FY2025 40-F (Mar 24, 2026) |
+| Glass House (GLAS)¹ | see comps | growth | — | FY2025 40-F (Mar 24, 2026) |
 | MariMed (MRMD) | $159.8M | +1.3% | -$14.5M | Q1 FY26 10-Q (May 14, 2026) |
 | Planet 13 (PLNH) | $103.4M | -11.2% | -$63.9M | Q1 FY26 10-Q (May 13, 2026) |
 | Grown Rogue (GRUSF) | $32.4M | +21.8% | +$3.2M | Q1 FY26 10-Q (May 12, 2026) |
@@ -321,20 +321,20 @@ FY2025 revenue and net income below are pulled from the RoboSystems SEC graph (1
 
 ## Filing Notes (RoboSystems / SEC graph)
 
-RoboSystems is **keyed by CIK** and still carries **legacy OTC tickers** — query by CIK or legacy ticker (e.g., Trulieve = TCNNF, not TRLV). As of June 20, 2026 the graph now carries **FY2025 annuals and Q1 FY2026 quarterlies for essentially the entire coverage list**, including the previously-blocked 40-F filers.
+RoboSystems is **keyed by CIK** and follows EDGAR's current ticker — query by CIK or current ticker (e.g., Trulieve = TRLV). The typed tools still resolve an old ticker; raw Cypher on `e.ticker` does not. As of June 20, 2026 the graph now carries **FY2025 annuals and Q1 FY2026 quarterlies for essentially the entire coverage list**, including the previously-blocked 40-F filers.
 
-| Legacy ticker | Company | CIK | Filing | Latest in graph | Note |
+| Ticker | Company | CIK | Filing | Latest in graph | Note |
 |--------|---------|-----|--------|-----------------|------|
-| TCNNF | Trulieve | 0001754195 | 10-K | Q1 FY26 (May 7) | Now NYSE: TRLV (medical-only entity) |
+| TRLV | Trulieve | 0001754195 | 10-K | Q1 FY26 (May 7) | NYSE; formerly TCNNF (medical-only entity) |
 | GTBIF | Green Thumb | 0001795139 | 10-K | Q1 FY26 (May 6) | Most profitable MSO |
 | CURLF | Curaleaf | 0001756770 | 40-F | FY2025 (Feb 27) | **Now loaded** (was blocked); IFRS tags; 1:3 split |
-| VRNO | Verano | 0001848416 | 10-K | Q1 FY26 (Apr 30) | RS stores `VRNO`; OTC is VRNOF; 1:5 split |
+| VRNO | Verano | 0001848416 | 10-K | Q1 FY26 (Apr 30) | Formerly VRNOF; 1:5 split |
 | CRLBF | Cresco | 0001832928 | 40-F | FY2025 (Mar 6) | **Now loaded** (was blocked); IFRS tags |
 | TSNDF | TerrAscend | 0001778129 | 10-K | Q1 FY26 (May 7) | MI exit/receivership; uplist prep (Aug 24 vote) |
 | AAWH | Ascend Wellness | 0001756390 | 10-K | Q1 FY26 (May 13) | **FY2025 now loaded** (was FY2024 only) |
-| GLASF | Glass House | 0001848731 | 40-F | FY2025 (Mar 24) | **Now loaded** (was zero data); applied to NYSE Jun 17 |
+| GLAS | Glass House | 0001848731 | 40-F | FY2025 (Mar 24) | **Now loaded** (was zero data); NYSE since Jun 30; formerly GLASF |
 | VREOF | Vireo Growth | 0001771706 | 10-K | Q1 FY26 (May 12) | **FY2025 now loaded**; roll-up; 30:1 consolidation; Fluent pending |
-| JUSHF | Jushi | 0001909747 | 10-K | Q1 FY26 (May 12) | FY2025 10-K (Mar 31) now loaded |
+| JUSH | Jushi | 0001909747 | 10-K | Q1 FY26 (May 12) | Formerly JUSHF; FY2025 10-K (Mar 31) now loaded |
 | MRMD | MariMed | 0001522767 | 10-K | Q1 FY26 (May 14) | FY2025 loaded |
 | PLNH | Planet 13 | 0001813452 | 10-K | Q1 FY26 (May 13) | FY2025 loaded |
 | GRUSF | Grown Rogue | 0001463000 | 10-K | Q1 FY26 (May 12) | Switched 20-F → 10-K; FY2025 (Apr 8) loaded |

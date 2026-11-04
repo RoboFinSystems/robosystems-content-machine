@@ -14,12 +14,12 @@
       "notes": "SIC-style codes point at drug/ag sectors; overridden to Cannabis by recall. Video published."
     },
     {
-      "cik": "0001754195", "ticker": "TCNNF", "name": "Trulieve Cannabis",
+      "cik": "0001754195", "ticker": "TRLV", "name": "Trulieve Cannabis",
       "sector": "Consumer Goods", "subsector": "Cannabis", "category": null,
       "is_primary": true, "secondary": null, "confidence": 0.99, "method": "recall",
       "sec": { "in_graph": true, "filing_type": "10-K", "fiscal_years": ["2022","2023","2024","2025"], "has_xbrl_facts": true },
       "coverage": { "covered": true, "status": "DONE", "source": "known" },
-      "notes": "Uplisted to NYSE (TRLV) Jun 2026; graph still carries legacy TCNNF. Key by CIK."
+      "notes": "Uplisted to NYSE (TRLV) Jun 2026; formerly TCNNF. Key by CIK."
     },
     {
       "cik": "0001848416", "ticker": "VRNO", "name": "Verano Holdings",
@@ -70,7 +70,7 @@
       "notes": ""
     },
     {
-      "cik": "0001909747", "ticker": "JUSHF", "name": "Jushi Holdings",
+      "cik": "0001909747", "ticker": "JUSH", "name": "Jushi Holdings",
       "sector": "Consumer Goods", "subsector": "Cannabis", "category": null,
       "is_primary": true, "secondary": null, "confidence": 0.98, "method": "recall",
       "sec": { "in_graph": true, "filing_type": "10-K", "fiscal_years": ["2021","2022","2023","2024"], "has_xbrl_facts": true },
@@ -110,12 +110,12 @@
       "notes": "40-F XBRL not loaded for FY2024 - coverage blocked on data."
     },
     {
-      "cik": "0001848731", "ticker": "GLASF", "name": "Glass House Brands",
+      "cik": "0001848731", "ticker": "GLAS", "name": "Glass House Brands",
       "sector": "Consumer Goods", "subsector": "Cannabis", "category": null,
       "is_primary": true, "secondary": null, "confidence": 0.98, "method": "recall",
-      "sec": { "in_graph": true, "filing_type": "40-F", "fiscal_years": [], "has_xbrl_facts": false },
-      "coverage": { "covered": false, "status": "BLOCKED", "source": "known" },
-      "notes": "Zero XBRL facts loaded (40-F / IFRS filer). Applied to NYSE Jun 2026."
+      "sec": { "in_graph": true, "filing_type": "40-F", "fiscal_years": ["2022","2023","2024","2025"], "has_xbrl_facts": true },
+      "coverage": { "covered": true, "status": "DONE", "source": "known" },
+      "notes": "Uplisted to NYSE (GLAS) Jun 30, 2026; formerly GLASF. 40-F / IFRS filer. Key by CIK."
     },
     {
       "cik": "0001771706", "ticker": "VREOF", "name": "Vireo Growth",

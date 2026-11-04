@@ -52,14 +52,16 @@ And it's queryable two ways, depending on who's asking:
 
 That last one matters more than it looks. Because the repository speaks MCP, an AI assistant can query SEC data _directly_—not summarize a stale article about a company, but pull the actual filed numbers and reason over them. That's the difference between an AI that sounds informed and one that is.
 
-A query that would be a week of spreadsheet work looks, schematically, like this:
+A query that would be a week of spreadsheet work looks like this:
 
 ```cypher
-MATCH (e:Entity)-[:REPORTED]->(f:Fact)-[:OF_CONCEPT]->(c:Concept {name: 'us-gaap:Revenues'})
-MATCH (f)-[:FOR_PERIOD]->(p:Period)
-WHERE e.ticker IN ['GTBIF', 'TCNNF', 'VRNO'] AND p.fiscal_year >= 2022
-RETURN e.ticker, p.fiscal_year, f.value
-ORDER BY e.ticker, p.fiscal_year
+MATCH (ent:Entity)-[:ENTITY_HAS_REPORT]->(r:Report {form: '10-K'})-[:REPORT_HAS_FACT]->(f:Fact {has_dimensions: false})-[:FACT_HAS_ELEMENT]->(e:Element),
+      (f)-[:FACT_HAS_PERIOD]->(p:Period {duration_type: 'annual'})
+WHERE ent.ticker IN ['GTBIF', 'TRLV', 'VRNO']
+  AND e.qname IN ['us-gaap:Revenues', 'us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax']
+  AND p.end_date >= '2022-01-01' AND f.numeric_value > 0
+RETURN DISTINCT ent.ticker AS ticker, p.end_date AS period_end, f.numeric_value AS revenue
+ORDER BY ticker, period_end
 ```
 
 One question, every company, every year, straight from the filings.
