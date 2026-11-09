@@ -1,17 +1,18 @@
 ---
-title: 'AI Agents for Financial Analysis: Beyond ChatGPT'
+title: 'AI for Financial Analysis: Agents That Do the Work'
 date: '2025-9-3'
 author: 'Joey French'
 excerpt: 'What if your AI could actually execute financial analysis instead of just talking about it? Model Context Protocol makes AI agents that do real work, not just generate text.'
-metaDescription: 'Learn how MCP-enabled AI agents transform financial analysis. Discover AI that executes analysis, monitors patterns, and generates insights—not just advice. Real examples included.'
+metaDescription: 'AI for financial analysis that does the work: MCP-connected agents query live data, run the analysis, flag patterns and write the report. Real examples included.'
 tags: ['AI', 'MCP', 'financial analysis', 'automation']
 keywords:
   [
+    'AI for financial analysis',
     'AI financial analysis',
+    'financial AI agent',
+    'AI agents finance',
     'MCP tools',
     'Model Context Protocol',
-    'AI agents finance',
-    'financial automation',
     'automated financial reporting',
   ]
 canonicalUrl: 'https://robosystems.ai/blog/ai-agents-financial-analysis'
