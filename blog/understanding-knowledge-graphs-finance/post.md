@@ -98,7 +98,7 @@ Traditional cost accounting makes you pick one allocation method and pray it's r
 
 By the time you've analyzed last quarter's performance, you're halfway through this quarter. Your insights are archeology, not intelligence.
 
-Knowledge graphs update in real-time. Every transaction immediately connects to its full context. You're not analyzing history; you're watching your business live.
+Knowledge graphs update in real-time. Every transaction immediately connects to its full context. You're not analyzing history; you're watching your business live. That full context, built inside the knowledge graph, is what we call a [context graph](https://robosystems.ai/blog/building-financial-context-graphs).
 
 ## RoboSystems + LadybugDB: Built for Financial Reality
 

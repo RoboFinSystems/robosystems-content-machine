@@ -70,7 +70,7 @@ Every time you open ChatGPT for financial analysis, you start from zero. You exp
 
 GraphRAG changes everything. Your knowledge graph becomes AI's permanent memory. It doesn't just remember facts—it understands relationships. When you ask, "Why did margins drop last quarter?" AI can traverse your actual cost structure, not guess based on generic training data.
 
-The Model Context Protocol (MCP) takes this further. It gives AI hands—the ability to directly query, analyze, and update your graph. Your AI doesn't just chat about finance; it becomes your financial analyst.
+The Model Context Protocol (MCP) takes this further. It gives AI hands—the ability to directly query, analyze, and update your graph. Your AI doesn't just chat about finance; it becomes your financial analyst. What it queries is a [context graph](https://robosystems.ai/blog/building-financial-context-graphs): the semantic layer over the knowledge graph, where the relationships carry meaning.
 
 ## The Operational-Financial Divide Is Killing Your Business
 

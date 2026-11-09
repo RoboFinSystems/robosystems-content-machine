@@ -46,7 +46,7 @@ Through MCP, your AI agents wield powerful capabilities:
 
 ### The Query Tool
 
-Your AI doesn't just suggest queries—it runs them. When you ask about cash flow, it traverses your entire financial graph, following money from invoice to collection, understanding payment patterns, and identifying bottlenecks you didn't know existed.
+Your AI doesn't just suggest queries—it runs them. When you ask about cash flow, it traverses your entire financial graph, following money from invoice to collection, understanding payment patterns, and identifying bottlenecks you didn't know existed. That graph is a [context graph](https://robosystems.ai/blog/building-financial-context-graphs): the relationships carry meaning, so the agent follows them instead of retrieving text.
 
 ### The Analysis Engine
 

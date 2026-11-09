@@ -1,9 +1,9 @@
 ---
-title: 'Building Financial Context Graphs: Beyond RAG to Semantic Understanding'
+title: 'Context Graphs for Finance: Architecture and Use Cases'
 date: '2026-1-12'
 author: 'Joey French'
 excerpt: "Most AI projects fail because the data isn't ready. Context graphs are the semantic layer that transforms scattered financial data into meaning AI can actually understand."
-metaDescription: 'Context graphs are the semantic layer that transforms scattered financial data into meaning AI can actually understand. Learn how to build them on the RoboSystems knowledge graph platform.'
+metaDescription: 'A context graph is the semantic layer over a financial knowledge graph. What it is, the architecture that makes one work, and its use cases in financial services.'
 tags:
   [
     'context-graphs',
@@ -14,7 +14,10 @@ tags:
   ]
 keywords:
   [
+    'context graph',
     'context graphs',
+    'context graph architecture',
+    'context graph use cases financial services',
     'knowledge graphs',
     'financial context graph',
     'GraphRAG',
@@ -128,6 +131,22 @@ We're building toward something bigger:
 **XBRL-native reports.** The financial world still runs on documents—PDFs, slides, spreadsheets. But XBRL has been quietly standardizing financial semantics for two decades. We believe reports should be structured data first, rendered documents second. Context graphs make this possible.
 
 **AI agents that actually work.** The hype around AI agents often exceeds the reality because agents need reliable data to operate. Context graphs provide that reliability—structured, verified, semantically rich data that agents can navigate without hallucinating.
+
+## What is a context graph?
+
+A context graph is what you build inside a knowledge graph when the goal is AI that understands rather than retrieves. The entities and relationships carry meaning: an invoice is connected to its customer, and the connection carries the retainer it belongs to, the payment history behind it and what that history predicts. A basic graph holds the fact. A context graph holds why the fact matters, and when it was true.
+
+## How is a context graph different from a knowledge graph?
+
+A knowledge graph is the structure: entities and the links between them, the thing Google and every large technology company has run for decades. A context graph is the semantic layer on top of that structure, with three properties the base graph lacks: relationships that mean something, several perspectives on the same transaction (operational, financial, market), and time, so the graph says what was true when. One is the foundation; the other is what an AI agent can reason over.
+
+## What does a context graph architecture look like for financial services?
+
+Three layers. At the bottom, a graph that holds entities, semantic relationships and lineage, so any value traces back to its source through every transformation with timestamps. Above it, adapters that turn the sources a finance team already has (QuickBooks, SEC XBRL filings, and whatever else you build an adapter for) into graph nodes and relationships. On top, the Model Context Protocol, so Claude, ChatGPT or any MCP client queries the graph directly with no middleware. RoboSystems runs all three as open source, hosted or deployed into your own AWS account.
+
+## What are the use cases of context graphs in financial services?
+
+The CFO's question "what's driving our margin compression?", answered by traversing periods, segments and causes rather than retrieving ten documents. Comparing your own numbers to public filers through the shared SEC repository (8,500+ companies, 77,000+ filings), so "how does our R&D spending compare to peers?" has a graph behind it. Lineage, when someone asks where a number came from. And AI agents that act on the books rather than talk about them: RoboLedger turns a company's QuickBooks books into a context graph that any MCP client can query, with nothing written back until a person posts an entry.
 
 ## Getting Started
 
