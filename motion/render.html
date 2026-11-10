@@ -17,7 +17,7 @@
       // builds one template from its data and exposes __init / __total / __seek.
       // The landing kit, fonts and logo are mounted from roboledger-app (see README).
       import { mount } from '/demos/kit.js'
-      const TEMPLATES = ['intro', 'outro', 'slide']
+      const TEMPLATES = ['intro', 'outro', 'slide', 'research']
       const q = new URLSearchParams(location.search)
       const name = q.get('t') || 'intro'
       if (!TEMPLATES.includes(name)) throw new Error(`unknown template "${name}"; expected ${TEMPLATES.join(', ')}`)

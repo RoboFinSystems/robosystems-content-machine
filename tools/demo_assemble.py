@@ -9,8 +9,10 @@ The episode is showcase/<episode>/episode.json, a list of segments:
   { "id": "chat", "kind": "clip", "file": "takes/chat.mp4", "in": 12.0, "out": 27.5,
     "narration": "...", "keepAudio": false }
 
-- motion       a template from motion/ (intro, outro, slide) rendered to the length of its
-               narration plus a tail, so the picture follows the voice.
+- motion       a template from motion/ (intro, outro, slide, research) rendered to the length
+               of its narration plus a tail, so the picture follows the voice. "cues":
+               {name: "phrase"} times a build inside the shot to the word that names it:
+               every "@name" in data becomes that word's time in seconds.
 - walkthrough  a live walkthrough already recorded by `just demo-pipeline`; its narration
                lives in its own beats, so the assembler takes renders/<slug>_vo.mp4 as is.
 - clip         a span of a recording (a chat take): trimmed, scaled to 1920x1080, voiced
@@ -34,6 +36,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import subprocess
 import sys
 import urllib.parse
@@ -92,14 +95,80 @@ def voice(seg, audio_dir, slug, voice_id, no_voice):
   return out
 
 
-def render_motion(seg, secs, out_dir, name):
-  data = dict(seg.get("data") or {})
+WORDS_PER_SEC = 2.6  # cue times for a --no-voice timing cut
+
+_whisper = None
+
+
+def word_times(text, vo):
+  """[(token, seconds)] for a narration: from its voice when there is one, else estimated."""
+  from align_words import align, tokens_of
+
+  toks = tokens_of(text)
+  if vo is None:
+    return [(w, round(i / WORDS_PER_SEC, 3)) for i, w in enumerate(toks)]
+  cache = vo.with_name(vo.stem + "_words.json")
+  if cache.exists() and cache.stat().st_mtime >= vo.stat().st_mtime:
+    return [tuple(x) for x in json.loads(cache.read_text())]
+  global _whisper
+  if _whisper is None:
+    from faster_whisper import WhisperModel
+
+    _whisper = WhisperModel("small.en", device="cpu", compute_type="int8")
+  segs, info = _whisper.transcribe(
+    str(vo), word_timestamps=True, language="en", beam_size=5
+  )
+  heard = [(w.word.strip(), float(w.start)) for s in segs for w in (s.words or [])]
+  out = align(toks, heard, float(info.duration))
+  cache.write_text(json.dumps(out))
+  return out
+
+
+def resolve_cues(seg, vo):
+  """
+  A motion segment's "cues": {name: "phrase from the narration"} become seconds, and every
+  "@name" (or "@name+0.4", "@name-0.2") string in its data is replaced by that time, so a
+  build inside the shot lands on the word that names it.
+  """
+  cues = seg.get("cues")
+  if not cues:
+    return seg.get("data") or {}
+  from align_words import norm
+
+  text = (seg.get("narration") or "").strip()
+  toks = word_times(text, vo)
+  words = [norm(w) for w, _ in toks]
+  at = {}
+  for name, phrase in cues.items():
+    want = [norm(w) for w in phrase.split()]
+    hits = [i for i in range(len(words)) if words[i : i + len(want)] == want]
+    if not hits:
+      raise SystemExit(
+        f"segment {seg['id']}: cue {name!r}: {phrase!r} is not in the narration"
+      )
+    at[name] = toks[hits[0]][1]
+
+  def sub(v):
+    if isinstance(v, dict):
+      return {k: sub(x) for k, x in v.items()}
+    if isinstance(v, list):
+      return [sub(x) for x in v]
+    if isinstance(v, str) and v.startswith("@"):
+      m = re.fullmatch(r"@(\w+)([+-]\d+(?:\.\d+)?)?", v)
+      if not m or m.group(1) not in at:
+        raise SystemExit(f"segment {seg['id']}: unknown cue reference {v!r}")
+      return round(max(0.0, at[m.group(1)] + float(m.group(2) or 0)), 3)
+    return v
+
+  return sub(seg.get("data") or {})
+
+
+def render_motion(seg, secs, out_dir, name, public=RL_PUBLIC, data=None):
+  data = dict(data if data is not None else seg.get("data") or {})
   if secs:
     data["duration"] = round(secs, 3)
   query = f"t={seg['template']}&data={urllib.parse.quote(json.dumps(data))}"
-  mounts = (
-    f"/demos/={RL_PUBLIC}/demos,/fonts/={RL_PUBLIC}/fonts,/images/={RL_PUBLIC}/images"
-  )
+  mounts = f"/demos/={public}/demos,/fonts/={public}/fonts,/images/={public}/images"
   run(
     [
       "node",
@@ -189,6 +258,8 @@ def main() -> int:
   voice_id = ep.get("voiceId") or os.environ.get("ELEVEN_LABS_VOICE_ID")
   tail = (ep.get("tailMs", DEFAULT_TAIL_MS)) / 1000
   fade = float(ep.get("fade", DEFAULT_FADE))
+  # "public": the app checkout whose demo kit, fonts and logo the motion shots mount
+  public = Path(ep["public"]).expanduser() if ep.get("public") else RL_PUBLIC
 
   parts = []
   for seg in ep["segments"]:
@@ -197,7 +268,9 @@ def main() -> int:
     vo = voice(seg, audio_dir, slug, voice_id, args.no_voice)
     if kind == "motion":
       secs = (duration(vo) + tail + fade) if vo else None
-      raw = render_motion(seg, secs, work, f"{sid}_raw")
+      raw = render_motion(
+        seg, secs, work, f"{sid}_raw", public=public, data=resolve_cues(seg, vo)
+      )
       normalize(raw, out, audio=vo)
     elif kind == "walkthrough":
       spec = json.loads((ep_dir / seg["spec"]).read_text())
