@@ -536,7 +536,7 @@ demo-narrate spec *args="":
 
 # 1b. Word timings for each beat, so an action with "cue": "phrase" starts on that word.
 demo-align spec *args="":
-    uv run --with faster-whisper python tools/demo_align.py {{spec}} {{args}}
+    uv run --with faster-whisper --with 'av<16' python tools/demo_align.py {{spec}} {{args}}
 
 # 2. Record the walkthrough against the live UI -> silent mp4 in showcase/<company>/renders/.
 demo-render spec config *args="":
