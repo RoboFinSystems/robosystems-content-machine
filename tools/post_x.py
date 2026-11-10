@@ -638,9 +638,14 @@ def cmd_text(args) -> int:
   else:
     sys.exit("give --text or --file")
   reply = args.reply.strip() if args.reply else None
+  video = Path(args.video) if args.video else None
+  if video and not video.exists():
+    sys.exit(f"video not found: {video}")
 
   print(f"post:      {len(text)} chars (280 is the non-Premium cap)")
   print(f"reply:     {len(reply)} chars" if reply else "reply:     NONE")
+  if video:
+    print(f"video:     {video} ({video.stat().st_size / 1e6:.1f} MB)")
   if args.dry_run:
     print("--- dry run: post text ---")
     print(text)
@@ -652,7 +657,13 @@ def cmd_text(args) -> int:
   sess = oauth_session()
   handle = acting_user_guard(sess)
 
-  r = sess.post(f"{API}/2/tweets", json={"text": text})
+  payload = {"text": text}
+  if video:
+    payload["media"] = {
+      "media_ids": [upload_media(sess, video, "video/mp4", "tweet_video")]
+    }
+    print("video processed")
+  r = sess.post(f"{API}/2/tweets", json=payload)
   if r.status_code >= 300:
     api_error(r, "creating the post (POST /2/tweets)")
   tweet_id = r.json()["data"]["id"]
@@ -782,6 +793,7 @@ def main() -> int:
   tx.add_argument(
     "--reply", help="a follow-up reply posted under it (where the proof link goes)"
   )
+  tx.add_argument("--video", help="attach a video natively (an .mp4 path)")
   tx.add_argument("--dry-run", action="store_true")
 
   args = ap.parse_args()

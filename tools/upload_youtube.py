@@ -14,9 +14,9 @@ Auth notes (web-type OAuth client):
     (or use a Desktop-app client, which allows any localhost port)
   - publish the OAuth consent screen to production, else refresh tokens expire in 7 days
 
-YouTube policy note: videos uploaded through an UNAUDITED API project are locked
-to private by YouTube. Until the API audit clears, upload private (the default),
-review in Studio, and flip visibility there. After the audit, use --public.
+Visibility: uploads default to private. The API project can set public (verified
+2026-11-10: a showcase upload flipped to public through videos.update), so pass
+--public to upload straight to public, or flip an uploaded video with `publish`.
 Quota: one upload = 1,600 units of the 10,000/day default (about 6 uploads/day);
 a first comment = 50 units.
 
@@ -606,7 +606,9 @@ def cmd_showcase(args) -> int:
   print("thumbnail set")
   yt.captions().insert(
     part="snippet",
-    body={"snippet": {"videoId": vid, "language": "en", "name": "English", "isDraft": False}},
+    body={
+      "snippet": {"videoId": vid, "language": "en", "name": "English", "isDraft": False}
+    },
     media_body=MediaFileUpload(str(captions), mimetype="application/octet-stream"),
   ).execute()
   print("captions set")
@@ -653,7 +655,9 @@ def main() -> int:
     help="post even if the sidecar already records a comment_id",
   )
   cm.add_argument("--dry-run", action="store_true")
-  sc = sub.add_parser("showcase", help="upload a showcase episode (showcase/<ep>/youtube.json)")
+  sc = sub.add_parser(
+    "showcase", help="upload a showcase episode (showcase/<ep>/youtube.json)"
+  )
   sc.add_argument("episode")
   sc.add_argument("--public", action="store_true")
   sc.add_argument("--unlisted", action="store_true")

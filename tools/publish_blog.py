@@ -130,6 +130,7 @@ def publish(slug, narrate=True):
     "keywords": meta.get("keywords") or [],
     "reading_time_minutes": bc.reading_time_minutes(body),
     "canonical_url": meta.get("canonicalUrl") or None,
+    "youtube": meta.get("youtube") or None,
   }
   subprocess.run(
     [

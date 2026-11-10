@@ -60,6 +60,8 @@ def build_item(bucket, slug, present_names):
     "keywords": meta.get("keywords") or [],
     "reading_time_minutes": bc.reading_time_minutes(body) if body else None,
     "canonical_url": meta.get("canonicalUrl") or None,
+    # a video id or YouTube link: the blog page embeds it above the article
+    "youtube": meta.get("youtube") or None,
     "assets": assets,
   }
 
