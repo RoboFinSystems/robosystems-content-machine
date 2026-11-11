@@ -8,6 +8,8 @@
  *   number   { eyebrow?, value, prefix?, suffix?, decimals?, label, from?: { value, label } }
  *   compare  { eyebrow?, left: { title, items[] }, right: { title, items[] } }
  *   flow     { eyebrow?, nodes[], caption? }
+ *   tiles    { eyebrow?, items[], caption? }
+ *   still    { eyebrow?, src, width?, caption? }   src is served from motion/ (e.g. /stills/x.png)
  * plus duration? (seconds, default 4.5)
  */
 import { blurIn, eio, eo, rise, seg } from './runtime.js'
@@ -130,7 +132,45 @@ function flow(data) {
   }
 }
 
-const KINDS = { title, number, compare, flow }
+function tiles(data) {
+  const N = data.items
+  return {
+    html: `
+  ${data.eyebrow ? `<div class="eyebrow" id="eb">${data.eyebrow}</div>` : ''}
+  <div class="tiles" style="margin-top:${data.eyebrow ? 60 : 0}px">
+    ${N.map((n, i) => `<div class="tl" id="tl${i}">${n}</div>`).join('')}
+  </div>
+  ${data.caption ? `<div class="sub" id="cap" style="margin-top:60px">${data.caption}</div>` : ''}`,
+    css: `
+.tiles { display: flex; align-items: stretch; gap: 36px; }
+.tl { width: 470px; padding: 48px 30px; border-radius: 24px; border: 1px solid var(--line); background: var(--card);
+  font-size: 44px; font-weight: 600; line-height: 1.2; display: flex; align-items: center; justify-content: center; }`,
+    pose($, t) {
+      if (data.eyebrow) blurIn($('eb'), seg(t, 0.1, 0.6), 12)
+      N.forEach((_, i) => rise($('tl' + i), eo(seg(t, 0.4 + i * 0.5, 0.85 + i * 0.5)), 20))
+      if (data.caption) blurIn($('cap'), seg(t, 0.6 + N.length * 0.5, 1.2 + N.length * 0.5), 12)
+    },
+  }
+}
+
+/* A real screen, held: a crop of the app framed on the backdrop. Never a redrawing of it. */
+function still(data) {
+  return {
+    html: `
+  ${data.eyebrow ? `<div class="eyebrow" id="eb">${data.eyebrow}</div>` : ''}
+  <img class="shot" id="shot" src="${data.src}" style="width:${data.width || 1500}px;margin-top:${data.eyebrow ? 56 : 0}px" />
+  ${data.caption ? `<div class="sub" id="cap" style="margin-top:56px">${data.caption}</div>` : ''}`,
+    css: `
+.shot { display: block; border-radius: 16px; border: 1px solid var(--line); }`,
+    pose($, t) {
+      if (data.eyebrow) blurIn($('eb'), seg(t, 0.1, 0.6), 12)
+      rise($('shot'), eo(seg(t, 0.25, 0.8)), 20)
+      if (data.caption) blurIn($('cap'), seg(t, 0.9, 1.5), 12)
+    },
+  }
+}
+
+const KINDS = { title, number, compare, flow, tiles, still }
 
 export default function slide(data) {
   const kind = KINDS[data.kind]
