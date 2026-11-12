@@ -20,27 +20,79 @@ keywords:
 canonicalUrl: 'https://robosystems.ai/blog/from-numbers-to-narratives'
 ---
 
-Last June, we [queried NVIDIA's revenue by geography](https://claude.ai/share/2028a608-cae4-4edc-820b-0a6f2935b275) using the RoboSystems MCP prototype. We asked Claude to survey recent filings and flag the most interesting finding. Out of every metric across every company, it flagged NVIDIA's geographic revenue concentration as the standout anomaly: Singapore accounted for $9.0 billion in a single quarter — 20% of NVIDIA's revenue flowing through a city-state with no semiconductor fabs and no major hyperscaler headquarters. Something was fishy. Claude noted it "likely reflecting major cloud provider and manufacturing partnerships."
+On June 22, 2025, we pointed Claude at a batch of new filings in the RoboSystems SEC repository and asked one open question: survey them and tell us the most interesting thing you find. [Here's the chat](https://claude.ai/share/2028a608-cae4-4edc-820b-0a6f2935b275). Nobody asked about geography. One of the five findings it came back with was a line in NVIDIA's revenue note: Singapore, $9.0 billion in a single quarter, 20% of NVIDIA's revenue billed to a city-state of six million people. Claude's read was that it was "likely reflecting major cloud provider and manufacturing partnerships."
 
-We were wrong about the why.
+The number was right. The why was a guess.
+
+Seventeen months later, that line is the subject of a Wall Street Journal column.
+
+## Update: November 11, 2026
+
+I wrote this post in March 2026. This week the Singapore line became news, so I went back through it against the filings. The observation held up. Several of the details didn't, and I've corrected them below.
+
+**What happened.** The Wall Street Journal's Jonathan Weil published ["Nvidia's Disappearing Singapore Sales Deepen Mystery Around Megaspeed"](https://www.wsj.com/business/earnings/nvidias-disappearing-singapore-sales-deepen-mystery-around-megaspeed-7d483180) on November 11. Megaspeed International is the Singapore-based cloud company tied to the investigation NVIDIA's board announced on November 8. An NVIDIA spokesman told the Journal the company put Megaspeed on an internal block list in June 2025. The last quarter NVIDIA reported a Singapore line ended in July 2025. The next quarter it changed how it assigns revenue to countries, and Singapore was gone. The Journal says it isn't clear whether the two are related, and NVIDIA declined to say. I don't know either.
+
+**The timeline.**
+
+- **June 2025:** NVIDIA stops selling to Megaspeed, by its own later account.
+- **June 22, 2025:** Claude surfaces Singapore at 20% of NVIDIA's quarterly revenue in an open-ended survey of new filings.
+- **August 27, 2025:** NVIDIA's 10-Q for the quarter ended July 27 reports Singapore at $10.2 billion, 22% of revenue. It's the last time the line appears.
+- **Quarter ended October 2025:** NVIDIA switches from customer billing location to customer headquarters and recasts prior periods.
+- **February 25, 2026:** the FY2026 10-K is filed with no Singapore line.
+- **March 20, 2026:** this post.
+- **November 11, 2026:** the Journal asks NVIDIA to explain.
+
+**What I got wrong in March.**
+
+- The table put billing-location years next to a headquarters-location year. That made the United States and China trends look like something they weren't. Both bases are below, side by side.
+- I tied the Singapore line to the Super Micro indictment of March 19, 2026. That indictment describes a Southeast Asian intermediary and names no Singapore entity. The co-founder it charges has pleaded not guilty and Super Micro isn't charged. It doesn't explain the Singapore line, and I shouldn't have written it as if it did.
+- I wrote that Claude flagged Singapore as the standout anomaly. It was one of five findings, and Claude didn't call it an anomaly. It reported the number and offered a benign explanation.
+- I wrote that Singapore has no semiconductor fabs. It has several.
+- The sample search result further down described an Arm goodwill impairment that never happened. It's been replaced with real text from NVIDIA's 10-K.
 
 ## The $23.7 Billion Geography That Appeared and Vanished
 
-This week, with NVIDIA's FY2026 10-K now in the knowledge graph, we pulled the full annual picture. The trend is unmistakable:
+Here is the Singapore line as NVIDIA originally reported it, by customer billing location:
 
-| Geography            | FY2022 | FY2023 | FY2024 | FY2025     | FY2026      |
-| -------------------- | ------ | ------ | ------ | ---------- | ----------- |
-| **United States**    | $4.3B  | $8.3B  | $27.0B | $61.3B     | **$149.6B** |
-| **Taiwan**           | $8.5B  | $7.0B  | $13.4B | $20.6B     | **$42.3B**  |
-| **China (incl. HK)** | $7.1B  | $5.8B  | $10.3B | $17.1B     | **$19.7B**  |
-| **Singapore**        | —      | $2.3B  | $6.8B  | **$23.7B** | —           |
-| **Other**            | $6.9B  | $3.6B  | $2.1B  | $4.4B      | **$4.3B**   |
+| Billing location     | FY2023 | FY2024 | FY2025     | Quarter ended Jul 2025 |
+| -------------------- | ------ | ------ | ---------- | ---------------------- |
+| **United States**    | $8.3B  | $27.0B | $61.3B     | $23.5B                 |
+| **Singapore**        | $2.3B  | $6.8B  | **$23.7B** | **$10.2B**             |
+| **Taiwan**           | $7.0B  | $13.4B | $20.6B     | $8.5B                  |
+| **China (incl. HK)** | $5.8B  | $10.3B | $17.1B     | $2.8B                  |
+| **Other**            | $3.6B  | $3.4B  | $7.9B      | $1.8B                  |
+| **Total**            | $27.0B | $60.9B | $130.5B    | $46.7B                 |
+| Singapore share      | 8%     | 11%    | 18%        | 22%                    |
 
-Singapore appears as a standalone geography in FY2023, rockets to $23.7 billion by FY2025, then vanishes entirely in FY2026. Meanwhile, US revenue explodes from 16% to 69% of total revenue over the same period.
+Singapore goes from 8% of revenue to 22% in under three years. NVIDIA explained it in a footnote each time. From the [FY2025 10-K](https://www.sec.gov/Archives/edgar/data/1045810/000104581025000023/): "Customers use Singapore to centralize invoicing while our products are almost always shipped elsewhere. Shipments to Singapore were less than 2% of fiscal year 2025 total revenue." The [10-Q for the July 2025 quarter](https://www.sec.gov/Archives/edgar/data/1045810/000104581025000209/) added: "Over 99% of controlled Data Center compute revenue billed to Singapore was for orders from U.S.-based customers for the second quarter and first half of fiscal year 2026."
 
-On March 19, 2026, the rest of the story arrived — not in a filing, but in a [federal indictment](https://www.cnbc.com/2026/03/19/us-tech-execs-smuggled-nvidia-chips-to-china-prosecutors-say.html). Super Micro Computer's co-founder was charged with smuggling $2.5 billion in NVIDIA AI servers to China through Southeast Asian intermediaries. The servers were assembled in the US, shipped to Taiwan, routed through a Singapore-based entity, repackaged in unmarked boxes, and delivered to their true destination: China.
+Then the basis changed. From the [FY2026 10-K](https://www.sec.gov/Archives/edgar/data/1045810/000104581026000021/): "In the third quarter of fiscal year 2026, we changed to revenue based upon the location of our customers' headquarters as we believe it provides a better representation of the geographic profile of our revenue. Prior period information has been recast to reflect this change."
 
-The structured data had the signal the entire time. Singapore's meteoric revenue rise and sudden disappearance was the breadcrumb trail. But you'd only connect the dots if you could read the narrative alongside the numbers — the methodology change disclosures, the risk factor updates about export controls, the footnotes about geographic revenue classification.
+The same business, recast by customer headquarters:
+
+| Customer headquarters | FY2024 | FY2025  | FY2026      |
+| --------------------- | ------ | ------- | ----------- |
+| **United States**     | $31.5B | $77.5B  | **$149.6B** |
+| **Taiwan**            | $14.9B | $23.6B  | **$42.3B**  |
+| **China (incl. HK)**  | $12.3B | $25.0B  | **$19.7B**  |
+| **Other**             | $2.1B  | $4.4B   | **$4.3B**   |
+| **Total**             | $60.9B | $130.5B | $215.9B     |
+
+Because NVIDIA recast periods it had already reported, you can put the two bases next to each other and see where the Singapore line went:
+
+| Change from billing basis to headquarters basis | FY2024 | FY2025  | Quarter ended Jul 2025 |
+| ----------------------------------------------- | ------ | ------- | ---------------------- |
+| Singapore, as billed                            | $6.8B  | $23.7B  | $10.2B                 |
+| United States                                   | +$4.6B | +$16.2B | +$9.4B                 |
+| China (incl. HK)                                | +$2.0B | +$7.9B  | +$1.2B                 |
+| Taiwan                                          | +$1.5B | +$3.0B  | +$0.4B                 |
+| Other                                           | -$1.3B | -$3.5B  | -$0.9B                 |
+
+These are net changes in each line between the two bases, so they aren't a dollar-for-dollar trace of Singapore invoices. "Other" moved too. But the shape is clear. Most of Singapore became the United States. And in FY2025, customers headquartered in China were $25.0 billion, 19% of NVIDIA's revenue. On the billing view they were 13%.
+
+What the filings can't tell you is anything about a single customer. On the new basis, a direct customer headquartered in Singapore sits in "Other", a line of about $4.3 billion a year. NVIDIA doesn't say what's in it, and it hasn't said where Megaspeed's purchases were classified on either basis. Much of NVIDIA's hardware also reaches buyers inside servers built by other companies, which the geographic note doesn't follow.
+
+The structured data had the signal in June 2025. A model with no prompt about geography pulled it out of a batch of filings. What it couldn't do then was read the footnote next to the number, and the footnote is where the story changed. In March I had the footnote available and still built a table across the change without reading it closely. That's the argument of this post, made at my own expense.
 
 **This is the gap at the center of financial analysis: the numbers live in one system, and the story behind them lives in another.** Analysts toggle between XBRL fact tables and PDF filings. AI agents can query the graph or search documents, but never both in the same reasoning chain.
 
@@ -108,13 +160,9 @@ This means a search result doesn't just return text. It returns text _annotated 
 
 ```json
 {
-  "section_label": "Goodwill and Intangible Assets",
-  "content": "During Q3 2023, the Company recognized a goodwill impairment charge of $8.7B related to the Arm acquisition...",
-  "xbrl_elements": [
-    "us-gaap:Goodwill",
-    "us-gaap:GoodwillImpairmentLoss",
-    "us-gaap:BusinessAcquisitionNameOfAcquiredEntity"
-  ],
+  "section_label": "Segment Information",
+  "content": "In the third quarter of fiscal year 2026, we changed to revenue based upon the location of our customers' headquarters as we believe it provides a better representation of the geographic profile of our revenue. Prior period information has been recast to reflect this change.",
+  "xbrl_elements": ["us-gaap:Revenues", "srt:StatementGeographicalAxis"],
   "source_type": "ixbrl_disclosure"
 }
 ```
@@ -127,11 +175,11 @@ With MCP tools that span both layers, an AI agent can execute multi-step reasoni
 
 **"Why did NVIDIA's Singapore revenue disappear?"**
 
-1. Query the graph: `us-gaap:Revenues` by `srt:StatementGeographicalAxis` — Singapore grows from $0 to $23.7B then vanishes
-2. Search disclosures for "geographic" or "revenue methodology" across NVDA's filings
-3. Find the MD&A section where NVIDIA explains the change in geographic classification
-4. Cross-reference with risk factor disclosures mentioning "export controls" or "China"
-5. Synthesize: methodology change + export control risk + geographic reclassification = a story the numbers alone couldn't tell
+1. Query the graph: `us-gaap:Revenues` by `srt:StatementGeographicalAxis`. Singapore grows from $2.3B in FY2023 to $23.7B in FY2025, and the member stops appearing after the July 2025 quarter
+2. Search disclosures for "geographic" or "billing location" across NVDA's filings
+3. Find the segment note where NVIDIA says it moved from billing location to customer headquarters and recast prior periods
+4. Pull the recast years and compare them with the originals, line by line
+5. Synthesize: a change of basis, a recast, and a question the filing doesn't answer
 
 **"Which companies have the most export control exposure?"**
 
@@ -155,7 +203,7 @@ SEC filings proved the architecture. But the same pattern applies to any domain 
 
 - **Your own documents**: Upload markdown—board memos, research notes, due diligence reports—and search them alongside your graph data
 - **Connected sources**: Sync Google Drive or Notion content into the same searchable index, partitioned by the same `graph_id`
-- **AI semantic memory**: Agents store observations via `remember-text` and recall them later via `recall-text`—semantic search by meaning, not just keywords. "What did we learn about NVIDIA's supply chain?" finds the note you saved three sessions ago about TSMC capacity constraints, even if those exact words don't match.
+- **AI semantic memory**: Agents store observations via `remember` and recall them later via `recall`—semantic search by meaning, not just keywords. "What did we learn about NVIDIA's supply chain?" finds the note you saved three sessions ago about TSMC capacity constraints, even if those exact words don't match.
 
 This isn't keyword search bolted onto a database. It's three search modes working together—BM25 for exact terms, kNN for semantic similarity, and Cypher for structured traversal—unified under one `graph_id` and accessible through the same MCP tools.
 
@@ -186,6 +234,6 @@ The SEC shared repository is live with document search enabled. Subscribe and yo
 - Query the graph for the actual financial impact
 - Build a comparative analysis in minutes
 
-NVIDIA's Singapore revenue was a $23.7 billion signal hiding in plain sight. The numbers were in the graph. The explanation was in the disclosures. The full story took both — and a federal indictment — to understand.
+NVIDIA's Singapore line was a $23.7 billion number hiding in plain sight. The number was in the graph. The reason it stopped being reported was in a footnote. Whether there's more to it than that is NVIDIA's question to answer.
 
 Numbers tell you what happened. Narratives tell you why. Now your AI has both.
