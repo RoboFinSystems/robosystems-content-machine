@@ -62,9 +62,9 @@ One tells you what. The other tells you why, how, and what's next.
 
 ## The Magic Moment: When Patterns Become Obvious
 
-Here's a real example from last week:
+Here's the kind of question a graph answers well:
 
-A RoboSystems user asked their graph: "Which customers cost us more to service than they generate in profit?"
+"Which customers cost us more to service than they generate in profit?"
 
 In a traditional system, that's a three-week project. You'd need to:
 
@@ -74,7 +74,7 @@ In a traditional system, that's a three-week project. You'd need to:
 4. Factor in payment delays and their financing cost (good luck)
 5. Account for returns and refunds (hope you tracked them right)
 
-In their knowledge graph? One query. 12 seconds. The answer included seven customers they never suspected were unprofitable, consuming $400K annually in hidden costs.
+In a knowledge graph, revenue, support, operating and financing costs are already connected to each customer, so it is one query. The answer can surface customers who cost more to serve than they bring in.
 
 ## Why Finance Desperately Needs Graphs
 

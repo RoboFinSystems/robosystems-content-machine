@@ -78,11 +78,11 @@ Your AI agent has already:
 
 You haven't even opened your laptop yet.
 
-### The $2M Save That Almost Wasn't
+### What That Looks Like
 
-True story from an early adopter: Their AI agent noticed a pattern humans missed—invoice processing times were increasing by 3% monthly. Seemed trivial. The AI traced it through the graph, predicted the cascade effect, and discovered it would trigger $2M in early payment discount losses within six months.
+Picture an agent watching invoice processing times creep up 3% a month. On its own, that looks trivial. Traced through the graph to the payment terms behind each invoice, it shows which early-payment discounts the company is on track to lose, and by how much.
 
-The fix? A simple workflow change that took one afternoon to implement.
+The fix is usually a workflow change, not a new system.
 
 ### The Analysis That Used to Take Two Weeks
 
@@ -144,7 +144,7 @@ Continuously hunts for efficiency:
 - Pricing adjustments to improve margins
 - Resource allocation to reduce waste
 
-Last month, one client's Optimizer found $180K in annual savings just by reorganizing payment schedules.
+For example, an Optimizer can test whether reorganizing payment schedules would capture discounts the company is currently leaving on the table.
 
 ### The Strategist
 
