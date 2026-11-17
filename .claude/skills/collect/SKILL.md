@@ -1,6 +1,9 @@
 ---
-description: Collect source materials for a company coverage project.
+name: collect
+description: "Collect source materials for a company coverage project, automating what can be fetched and listing what has to be fetched by hand. Use for \"collect <ticker>\", \"gather the sources for <ticker>\"."
 argument-hint: '[ticker]'
+metadata:
+  lane: gtm
 ---
 
 Collect source materials for a company coverage project. This is a tag-team process — automate what we can, tell the user what to get manually.

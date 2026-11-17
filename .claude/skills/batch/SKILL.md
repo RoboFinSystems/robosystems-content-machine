@@ -1,6 +1,9 @@
 ---
-description: Scaffold all projects for a campaign at once.
+name: batch
+description: "Scaffold every project for a campaign at once: read the campaign's tickers.md and run scout and scaffold for each ticker. Use for \"batch <campaign>\", \"scaffold the campaign\", or \"set up the batch\"."
 argument-hint: '[campaign]'
+metadata:
+  lane: gtm
 ---
 
 Scaffold all projects for a campaign at once. Reads the ticker list from the campaign's tickers.md and runs scout + scaffold for each.

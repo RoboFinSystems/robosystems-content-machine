@@ -1,6 +1,9 @@
 ---
-description: Author the full written output set for a project in this session.
+name: author
+description: "Author the full written output set for one coverage project in this session, against AUTHORING_INSTRUCTIONS.md and PRODUCTION_CONTRACT.md (written artifacts only; the renderer builds the slides). Use for \"author <project>\", \"write the brief for <ticker>\", or after a project is scaffolded."
 argument-hint: '[project]'
+metadata:
+  lane: gtm
 ---
 
 Author the full written output set for a project directly in this session - one shot, against the contract in `AUTHORING_INSTRUCTIONS.md` + `PRODUCTION_CONTRACT.md`. You produce written artifacts only; the renderer builds every slide from `script.json`. `/review` is the quality gate afterward.

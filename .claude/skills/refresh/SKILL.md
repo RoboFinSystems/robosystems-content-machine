@@ -1,6 +1,9 @@
 ---
-description: Update an existing project's campaign files in place.
+name: refresh
+description: "Update an existing project's campaign files in place after the campaign brief or authoring instructions changed, without touching its sources or outputs. Use for \"refresh <project>\", \"push the campaign changes to <project>\"."
 argument-hint: '[project]'
+metadata:
+  lane: gtm
 ---
 
 Update an existing project's campaign files without touching sources or outputs. Use when you've refined the CAMPAIGN_BRIEF or AUTHORING_INSTRUCTIONS in the campaign directory and want to push changes to an existing project.
