@@ -28,12 +28,14 @@ Reach alignment (measured on our own analytics): the `youtube_title` is **search
 
 **Per-surface framing (see the Surface rules section in `AUTHORING_INSTRUCTIONS.md`).** Every name ships every asset; the copy differs per surface because the discovery mechanisms do. **Never reuse a string across surfaces** - the `youtube_title` is a search query, the X hook is a curiosity line, the brief headline is the analytical claim. And the niche rule **inverts** between them: an underserved cashtag is an advantage on X (quiet feed, right readers) but a liability on YouTube (nobody searches the name), so for a thin-demand name the YouTube title must earn traffic on the *topic* - the accounting mechanism, the sector question - rather than on the ticker.
 
-**Two closing beats, in this order.** (a) **The generalization** - one or two flat, concrete sentences that no analyst wrote this, the same pipeline reads any filer's XBRL, and a private company reporting in the same format is the same job. Written fresh per name so it hangs off that company's specific finding. Without it the piece sells the analysis and not the machine. It goes in **both** the script (before or inside the CTA) and the brief's Bottom Line; the brief is the X Article, and it is the one that keeps losing it. (b) **The CTA, per the RoboSystems plug rules in `AUTHORING_INSTRUCTIONS.md`** - the mid-video attribution names the SEC Shared Repository (`robosystems.ai/pricing` in its subhead); the closing CTA's door is the report's own page, `roboinvestor.ai/research/{TICKER}`. Never the homepage, never a spoken price.
+**Two closing beats, in this order.** (a) **The generalization** - one or two flat, concrete sentences that no analyst wrote this, the same pipeline reads any filer's XBRL, and a private company reporting in the same format is the same job. Written fresh per name so it hangs off that company's specific finding. Without it the piece sells the analysis and not the machine. It goes in **both** the script (before or inside the CTA) and the brief's Bottom Line; the brief is the X Article, and it is the one that keeps losing it. (b) **The prompt and the door** (2026-11-16, per `AUTHORING_INSTRUCTIONS.md`): one exact question a reader could ask the SEC repository from Claude or ChatGPT that reproduces the piece's best number, as *Ask the filing yourself:* at the end of the brief's Bottom Line and the X post's closing line; the door, the 14-day SEC trial at `robosystems.ai/pricing` with its tracking, goes only in the X first comment and the YouTube description. No promo codes. Never the homepage, never a spoken price.
 
 ### 2. Verify the numbers against the graph
 Pull the XBRL facts through the robosystems MCP (`financial-statement-analysis`, `read-graph-cypher`, `search-documents`) rather than trusting press coverage. Every number that lands on a slide or in narration should trace to a filing or be explicitly labeled as guidance/consensus with its source.
 
 ### 3. Author the outputs (this order — later files derive from earlier ones)
+**Brief-only is the default since 2026-11-16:** author 1 and the X post and `publish.json` from 3, validate with `just validate-brief {TICKER}`, and skip 2 and the YouTube description unless the task names this ticker as the week's video.
+
 1. `reports/{TICKER}_brief.md` — the narrative brief (ships verbatim as the X Article). Markdown tables render as native Article tables — use them wherever 3+ rows of figures line up (results vs. estimates, DCF scenarios, multiples grid); 1-3 per brief.
 2. `scripts/{TICKER}_script.json` — segments with narration, slides, eyebrows; set `metadata.coverage_label`.
 3. `social/` — X post, YouTube description, `{TICKER}_publish.json`.
@@ -48,7 +50,8 @@ Use subagents for scale where useful (e.g., parallel section drafts), but the fa
 
 ### 4. Validate
 ```bash
-just validate {TICKER}
+just validate-brief {TICKER}   # brief-only (the default)
+just validate {TICKER}         # when a video script was authored
 ```
 Fix and re-run until clean (`just validate-fix` for mechanical schema issues).
 

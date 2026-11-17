@@ -105,20 +105,29 @@ If the card is absent, this is **initiating coverage** — introduce the company
 
 ## What You Produce
 
-Produce the **4 core outputs** in order (brief FIRST - it's the foundation everything else
-derives from) and the **publish metadata** (#6). (The 9:16 short and the Q&A podcast are
+**Brief-only is the default (reboot, 2026-11-16).** Research ships as a written brief: the brief
+(#1), the X post (#3) and the publish metadata (#6), validated with `just validate-brief` and
+published with `just publish-brief`. Author the video script (#2) and the YouTube description (#4)
+only when the task names this ticker as the week's video. When it does, produce the **4 core
+outputs** in order (brief FIRST - it's the foundation everything else derives from) and the
+**publish metadata** (#6). (The 9:16 short and the Q&A podcast are
 retired - author no `short_script.json` and no `qa.json`.) Schema and slide mechanics: see `PRODUCTION_CONTRACT.md`.
 Downstream the visuals render from your `script.json` via the animated **webdeck**
 (`just webdeck-pipeline`), and thumbnails auto-generate from the brief (`just thumbnails`).
 You author no slide HTML.
 
-**Promo code (optional placeholder).** Where copy invites sign-up, add the offer line
-`New customers get 50% off your first month with code [PROMO_CODE].` Keep `[PROMO_CODE]` as a
-literal token (swap in the live Stripe code at post time, or omit the line if no promo is
-running) — never hardcode a real code here, since codes change and expire. **Not in the brief**:
-the brief renders on the research page directly above that page's own offer block, so its footer
-is attribution only (see the brief's Footer rule). Social copy and the YouTube description are
-the surfaces that carry a promo.
+**The door is the SEC trial, and the bridge is the prompt (2026-11-16).** Promo codes are
+retired: write no `[PROMO_CODE]` line anywhere. A research reader's next step is to ask the filing
+the same question themselves, so every piece carries **the prompt**: one exact question, written
+the way a reader would type it into Claude, ChatGPT or any MCP client connected to the SEC Shared
+Repository, that reproduces the piece's most interesting number (e.g. *"What share of Trulieve's
+2025 revenue went to income tax, and how does that compare with 2024?"*). It goes at the end of
+the brief's Bottom Line, introduced as *Ask the filing yourself:*, and on the closing line of the
+X post. The door itself, the 14-day free trial (`robosystems.ai/pricing`), is a link and goes
+only where links belong: the X first comment and the YouTube description, never the brief or the
+X post body. Every such link carries tracking so trials can be traced to research:
+`https://robosystems.ai/pricing?utm_source={x|youtube}&utm_medium=research&utm_campaign={TICKER}`.
+Never name a price.
 
 ## Surface rules - one analysis, framed three ways
 
@@ -192,7 +201,8 @@ separate from the analysis, and **do not close the brief with an offer or a prom
 The research page now carries the offer in its own shell, immediately below the brief
 ("Compare your company to {Company}" → roboledger.ai), so a second close inside the markdown
 competes with it and dates the page: a promo code outlives the campaign that minted it, and a
-price named here outlives the price. Say where the numbers came from and stop.
+price named here outlives the price. Say where the numbers came from and stop. (The prompt, *Ask the filing yourself:*, sits above
+the footer as the last line of the Bottom Line; it is a question, not an offer.)
 
 **Quality check:** would you watch a video built on this story? If it reads generic, rewrite
 the hook and financial story until there's a genuine insight. Only then move to the script.
@@ -234,22 +244,26 @@ Editorial guidance for the script:
   does not. The two have different jobs and different doors:
   - the **mid-video attribution** says where the data came from. Its door is the SEC Shared
     Repository: name it in the narration, `robosystems.ai/pricing` in the slide subhead.
-  - the **closing CTA** asks the viewer to do something, and what a viewer of a single-company
-    analysis wants is their own company against this one. Its door is the report's own page,
-    `roboinvestor.ai/research/{TICKER}`, which carries the compare offer in its shell — put
-    that URL in the slide subhead and link it in the YouTube description.
+  - the **closing CTA** asks the viewer to do something: ask the filing themselves. Speak the
+    piece's prompt, then the door: the 14-day free trial of the SEC Shared Repository,
+    `robosystems.ai/pricing` in the slide subhead and the tracked link in the YouTube
+    description. (Before 2026-11-16 the door was `roboinvestor.ai/research/{TICKER}`; the SEC
+    repository became the lane's lead magnet on 11-11.)
   - *Mid-video attribution (best for shorter videos), after citing a specific data point:*
     > "All of the financial data in this analysis comes from the company's actual SEC filing,
     > pulled directly from the RoboSystems SEC Shared Repository. It is a subscription you can
     > point your own tools at, across every public company that files. Link in the description."
   - *Closing CTA (best for longer analyses), as the final or second-to-last slide:*
-    > "Every number here came out of the filing itself. The interesting question is how your
-    > own company's margins and growth look next to this one - connect your books, put the SEC
-    > graph beside them, and ask. The link is in the description."
+    > "Every number here came out of the filing itself, and you can ask it the same questions.
+    > Connect the SEC repository to Claude or ChatGPT, it's a fourteen day free trial, and start
+    > with this one: {the prompt}. The link is in the description."
 
 ### 3. X Post (`social/{TICKER}_x_post.txt`)
 A **single post — NOT a numbered thread** (long-form is fine on X; no "1/ 2/ 3/"). Opening
 hook; 3-5 key findings with specific numbers; a risk/caveat; closing takeaway; relevant `$TICKER` cashtag **and EXACTLY ONE cashtag total** (X rejects a post carrying two or more with HTTP 403: *"Posts are limited to a maximum of one cashtag ($SYMBOL)"* - verified 2026-07-30 when AEHR's short failed on ` $AEHR $SOXX`. The old guidance here asked for a sector/thematic ETF cashtag alongside the ticker for extra discovery reach; that is no longer possible. Keep the company's own ` $TICKER` and demote the ETF to a **hashtag** (`#SOXX`, `#JETS`, `#XBI`), which still carries a topical signal and is not rate-limited) and topic hashtags; tag @RoboFinSystems. **Cashtag placement & hygiene:** **lead with the cashtags** — `$TICKER $ETF` go on the FIRST line (front placement gets more topic-feed reach than burying them at the end, and the tag sits above the fold where the feed crops); the topic hashtags + @RoboFinSystems tag go on the closing line. Keep cashtags space-separated and **never glue a `$`-cashtag inside parens** like `($TICKER)` — X only linkifies AND indexes a cashtag when a space (or start-of-post/@) precedes it, so a leading paren silently kills both the link and the cashtag-feed discovery. For a parenthetical in prose, use the bare ticker `(TICKER)` without the `$`. **Never use `<` or `>`** in any social copy, YouTube description, or brief — YouTube and X parse them as HTML tags and reject the whole paste. Spell comparisons out: `under 1x`, `over $740M` (not `<1x` / `>$740M`).
+**The prompt closes the post (2026-11-16):** the last line before the hashtags is *Ask the
+filing yourself:* and the piece's prompt, with no link. The trial link goes in the first comment
+(`x_first_comment`), tracked as above.
 **No link and no promo in the body.** The X post carries **no `robosystems.ai` link and no
 promo-code line** - both suppress reach (X throttles external links, and a discount CTA on every
 post reads as spam and drags engagement). Keep the RoboSystems CTA and any promo to the YouTube
@@ -268,8 +282,9 @@ Article both win reach).
 restate the Company + Ticker + quarter + the topic keywords a searcher would type before any
 flourish. Then a 1-2 sentence hook; links: **`https://robosystems.ai/pricing` first** (the SEC
 Shared Repository door - the thing this video is actually selling), then `https://robosystems.ai` and
-`https://github.com/RoboFinSystems/robosystems-content-machine`; a `🎟️ New customers: 50% off
-your first month with code [PROMO_CODE]` line under the links; a voice-credit line
+`https://github.com/RoboFinSystems/robosystems-content-machine`; under the links, the trial line
+`Ask the filing yourself, free for 14 days in Claude, ChatGPT or any MCP client:` followed by the
+tracked pricing link (`utm_source=youtube`) and the piece's prompt; a voice-credit line
 `Voiceover by ElevenLabs: https://try.elevenlabs.io/v9z3wzm97gk3` with a following
 `Disclosure: the ElevenLabs link is a referral link.` note (the video narration is ElevenLabs);
 **timestamps** — draft from
@@ -309,12 +324,12 @@ times, the S3 media links, and flagging any unresolved placeholders). A JSON obj
 - `seo_title` / `seo_description` (optional) — explicit overrides for the `/research` page
   `<title>` and meta description. Leave them out unless the `youtube_title` genuinely should
   differ from the page title; `reindex.py` composes both otherwise.
-- `x_first_comment` — the X first comment under the video post; points to the brief published as an X **Article** (use `[X_ARTICLE_LINK]`). The full long-form is uploaded as native video; no YouTube link on X.
+- `x_first_comment` — the X first comment; points to the brief published as an X **Article** (use `[X_ARTICLE_LINK]`), then one line with the trial: `Ask the filing yourself, free for 14 days:` and the tracked link (`utm_source=x`). The full long-form is uploaded as native video when there is one; no YouTube link on X.
 - `youtube_comment` (optional) — the YouTube first comment, posted automatically at `yt-publish`. Omit it and the tool posts the default written-brief line pointing at the ticker's `/research` page (`[RESEARCH_URL]` resolves to it). Write one only when a bespoke line beats "here is the full written brief" - e.g. a question that invites replies.
 
 _No LinkedIn for research - LinkedIn is the technical/blog lane, not a research channel. The 9:16 short is retired (#5) - no `short_*` social files. The Q&A podcast is retired - no `podcast_*` fields, no `qa.json`._
 
-Same placeholder rules as the rest (`[YOUTUBE_LINK]`, `[PROMO_CODE]`) — never hardcode the live URL or code.
+Same placeholder rules as the rest (`[YOUTUBE_LINK]`) — never hardcode the live URL. `[PROMO_CODE]` is retired (2026-11-16); write no promo line.
 
 ## Workflow
 
