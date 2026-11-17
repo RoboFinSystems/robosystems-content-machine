@@ -1,6 +1,9 @@
 ---
-description: Quick recon on a company before initiating coverage.
+name: scout
+description: "Quick recon on a company before initiating coverage: what data exists, what is ready, and whether it is worth covering. Use for \"scout <ticker>\", \"should we cover <ticker>\"."
 argument-hint: '[ticker]'
+metadata:
+  lane: gtm
 ---
 
 Quick recon on a company before initiating coverage. Check what data exists, what's ready, and whether it's worth covering.

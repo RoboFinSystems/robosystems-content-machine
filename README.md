@@ -78,7 +78,7 @@ graph for discovery and comps, xbrlkit to confirm a figure against the filing it
 - **Social copy** (`social/`) - X post, YouTube description, and `publish.json` (the titles and links the publish step reads).
 
 The repo ships the research-lane skills that drive this - `/scout`, `/collect`, `/author`,
-`/review`, `/status`, `/batch`, `/refresh` - as `.claude/commands/*.md`. They are conveniences
+`/review`, `/status`, `/batch`, `/refresh` - as `.claude/skills/*/SKILL.md`. They are conveniences
 around the contract, not a dependency: the contract is the spec, and a session that reads
 `AUTHORING_INSTRUCTIONS.md` + `PRODUCTION_CONTRACT.md` produces the same artifacts without them.
 

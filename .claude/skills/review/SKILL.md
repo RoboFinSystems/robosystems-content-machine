@@ -1,6 +1,9 @@
 ---
-description: Quality review of authored output before running the pipeline.
+name: review
+description: "Quality review of a project's authored output before the pipeline renders it, while a fix is still an edit. Use for \"review <project>\", \"check the authored brief\", or \"is it ready to render\"."
 argument-hint: '[project...]'
+metadata:
+  lane: gtm
 ---
 
 Quality gate between authoring and rendering. Catch problems here, where a fix is an edit,

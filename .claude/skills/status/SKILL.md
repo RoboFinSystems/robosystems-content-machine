@@ -1,5 +1,8 @@
 ---
-description: Production dashboard — state of all coverage projects.
+name: status
+description: "Production dashboard: the state of every coverage project at a glance. Use for \"status\", \"where are the projects\", or \"production dashboard\"."
+metadata:
+  lane: gtm
 ---
 
 Production dashboard — show the state of all coverage projects at a glance.
