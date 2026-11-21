@@ -32,7 +32,7 @@ There are now three ways to put Claude to work on a company's books, and they do
 
 **A model of the books.** The ledger read into a structure that knows what each account means in reporting terms, which months are closed, how the companies in a group fit together, and which entries make up each number. That's what RoboLedger builds, and it's the layer this post is about.
 
-So Claude can act in the books now. Whether the work holds up depends on what it knows about them while it acts.
+So Claude can act in the books now. Whether the work holds up depends on what it knows about them while it acts. (For the finance side, where the vendors sell market data to research desks, see [Claude for finance](https://harbinger.finance/learn/claude-for-finance).)
 
 ## Why the model under the agent is the hard part
 
