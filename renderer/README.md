@@ -17,6 +17,9 @@ package to `design-system/`. It does the jobs the Python pipeline can't:
    still-plus-Ken-Burns demo cut.
 4. **`probe`** — list the anchors a walkthrough can actually aim at, read off the
    running app.
+5. **`post`**: social **stills and carousels**, one 1080x1350 PNG per slide (LinkedIn's
+   4:5 portrait) and, for more than one slide, a PDF carousel of the same pages. The
+   visual layer for Joey's LinkedIn and X posts (`gtm/content/strategy.md` §3a).
 
 **Tool vs. product:** this package is the generalized, committed *tool*. Everything
 per-episode is a *product* and lives together under the repo-root
@@ -287,6 +290,47 @@ Flags still win over the spec, for trying a voice without editing the file.
 writes one framed still per beat in ~15 seconds, reporting the zoom level each
 beat settled at. Catching a zoom aimed at the wrong element there costs seconds;
 catching it after a full render costs minutes.
+
+## post: social stills and carousels
+
+```bash
+just post renderer/examples/filing-ladder.post.json            # -> renderer/examples/renders/
+just post drafts/posts/<slug>.post.json --out /tmp/x --dsf 2    # 2160x2700, sharper on retina
+```
+
+A slide is a native card built for a phone feed (type sized for 4:5, the brand's wash and
+grid, the logo), so the video templates keep their 16:9 layout. Every word and number comes
+from the spec; nothing is generated, and nothing is an AI image.
+
+```jsonc
+{
+  "name": "filing-ladder",
+  "brand": "robosystems",            // or "roboledger": colours, logo, fonts
+  "footer": "Joseph French · robosystems.ai",
+  "size": [1080, 1350],              // optional; 4:5 by default
+  "slides": [
+    { "kind": "cover",  "eyebrow": "…", "title": "…", "sub": "…" },
+    { "eyebrow": "…", "title": "…", "visual": { "template": "research", "data": { "kind": "bars", … } },
+      "caption": "…", "source": "…" },
+    { "eyebrow": "…", "title": "…", "image": "captures/close.png", "crop": [x, y, w, h], "caption": "…" },
+    { "kind": "number", "eyebrow": "…", "value": "93%", "label": "…", "sub": "…", "source": "…" },
+    { "kind": "text",   "eyebrow": "…", "text": "…" },
+    { "kind": "end",    "eyebrow": "…", "title": "…", "line": "…", "url": "…" }
+  ]
+}
+```
+
+- **`visual`** is a motion template (`motion/`) posed at its finished frame (`at` seconds, or
+  just before its fade-out) and cropped to what it painted, on a transparent backdrop so it
+  sits on the card. `template: "research"` (bars, counters, board, flow, band, …) mounts
+  robosystems-app; `slide` (number, compare, still) mounts roboledger-app. The research kinds
+  get post-sized type inside the card (`POST_CSS` in `src/post.mjs`); `visual.css` appends a
+  one-off fix, `postCss: false` turns the defaults off.
+- **`image`** is a file relative to the spec (a `render-capture` still). `crop` zooms a wide UI
+  capture onto the part that carries the claim; a whole 16:9 screen is unreadable on a 4:5 card.
+- **Long lines shrink to fit** their box rather than overrun the card; check the PNGs anyway.
+- **Specs are per-post products:** keep them in `drafts/posts/` (gitignored) beside their
+  captures. `renderer/examples/` holds one committed example; its renders are gitignored.
 
 ## How it fits together
 

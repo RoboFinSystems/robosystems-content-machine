@@ -101,3 +101,6 @@ oneoffs/
 .playwright-mcp
 # Claude Code worktrees checked out inside the repo
 .claude/worktrees/
+
+# Renders of the committed post example (just post renderer/examples/...)
+renderer/examples/renders/

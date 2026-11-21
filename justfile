@@ -561,6 +561,13 @@ demo-pipeline spec config: (demo-narrate spec) (demo-align spec) (demo-render sp
 demo-stills spec config:
     node renderer/src/cli.mjs demo --spec {{spec}} --config {{config}} --stills
 
+# Social stills and carousels: one 1080x1350 PNG per slide and, for a carousel, a PDF
+# (LinkedIn's document post). Charts come from the motion templates posed at their
+# finished frame; product shots from `render-capture`. Spec shape: renderer/README.md, "post".
+# e.g. just post renderer/examples/filing-ladder.post.json
+post spec *args="":
+    node renderer/src/cli.mjs post --spec {{spec}} {{args}}
+
 # ─── Utilities ────────────────────────────────────────────────
 
 # Play the final video

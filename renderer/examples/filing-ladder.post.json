@@ -1,0 +1,47 @@
+{
+  "name": "filing-ladder",
+  "brand": "robosystems",
+  "footer": "Joseph French · robosystems.ai",
+  "slides": [
+    {
+      "kind": "cover",
+      "eyebrow": "Filing Ladder v0.2",
+      "title": "One SEC filing, every form: the same answers at about half the cost",
+      "sub": "38 questions, 26 filings, three runs each, every answer scored with its cost."
+    },
+    {
+      "eyebrow": "Cost per correct lookup",
+      "title": "Reading the whole filing costs twice as much",
+      "visual": {
+        "template": "research",
+        "data": {
+          "kind": "bars",
+          "unit": "¢",
+          "max": 14,
+          "duration": 3,
+          "rows": [
+            { "label": "Plain text, read whole", "tone": "plain", "enter": 0.1, "steps": [{ "v": 12.4 }] },
+            { "label": "Knowledge graph and the document, through tools", "enter": 0.2, "steps": [{ "v": 5.9 }] }
+          ]
+        }
+      },
+      "caption": "Same model (Sonnet 5.5), same questions, same scoring.",
+      "source": "Filing Ladder v0.2, 2026-11-09"
+    },
+    {
+      "kind": "number",
+      "eyebrow": "Accuracy on lookups",
+      "value": "93%",
+      "label": "for the graph and for the text read whole alike",
+      "sub": "Structure didn't make the model smarter. It made each right answer cheaper.",
+      "source": "Filing Ladder v0.2, 2026-11-09"
+    },
+    {
+      "kind": "end",
+      "eyebrow": "Open source",
+      "title": "Run the benchmark on your own machine",
+      "line": "xbrlkit, the package behind it, is free and reads any SEC filing locally.",
+      "url": "xbrlkit.com"
+    }
+  ]
+}

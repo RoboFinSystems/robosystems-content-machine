@@ -16,14 +16,18 @@
  *
  *   rs-render motion  --html drafts/x/x.html [--out DIR] [--stills 1,5,30] [--keep-frames]
  *
+ *   rs-render post    --spec drafts/posts/x.post.json [--out DIR] [--dsf 2] [--no-pdf]
+ *
  * Python stays the orchestrator and owns audio (VO/music); this emits the
- * silent visual layer (stills for `capture`, an mp4 for `short` and `demo`).
+ * silent visual layer (stills for `capture`, an mp4 for `short` and `demo`, social
+ * PNGs and a PDF carousel for `post`).
  */
 import { capture } from './capture.mjs';
 import { short } from './short.mjs';
 import { demo } from './demo.mjs';
 import { probe } from './probe.mjs';
 import { motion } from './motion.mjs';
+import { post } from './post.mjs';
 
 function parseArgs(argv) {
   const args = { _: [] };
@@ -66,12 +70,16 @@ async function main() {
     case 'motion':
       await motion(args);
       break;
+    case 'post':
+      await post(args);
+      break;
     default:
       console.error(
         `Unknown command: ${cmd ?? '(none)'}\n` +
           `Usage:\n  rs-render capture [options]\n  rs-render short --spec <file> [options]\n` +
           `  rs-render demo --spec <file> [options]\n  rs-render probe [--routes ...] [options]\n` +
-          `  rs-render motion --html <file> [--stills t1,t2] [options]`
+          `  rs-render motion --html <file> [--stills t1,t2] [options]\n` +
+          `  rs-render post --spec <file.post.json> [--out DIR] [--dsf 2] [--no-pdf]`
       );
       process.exit(1);
   }
