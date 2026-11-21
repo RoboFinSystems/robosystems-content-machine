@@ -92,16 +92,17 @@ disputed tax regime these diverge by orders of magnitude. Write "charged" or "ta
 expense figure and reserve "paid" for the cash figure, and if the two differ materially, say so
 and explain where the gap went. "Paid or accrued" is not an acceptable hedge.
 
-## Continuing coverage (if `sources/_prior_coverage.md` exists)
+## Prior coverage: draft first, then check (if `sources/_prior_coverage.md` exists)
 
-If `sources/_prior_coverage.md` is present, this is **not a first look — it's the next chapter** in an ongoing, quarterly coverage thread. Read that card first, then:
+A card at `sources/_prior_coverage.md` means we have covered this company before. **Do not open it until the brief is drafted.** The new brief is not a sequel:
 
-- **Open on the thread.** The brief's Hook and the video's first lines should reference the prior coverage — what we said and the price/setup *then* — and immediately pivot to **what changed this quarter** (new filing, new catalyst, price move). Don't re-introduce the company from scratch.
-- **Carry the thesis forward.** Explicitly contrast then vs now (e.g. "we covered this at $X last quarter; revenue has since re-accelerated to…"). Update every number; keep the narrative continuity.
-- **Stamp the label.** Set `metadata.coverage_label` in `scripts/{TICKER}_script.json` to a human label for this update (e.g. `"Q2 FY2026 update"`). The quarter key itself (e.g. `2026-Q2`) is derived automatically at publish — you only author the label.
-- Sources accumulate: the new quarter's filing sits alongside the prior ones in `sources/`; the full prior brief is in `.history/`.
+- **Write from the current filing only**, as if covering the company for the first time. Find the story this filing tells. Do not look for last time's angle, structure or headline, and never open `.history/` or the published prior brief.
+- **Then open the card.** It holds three facts: when we last covered the company, the filing it was on, and the one claim we made.
+- **Add one short "since we last covered this" passage** where it fits: what we said then, and what the new filing shows now. If the new brief contradicts the old claim, say so plainly.
+- **If the draft turned out to be the same story as last time**, that is a finding, not a default: say in one line that the thesis held and why, and check that the filing has nothing newer to lead with.
+- **Stamp the label.** Set `metadata.coverage_label` in `scripts/{TICKER}_script.json` to a human label for this update (e.g. `"Q2 FY2026 update"`). The quarter key itself (e.g. `2026-Q2`) is derived automatically at publish.
 
-If the card is absent, this is **initiating coverage** — introduce the company fresh.
+If the card is absent, this is **initiating coverage**.
 
 ## What You Produce
 

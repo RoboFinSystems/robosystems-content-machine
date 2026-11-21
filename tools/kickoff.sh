@@ -28,7 +28,8 @@ if [ -f "$REDO" ]; then
     # a redo remakes the video only; the brief and its coverage thread are already done
     OUT="$OUT"$'\n\n---\n\n'"$(cat "$REDO")"
 elif [ -f "$PRIOR" ]; then
-    OUT="$OUT"$'\n\n---\n\n'"$(cat "$PRIOR")"
+    # the card itself is NOT appended: the brief is drafted from the current filing first
+    OUT="$OUT"$'\n\n---\n\n'"Prior coverage exists (sources/_prior_coverage.md). Draft the brief from the current filing first; open the card only afterwards, per \"Prior coverage\" in AUTHORING_INSTRUCTIONS.md."
 fi
 
 printf '%s\n' "$OUT"

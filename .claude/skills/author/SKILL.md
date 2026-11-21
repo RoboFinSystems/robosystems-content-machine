@@ -23,7 +23,7 @@ Author the full written output set for a project directly in this session - one 
 Read, in order:
 - `projects/{TICKER}/AUTHORING_INSTRUCTIONS.md` — the authoring spec (campaign overlay already baked in at scaffold time). Follow it exactly.
 - `projects/{TICKER}/PRODUCTION_CONTRACT.md` — schema, slide kinds, `data` shapes, TTS spoken-form rules, the per-segment `eyebrow` field.
-- `projects/{TICKER}/KICKOFF.md` and everything in `sources/`.
+- `projects/{TICKER}/KICKOFF.md` and everything in `sources/`. The one exception is `sources/_prior_coverage.md`: leave it closed until the brief is drafted (the instructions' "Prior coverage" section).
 
 Non-negotiables that reviews keep catching: narration is spoken-form (no `$ % x / &`), the brief's Hook carries an early ` $TICKER` cashtag (space before `$`, never `($TICKER)`), no em/en dashes anywhere, slide `data` matches narration numbers exactly, every segment except the CTA gets an `eyebrow`.
 

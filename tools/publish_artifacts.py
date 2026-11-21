@@ -79,7 +79,13 @@ def snapshot_prior_version(bucket, ticker):
   prior_date = reindex.version_date(listing, ticker)
   if not prior_date:
     return  # nothing published yet
-  prior_version = reindex.quarter(prior_date)
+  # The published meta.json says which version this is. The brief's upload date does
+  # not: `just republish-brief` re-uploads a brief in place (the 2026-11 promo strip
+  # touched most of them), which would date a Q3 report as this quarter and skip the
+  # archive, overwriting it. The upload date is the fallback for a publish old enough
+  # to have no meta.json.
+  meta = reindex.s3_get_json(bucket, f"content/{ticker}/meta.json") or {}
+  prior_version = meta.get("version") or reindex.quarter(meta.get("date") or prior_date)
   if prior_version == reindex.quarter(datetime.date.today().isoformat()):
     return  # same quarter — an in-place refresh, not a new version
   dst = f"s3://{bucket}/content/{ticker}/archive/{prior_version}/"
