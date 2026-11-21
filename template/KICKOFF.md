@@ -6,29 +6,28 @@ working the same project folder. `just kickoff {TICKER}` prints it with the tick
 
 ---
 
-You're producing equity-research coverage for **{TICKER}** — everything you need is in this folder.
+You're producing an equity research brief for **{TICKER}**; everything you need is in this folder.
 
-1. **Read `sources/_SOURCE_NOTES.md` first** — the per-ticker angle, the verified anchor numbers,
-   the coverage type (initiating vs. update), and exactly what to refresh live.
-2. Then **`AUTHORING_INSTRUCTIONS.md`** (the editorial brief) and **`PRODUCTION_CONTRACT.md`** (the
-   output schema, slide kinds, and spoken-form TTS rules). If a campaign overlay is present, also
-   read **`CAMPAIGN_BRIEF.md`**.
-3. Read everything else in **`sources/`** (filings, transcripts, comps, prior coverage).
+1. **Read `TASK.md` if it exists** (a `/batch-research` run): the filing by accession, the research
+   tier, the deliverables.
+2. Then **`AUTHORING_INSTRUCTIONS.md`**, starting with "Research method". If a campaign overlay is
+   present, also read **`CAMPAIGN_BRIEF.md`**. **`PRODUCTION_CONTRACT.md`** matters only for a
+   video pick.
+3. Read everything else in **`sources/`** except `_prior_coverage.md`, which stays closed until the
+   brief is drafted.
 
 Rules:
-- **Verify every number live via the RoboSystems MCP** (keyed by CIK / legacy ticker — see
-  `_SOURCE_NOTES.md`). Never reuse a stale figure; web-search the current price, valuation, and news.
-- Produce the outputs `AUTHORING_INSTRUCTIONS.md` specifies, in order (brief first). Follow the schema
-  in `PRODUCTION_CONTRACT.md` exactly — you author **no HTML**. The renderer builds every slide from
-  `scripts/{TICKER}_script.json`.
-- Narration must be spoken-form (the TTS rules in the contract).
+- The web pass first, written to `sources/_web_research.md`; then the filing, verified in xbrlkit
+  by accession; then checks A to D. Every figure about the company comes from a filing; web
+  material is named and dated in the sentence.
+- Brief-only by default: the brief, the X post and `publish.json`.
 
-When done: `just validate {TICKER}`, then `just webdeck-pipeline {TICKER}`.
+When done: `just validate-brief {TICKER}`. A video pick also gets the script, then
+`just validate {TICKER}` and `just webdeck-pipeline {TICKER}`.
 
 ---
 ## Run-specific flavor (optional)
 
 <!-- Add any one-off direction for THIS run here, then it rides along when you paste the kickoff.
-     Examples: "Lead with the AI-capex angle." ·
-     "Keep the long-form under 7 minutes." · "This is continuing coverage — open with what changed."
-     Leave blank for a standard run (the angle already lives in _SOURCE_NOTES.md). -->
+     Example: "This is continuing coverage: open with what changed."
+     Leave blank for a standard run. -->

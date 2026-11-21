@@ -237,8 +237,8 @@ def seo_fields(
   written search-first, and 39 of 59 projects have one. Otherwise compose company (ticker),
   the year, "Earnings", and the brief's hook. The previous template
   ("MGP Ingredients, Inc. (MGPI) SEC Filing Analysis") carried no period and no finding:
-  it sat at position ~10 for "mgp whiskey q2 sales" with 212 impressions and 0 clicks
-  (Search Console, 3mo to 2026-09-02). Year, not quarter, in the composed form: `version`
+  it ranked at the bottom of page one for "mgp whiskey q2 sales" and drew no clicks in
+  three months (Search Console, to 2026-09-02). Year, not quarter, in the composed form: `version`
   is the publish quarter, not the fiscal period covered, and a 10-K labelled "Q3 Earnings"
   would be a wrong claim.
 
@@ -309,18 +309,20 @@ def project_meta(ticker):
   pub = _load(os.path.join(pdir, "social", f"{ticker}_publish.json"))
   campaign = meta.get("campaign")
   b_title, b_summary = brief_headline(pdir, ticker)
+  # A brief-only project has no script, so its company and coverage label come from
+  # publish.json (2026-11-20); a script, when there is one, still wins.
   out = {
-    "company": meta.get("company") or ticker,
+    "company": meta.get("company") or pub.get("company") or ticker,
     "title": (
       pub.get("youtube_title") or meta.get("video_title") or b_title or ticker
     ).strip(),
     "summary": (meta.get("video_description") or b_summary or "").strip(),
-    "tags": meta.get("tags") or [],
+    "tags": meta.get("tags") or pub.get("tags") or [],
     "campaign": campaign,
     "campaign_slug": "cannabis_coverage"
     if "cannabis" in (campaign or "").lower()
     else None,
-    "coverage_label": meta.get("coverage_label"),
+    "coverage_label": meta.get("coverage_label") or pub.get("coverage_label"),
   }
   # Deliberate per-ticker overrides for the /research <title> / description, authored in
   # publish.json. They ride into meta.json at publish and win over seo_fields' composed

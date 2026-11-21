@@ -53,9 +53,31 @@ Content Machine — Production Status
           done = outputs present  ·  — = not started
 ```
 
+### 3b. Batch board (research batches)
+Projects in a `/batch-research` batch carry `projects/{T}/STATUS.md`, written by the subagent
+authoring that brief and synced from whichever machine runs it. When any exist, print a second
+table read from them, newest first:
+
+```
+Research batch - brief runs
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  TICKER   STAGE       TIER     FILING                   VALIDATE       ANGLE
+  WK       COMPLETE    middle   10-Q 2026-09-30          PASSED (1 w)   Buybacks took 100.8% of FCF, then stopped
+  MSFT     drafting    deep     10-Q 2026-09-30          -              -
+  INTU     queued      middle   10-Q 2026-10-31          -              -
+
+  4 tickers: 1 complete, 1 running, 1 queued, 1 stopped
+```
+
+`stage` other than queued or COMPLETE, unchanged for more than an hour, is probably an
+interrupted run (a usage limit, a closed session): say so. `projects/.batch/*.md` holds each
+lead's final table.
+
 ### 4. Highlight next actions
 Based on the state, suggest what to do next:
 - Projects needing sources → `/collect TICKER`
-- Projects with sources but no brief → `/author TICKER` (one-shot authoring)
+- Projects with sources but no brief → `/author TICKER` (one-shot authoring), or several at once with `/batch-research`
+- Batch briefs at COMPLETE → `/review TICKER`, then Joey's read before anything publishes
 - Projects with authoring outputs → `/review TICKER`, then `just webdeck-pipeline TICKER`
 - Projects with a long-form video → `just thumbnails TICKER` → `just publish TICKER` → post (`yt-upload` / `x-article`)

@@ -9,6 +9,8 @@ Checks:
   - Narration is in spoken form (no raw symbols / bad TTS spacings)
   - Publish metadata (social/{ticker}_publish.json) has the fields postpack needs
   - Continuing coverage: a coverage_label when a prior-coverage card is present
+  - Brief-only: the X post and publish.json beside the brief (one cashtag, no link in
+    the body, the prompt line, a page title with a period token, the company name)
 
 Usage:
     uv run python tools/validate_project.py GTBIF
@@ -349,12 +351,23 @@ def check_brief(project_dir, ticker):
       f"No space-preceded ${ticker} in the first 20 lines — X Article pickup needs one"
     )
 
-  # publish resolves [PROMO_CODE]; anything else in that shape renders literally on /research.
-  stray = sorted(set(re.findall(r"\[([A-Z][A-Z0-9_]{3,})\]", text)) - {"PROMO_CODE"})
+  # Anything in this shape renders literally on /research. [PROMO_CODE] included: promo
+  # codes were retired 2026-11-16 and publish no longer has a code to put there.
+  stray = sorted(set(re.findall(r"\[([A-Z][A-Z0-9_]{3,})\]", text)))
   if stray:
     error(f"Unresolved placeholder(s) would render literally: {', '.join(stray)}")
   else:
     ok("No unresolved placeholders")
+
+  # The prompt is the brief's bridge to the trial block: the /research page lifts the
+  # "Ask the filing yourself:" line out of the prose and shows it as the copyable prompt.
+  if re.search(r"ask the filing yourself:", text, re.I):
+    ok("Ask the filing yourself: line present")
+  else:
+    warn(
+      "No 'Ask the filing yourself:' line - the /research page falls back to a "
+      "generic prompt instead of this brief's own question"
+    )
 
 
 # The half-restored money form. On 2026-09-15, briefs pre-cleaned for narration were turned
@@ -517,7 +530,7 @@ def check_tax_expense_vs_paid(project_dir, ticker):
     f"us-gaap:IncomeTaxesPaid / IncomeTaxesPaidNet, NOT IncomeTaxExpenseBenefit or "
     f"CurrentIncomeTaxExpenseBenefit. For 280E filers these differ by up to 143x.\n"
     f"          Verify with xbrlkit, not by re-reading the brief:\n"
-    f"            load_filing {{source: '{ticker} 10-K'}}\n"
+    f"            load_filing {{source: '<cik>:<accession>'}}  (by accession: the ticker form can load an older filing)\n"
     f"            fact_grid {{elements: ['us-gaap:IncomeTaxExpenseBenefit',"
     f" 'us-gaap:IncomeTaxesPaidNet'], period_type: 'duration'}}"
   )
@@ -1118,11 +1131,13 @@ def check_publish_metadata(project_dir, ticker, script):
   # page falls back to a composed "Company (TICK) YEAR Earnings: hook" title.
   yt = str(pub.get("youtube_title") or "").strip()
   if yt and not str(pub.get("seo_title") or "").strip():
-    try:
-      with open(os.path.join(project_dir, "scripts", f"{ticker}_script.json")) as f:
-        company = (json.load(f).get("metadata") or {}).get("company") or ""
-    except (OSError, json.JSONDecodeError):
-      company = ""
+    company = str(pub.get("company") or "")
+    if not company:
+      try:
+        with open(os.path.join(project_dir, "scripts", f"{ticker}_script.json")) as f:
+          company = (json.load(f).get("metadata") or {}).get("company") or ""
+      except (OSError, json.JSONDecodeError):
+        company = ""
     short = company.lower().split(",")[0].strip()
     names = ticker.lower() in yt.lower() or (len(short) > 2 and short in yt.lower())
     period = re.search(
@@ -1164,6 +1179,82 @@ def check_publish_metadata(project_dir, ticker, script):
     )
 
   return pub
+
+
+# Em and en dashes are banned in everything that ships; "<" and ">" break the X and
+# YouTube composers, which read them as HTML.
+_DASHES = re.compile("[\u2014\u2013]")
+_CASHTAG = re.compile(r"(?<![\w$])\$([A-Za-z][A-Za-z.]{0,6})\b")
+_LINK = re.compile(r"https?://|www\.|robosystems\.ai|roboinvestor\.ai", re.I)
+
+
+def check_brief_companions(project_dir, ticker):
+  """Brief-only: the X post and publish.json ship as written, beside the brief, so they
+  carry the checks a script would otherwise get. Until 2026-11-20 brief-only validation
+  read the brief alone and three pilot authors checked these by hand with grep."""
+  print("\n--- X post and publish metadata ---")
+  files = (
+    f"reports/{ticker}_brief.md",
+    f"social/{ticker}_x_post.txt",
+    f"social/{ticker}_publish.json",
+  )
+  for rel in files:
+    path = os.path.join(project_dir, rel)
+    if not os.path.exists(path):
+      continue
+    with open(path, encoding="utf-8") as fh:
+      text = fh.read()
+    if _DASHES.search(text):
+      error(f"{rel}: em or en dash; use a spaced hyphen or restructure")
+    if re.search(r"[<>]", text):
+      error(f"{rel}: '<' or '>' (spell it out: under, over)")
+
+  path = os.path.join(project_dir, "social", f"{ticker}_x_post.txt")
+  if not os.path.exists(path):
+    error(f"X post missing: social/{ticker}_x_post.txt")
+  else:
+    with open(path, encoding="utf-8") as fh:
+      post = fh.read()
+    tags = {t.upper() for t in _CASHTAG.findall(post)}
+    if len(tags) > 1:
+      error(
+        f"X post carries {len(tags)} cashtags ({', '.join(sorted(tags))}); X rejects a "
+        f"post with more than one. Keep ${ticker}, make any ETF a hashtag"
+      )
+    elif ticker.upper() not in tags:
+      warn(f"X post has no ${ticker} cashtag")
+    else:
+      ok(f"X post: one cashtag, ${ticker}")
+    if f"(${ticker}" in post:
+      error(f"X post: '(${ticker}' - a paren before the $ kills the cashtag")
+    if _LINK.search(post):
+      error("X post body carries a link; links go in x_first_comment only")
+    else:
+      ok("X post: no link in the body")
+    if re.search(r"ask the filing yourself:", post, re.I):
+      ok("X post closes on the prompt")
+    else:
+      warn("X post has no 'Ask the filing yourself:' line")
+
+  pub = check_publish_metadata(project_dir, ticker, None) or {}
+  first = str(pub.get("x_first_comment") or "")
+  if first and "utm_source=x" not in first:
+    warn("x_first_comment: the trial link lacks utm_source=x tracking")
+  if first and "[X_ARTICLE_LINK]" not in first:
+    warn("x_first_comment: no [X_ARTICLE_LINK] placeholder for the Article")
+  if pub and not str(pub.get("company") or "").strip():
+    warn(
+      "publish.json has no company: the /research page will show the ticker in place "
+      "of the company name (brief-only has no script to read it from)"
+    )
+  if os.path.exists(os.path.join(project_dir, "sources", "_prior_coverage.md")):
+    if str(pub.get("coverage_label") or "").strip():
+      ok(f"continuing coverage: coverage_label = {pub['coverage_label']}")
+    else:
+      warn(
+        "continuing coverage (sources/_prior_coverage.md present) but publish.json "
+        'has no coverage_label (e.g. "Q1 FY2027 update")'
+      )
 
 
 def try_fix_script(project_dir, ticker, script):
@@ -1254,6 +1345,7 @@ def main():
     check_brief(project_dir, ticker)
     check_money_units(project_dir, ticker)
     check_tax_expense_vs_paid(project_dir, ticker)
+    check_brief_companions(project_dir, ticker)
   else:
     check_required_files(project_dir, ticker)
     check_money_units(project_dir, ticker)

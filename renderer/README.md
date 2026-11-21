@@ -19,7 +19,7 @@ package to `design-system/`. It does the jobs the Python pipeline can't:
    running app.
 5. **`post`**: social **stills and carousels**, one 1080x1350 PNG per slide (LinkedIn's
    4:5 portrait) and, for more than one slide, a PDF carousel of the same pages. The
-   visual layer for Joey's LinkedIn and X posts (`gtm/content/strategy.md` §3a).
+   visual layer for Joey's LinkedIn and X posts.
 
 **Tool vs. product:** this package is the generalized, committed *tool*. Everything
 per-episode is a *product* and lives together under the repo-root
