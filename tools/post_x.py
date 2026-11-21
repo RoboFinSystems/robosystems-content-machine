@@ -364,7 +364,7 @@ class ArticleSource(NamedTuple):
   cmd_article takes one of these rather than a ticker.
 
   Blog posts get this path because the X Article is the best-performing format on the
-  account (median 380 vs 189 plain text) and it was reachable only by ticker content -
+  account (about twice a plain text post) and it was reachable only by ticker content -
   while the concept/education lane is the one with measured search demand behind it.
   """
 

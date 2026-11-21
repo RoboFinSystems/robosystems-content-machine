@@ -212,7 +212,7 @@ assumed:
 |---|---|---|
 | **YouTube** | ~61% search, browse is negligible | The **searchable query**: Company + Ticker + quarter + the specific metric. Front-load what someone would actually type. |
 | **X** | cashtag / topic feeds | The **contrarian curiosity line** plus an early ` $TICKER`. Small active cashtag communities out-reach marquee names 6-10x; crowded tickers land near the account median. |
-| **/research** | direct link (a prospect we sent) + long-tail SERP | The **brief**. This is the asset a buyer actually reads, so it carries the analytical claim plainly. **The page `<title>` is the `youtube_title`** (since 2026-09-02, `reindex.py` `seo_fields`): it is reused there because a search-first title is what a SERP needs too. If the `youtube_title` does not name the ticker or company AND a period token (Q2 2026 / FY2026 / 10-K / 10-Q / Earnings), the page falls back to a composed "Company (TICK) YEAR Earnings: brief hook" title, which is weaker. Set `seo_title` in publish.json only to override deliberately. |
+| **/research** | direct links + long-tail search | The **brief**. This is the asset a buyer actually reads, so it carries the analytical claim plainly. **The page `<title>` is the `youtube_title`** (since 2026-09-02, `reindex.py` `seo_fields`): it is reused there because a search-first title is what a SERP needs too. If the `youtube_title` does not name the ticker or company AND a period token (Q2 2026 / FY2026 / 10-K / 10-Q / Earnings), the page falls back to a composed "Company (TICK) YEAR Earnings: brief hook" title, which is weaker. Set `seo_title` in publish.json only to override deliberately. |
 
 **Never reuse one string across two surfaces.** The `youtube_title` is a query, the X hook is a
 curiosity line, and the brief's headline is the analytical claim. A single string copied
@@ -326,7 +326,7 @@ Editorial guidance for the script:
     piece's prompt, then the door: the 14-day free trial of the SEC Shared Repository,
     `robosystems.ai/pricing` in the slide subhead and the tracked link in the YouTube
     description. (Before 2026-11-16 the door was `roboinvestor.ai/research/{TICKER}`; the SEC
-    repository became the lane's lead magnet on 11-11.)
+    repository became the research lane's call to action on 2026-11-11.)
   - *Mid-video attribution (best for shorter videos), after citing a specific data point:*
     > "All of the financial data in this analysis comes from the company's actual SEC filing,
     > pulled directly from the RoboSystems SEC Shared Repository. It is a subscription you can
@@ -348,9 +348,8 @@ post reads as spam and drags engagement). The trial link goes in `x_first_commen
 description on a video pick), never the X post body. Every post leads with substantive text and the
 cashtag. (An earlier version of this rule claimed link-only captions get a fraction of a text
 post's reach - **retracted 2026-07-26**: that was a measurement artifact which filed native X
-Articles in the same bucket as outbound links. Articles are our HIGHEST-reach format, median 380
-vs 272 for text+video and 112 for a text post carrying a self-link. Publish the Article on every
-name.) On X the **full long-form is uploaded as native
+Articles in the same bucket as outbound links. Articles are our highest-reach format: about 1.4 times a text post with video,
+and more than 3 times a text post carrying a self-link. Publish the Article on every name.) On X the **full long-form is uploaded as native
 video**, and the brief is published as a native X **Article** whose link goes in the first
 comment (`x_first_comment`) - so there is no YouTube link on X at all (native video + native
 Article both win reach).
@@ -373,9 +372,9 @@ metric or term a cold viewer needs; disclaimer ("This is not investment advice. 
 targets."); relevant `$TICKER` and topic hashtags.
 
 ### 5. The 9:16 short (RETIRED 2026-09-26)
-Author no short. Measured over 365 days, the Shorts feed brought 17% of the channel's views
-but 0.5% of its watch time (27 minutes all year, about 3 seconds a view), 2 subscribers, and
-no measurable traffic to the long-form, while each short spent the same YouTube upload quota
+Author no short. Measured over a year, the Shorts feed brought about a sixth of the channel's
+views but under 1% of its watch time (a few seconds a view), almost no subscribers, and no
+measurable traffic to the long-form, while each short spent the same YouTube upload quota
 as a long-form video. The channel grows on search to the long-form. The short tooling
 (`webdeck-short-*`) still runs for a one-off if one is ever wanted.
 
@@ -399,8 +398,8 @@ times, the S3 media links, and flagging any unresolved placeholders). A JSON obj
   period in parentheses: "Fastenal: A Double-Digit Comeback the Market Sold (FAST Q2 2026)".
   Without both, the page gets a composed fallback ("Company (TICK) 2026 Earnings: brief hook"),
   which is honest but weaker. Why: the old template title ("MGP Ingredients, Inc. (MGPI) SEC
-  Filing Analysis") sat at position 10 for "mgp whiskey q2 sales" with 212 impressions and 0
-  clicks (Search Console, 3 months to 2026-09-02).
+  Filing Analysis") ranked at the bottom of page one for "mgp whiskey q2 sales" and drew no
+  clicks in three months (Search Console, to 2026-09-02).
 - `seo_title` / `seo_description` (optional) — explicit overrides for the `/research` page
   `<title>` and meta description. Leave them out unless the `youtube_title` genuinely should
   differ from the page title; `reindex.py` composes both otherwise.

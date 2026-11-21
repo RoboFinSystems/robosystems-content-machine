@@ -237,8 +237,8 @@ def seo_fields(
   written search-first, and 39 of 59 projects have one. Otherwise compose company (ticker),
   the year, "Earnings", and the brief's hook. The previous template
   ("MGP Ingredients, Inc. (MGPI) SEC Filing Analysis") carried no period and no finding:
-  it sat at position ~10 for "mgp whiskey q2 sales" with 212 impressions and 0 clicks
-  (Search Console, 3mo to 2026-09-02). Year, not quarter, in the composed form: `version`
+  it ranked at the bottom of page one for "mgp whiskey q2 sales" and drew no clicks in
+  three months (Search Console, to 2026-09-02). Year, not quarter, in the composed form: `version`
   is the publish quarter, not the fiscal period covered, and a 10-K labelled "Q3 Earnings"
   would be a wrong claim.
 
