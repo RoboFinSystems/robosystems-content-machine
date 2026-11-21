@@ -45,9 +45,11 @@ Flag, but keep, a filing more than 30 days old: the brief will read stale.
   A campaign project keeps its campaign's instructions; say so in the summary.
 
 ### 3. Write each task
+Choose the batch id first: the date and a short label (`2026-11-23-software`).
+
 ```bash
 uv run python tools/write_task.py {T} --cik {CIK} --accession {ACCESSION} --form {FORM} \
-  --period-end {REPORT_DATE} --filed {FILING_DATE} --company "{NAME}" [--tier deep]
+  --period-end {REPORT_DATE} --filed {FILING_DATE} --company "{NAME}" --batch {BATCH_ID} [--tier deep]
 ```
 
 It writes `projects/{T}/TASK.md` from `template/BRIEF_TASK.md` and resets `projects/{T}/STATUS.md`
@@ -59,8 +61,10 @@ Use the company name as the graph gives it, in title case (`WORKIVA INC` becomes
 ### 4. Summarize, then print the lead prompt LAST
 First a short table: ticker, company, form, filed, tier, and initiating or continuing coverage,
 plus anything dropped or flagged. Then the lead prompt below, filled in, as the **final** thing
-in the reply, with nothing after it, so `/copy` takes exactly the prompt. Use a batch id of the
-date and a short label (`2026-11-23-software`).
+in the reply, with nothing after it, so `/copy` takes exactly the prompt.
+
+If the session running this skill keeps a pipeline record elsewhere (a vault, a tracker), update it
+from the task files before printing the prompt: the prompt must be the last thing in the reply.
 
 ```
 You are the lead for a research batch in this repository (robosystems-content-machine).

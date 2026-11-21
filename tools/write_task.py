@@ -35,6 +35,7 @@ def main():
   ap.add_argument("--filed", required=True)
   ap.add_argument("--company", required=True)
   ap.add_argument("--tier", choices=("middle", "deep"), default="middle")
+  ap.add_argument("--batch", required=True, help="batch id, e.g. 2026-11-23-software")
   ap.add_argument(
     "--redo", action="store_true", help="move existing outputs to .partial/ first"
   )
@@ -90,6 +91,7 @@ def main():
     "PERIOD_END": args.period_end,
     "FILED": args.filed,
     "TIER": args.tier,
+    "BATCH": args.batch,
     "COVERAGE": coverage,
     "WRITTEN": datetime.date.today().isoformat(),
   }
@@ -101,7 +103,7 @@ def main():
     fh.write(text)
   with open(os.path.join(pdir, "STATUS.md"), "w", encoding="utf-8") as fh:
     fh.write(
-      f"ticker: {t}\nstage: queued\ntier: {args.tier}\n"
+      f"ticker: {t}\nstage: queued\ntier: {args.tier}\nbatch: {args.batch}\n"
       f"filing: {args.form} {args.period_end} {args.accession}\nblocked_on: none\n"
     )
   print(

@@ -1,6 +1,6 @@
 # TASK - {TICKER} research brief ({TIER} tier)
 
-Written by `/batch-research` on {WRITTEN}. You are one subagent of a batch: you author **one**
+Written by `/batch-research` on {WRITTEN}, batch `{BATCH}`. You are one subagent of a batch: you author **one**
 brief, for **{TICKER}** ({COMPANY}), in `projects/{TICKER}/`. Other subagents are writing other
 tickers at the same time.
 
@@ -57,6 +57,7 @@ Rewrite it at the start and at every stage change, in this shape:
 ticker: {TICKER}
 stage: research | drafting | validating | COMPLETE | stopped
 tier: {TIER}
+batch: {BATCH}
 filing: {FORM} {PERIOD_END} {ACCESSION}
 started: <date "+%Y-%m-%d %H:%M">
 finished: <the same, at COMPLETE>
