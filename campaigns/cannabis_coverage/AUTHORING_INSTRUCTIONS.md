@@ -1,6 +1,13 @@
 
 # RoboSystems Initiating Coverage: Cannabis Industry — Authoring Instructions
 
+> **STOP: macro note required first (2026-11-20).** The June 2026 `CAMPAIGN_BRIEF.md`, the
+> May 29 comps table and the June watchlist were archived to
+> `campaigns/cannabis_coverage/_archive/2026-06/` because their facts and prices are stale.
+> Do not author a cannabis company brief until a new `CAMPAIGN_BRIEF.md` (macro note) and a new
+> comps table have been written from current filings and prices. Never read `_archive/`.
+> References below to `CAMPAIGN_BRIEF.md` and `sources/cannabis_comps_table.md` mean the new ones.
+
 You are a financial analyst and content producer. RoboSystems is initiating coverage on the
 US cannabis industry — the most under-covered sector in public markets. Your job is to
 analyze a cannabis company's SEC filing using the RoboSystems MCP tools and produce the
@@ -222,28 +229,43 @@ Beyond standard analysis, every cannabis video MUST address:
      what today's price implies the market is pricing in. **Framing: implied value under stated
      assumptions — not a price target, not advice.**
 
-## Continuing coverage (if `sources/_prior_coverage.md` exists)
+## Prior coverage: draft first, then check (if `sources/_prior_coverage.md` exists)
 
-If `sources/_prior_coverage.md` is present, this is **not a first look — it's the next chapter** in an ongoing, quarterly coverage thread (this campaign is built for multi-quarter arcs). Read that card first, then:
+A card at `sources/_prior_coverage.md` means we have covered this company before. **Do not open it until the brief is drafted.** The new brief is not a sequel:
 
-- **Open on the thread.** The brief's Hook and the video's first lines should reference the prior coverage — what we said and the price *then* — and immediately pivot to **what changed this quarter** (new 10-Q, catalyst movement, the effective-tax-rate trend, price move). Don't re-introduce the company from scratch.
-- **Carry the thesis forward.** Explicitly contrast then vs now (e.g. "we covered this at $X in Q1; the quarterly effective tax rate has since fallen to…"). Update every number; keep the continuity.
-- **Stamp the label.** Set `metadata.coverage_label` in `scripts/{TICKER}_script.json` to a human label (e.g. `"Q2 FY2026 update"`). The quarter key (e.g. `2026-Q2`) is derived automatically at publish — you only author the label.
-- Sources accumulate: the new quarter's filing sits alongside the prior ones in `sources/`; the full prior brief is in `.history/`.
+- **Write from the current filing only**, as if covering the company for the first time. Find the story this filing tells. Do not look for last time's angle, structure or headline, and never open `.history/` or the published prior brief.
+- **Then open the card.** It holds three facts: when we last covered the company, the filing it was on, and the one claim we made.
+- **Add one short "since we last covered this" passage** where it fits: what we said then, and what the new filing shows now. If the new brief contradicts the old claim, say so plainly.
+- **If the draft turned out to be the same story as last time**, that is a finding, not a default: say in one line that the thesis held and why, and check that the filing has nothing newer to lead with.
+- **Stamp the label.** Set `metadata.coverage_label` in `scripts/{TICKER}_script.json` to a human label for this update (e.g. `"Q2 FY2026 update"`). The quarter key itself (e.g. `2026-Q2`) is derived automatically at publish.
 
-If the card is absent, this is **initiating coverage** — introduce the company fresh.
+If the card is absent, this is **initiating coverage**.
 
 ## What You Produce
 
-Produce these **4 core outputs** in order (the narrative brief comes FIRST — it's the foundation
-everything else derives from) and the **publish metadata** (#6). (Shorts #5 are backburnered; the Q&A podcast is retired - author neither.) (Schema and slide
-mechanics: see `PRODUCTION_CONTRACT.md`.) The deck is built by the renderer from the script;
-the thumbnails are made in ChatGPT from the brief. You author no HTML.
+**Brief-only is the default (reboot, 2026-11-16).** Research ships as a written brief: the brief
+(#1), the X post (#3) and the publish metadata (#6), validated with `just validate-brief` and
+published with `just publish-brief`. Author the video script (#2) and the YouTube description (#4)
+only when the task names this ticker as the week's video. When it does, produce the **4 core
+outputs** in order (brief FIRST - it's the foundation everything else derives from) and the
+**publish metadata** (#6). (The 9:16 short and the Q&A podcast are
+retired - author no `short_script.json` and no `qa.json`.) Schema and slide mechanics: see `PRODUCTION_CONTRACT.md`.
+Downstream the visuals render from your `script.json` via the animated **webdeck**
+(`just webdeck-pipeline`), and thumbnails auto-generate from the brief (`just thumbnails`).
+You author no slide HTML.
 
-**Promo code (optional placeholder).** Where copy invites sign-up, add the offer line
-`New customers get 50% off your first month with code [PROMO_CODE].` Keep `[PROMO_CODE]` as a
-literal token (swap in the live Stripe code at post time, or omit the line if no promo is
-running) — never hardcode a real code here, since codes change and expire.
+**The door is the SEC trial, and the bridge is the prompt (2026-11-16).** Promo codes are
+retired: write no `[PROMO_CODE]` line anywhere. A research reader's next step is to ask the filing
+the same question themselves, so every piece carries **the prompt**: one exact question, written
+the way a reader would type it into Claude, ChatGPT or any MCP client connected to the SEC Shared
+Repository, that reproduces the piece's most interesting number (e.g. *"What share of Trulieve's
+2025 revenue went to income tax, and how does that compare with 2024?"*). It goes at the end of
+the brief's Bottom Line, introduced as *Ask the filing yourself:*, and on the closing line of the
+X post. The door itself, the 14-day free trial (`robosystems.ai/pricing`), is a link and goes
+only where links belong: the X first comment and the YouTube description, never the brief or the
+X post body. Every such link carries tracking so trials can be traced to research:
+`https://robosystems.ai/pricing?utm_source={x|youtube}&utm_medium=research&utm_campaign={TICKER}`.
+Never name a price.
 
 ### 1. Narrative Brief (`reports/{TICKER}_brief.md`) — write this FIRST
 
@@ -290,9 +312,7 @@ quarter results vs. estimates, bull/base/bear DCF scenarios, the MSO comps grid,
 footprint breakdowns. 1-3 tables per brief is a good target. Keep the prose for the story
 and the tables for the numbers; standard `| a | b |` syntax with a header row.
 
-**Footer (optional CTA).** After the analysis, end with a one-line soft RoboSystems CTA; when a
-promo is running, append `New customers get 50% off your first month with code [PROMO_CODE].`
-Keep it a footer, separate from the analysis — never a sales pitch inside the report.
+**Footer.** After the analysis, end with a one-line soft RoboSystems line that says where the numbers came from. No promo line and no link: the prompt (*Ask the filing yourself:*) sits at the end of the Bottom Line, above the footer.
 
 **Quality check:** re-read it. Is there a clear narrative arc? Would you watch this video?
 If it reads like a generic summary, rewrite the hook and financial story until there's a real
@@ -360,8 +380,9 @@ X **Article** whose link goes in the first comment (`x_first_comment`) — no Yo
 Company + Ticker + the 280E/MSO topic keywords a searcher would type), then a 1-2 sentence hook;
 links: **`https://robosystems.ai/pricing` first** (the SEC Shared Repository door - what the video
 is actually selling), then `https://robosystems.ai`
-and `https://github.com/RoboFinSystems/robosystems-content-machine`; a `🎟️ New customers: 50%
-off your first month with code [PROMO_CODE]` line under the links; **timestamps** — draft from
+and `https://github.com/RoboFinSystems/robosystems-content-machine`; under the links, the trial line
+`Ask the filing yourself, free for 14 days in Claude, ChatGPT or any MCP client:` followed by
+`https://robosystems.ai/pricing?utm_source=youtube&utm_medium=research&utm_campaign={TICKER}`; **timestamps** — draft from
 `duration_estimate_seconds` (`0:00` start, accumulate); after render, finalize from the generated
 `videos/{TICKER}_timestamps.txt` (actual chapter times); 6-8 key-finding
 bullets with numbers; a 2-3 sentence **280E explainer** (many viewers land cold); disclaimer
@@ -386,7 +407,7 @@ times, the S3 media links, and flagging any unresolved placeholders). A JSON obj
 
 _No LinkedIn for research - LinkedIn is the technical/blog lane, not a research channel. No `short_*` fields (shorts backburnered #5). The Q&A podcast is retired - no `podcast_*` fields, no `qa.json`._
 
-Same placeholder rules as the rest (`[YOUTUBE_LINK]`, `[PROMO_CODE]`) — never hardcode the live URL or code.
+Same placeholder rules as the rest (`[YOUTUBE_LINK]`) — never hardcode the live URL. `[PROMO_CODE]` is retired (2026-11-16); write no promo line.
 
 ## Workflow
 
