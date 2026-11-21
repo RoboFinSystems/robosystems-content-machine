@@ -21,9 +21,10 @@ Author the full written output set for a project directly in this session - one 
 **If `projects/{TICKER}/REDO.md` exists, this is a video redo (`just redo`) and that file governs:** keep the brief as published, read `LOVES-HATES.md`, never open `.history/`, and author only the scripts and the video-facing copy it lists.
 
 Read, in order:
-- `projects/{TICKER}/AUTHORING_INSTRUCTIONS.md` — the authoring spec (campaign overlay already baked in at scaffold time). Follow it exactly.
-- `projects/{TICKER}/PRODUCTION_CONTRACT.md` — schema, slide kinds, `data` shapes, TTS spoken-form rules, the per-segment `eyebrow` field.
-- `projects/{TICKER}/KICKOFF.md` and everything in `sources/`. The one exception is `sources/_prior_coverage.md`: leave it closed until the brief is drafted (the instructions' "Prior coverage" section).
+- `projects/{TICKER}/TASK.md` when it exists (written by `/batch-research`): the filing by accession, the research tier, the deliverables. It wins where it differs from the instructions.
+- `projects/{TICKER}/AUTHORING_INSTRUCTIONS.md` - the authoring spec (campaign overlay already baked in at scaffold time). Follow it exactly, starting with "Research method": the web pass, the filing, checks A to D.
+- `projects/{TICKER}/PRODUCTION_CONTRACT.md` - only for a video pick: schema, slide kinds, `data` shapes, TTS spoken-form rules, the per-segment `eyebrow` field.
+- Everything in `sources/`, except `sources/_prior_coverage.md`, which stays closed until the brief is drafted (the instructions' "Prior coverage" section). Do not read `KICKOFF.md`, `.history/` or `.partial/`.
 
 Non-negotiables that reviews keep catching: narration is spoken-form (no `$ % x / &`), the brief's Hook carries an early ` $TICKER` cashtag (space before `$`, never `($TICKER)`), no em/en dashes anywhere, slide `data` matches narration numbers exactly, every segment except the CTA gets an `eyebrow`.
 
@@ -33,15 +34,15 @@ Reach alignment (measured on our own analytics): the `youtube_title` is **search
 
 **Two closing beats, in this order.** (a) **The generalization** - one or two flat, concrete sentences that no analyst wrote this, the same pipeline reads any filer's XBRL, and a private company reporting in the same format is the same job. Written fresh per name so it hangs off that company's specific finding. Without it the piece sells the analysis and not the machine. It goes in **both** the script (before or inside the CTA) and the brief's Bottom Line; the brief is the X Article, and it is the one that keeps losing it. (b) **The prompt and the door** (2026-11-16, per `AUTHORING_INSTRUCTIONS.md`): one exact question a reader could ask the SEC repository from Claude or ChatGPT that reproduces the piece's best number, as *Ask the filing yourself:* at the end of the brief's Bottom Line and the X post's closing line; the door, the 14-day SEC trial at `robosystems.ai/pricing` with its tracking, goes only in the X first comment and the YouTube description. No promo codes. Never the homepage, never a spoken price.
 
-### 2. Verify the numbers against the graph
-Pull the XBRL facts through the robosystems MCP (`financial-statement-analysis`, `read-graph-cypher`, `search-documents`) rather than trusting press coverage. Every number that lands on a slide or in narration should trace to a filing or be explicitly labeled as guidance/consensus with its source.
+### 2. Research, then verify the numbers against the filing
+Run the instructions' "Research method": the web pass to `sources/_web_research.md` first, then the filing with `robosystems-sec`, then checks A to D (E on the deep tier). Load the filing in xbrlkit by accession and pass `filing` on every call. Every number about the company traces to a filing and is verified in xbrlkit; web material (price, consensus, peers) is named and dated in the sentence.
 
 ### 3. Author the outputs (this order — later files derive from earlier ones)
 **Brief-only is the default since 2026-11-16:** author 1 and the X post and `publish.json` from 3, validate with `just validate-brief {TICKER}`, and skip 2 and the YouTube description unless the task names this ticker as the week's video.
 
 1. `reports/{TICKER}_brief.md` — the narrative brief (ships verbatim as the X Article). Markdown tables render as native Article tables — use them wherever 3+ rows of figures line up (results vs. estimates, DCF scenarios, multiples grid); 1-3 per brief.
 2. `scripts/{TICKER}_script.json` — segments with narration, slides, eyebrows; set `metadata.coverage_label`.
-3. `social/` — X post, YouTube description, `{TICKER}_publish.json`.
+3. `social/` - X post, YouTube description (video picks only), `{TICKER}_publish.json` (with `company`, and `coverage_label` on continuing coverage).
 (No 9:16 short: retired 2026-09-26, see `AUTHORING_INSTRUCTIONS.md` #5.)
 
 (No `qa.json` - the Q&A podcast is retired. The audio edition that replaced it is *generated*

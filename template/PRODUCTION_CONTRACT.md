@@ -303,9 +303,9 @@ The brief *is* the script for the audio edition, which has two consequences wort
   sentence that introduces a table ("Here is the table nobody builds:") lands on whatever
   follows the table. Keep the finding in the prose, not only in the cells — which is how
   these briefs are written anyway.
-- **Cashtags, promo placeholders and `·` separators are handled for you.** `$STX` loses its
-  `$` (it would read "dollar S T X"), `[PROMO_CODE]` resolves exactly as it does for the
-  published text, and the source-note's `·` become sentence breaks.
+- **Cashtags and `·` separators are handled for you.** `$STX` loses its `$` (it would read
+  "dollar S T X"), and the source-note's `·` become sentence breaks. (Promo placeholders were
+  retired 2026-11-16; a brief carries none.)
 
 ---
 
