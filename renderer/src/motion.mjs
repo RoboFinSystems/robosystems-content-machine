@@ -15,7 +15,7 @@
  * query string, e.g. the roboledger-app landing demos:
  *   --root ~/Projects/roboledger-app/public --html .../public/demos/render.html --query demo=hero --name hero
  * --mount "/demos/=DIR,/fonts/=DIR" adds more url prefixes to that server, so a
- * page under --root can import files from another folder (motion/ imports the
+ * page under --root can import files from another folder (templates/ imports the
  * landing kit from roboledger-app this way).
  */
 import { chromium } from 'playwright';

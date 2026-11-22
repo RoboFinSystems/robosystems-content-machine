@@ -468,9 +468,9 @@ render-short spec:
 render-motion html query="" root="" width="1920" height="1080" *args="":
     node renderer/src/cli.mjs motion --html {{html}} --width {{width}} --height {{height}} {{ if query != "" { "--query '" + query + "'" } else { "" } }} {{ if root != "" { "--root " + root } else { "" } }} {{args}}
 
-# Render a video template (motion/: intro, outro, slide) from its data, reusing the
+# Render a video template (renderer/templates/: intro, outro, slide) from its data, reusing the
 # landing kit, fonts and logo from roboledger-app ($ROBOLEDGER_PUBLIC overrides the path).
-# See motion/README.md for the data shapes.
+# See renderer/templates/README.md for the data shapes.
 # e.g. just motion-template slide plan-title '{"kind":"title","eyebrow":"Step 3","headline":"Plan from it."}' out/
 _rl_public := env_var_or_default("ROBOLEDGER_PUBLIC", home_directory() / "Projects/roboledger-app/public")
 
@@ -479,7 +479,7 @@ motion-sync *args="":
     ./tools/motion_sync.sh {{args}}
 
 motion-template t name data out *args="":
-    node renderer/src/cli.mjs motion --root motion --html motion/render.html --mount "/demos/={{_rl_public}}/demos,/fonts/={{_rl_public}}/fonts,/images/={{_rl_public}}/images" --query "t={{t}}&data=$(python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1]))' '{{data}}')" --name {{name}} --out {{out}} {{args}}
+    node renderer/src/cli.mjs motion --root renderer/templates --html renderer/templates/render.html --mount "/demos/={{_rl_public}}/demos,/fonts/={{_rl_public}}/fonts,/images/={{_rl_public}}/images" --query "t={{t}}&data=$(python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1]))' '{{data}}')" --name {{name}} --out {{out}} {{args}}
 
 # ─── Motion QA + sound (tools/motion, vendored from ferndesk/no-slop-motion; see its README) ───
 
@@ -516,7 +516,7 @@ create-feature type="feature" name="" base="main":
 install-hooks:
     git config core.hooksPath .githooks
 
-# ─── Brand film (tools/ad: one core, many films; a film is a spec in tools/ad/films/) ───
+# ─── Brand film (tools/ad + renderer/templates/ad.html: one core, many films; a film is a spec in tools/ad/films/) ───
 
 # Build a film end to end: voice + timeline, Blender plates, the type layer, the mix, a pop scan.
 # Output in showcase/robosystems_ad/films/<name>/renders/. Needs Blender and `just render-setup`.

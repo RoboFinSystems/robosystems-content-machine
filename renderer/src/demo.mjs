@@ -30,9 +30,9 @@ import path from 'node:path';
 import { framesToMp4 } from './ffmpeg.mjs';
 import { installCursor } from './cursor.mjs';
 import { resolveCreds, newThemedContext, login, switchEntity, settle } from './session.mjs';
-// The motion runtime the landing demos and the research deck run (motion/runtime.js,
+// The motion runtime the landing demos and the research deck run (templates/runtime.js,
 // vendored from @robosystems/core by `just motion-sync`), so a camera move eases the same.
-import { clamp01, eio as easeInOut, eo as easeOut } from '../../motion/runtime.js';
+import { clamp01, eio as easeInOut, eo as easeOut } from '../templates/runtime.js';
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 const lerp = (a, b, t) => a + (b - a) * t;

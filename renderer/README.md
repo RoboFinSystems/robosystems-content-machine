@@ -320,7 +320,7 @@ from the spec; nothing is generated, and nothing is an AI image.
 }
 ```
 
-- **`visual`** is a motion template (`motion/`) posed at its finished frame (`at` seconds, or
+- **`visual`** is a motion template (`renderer/templates/`) posed at its finished frame (`at` seconds, or
   just before its fade-out) and cropped to what it painted, on a transparent backdrop so it
   sits on the card. `template: "research"` (bars, counters, board, flow, band, …) mounts
   robosystems-app; `slide` (number, compare, still) mounts roboledger-app. The research kinds

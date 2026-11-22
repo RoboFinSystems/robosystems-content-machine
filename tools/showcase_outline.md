@@ -32,7 +32,7 @@ so it can do X, Y and Z, and you get your time and money back.** One sentence, s
 | 6. Payoff (~8s) | `slide` `compare` | Time and money, as outcomes. |
 | 7. End card (~5s) | `just motion-template outro` | "RoboLedger. Powered by RoboSystems." |
 
-Motion shots come from `motion/` (see `motion/README.md`). Live shots are walkthrough beats
+Motion shots come from `renderer/templates/` (see its `README.md`). Live shots are walkthrough beats
 (`renderer/README.md`, `just demo-pipeline`) or chat takes (`showcase/mcp_series/recording.md`).
 
 The cut is `showcase/{EPISODE}/episode.json`, one segment per shot, and `just demo-assemble
