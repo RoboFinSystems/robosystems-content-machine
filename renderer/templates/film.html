@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>Research film</title>
+    <title>Film</title>
     <script type="importmap">
       { "imports": { "three": "/node_modules/three/build/three.module.js", "three/addons/": "/node_modules/three/examples/jsm/" } }
     </script>
@@ -49,15 +49,51 @@
       .mark { display: flex; align-items: center; gap: 22px; margin-top: 70px; }
       .mark img { width: 84px; height: 84px; border-radius: 20px; } .mark span { font: 800 46px var(--display); }
       .url { font: 500 34px var(--body); color: var(--c300); margin-top: 26px; }
+      /* title: a chapter card between sections of a long film */
+      .ttl { font: 800 104px/1.08 var(--display); letter-spacing: -.01em; max-width: 1500px; margin-top: 36px; }
+      .tsub { font: 500 40px/1.3 var(--body); color: var(--soft); max-width: 1300px; margin-top: 34px; }
+      /* table: a small grid read row by row, one column lit */
+      .head { position: absolute; left: 200px; top: 120px; }
+      .tbl { position: absolute; left: 200px; right: 200px; top: 220px; display: grid; column-gap: 40px; }
+      .tbl .th { font: 600 22px var(--display); letter-spacing: .2em; text-transform: uppercase; color: var(--muted); padding-bottom: 22px; text-align: right; }
+      .tbl .th.c0, .tbl .td.c0 { text-align: left; }
+      .tbl .td { font: 800 52px/1 var(--display); padding: 26px 0; border-top: 1px solid rgba(255,255,255,.22); text-align: right; white-space: nowrap; }
+      .tbl .td.lab { font: 500 40px/1.3 var(--body); color: var(--soft); }
+      .tbl .hl { color: var(--c300); }
+      .tcap { position: absolute; left: 200px; right: 200px; bottom: 84px; font: 500 44px/1.3 var(--body); }
+      /* columns on the dark stage: values on one baseline, the film's own lit */
+      .dcols { position: absolute; left: 200px; right: 200px; top: 300px; height: 520px; }
+      .dcols .cfill { background: rgba(255,255,255,.82); } .dcols .col.hl .cfill { background: var(--c300); }
+      .dcols .cl { color: var(--soft); }
+      /* points: a short list, each line arriving on its word */
+      .pts { position: absolute; left: 200px; right: 200px; top: 250px; }
+      .pt { display: flex; gap: 34px; align-items: baseline; font: 500 54px/1.25 var(--body); padding: 30px 0; border-top: 1px solid rgba(255,255,255,.22); }
+      .pt b { font: 800 30px var(--display); color: var(--c300); min-width: 70px; }
+      /* change: the same sentence in two filings, what was removed struck out */
+      .chg { position: absolute; left: 200px; right: 200px; }
+      .chg .cby { font: 600 22px var(--display); letter-spacing: .24em; text-transform: uppercase; color: var(--muted); margin-bottom: 20px; }
+      .chg .cq { font: 500 46px/1.35 var(--body); }
+      .chg .cq s { color: var(--film-alarm); text-decoration-thickness: 4px; }
+      .chg .cq u { text-decoration: none; color: var(--c300); }
+      /* capture: a still of the product or a filing, in a frame, pushed in to what matters */
+      .shot { position: absolute; left: 260px; right: 260px; top: 110px; height: 788px; border-radius: 22px; overflow: hidden; border: 1px solid rgba(255,255,255,.28); background: #04070c; }
+      .shot img { position: absolute; left: 0; top: 0; width: 100%; transform-origin: 0 0; }
+      .shot .box { position: absolute; border: 4px solid var(--c300); border-radius: 12px; box-shadow: 0 0 0 4000px rgba(4,7,12,.5); }
+      /* end: the product and the offer, the last thing on screen */
+      .eline { font: 600 30px var(--display); letter-spacing: .26em; text-transform: uppercase; color: var(--c300); margin-top: 26px; }
+      .offer { font: 800 92px/1.1 var(--display); margin-top: 70px; }
+      .osub { font: 500 44px var(--body); color: var(--soft); margin-top: 22px; }
       .fine { position: absolute; left: 0; right: 0; bottom: 34px; text-align: center; font: 500 24px var(--body); color: var(--muted); }
     </style>
   </head>
   <body>
     <div id="stage"><canvas id="gl" width="1920" height="1080"></canvas></div>
     <script type="module">
-      // The type layer of a research film (tools/research_film/build.py; projects/<TICKER>/film/).
-      // A template: the film's spec lists its scenes, and each names a kind and carries its own
-      // words, figures and cue names. Nothing here belongs to one company.
+      // The film kit's page: the type layer of any film whose scenes are data. A lane's builder
+      // (research: tools/research_film/build.py) hands it a timeline; the film's spec lists its
+      // scenes, and each names a kind and carries its own words, figures and cue names. Nothing
+      // here belongs to one company or one lane. A film whose scenes are drawn by hand (the brand
+      // film, ad.html) keeps a page of its own on the same stage.
       //
       //   data.scenes: { <scene name, as the acts name it>: { kind, at: { slot: cue }, ...content } }
       //
@@ -72,8 +108,21 @@
       //   rows    { kicker, rows: [{ label, value, sub, at }] }
       //   quote   { quote, by, line? }                             at: quote, line
       //   ask     { kicker, prompt, url, note }                    at: ask
+      //   title   { kicker?, title, sub? }                         a chapter card; no cues
+      //   table   { kicker, columns: [..], rows: [[..]], hl?, caption? }   at: rows, caption
+      //           read row by row from at.rows; hl is the column lit; the first column is labels
+      //   columns { kicker, columns: [{ label, text, amount, hl? }], caption? }  at: columns, caption
+      //   points  { kicker, points: [{ text, at }] }
+      //   change  { kicker?, before: { by, html }, after: { by, html } }   at: before, after
+      //           html may mark removed words <s>..</s> and kept ones <u>..</u>
+      //   capture { image, caption?, kicker?, zoom?: [x, y, w, h], box?: [x, y, w, h] }  at: zoom, caption
+      //           image is a path under the film folder; zoom and box are fractions of the image
       //
-      // A scene's "stage" overrides where it plays: field, plate, flood, grid or graph.
+      //   end     { line, offer, sub, url, note? }                 at: offer
+      //           the mark, what the product is, the offer and where to go
+      //
+      // A scene's "stage" overrides where it plays: field, plate, flood, grid, graph, horizon
+      // (the graph as a horizon under the type) or orbit (the graph large and turning, off to the right).
       // The stage, the lens and the colours are the film kit's (film_stage.js).
       import { stage, fonts, seg, eo, eio, lerp, show, $ } from './film_stage.js'
 
@@ -81,8 +130,8 @@
       const W = 1920, H = 1080, C = TL.cues, SC = TL.scenes.map((s) => ({ ...TL.data.scenes[s.name], name: s.name, a: s.start, b: s.end }))
       const clamp = (x) => Math.max(0, Math.min(1, x))
       const { scene, cam, composer, bloom, DARK, BLACK, FLOOD, THREE, dust, nodes, edgeMat, globe, setNodes, floor, floorMat } = stage({ W, H, canvas: $('gl') })
-      const STAGE = { stat: 'field', ident: 'plate', number: 'flood', rows: 'grid', quote: 'grid', ask: 'graph' }
-      const FLOOR = { rows: 0.5, quote: 0.35 }
+      const STAGE = { stat: 'field', ident: 'plate', number: 'flood', rows: 'grid', quote: 'grid', ask: 'graph', title: 'graph', table: 'horizon', columns: 'grid', points: 'horizon', change: 'orbit', capture: 'graph', end: 'graph' }
+      const FLOOR = { rows: 0.5, quote: 0.35, table: 0.3, columns: 0.3, points: 0.4, change: 0.3 }
       const el = (parent, cls, text) => { const e = document.createElement('div'); e.className = cls; if (text != null) e.textContent = text; parent.appendChild(e); return e }
 
       // each kind builds its overlay once and returns how to draw it at a time
@@ -142,6 +191,63 @@
             show(q, seg(t, C[A.quote] - 0.2, C[A.quote] + 0.5), seg(u, d - 0.3, d)); show(by, seg(t, C[A.quote] + 0.4, C[A.quote] + 1.0), seg(u, d - 0.3, d), 10)
             show(l, s.line ? seg(t, C[A.line] - 0.1, C[A.line] + 0.5) : 0, seg(u, d - 0.3, d), 16) }
         },
+        title(o, s) {
+          const c = el(o, 'ctr'), k = el(c, 'kick', s.kicker || ''), h = el(c, 'ttl', s.title), sub = el(c, 'tsub', s.sub || '')
+          return (t, u, d) => { const out = seg(u, d - 0.35, d)
+            show(k, seg(u, 0.15, 0.7), out, 12); show(h, seg(u, 0.35, 1.0), out, 26); show(sub, s.sub ? seg(u, 0.9, 1.5) : 0, out, 12) }
+        },
+        table(o, s) {
+          const k = el(el(o, 'head'), 'kick', s.kicker), g = el(o, 'tbl'), n = s.columns.length
+          g.style.gridTemplateColumns = `1.15fr ${'1fr '.repeat(n - 1)}`
+          const H = s.columns.map((c, j) => el(g, 'th' + (j ? '' : ' c0') + (j === s.hl ? ' hl' : ''), c))
+          const R = s.rows.map((r) => r.map((v, j) => el(g, 'td' + (j ? '' : ' lab c0') + (j === s.hl ? ' hl' : ''), v)))
+          const cap = el(o, 'tcap', s.caption || '')
+          return (t, u, d) => { const A = s.at, out = seg(u, d - 0.3, d), a = C[A.rows]
+            show(k, seg(u, 0.1, 0.7), out, 10); H.forEach((h) => show(h, seg(u, 0.3, 0.9), out, 8))
+            R.forEach((row, i) => row.forEach((c) => show(c, seg(t, a + i * 0.4 - 0.15, a + i * 0.4 + 0.4), out, 16)))
+            show(cap, s.caption ? seg(t, C[A.caption] - 0.1, C[A.caption] + 0.5) : 0, out, 12) }
+        },
+        columns(o, s) {
+          const k = el(el(o, 'head'), 'kick', s.kicker), cw = el(o, 'cols dcols'), CH = 520, n = s.columns.length, step = (W - 400) / n
+          const max = Math.max(...s.columns.map((c) => c.amount)), cap = el(o, 'tcap', s.caption || ''); cap.style.textAlign = 'center'
+          const K = s.columns.map((c, i) => { const r = el(cw, 'col' + (c.hl ? ' hl' : '')); r.style.left = i * step + (step - 190) / 2 + 'px'; return { r, f: el(r, 'cfill'), v: el(r, 'cv', c.text), l: el(r, 'cl', c.label), at: c.at } })
+          return (t, u, d) => { const A = s.at, out = seg(u, d - 0.3, d)
+            show(k, seg(u, 0.1, 0.7), out, 10)
+            s.columns.forEach((c, i) => { const at = K[i].at ? C[K[i].at] : C[A.columns] + i * 0.35, g = eo(seg(t, at, at + 0.9)), h = (c.amount / max) * (CH - 70) * g
+              K[i].r.style.opacity = clamp(seg(t, at - 0.15, at + 0.25)) * (1 - eo(out)); K[i].f.style.height = h + 'px'; K[i].v.style.bottom = h + 12 + 'px' })
+            show(cap, s.caption ? seg(t, C[A.caption] - 0.1, C[A.caption] + 0.5) : 0, out, 12) }
+        },
+        points(o, s) {
+          const k = el(el(o, 'head'), 'kick', s.kicker), w = el(o, 'pts')
+          const P = s.points.map((p, i) => { const r = el(w, 'pt'); r.innerHTML = `<b>${String(i + 1).padStart(2, '0')}</b><span></span>`; r.lastChild.textContent = p.text; return r })
+          return (t, u, d) => { const out = seg(u, d - 0.3, d); show(k, seg(u, 0.1, 0.7), out, 10)
+            s.points.forEach((p, i) => show(P[i], seg(t, C[p.at] - 0.15, C[p.at] + 0.45), out, 18)) }
+        },
+        change(o, s) {
+          const k = el(el(o, 'head'), 'kick', s.kicker || ''), mk = (x, top) => { const b = el(o, 'chg'); b.style.top = top + 'px'; el(b, 'cby', x.by); el(b, 'cq').innerHTML = x.html; return b }
+          const b = mk(s.before, 250), a = mk(s.after, 600)
+          return (t, u, d) => { const A = s.at, out = seg(u, d - 0.3, d)
+            show(k, seg(u, 0.1, 0.7), out, 10); show(b, seg(t, C[A.before] - 0.2, C[A.before] + 0.5), out, 16); show(a, seg(t, C[A.after] - 0.2, C[A.after] + 0.5), out, 16) }
+        },
+        capture(o, s) {
+          const k = el(o, 'kick', s.kicker || ''); Object.assign(k.style, { position: 'absolute', left: '260px', top: '56px' })
+          const f = el(o, 'shot'), img = document.createElement('img'); img.src = '/film/' + s.image; f.appendChild(img)
+          const bx = s.box ? el(f, 'box') : null, cap = el(o, 'cap', s.caption || ''); cap.style.bottom = '70px'
+          const FW = W - 520, z = s.zoom || [0, 0, 1, 1]
+          return (t, u, d) => { const A = s.at || {}, out = seg(u, d - 0.3, d), za = A.zoom ? C[A.zoom] : s.a + 1.2, p = eio(seg(t, za, za + 1.4))
+            const sc = lerp(1, 1 / z[2], p), ih = (img.naturalHeight / img.naturalWidth) * FW
+            img.style.transform = `translate(${-z[0] * FW * sc * p}px, ${-z[1] * ih * sc * p}px) scale(${sc})`
+            if (bx) { const q = (v, of) => v * of * sc; Object.assign(bx.style, { left: q(s.box[0] - z[0] * p, FW) + 'px', top: q(s.box[1] - z[1] * p, ih) + 'px', width: q(s.box[2], FW) + 'px', height: q(s.box[3], ih) + 'px', opacity: seg(t, za + 1.2, za + 1.7) }) }
+            show(f, seg(u, 0.1, 0.7), out, 20); show(k, seg(u, 0.1, 0.7), out, 10)
+            show(cap, s.caption ? (A.caption ? seg(t, C[A.caption] - 0.1, C[A.caption] + 0.5) : seg(u, 0.8, 1.4)) : 0, out, 12) }
+        },
+        end(o, s) {
+          const c = el(o, 'ctr'), m = el(c, 'mark'), l = el(c, 'eline', s.line), of = el(c, 'offer', s.offer), sub = el(c, 'osub', s.sub), url = el(c, 'url', s.url), n = el(o, 'fine', s.note || ''); m.style.marginTop = '0'
+          m.innerHTML = '<img src="/ds/assets/robosystems_icon.png" /><span>RoboSystems</span>'
+          return (t, u) => { const a = C[s.at.offer]
+            show(m, seg(u, 0.2, 0.9), 0, 12); show(l, seg(u, 0.6, 1.3), 0, 10)
+            show(of, seg(t, a - 0.2, a + 0.5), 0, 24); show(sub, seg(t, a + 0.4, a + 1.0), 0, 12); show(url, seg(t, a + 1.0, a + 1.6), 0, 10); show(n, seg(u, 0.3, 1.0), 0, 0) }
+        },
         ask(o, s) {
           const c = el(o, 'ctr'), k = el(c, 'kick', s.kicker), p = el(c, 'prompt', s.prompt), m = el(c, 'mark'), url = el(c, 'url', s.url), n = el(o, 'fine', s.note); k.style.fontSize = '34px'
           m.innerHTML = '<img src="/ds/assets/robosystems_icon.png" /><span>RoboSystems</span>'
@@ -163,7 +269,7 @@
         SC.forEach((x) => (x.el.style.opacity = x === s ? 1 : 0))
         scene.background = on === 'plate' ? BLACK : on === 'flood' ? FLOOD : DARK
         scene.fog = on === 'grid' ? new THREE.Fog(DARK, 18, 78) : null
-        dust.visible = on !== 'flood' && on !== 'plate'; floor.visible = on === 'grid'; globe.visible = on === 'field' || on === 'flood' || on === 'graph'
+        dust.visible = on !== 'flood' && on !== 'plate'; floor.visible = on === 'grid'; globe.visible = on === 'field' || on === 'flood' || on === 'graph' || on === 'horizon' || on === 'orbit'
         bloom.strength = on === 'flood' ? 0.36 : 0.6
         dust.material.uniforms.uAlpha.value = 0.55; dust.material.uniforms.uAperture.value = 0.08; nodes.material.uniforms.uAlpha.value = 1
         globe.position.set(0, 0, 0); globe.scale.setScalar(1); globe.rotation.set(0.28, t * 0.2, 0.12)
@@ -186,10 +292,20 @@
           cam.position.set(0, 0, lerp(14, 15.5, eio(k))); cam.lookAt(0, 0, 0); dust.material.uniforms.uFocus.value = 14
           nodes.material.uniforms.uFocus.value = cam.position.z - 4; nodes.material.uniforms.uAperture.value = 0.1
         }
+        if (on === 'horizon') { // the graph as a horizon: a wide arc of it turning under the type
+          setNodes(1); edgeMat.opacity = 0.18; nodes.material.uniforms.uAlpha.value = 0.4; globe.scale.setScalar(7.5); globe.position.set(0, -32.8, -6)
+          globe.rotation.set(0.1, t * 0.035, 0); cam.position.set(0, 0.6, lerp(15, 13.6, eio(k))); cam.lookAt(0, -0.4, 0)
+          dust.material.uniforms.uFocus.value = 16; nodes.material.uniforms.uFocus.value = 19; nodes.material.uniforms.uAperture.value = 0.05
+        }
+        if (on === 'orbit') { // the graph large and turning, off to the right, behind the words
+          setNodes(1); edgeMat.opacity = 0.16; nodes.material.uniforms.uAlpha.value = 0.34; globe.scale.setScalar(2.7); globe.position.set(9.5, -1.5, -6)
+          globe.rotation.set(0.3, t * 0.12, 0.1); cam.position.set(lerp(-0.6, 0.6, eio(k)), 0, 15); cam.lookAt(0, 0, 0)
+          dust.material.uniforms.uFocus.value = 15; nodes.material.uniforms.uFocus.value = 20; nodes.material.uniforms.uAperture.value = 0.06
+        }
         s.draw(t, u, d, k)
         composer.render()
       }
-      window.__init = async () => { await fonts(); window.__READY = true }
+      window.__init = async () => { await fonts(); await Promise.all([...document.images].map((i) => i.decode().catch(() => {}))); window.__READY = true }
       window.__total = () => TL.total
       window.__seek = seek
     </script>

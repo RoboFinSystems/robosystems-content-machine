@@ -529,6 +529,8 @@ film-check *args:
 # Build a research film from projects/TICKER/film/TICKER_film.json (words, cues, figures and
 # their sources): voice, timeline, the type layer over the filing ident, the mix.
 # Output: projects/TICKER/film/renders/TICKER_film.mp4. Needs `just film-ident` once.
+# `--cut long` builds a second cut from TICKER_film_long.json in film/long/; `--dry --stills 4,20`
+# lays a cut out from word counts with no voice, to read the picture before the words are approved.
 research-film ticker *args:
     @just ensure-env
     UV_ENV_FILE=.env uv run --with faster-whisper --with 'av<16' --with librosa --with soundfile --with numpy python tools/research_film/build.py {{ticker}} {{args}}
