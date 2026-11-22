@@ -1,0 +1,1 @@
+{ "name": "short_portfolio", "format": "wide", "turn": "share", "turn_cue": "hold", "acts": ["reveal", "share", "end"], "leads": { "reveal": 0.9, "end": 1.4 }, "tail": 2.8 }

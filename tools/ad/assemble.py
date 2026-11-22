@@ -1,6 +1,7 @@
 """
 Finish a film: screen each Blender plate under its window of the type layer, mix the voice
-over the ducked music at -14 LUFS.
+over the ducked music at -14 LUFS. A plate with labels set among its lines is first cut back
+around the type, so a line passes behind a label and never through it.
 
   python3 tools/ad/assemble.py <film name>     -> showcase/robosystems_ad/films/<name>/renders/<name>.mp4
 """
@@ -16,19 +17,33 @@ PLATE = {
   "trace": "trace",
   "share": "share",
 }  # scene -> the Blender shot under it
+HOLDOUT = {"trace"}  # scenes whose plate is cut back around the type
 
 film = WORK / "films" / sys.argv[1]
 tl = json.loads((film / "timeline.json").read_text())
 total = tl["total"]
-ins, fc, last, n = [], "[0:v]format=gbrp[v0]", "v0", 0
+held = [s["name"] for s in tl["scenes"] if s["name"] in PLATE and s["name"] in HOLDOUT]
+ins, last, n = [], "v0", 0
+fc = (
+  f"[0:v]split={len(held) + 1}[base]" + "".join(f"[h{i}]" for i in range(len(held)))
+  if held
+  else "[0:v]copy[base]"
+) + ";[base]format=gbrp[v0]"
 for s in tl["scenes"]:
   if s["name"] not in PLATE:
     continue
   n += 1
   f0, f1 = s["frame"], s["frame"] + s["frames"]
   ins += ["-i", str(film / "plates" / f"{PLATE[s['name']]}.mp4")]
+  fc += f";[{n}:v]tpad=start={f0}:start_mode=clone:stop_mode=clone:stop_duration=90,format=gbrp"
+  if s["name"] in HOLDOUT:  # the type, widened and softened, as a matte over the plate
+    fc += (
+      f"[q{n}];[h{held.index(s['name'])}]format=gray,lut=y='clip((val-24)*5,0,255)',"
+      f"dilation,dilation,dilation,gblur=sigma=2,negate,format=gbrp[m{n}]"
+      f";[q{n}][m{n}]blend=all_mode=multiply"
+    )
   fc += (
-    f";[{n}:v]tpad=start={f0}:start_mode=clone:stop_mode=clone:stop_duration=90,format=gbrp[p{n}]"
+    f"[p{n}]"
     f";[{last}][p{n}]blend=all_mode=screen:enable='gte(t,{f0 / 30 - 0.005:.3f})*lt(t,{f1 / 30 - 0.005:.3f})'[v{n}]"
   )
   last = f"v{n}"
