@@ -504,6 +504,15 @@ motion-join-music *args="":
 motion-cue-sheet *args="":
     uv run --with librosa --with numpy --with soundfile python tools/motion/music/cue_sheet.py {{args}}
 
+# ─── Brand film (tools/ad: one core, many films; a film is a spec in tools/ad/films/) ───
+
+# Build a film end to end: voice + timeline, Blender plates, the type layer, the mix, a pop scan.
+# Output in showcase/robosystems_ad/films/<name>/renders/. Needs Blender and `just render-setup`.
+# e.g. just ad-film main · just ad-film short_yours
+ad-film name:
+    @just ensure-env
+    sh tools/ad/make_film.sh {{name}}
+
 # ─── Product demos (live UI walkthrough: real cursor, real clicks, component zoom) ───
 
 # List the anchors a walkthrough can aim at, read off the RUNNING app rather than
