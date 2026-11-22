@@ -8,7 +8,6 @@ NAME=$1
 AD=tools/ad
 F=showcase/robosystems_ad/films/$NAME
 BL=${BLENDER:-/Applications/Blender.app/Contents/MacOS/Blender}
-RL=${ROBOSYSTEMS_PUBLIC:-$HOME/Projects/robosystems-app/public}
 UV_ENV_FILE=.env uv run --with faster-whisper --with 'av<16' --with librosa --with soundfile python $AD/film.py $AD/films/$NAME.json
 mkdir -p $F/plates $F/renders
 has() { python3 -c "import json,sys;sys.exit(0 if any(s['name']=='$1' for s in json.load(open('$F/timeline.json'))['scenes']) else 1)"; }
@@ -25,7 +24,7 @@ if has share; then plate share shots.py "--shot share"; fi
 SIZE=$(python3 -c "import json;print('1080 1920' if json.load(open('$F/timeline.json'))['format']=='tall' else '1920 1080')")
 set -- $SIZE
 node renderer/src/cli.mjs motion --root renderer/templates --html renderer/templates/ad.html --query "film=$NAME" --width $1 --height $2 \
-  --mount "/fonts/=$RL/fonts,/images/=$RL/images,/node_modules/=renderer/node_modules,/films/=showcase/robosystems_ad/films" --name layer --out $F/renders | tail -1
+  --mount "/ds/=design-system,/node_modules/=renderer/node_modules,/films/=showcase/robosystems_ad/films" --name layer --out $F/renders | tail -1
 python3 $AD/assemble.py $NAME
 uv run --with numpy python tools/motion/qa/pop-scan.py $F/renders/$NAME.mp4 --sheet none \
   --cuts "$(python3 -c "import json;print(','.join(str(s['start']) for s in json.load(open('$F/timeline.json'))['scenes'][1:]))")" | tail -12

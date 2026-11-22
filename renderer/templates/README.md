@@ -8,7 +8,8 @@ from roboledger-app, which the renderer mounts at `/demos/`, `/fonts/` and `/ima
 videos and the landing page share one look and one runtime.
 
 `ad.html` is the brand film's page (three.js shots and type, wide or tall). It is driven by a
-film's timeline, not by `render.html`: see `tools/ad/film.py` and `just ad-film`.
+film's timeline, not by `render.html`: see `tools/ad/film.py` and `just ad-film`. Its tokens,
+fonts and logo come from `design-system/` (`tokens/film.css`), not from an app checkout.
 
 ```bash
 just motion-template intro  open    '{"kicker":"For finance leads","title":"Why is cash down in a profitable year?"}' out/

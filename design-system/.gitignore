@@ -1,6 +1,0 @@
-# Build toolchain
-node_modules/
-
-# Generated build artifacts — regenerate with `npm run build` (or `just design-build`).
-_ds_bundle.js
-_ds_bundle.css

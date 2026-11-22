@@ -1,197 +1,102 @@
-# RoboSystems Content Design System
+# RoboSystems content brand source
 
-A brand + content design system for **RoboSystems** — purpose-built for the
-**RoboSystems Content Machine**: the automated pipeline that turns a company's SEC
-filings into narrated research **videos**, vertical **shorts**, **blog essays**, and
-**social posts**.
+The one place the content machine reads the RoboSystems brand from: **tokens, fonts and
+logos**. Nothing here is built or installed. A page links a token file, mounts the fonts and
+uses the marks.
 
-The base [RoboSystems app design system](#sources) is engineered for a web product
-(Flowbite + Tailwind, app chrome, settings forms). **This system is different**: it
-re-frames the same brand for *content production* — 16:9 decks, 9:16 shorts, YouTube
-thumbnails, long-form blog posts, and X/social cards. Same fonts, same blue, same logo;
-a vocabulary aimed at slides and stories instead of app screens.
+It holds two surfaces of one brand:
 
-> **House brand: RoboSystems (blue). Dark-first. Orbitron display + Space Grotesk body.**
-> Accent color for the one thing that matters per slide. Eyebrow section labels
-> (`01 / THE PAIN`). Subtle source-attribution footers. Every number verbatim from filings.
+- **The film** (`tokens/film.css`): the look of the brand film and of every video built on its
+  form. Light on near-black, cyan for structure, a blue to indigo field for the turn.
+- **The deck** (`tokens/colors.css` and the rest): the research webdeck, thumbnails, article
+  covers and the light surface for written reports. Brand blue on a navy stage.
 
----
+New video work takes the film surface. The deck surface stays for the research long cut until
+that is rebuilt on the film's form.
 
-## Sources
+## Who reads it
 
-The brand sources this system was derived from:
+| Consumer | Reads |
+| --- | --- |
+| `renderer/templates/ad.html` (the brand film's type layer; `just ad-film`) | `tokens/film.css`, `fonts/`, `assets/robosystems_icon.png` |
+| `tools/build_webdeck.py`, `tools/build_webdeck_short.py` | `tokens/*.css` (deck), `fonts/`, the lockup and the white mark |
+| `tools/gen_article_cover.py` | `fonts/` |
 
-- **`robosystems-app/`** (codebase) — the production Next.js app. The brand truth lives in
-  `src/app/globals.css` (the `@theme` primary-blue override + `@font-face` rules) and the
-  `@robosystems/core` package it installs (the shared components and the cross-app brand map).
-- **`robosystems-content-machine/`** (codebase) — the content pipeline this system serves.
-  Key reads: `template/PRODUCTION_CONTRACT.md` (the script → deck → video contract, TTS rules,
-  slide kinds), `tools/webdeck/template.html` (how the renderer actually draws a slide), and
-  `blog/*/post.md` (published essays).
-- **GitHub:** [RoboFinSystems/robosystems-content-machine](https://github.com/RoboFinSystems/robosystems-content-machine)
-  — the open pipeline (MIT). Explore it to understand how these artifacts are produced and
-  assembled. Related: [RoboSystems platform](https://github.com/RoboFinSystems/robosystems),
-  product site [robosystems.ai](https://robosystems.ai).
+The RoboLedger video templates (`renderer/templates/intro.js`, `outro.js`, `slide.js`) and the
+post stills take the product's own chrome and fonts from the app checkouts, not from here:
+they are meant to match the product's landing pages.
 
-**Font substitution flag:** Orbitron + Space Grotesk are the real brand TTFs (bundled here,
-OFL). The brand's monospace (`JetBrains Mono`, used for code/tickers) was **not** shipped as a
-file in the codebase — it is loaded from Google Fonts via `fonts.css`. Swap in the licensed
-file if you have it.
+## The film surface
 
----
+The house form for video. A film is a spec (`tools/ad/films/<name>.json`) over a set of acts;
+the look is fixed here so every film, short cut, research film and demo wrapper matches.
 
-## What RoboSystems is
+- **Stage.** Near-black (`--film-black` #04070c). Never a flat colour for long: a slow 3D plate
+  (the graph sphere, a trace, a report as an object) sits under the type.
+- **Structure is cyan.** Nodes are near-white (`--film-node`), links and labels cyan-300
+  (#67e8f9), dust and the key light cyan-400 (#22d3ee). The rim light is indigo (#6366f1), the
+  fill blue (#2563eb).
+- **The field.** A blue to indigo gradient is held back for the turn of a film and for the
+  line that states what the product is. It is the only time the frame leaves black.
+- **Alarm red** (`--film-alarm` #f87171) belongs to the problem act and nowhere else.
+- **Type.** Orbitron for headlines, figures and uppercase labels (wide tracking, .24em to
+  .34em); Space Grotesk for captions and anything read as a sentence. One idea per shot.
+  Figures are 2D and flat: perspective distorts magnitude.
+- **Motion.** Words blur in; a slow push runs under every shot; shots dissolve through the
+  stage, never through a dip to black that was not planned (`just motion-pops` checks).
+- **Sound.** One voice per film, one scored bed, the music's hit on the film's turn.
+- **End card.** The icon and the wordmark over the graph, the site under them.
 
-RoboSystems is an **open-source financial knowledge-graph platform**. It ingests SEC XBRL
-filings for every public company into per-company graph databases (LadybugDB), then exposes
-them to AI agents via MCP tools — so an analyst (or Claude) can query revenue, margins,
-balance-sheet, and segment data straight from the source filings. Products in the family:
-**RoboLedger** (AI controller over QuickBooks), **RoboInvestor**, and the **Content Machine**
-that this design system dresses.
+`film.css` is read by CSS. three.js and Blender cannot read it, so the same values are written
+out in `ad.html`'s script and in `tools/ad/blender/*.py`. Change a value here and change it
+there, then re-render (`just ad-film main`) and compare.
 
-The throughline of all RoboSystems content: **structure beats spreadsheets.** Money flows
-through networks, not rows; the brand's job is to make that argument credibly, with every
-number traceable to a filing.
+## The deck surface
 
----
+- **Stage.** A blue-tinted near-black (`--ink-900` #0a0e1a) with a restrained radial glow and,
+  on some slides, a faint dot grid. A light surface (`[data-surface="light"]`) exists for
+  written reports.
+- **Colour.** One brand blue (`--blue-500` #3b7af5), a navy ink, a cool gray ramp. Data uses a
+  fixed signal language: green positive, red negative, brand blue neutral or current, amber
+  warning. Graph teal (#00d4aa) is the one non-blue accent, for structure.
+- **Type.** Orbitron display, Space Grotesk body, JetBrains Mono for tickers and code (loaded
+  from Google Fonts by `fonts.css`, not bundled).
+- **Cards.** A 1px hairline with a subtle inset ring, not a drop shadow. Radii 10 to 20px.
+- **Layout.** 1920x1080 slides with a 140px side margin; headline, eyebrow, data, then a
+  source footer. Every number verbatim from the filing it cites.
 
-## CONTENT FUNDAMENTALS — how RoboSystems writes
+| Concern | Token file |
+| --- | --- |
+| Film | `tokens/film.css` |
+| Colour | `tokens/colors.css` |
+| Type | `tokens/typography.css` |
+| Spacing and stage geometry | `tokens/spacing.css` |
+| Shadows, rings, easing, glow and grid | `tokens/effects.css` |
+| Semantic aliases and the light surface | `tokens/semantic.css` |
 
-The voice is **the sharp equity analyst who shows their work** — confident, contrarian,
-numerate, and scrupulously honest about what is and isn't a recommendation. Two registers
-share one brand voice:
+`styles.css` imports the fonts and every token file, for a page that wants them all.
 
-**1. Research / video / social (punchy, declarative).**
-- **Hooks are confrontational and specific.** Real openers: *"Every Financial System Today Is
-  Built on a Lie."* · *"We covered it. Here's what changed."* · *"Nobody covers this $1.2B company."*
-- **The number is the protagonist.** Lead with the cognitive-dissonance figure (a 44%
-  effective tax rate, a 9x adjusted P/E, a $40M one-time charge), then explain it. Never bury
-  the metric.
-- **Honest framing, always.** Bull case *and* bear case. Explicit disclaimers: *"Not investment
-  advice. No price targets. Every number from the filings."* — this is non-negotiable and part
-  of the brand's credibility.
-- **Person:** "we" for RoboSystems' own conviction ("We covered it before the re-rating"); "you"
-  to challenge the reader ("try answering it. You'll need data from five systems").
-- **Casing:** Title Case or Sentence case for headlines; **eyebrow labels are UPPERCASE**
-  (`COVERAGE UPDATE`, `01 / THE PAIN`). Tickers always cashtag or exchange-qualified
-  (`$EXCO` / `NYSE: EXCO`).
-- **Em-dashes and colons** drive the rhythm. Short sentences. Then a longer one that lands the
-  point. Bulleted metric stacks (`• FY2025 revenue $1.18B (+3.4%)`).
+## Marks
 
-**2. Long-form blog (essayistic, still bold).**
-- Bigger ideas, manifesto energy: *"This Is Not a Pitch. It's a Warning."* Section headers
-  are full sentences. Argues from first principles, then drives to the product.
-- Closes on a turn — a takeaway or a dare, often two short bold lines:
-  *"The future of finance isn't in better spreadsheets. / It's in understanding relationships."*
+- **`assets/robosystems_icon.png`**: the icon the film's end card uses.
+- **`assets/robosystems_mark.svg`** (`currentColor`) and **`robosystems_mark_white.svg`**: the
+  mark for decks and covers. Give it clear space; never stretch it or fill it with a gradient.
+- **`assets/robosystems_lockup.png`**, **`robosystems_lockup_black.png`**: mark and wordmark.
+- **Product marks:** `roboledger.png`, `roboinvestor.png`.
+- **Source and partner marks:** `sec.png`, `quickbooks.svg`, `claude.svg`, for "sourced from"
+  and "works with" lines.
+- **`assets/grid.svg`**: the deck's grid texture.
 
-**Vibe:** technical credibility meets editorial swagger. Think a top-tier equity research note
-crossed with a confident product manifesto. **No emoji** in the analysis itself (an occasional
-🎙️/📊 appears in pipeline READMEs, never in published research). No hype words without a number
-behind them. Precision is the flex.
+No emoji and no decorative illustration on a brand artifact. Structure (graphs, grids, charts)
+is the visual language.
 
-**Spoken-form rule (narration only):** anything narrated by TTS spells symbols out — `$1.2B` →
-"one point two billion dollars", `76%` → "76 percent", `P/E` → "price to earnings", `SEC` →
-"S E C", and `AI` stays `AI` (never spaced). See `PRODUCTION_CONTRACT.md`. On-screen text keeps
-the symbols; only the voice track is respelled.
+## Fonts
 
----
+Orbitron and Space Grotesk are bundled as TTFs under the SIL Open Font License. The static
+weights serve the deck; `Orbitron-VariableFont_wght.ttf` serves the film.
 
-## VISUAL FOUNDATIONS
+## Words
 
-**The signature look: a dark navy "stage."** RoboSystems content lives on a near-black,
-blue-tinted canvas (`--ink-900` #0a0e1a) — the backdrop for decks, thumbnails, shorts, and
-video frames. It reads as a Bloomberg-terminal-meets-spacecraft surface: serious, technical,
-high-contrast. A light surface (`[data-surface="light"]`) exists for blog posts and written
-reports.
-
-- **Color.** One brand **blue** (`--blue-500` #3b7af5, hover #2563eb), a deep navy ink
-  (`#1b3a57` / `#172e47`), and a cool gray ramp. Data uses a strict signal language: **green =
-  positive, red = negative, brand-blue = neutral/current, amber = warning.** A **graph teal**
-  (`#00d4aa`) is the one non-blue accent, reserved for "structure"/knowledge-graph moments,
-  code, and prose links. Color is rationed — most of a slide is ink + white text; the accent
-  marks the single thing that matters.
-- **Type.** **Orbitron** (geometric, techy, wide) for display headlines, eyebrow labels, and
-  big numbers — it *is* the "machine" in RoboSystems. **Space Grotesk** for everything else
-  (body, captions, tabular data). **JetBrains Mono** for tickers, code, and query snippets.
-  Eyebrows are UPPERCASE Orbitron with wide `0.22em` tracking; hero numbers are Orbitron 700–900.
-- **Backgrounds.** Not flat — a restrained **radial brand glow** anchored top-center
-  (`--bg-stage-glow`), and a faint **dot-grid lattice** (`--bg-grid`, knowledge-graph texture)
-  on some surfaces. No photographic imagery in research decks (data is the hero); blog covers
-  may use abstract renders. Graph-teal corner washes mark structure slides. Never busy — the
-  glow is felt, not seen.
-- **Animation.** Restrained and confident — **no bounce on content**. Slide reveals fade-and-rise
-  ~16px on a signature `cubic-bezier(0.16, 1, 0.3, 1)` ease over ~640ms. The app's marketing
-  uses slow floating ambient shapes (6–10s) and a pulsing gradient text; content keeps motion
-  to entrance reveals. Always degrade to the end-state for print/PDF/reduced-motion.
-- **Hover / press.** Interactive UI: hover lifts to the lighter accent (`--accent-hover`) or
-  raises a card's elevation + inset ring; press shifts to the darker accent (`--accent-press`)
-  with a tiny 1px settle (no large scale). Links underline on hover.
-- **Borders & cards.** Cards on dark are `--surface-card` (#131b30) with a **1px hairline**
-  (`--ink-700`) *and* a subtle inset white ring (`--ring-inset`) — the "etched panel" look,
-  not a drop-shadow card. Radii are moderate: 10–20px for cards, pill for tags/badges. Shadows
-  on dark are deep + soft (never harsh); light surfaces use soft `rgba(16,24,40,…)` shadows.
-- **Transparency & blur.** Used sparingly — overlay scrims and the occasional frosted header.
-  Eyebrow numerals and watermarks sit at low-opacity (`--text-faint`).
-- **Layout.** 16:9 1920×1080 slides with a generous safe margin (`--slide-pad-x` 140px); 9:16
-  1080×1920 shorts. Lots of negative space on title slides; data slides use a clear headline →
-  eyebrow → data → source-footer stack. A persistent small RoboSystems mark + source line
-  anchors the corner.
-- **Imagery vibe.** Cool, dark, technical. When imagery appears, it's abstract/structural
-  (graph lattices, data viz) rather than people or stock photos — the numbers carry the story.
-
----
-
-## ICONOGRAPHY
-
-- **The brand mark.** An abstract glyph (`assets/robosystems_mark.svg`, white variant
-  `robosystems_mark_white.svg`, PNG `robosystems_logo_72.png`): a **trio of connected graph
-  nodes** above a **ledger/∞ form** — the knowledge-graph-over-the-books idea. The SVG uses
-  `fill="currentColor"`, so it recolors to any token (`color: var(--accent)` or white on dark).
-  Always give it clear space; never stretch or recolor into a gradient.
-- **UI icons.** The base app uses **Flowbite's icon set** (and `flowbite-react`) — thin,
-  rounded-join, ~1.5–2px stroke line icons. There is **no bundled brand icon font**. For
-  content work, match that weight with **[Lucide](https://lucide.dev)** (CDN), which is
-  stroke-compatible (2px, round caps/joins) — used in this system's components. *This is a
-  documented substitution:* the app ships Flowbite SVGs inline rather than a font; Lucide is the
-  closest freely-CDN-available match for new content. Keep icons monochrome (`currentColor`),
-  sized 16/20/24, and decorative-only in decks (the data leads).
-- **Emoji.** **Not used in published research or on slides.** Pipeline/tooling READMEs use a few
-  (🎙️ 📊) as wayfinding; published content does not. Don't add emoji to brand artifacts.
-- **Partner / source logos.** `assets/sec.png`, `quickbooks.svg`, `claude.svg` — used in
-  "built with / sourced from" footers. Product sub-brand logos: `roboledger.png`,
-  `roboinvestor.png`.
-- **No hand-drawn SVG illustration.** The brand doesn't use decorative spot illustrations in
-  research; structure (grids, nodes, charts) is the visual language. Don't invent iconography —
-  reuse the mark and Lucide line icons.
-
----
-
-## Foundations at a glance
-
-| Concern | Token file | Highlights |
-|---|---|---|
-| Color | `tokens/colors.css` | `--blue-500` #3b7af5, navy `--ink-900`, signal greens/reds, graph teal #00d4aa |
-| Type | `tokens/typography.css` | Orbitron display / Space Grotesk body / JetBrains mono; 2xs→8xl scale |
-| Spacing | `tokens/spacing.css` | 4px unit; slide + short stage geometry; radii |
-| Effects | `tokens/effects.css` | Deep soft shadows, inset rings, signature ease, stage glow + grid |
-| Semantic | `tokens/semantic.css` | `--stage-bg`, `--surface-card`, `--text-*`, `--data-*`, `[data-surface="light"]` |
-
----
-
-## Index — what's in this system
-
-Map of the directory:
-
-- **`styles.css`** — global entry point (link this one file). `@import`s fonts + all tokens.
-- **`fonts.css`** — `@font-face` for Orbitron + Space Grotesk; JetBrains Mono via Google Fonts CDN.
-- **`tokens/`** — `colors.css`, `typography.css`, `spacing.css`, `effects.css`, `semantic.css`.
-- **`assets/`** — `robosystems_mark.svg` (currentColor) + `robosystems_mark_white.svg`,
-  `robosystems_logo_72.png`, lockups, sub-brand logos (`roboledger.png`, `roboinvestor.png`),
-  partner/source logos (`sec.png`, `quickbooks.svg`, `claude.svg`), `grid.svg` texture.
-- **`components/`** — reusable React content primitives:
-  - `brand/` — **Eyebrow**, **Badge**, **BrandMark**, **SourceFooter**
-  - `data/` — **MetricCard**, **Callout**, **BarChart**, **ComparisonTable**
-  - `controls/` — **Button**
-
-> **Component namespace:** `_ds_bundle.js` registers the components on
-> `window.RoboSystemsContentDesignSystem_746ae7`, e.g. `const { Eyebrow, MetricCard, … } = window.RoboSystemsContentDesignSystem_746ae7`.
+How RoboSystems content is written is not set here. Research briefs follow
+`template/AUTHORING_INSTRUCTIONS.md`; narration follows the spoken-form rules in
+`template/PRODUCTION_CONTRACT.md`.

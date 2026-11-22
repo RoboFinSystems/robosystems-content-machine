@@ -45,8 +45,8 @@ install:
     uv sync
     @just install-node
 
-# renderer/ and design-system/ are optional lanes with their own installs
-# (just render-setup, just design-build); only the core pipeline's Node deps live here.
+# renderer/ is an optional lane with its own install
+# (just render-setup); only the core pipeline's Node deps live here.
 
 # Node deps for the headless-Chrome webdeck renderer (tools/webdeck)
 install-node:
@@ -436,14 +436,7 @@ content-migrate from="robosystems-marketing-assets":
     @just ensure-env
     @bash tools/migrate_content.sh {{from}}
 
-# ─── Content design system (design-system/) ────────────────────────────────────
-
-# Rebuild design-system/_ds_bundle.js from the component sources. Run after editing
-# components/*.jsx; the renderer's short path mounts the bundle.
-design-build:
-    cd design-system && npm install --no-audit --no-fund --silent && npm run build
-
-# ─── Renderer (renderer/ — Playwright: UI capture + 9:16 motion) ──────────────
+# ─── Renderer (renderer/ — Playwright: UI capture, walkthroughs, motion, post stills) ───
 
 # Install the renderer's Node deps + the Playwright Chromium browser (run once).
 render-setup:
@@ -455,11 +448,6 @@ render-setup:
 # e.g. just render-capture <config> coffee_roaster Driftline
 render-capture config company entity="" scenes="home,transactions,close,statements,reports":
     node renderer/src/cli.mjs capture --config {{config}} --scenes {{scenes}} --out showcase/{{company}}/captures {{ if entity != "" { "--entity '" + entity + "'" } else { "" } }}
-
-# Render a scene spec (a per-episode product in showcase/<company>/, gitignored) to a silent mp4.
-# Mux VO/music downstream in the Python short path. e.g. just render-short showcase/coffee_roaster/driftline.demo.json
-render-short spec:
-    node renderer/src/cli.mjs short --spec {{spec}}
 
 # Render a self-contained HTML composition (the __init/__total/__seek contract) to a silent mp4.
 # The roboledger-app landing demos render from the app's public/ folder:
