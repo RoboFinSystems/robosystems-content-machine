@@ -79,6 +79,26 @@
       .shot { position: absolute; left: 260px; right: 260px; top: 110px; height: 788px; border-radius: 22px; overflow: hidden; border: 1px solid rgba(255,255,255,.28); background: #04070c; }
       .shot img { position: absolute; left: 0; top: 0; width: 100%; transform-origin: 0 0; }
       .shot .box { position: absolute; border: 4px solid var(--c300); border-radius: 12px; box-shadow: 0 0 0 4000px rgba(4,7,12,.5); }
+      /* line: one to three series over the same periods, drawn left to right */
+      .lsvg { position: absolute; left: 0; top: 0; }
+      .lx { position: absolute; top: 868px; width: 260px; margin-left: -130px; text-align: center; font: 500 28px var(--body); color: var(--soft); }
+      .lv { position: absolute; font: 800 36px var(--display); white-space: nowrap; transform: translate(-50%, -100%); margin-top: -22px; }
+      .lkey { position: absolute; right: 200px; top: 120px; display: flex; gap: 44px; font: 500 30px var(--body); color: var(--soft); }
+      .lkey i { display: inline-block; width: 34px; height: 6px; border-radius: 3px; margin-right: 14px; vertical-align: middle; }
+      /* cards: a few figures of equal weight */
+      .cards { position: absolute; left: 200px; right: 200px; top: 250px; display: grid; gap: 36px; }
+      .card { border: 1px solid rgba(255,255,255,.26); border-radius: 18px; background: rgba(255,255,255,.05); padding: 40px 44px 44px; }
+      .card .kl { font: 500 32px var(--body); color: var(--soft); }
+      .card .kv { font: 800 84px/1.1 var(--display); margin-top: 22px; }
+      .card .kc { font: 500 30px var(--body); color: var(--muted); margin-top: 16px; }
+      /* dual: what it means on the left, the figures behind it on the right */
+      .dl { position: absolute; left: 200px; top: 250px; width: 800px; }
+      .dl .pt { font-size: 46px; }
+      .dr { position: absolute; right: 200px; top: 250px; width: 620px; }
+      .dr .ds { padding: 30px 0; border-top: 1px solid rgba(255,255,255,.22); }
+      .dr .dsl { font: 500 30px var(--body); color: var(--soft); } .dr .dsv { font: 800 68px/1.1 var(--display); margin-top: 10px; } .dr .dss { font: 500 26px var(--body); color: var(--muted); margin-top: 8px; }
+      /* tone: only where the author says a figure is good or bad news */
+      .pos { color: var(--film-good); } .neg { color: var(--film-alarm); }
       /* end: the product and the offer, the last thing on screen */
       .eline { font: 600 30px var(--display); letter-spacing: .26em; text-transform: uppercase; color: var(--c300); margin-top: 26px; }
       .offer { font: 800 92px/1.1 var(--display); margin-top: 70px; }
@@ -118,6 +138,14 @@
       //   capture { image, caption?, kicker?, zoom?: [x, y, w, h], box?: [x, y, w, h] }  at: zoom, caption
       //           image is a path under the film folder; zoom and box are fractions of the image
       //
+      //   line    { kicker, labels: [..], series: [{ label, values: [..], texts?: [..], hl? }], caption? }
+      //           at: line, caption. One to three series over the same periods, from zero, drawn
+      //           left to right; texts label points (null skips one); hl is the series lit
+      //   cards   { kicker, cards: [{ label, value, change?, tone?, at }] }   two to six figures of equal weight
+      //   dual    { kicker, points: [{ text, at }], stats: [{ label, value, sub?, tone?, at? }] }
+      //           what it means on the left, the figures behind it on the right
+      //   tone: "pos" | "neg" on a card, a stat or a row colours its value, where the author says
+      //   the figure is good or bad news. Nothing is coloured by its sign.
       //   end     { line, offer, sub, url, note? }                 at: offer
       //           the mark, what the product is, the offer and where to go
       //
@@ -130,8 +158,8 @@
       const W = 1920, H = 1080, C = TL.cues, SC = TL.scenes.map((s) => ({ ...TL.data.scenes[s.name], name: s.name, a: s.start, b: s.end }))
       const clamp = (x) => Math.max(0, Math.min(1, x))
       const { scene, cam, composer, bloom, DARK, BLACK, FLOOD, THREE, dust, nodes, edgeMat, globe, setNodes, floor, floorMat } = stage({ W, H, canvas: $('gl') })
-      const STAGE = { stat: 'field', ident: 'plate', number: 'flood', rows: 'grid', quote: 'grid', ask: 'graph', title: 'graph', table: 'horizon', columns: 'grid', points: 'horizon', change: 'orbit', capture: 'graph', end: 'graph' }
-      const FLOOR = { rows: 0.5, quote: 0.35, table: 0.3, columns: 0.3, points: 0.4, change: 0.3 }
+      const STAGE = { stat: 'field', ident: 'plate', number: 'flood', rows: 'grid', quote: 'grid', ask: 'graph', title: 'graph', table: 'horizon', columns: 'grid', points: 'horizon', change: 'orbit', capture: 'graph', end: 'graph', line: 'horizon', cards: 'orbit', dual: 'grid' }
+      const FLOOR = { rows: 0.5, quote: 0.35, table: 0.3, columns: 0.3, points: 0.4, change: 0.3, dual: 0.3 }
       const el = (parent, cls, text) => { const e = document.createElement('div'); e.className = cls; if (text != null) e.textContent = text; parent.appendChild(e); return e }
 
       // each kind builds its overlay once and returns how to draw it at a time
@@ -182,7 +210,7 @@
         },
         rows(o, s) {
           const k = el(o, 'kick', s.kicker); Object.assign(k.style, { position: 'absolute', left: '200px', top: '130px' })
-          const w = el(o, 'rows'), R = s.rows.map((r) => { const row = el(w, 'row'), a = el(row, ''); el(a, 'rl', r.label); el(a, 'rs', r.sub); el(row, 'rv', r.value); return row })
+          const w = el(o, 'rows'), R = s.rows.map((r) => { const row = el(w, 'row'), a = el(row, ''); el(a, 'rl', r.label); el(a, 'rs', r.sub); el(row, 'rv' + (r.tone ? ' ' + r.tone : ''), r.value); return row })
           return (t, u, d) => { show(k, seg(u, 0.1, 0.7), seg(u, d - 0.3, d), 10); s.rows.forEach((r, i) => show(R[i], seg(t, C[r.at] - 0.15, C[r.at] + 0.45), seg(u, d - 0.3, d), 20)) }
         },
         quote(o, s) {
@@ -240,6 +268,41 @@
             if (bx) { const q = (v, of) => v * of * sc; Object.assign(bx.style, { left: q(s.box[0] - z[0] * p, FW) + 'px', top: q(s.box[1] - z[1] * p, ih) + 'px', width: q(s.box[2], FW) + 'px', height: q(s.box[3], ih) + 'px', opacity: seg(t, za + 1.2, za + 1.7) }) }
             show(f, seg(u, 0.1, 0.7), out, 20); show(k, seg(u, 0.1, 0.7), out, 10)
             show(cap, s.caption ? (A.caption ? seg(t, C[A.caption] - 0.1, C[A.caption] + 0.5) : seg(u, 0.8, 1.4)) : 0, out, 12) }
+        },
+        line(o, s) {
+          const k = el(el(o, 'head'), 'kick', s.kicker), X0 = 300, X1 = 1620, Y0 = 840, Y1 = 330, n = s.labels.length
+          const max = Math.max(...s.series.flatMap((r) => r.values)), x = (i) => X0 + (i * (X1 - X0)) / (n - 1), y = (v) => Y0 - (v / max) * (Y0 - Y1)
+          const NS = 'http://www.w3.org/2000/svg', svg = document.createElementNS(NS, 'svg'); svg.setAttribute('class', 'lsvg'); svg.setAttribute('width', W); svg.setAttribute('height', H); o.appendChild(svg)
+          const mk = (tag, a) => { const e = document.createElementNS(NS, tag); Object.entries(a).forEach(([q, v]) => e.setAttribute(q, v)); svg.appendChild(e); return e }
+          mk('line', { x1: X0 - 40, x2: X1 + 40, y1: Y0, y2: Y0, stroke: 'rgba(255,255,255,.35)', 'stroke-width': 2 })
+          const xl = s.labels.map((l, i) => { const e = el(o, 'lx', l); e.style.left = x(i) + 'px'; return e })
+          const key = el(o, 'lkey'); key.innerHTML = s.series.map((r) => `<span><i style="background:${r.hl ? 'var(--c300)' : 'rgba(255,255,255,.8)'}"></i>${r.label}</span>`).join('')
+          const S = s.series.map((r) => { const col = r.hl ? '#67e8f9' : 'rgba(255,255,255,.85)', d = r.values.map((v, i) => `${i ? 'L' : 'M'}${x(i)},${y(v)}`).join(' ')
+            const p = mk('path', { d, fill: 'none', stroke: col, 'stroke-width': r.hl ? 7 : 5, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }), len = p.getTotalLength(); p.setAttribute('stroke-dasharray', len)
+            const dots = r.values.map((v, i) => mk('circle', { cx: x(i), cy: y(v), r: r.hl ? 11 : 9, fill: col }))
+            const tx = (r.texts || []).map((tv, i) => { if (tv == null) return null; const e = el(o, 'lv', tv); e.style.left = x(i) + 'px'; e.style.top = y(r.values[i]) + 'px'; if (r.hl) e.style.color = 'var(--c300)'; return e })
+            return { p, len, dots, tx } })
+          const cap = el(o, 'tcap', s.caption || ''); cap.style.textAlign = 'center'; cap.style.bottom = '40px'
+          return (t, u, d) => { const A = s.at, out = seg(u, d - 0.3, d), a = C[A.line], fade = 1 - eo(out)
+            show(k, seg(u, 0.1, 0.7), out, 10); show(key, seg(u, 0.3, 0.9), out, 8); xl.forEach((e) => show(e, seg(u, 0.3, 0.9), out, 8)); svg.style.opacity = clamp(seg(u, 0.2, 0.8)) * fade
+            S.forEach((r, j) => { const g = eio(seg(t, a + j * 0.5, a + j * 0.5 + 1.8)); r.p.setAttribute('stroke-dashoffset', r.len * (1 - g))
+              r.dots.forEach((c, i) => { const q = i / (n - 1); c.setAttribute('opacity', clamp((g - q) * n + 1)) })
+              r.tx.forEach((e, i) => e && show(e, clamp((g - i / (n - 1)) * n + 1) * seg(t, a, a + 0.4), out, 10)) })
+            show(cap, s.caption ? seg(t, C[A.caption] - 0.1, C[A.caption] + 0.5) : 0, out, 12) }
+        },
+        cards(o, s) {
+          const k = el(el(o, 'head'), 'kick', s.kicker), g = el(o, 'cards'), n = s.cards.length; g.style.gridTemplateColumns = `repeat(${n <= 4 ? Math.min(n, 2 + (n === 3)) : 3}, 1fr)`
+          const K = s.cards.map((c) => { const e = el(g, 'card'); el(e, 'kl', c.label); el(e, 'kv' + (c.tone ? ' ' + c.tone : ''), c.value); el(e, 'kc', c.change || ''); return e })
+          return (t, u, d) => { const out = seg(u, d - 0.3, d); show(k, seg(u, 0.1, 0.7), out, 10)
+            s.cards.forEach((c, i) => show(K[i], seg(t, C[c.at] - 0.15, C[c.at] + 0.45), out, 20)) }
+        },
+        dual(o, s) {
+          const k = el(el(o, 'head'), 'kick', s.kicker), l = el(o, 'dl'), r = el(o, 'dr')
+          const P = s.points.map((p) => { const e = el(l, 'pt'); e.textContent = p.text; return e })
+          const T = s.stats.map((x) => { const e = el(r, 'ds'); el(e, 'dsl', x.label); el(e, 'dsv' + (x.tone ? ' ' + x.tone : ''), x.value); el(e, 'dss', x.sub || ''); return e })
+          return (t, u, d) => { const out = seg(u, d - 0.3, d); show(k, seg(u, 0.1, 0.7), out, 10)
+            s.points.forEach((p, i) => show(P[i], seg(t, C[p.at] - 0.15, C[p.at] + 0.45), out, 18))
+            s.stats.forEach((x, i) => { const a = x.at ? C[x.at] : s.a + 0.8 + i * 0.5; show(T[i], seg(t, a - 0.15, a + 0.45), out, 18) }) }
         },
         end(o, s) {
           const c = el(o, 'ctr'), m = el(c, 'mark'), l = el(c, 'eline', s.line), of = el(c, 'offer', s.offer), sub = el(c, 'osub', s.sub), url = el(c, 'url', s.url), n = el(o, 'fine', s.note || ''); m.style.marginTop = '0'
