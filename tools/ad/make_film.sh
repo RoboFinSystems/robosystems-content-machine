@@ -19,7 +19,8 @@ plate() { # shot, script, extra args
   [ -f $F/plates/$1/anchors.json ] && cp $F/plates/$1/anchors.json $F/anchors_$1.json
   echo "  plate $1: $(ls $F/plates/$1 | grep -c frame-) frames"
 }
-if has reveal; then plate graph_hero tools/film/blender/graph_ident.py "--samples 32"  # the kit's ident, as the ad's hero; fi
+# the hero is the kit's graph ident, cut to this film's reveal
+if has reveal; then plate graph_hero tools/film/blender/graph_ident.py "--samples 32"; fi
 if has trace; then plate trace $AD/blender/shots.py "--shot trace"; fi
 if has share; then plate share $AD/blender/shots.py "--shot share"; fi
 SIZE=$(python3 -c "import json;print('1080 1920' if json.load(open('$F/timeline.json'))['format']=='tall' else '1920 1080')")

@@ -8,12 +8,14 @@ the music's hit shows up here before anything is rendered.
 
 It needs the voice takes already cached (showcase/robosystems_ad/audio/, not tracked), so it
 runs where the films have been built; a film whose takes are missing is skipped and named,
-and never voiced. It checks timings only: it does not render, so a change to a page or a
+and never voiced. It also checks that the ad's build script parses (`sh -n`). Beyond that it checks timings
+only: it does not render, so a change to a page or a
 Blender shot is compared by building the film (`just ad-film main`) against the last render.
 """
 
 import hashlib
 import json
+import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -47,6 +49,16 @@ def differs(a, b, path=""):
 
 def main():
   save, bad = "--save" in sys.argv, 0
+  # the timelines can agree while the script that builds a film no longer parses
+  script = subprocess.run(
+    ["sh", "-n", "tools/ad/make_film.sh"], cwd=REPO, capture_output=True, text=True
+  )
+  bad += script.returncode != 0
+  print(
+    f"  {'make_film.sh':16s} {'parses' if not script.returncode else 'DOES NOT PARSE'}"
+  )
+  if script.returncode:
+    print("     ", script.stderr.strip())
   for spec_file in sorted((REPO / "tools" / "ad" / "films").glob("*.json")):
     spec = json.loads(spec_file.read_text())
     missing = [
