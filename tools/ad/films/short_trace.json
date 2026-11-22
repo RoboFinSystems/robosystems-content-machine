@@ -1,0 +1,1 @@
+{ "name": "short_trace", "format": "wide", "turn": "how", "turn_cue": "every", "acts": ["reveal", "how", "end"], "leads": { "reveal": 0.9, "end": 1.4 }, "tail": 2.8 }

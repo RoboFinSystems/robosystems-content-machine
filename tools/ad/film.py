@@ -3,7 +3,10 @@ One core, many films. A film is a spec (tools/ad/films/<name>.json): which acts,
 what frame shape. This builds everything the picture is cut to.
 
   { "name": "main", "format": "wide" | "tall", "acts": ["problem", "reveal", ...],
-    "turn": "yours", "leads": { "reveal": 0.9 }, "tail": 3.2 }
+    "turn": "yours", "turn_cue": "trains", "leads": { "reveal": 0.9 }, "tail": 3.2 }
+
+The turn is the act the music's hit lands on: on its first word, or on one of its cues
+when the spec names a turn_cue.
 
 An act is a unit of the script: its words, the cues inside it (the word each build lands
 on) and the scenes it puts on screen. Acts live here, in ACTS, so every film says the
@@ -237,6 +240,9 @@ def main():
   hit = None
   if turn:
     first = takes[turn][2][0][1]
+    if spec.get("turn_cue"):
+      word = ACTS[turn]["cues"][spec["turn_cue"]]
+      first = next(tm for w, tm in takes[turn][2] if w == word)
     hit, _ = music_bed(starts[turn] + first, out / "music.wav")
     starts, total = layout(max(0.0, hit - (starts[turn] + first)))
   else:
@@ -315,7 +321,11 @@ def main():
     )
   print(
     f"{name} ({tl['format']}): {total}s"
-    + (f"; the turn at {cues.get('yours')}s, the hit at {hit:.2f}s" if turn else "")
+    + (
+      f"; the turn at {cues.get(spec.get('turn_cue')) or acts[turn][0]}s, the hit at {hit:.2f}s"
+      if turn
+      else ""
+    )
   )
 
 
