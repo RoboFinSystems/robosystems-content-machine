@@ -293,7 +293,7 @@
           nodes.material.uniforms.uFocus.value = cam.position.z - 4; nodes.material.uniforms.uAperture.value = 0.1
         }
         if (on === 'horizon') { // the graph as a horizon: a wide arc of it turning under the type
-          setNodes(1); edgeMat.opacity = 0.18; nodes.material.uniforms.uAlpha.value = 0.4; globe.scale.setScalar(7.5); globe.position.set(0, -31.2, -6)
+          setNodes(1); edgeMat.opacity = 0.18; nodes.material.uniforms.uAlpha.value = 0.4; globe.scale.setScalar(7.5); globe.position.set(0, -32.8, -6)
           globe.rotation.set(0.1, t * 0.035, 0); cam.position.set(0, 0.6, lerp(15, 13.6, eio(k))); cam.lookAt(0, -0.4, 0)
           dust.material.uniforms.uFocus.value = 16; nodes.material.uniforms.uFocus.value = 19; nodes.material.uniforms.uAperture.value = 0.05
         }
