@@ -1,0 +1,66 @@
+{
+  "format": "tall",
+  "total": 25.51,
+  "hit": 7.233,
+  "acts": {
+    "reveal": [
+      0.9,
+      5.7
+    ],
+    "yours": [
+      7.233,
+      17.313
+    ],
+    "end": [
+      18.713,
+      22.713
+    ]
+  },
+  "cues": {
+    "meet": 0.9,
+    "name": 1.24,
+    "category": 2.96,
+    "yours": 7.233,
+    "code": 8.693,
+    "data": 9.553,
+    "deployment": 10.433,
+    "infra": 11.393,
+    "model": 13.113,
+    "trains": 15.473,
+    "endname": 18.713,
+    "endline": 20.233
+  },
+  "scenes": [
+    {
+      "name": "reveal",
+      "start": 0.0,
+      "end": 6.683,
+      "frame": 0,
+      "frames": 201,
+      "plate": {
+        "file": "plates/graph_hero.mp4"
+      }
+    },
+    {
+      "name": "yours",
+      "start": 6.683,
+      "end": 11.093,
+      "frame": 201,
+      "frames": 132
+    },
+    {
+      "name": "props",
+      "start": 11.093,
+      "end": 18.113,
+      "frame": 333,
+      "frames": 211
+    },
+    {
+      "name": "end",
+      "start": 18.113,
+      "end": 25.51,
+      "frame": 544,
+      "frames": 222
+    }
+  ]
+}

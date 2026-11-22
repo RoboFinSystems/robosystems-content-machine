@@ -49,7 +49,7 @@ the look is fixed here so every film, short cut, research film and demo wrapper 
 - **End card.** The icon and the wordmark over the graph, the site under them.
 
 `film.css` is read by CSS. three.js and Blender cannot read it, so the same values are written
-out in `ad.html`'s script and in `tools/ad/blender/*.py`. Change a value here and change it
+out in `renderer/templates/film_stage.js` (the stage every film page imports) and in the Blender files (`tools/film/blender/`, `tools/ad/blender/`). Change a value here and change it
 there, then re-render (`just ad-film main`) and compare.
 
 ## The deck surface

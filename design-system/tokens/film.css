@@ -6,8 +6,8 @@
    built on the film's form reads these.
 
    CSS reads them as variables. three.js and Blender cannot, so the
-   same values are written out in ad.html's script and in
-   tools/ad/blender/*.py: change one here and change it there.
+   same values are written out in renderer/templates/film_stage.js and in
+   the Blender files (tools/film/blender/, tools/ad/blender/): change one here and change it there.
    ============================================================ */
 :root {
   /* Stage */

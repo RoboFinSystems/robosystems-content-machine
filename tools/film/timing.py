@@ -82,7 +82,7 @@ def repeat(y, a, b, sr):
   )
 
 
-def music_bed(music, turn_natural, out, after=0.0):
+def music_bed(music, turn_natural, out, after=0.0, quiet=False):
   """Fit the bed so its hit falls at or just after the turn, with at least `after` seconds
   of music following the hit. Returns (hit, bed length)."""
   import librosa
@@ -136,27 +136,42 @@ def music_bed(music, turn_natural, out, after=0.0):
   if added:
     how += f", +{added} bar(s) after the hit"
   sf.write(str(out), y.T, sr)
-  print(
-    f"  music: beat {beat:.3f}s, {how}, hit at {hit:.2f}s, bed {y.shape[1] / sr:.1f}s"
-  )
+  if not quiet:
+    print(
+      f"  music: beat {beat:.3f}s, {how}, hit at {hit:.2f}s, bed {y.shape[1] / sr:.1f}s"
+    )
   return hit, y.shape[1] / sr
 
 
-def build(spec, ACTS, out, voice, music, audio, plates=None, force=False):
+def build(
+  spec, ACTS, out, voice, music, audio, plates=None, force=False, quiet=False, dry=False
+):
   """Voice the spec's acts, fit the bed, and write timeline.json, voice.wav and music.wav
   into `out`. `plates` maps a scene to the footage under it: a path relative to `out`, or
   {"file", "holdout"?} with, for footage that is not rendered to the scene's length,
-  {"at": a cue, "mark": the plate's own second that falls on that cue}. Returns the timeline."""
-  from faster_whisper import WhisperModel
+  {"at": a cue, "mark": the plate's own second that falls on that cue}. Returns the timeline.
 
+  dry: lay the film out from word counts alone, with no voice, no music and nothing recorded,
+  so a lane can look at its picture before its words are approved. It writes only the timeline."""
   name, ids = spec["name"], spec["acts"]
   out.mkdir(parents=True, exist_ok=True)
   leads = {a: spec.get("leads", {}).get(a, ACTS[a]["lead"]) for a in ids}
   tail, turn = spec.get("tail", 3.2), spec.get("turn")
 
-  model = WhisperModel("small.en", compute_type="int8")
   takes = {}
-  for a in ids:
+  if dry:  # about 2.6 words a second, each word in its place
+    for a in ids:
+      words = tokens_of(ACTS[a]["text"])
+      takes[a] = (
+        None,
+        len(words) / 2.6,
+        [(norm(w), i / 2.6) for i, w in enumerate(words)],
+      )
+  else:
+    from faster_whisper import WhisperModel
+
+    model = WhisperModel("small.en", compute_type="int8")
+  for a in [] if dry else ids:
     mp3 = take(a, ACTS[a]["text"], voice, audio, force)
     d = dur(mp3)
     segs, _ = model.transcribe(str(mp3), word_timestamps=True)
@@ -177,16 +192,16 @@ def build(spec, ACTS, out, voice, music, audio, plates=None, force=False):
 
   starts, total = layout()
   hit = None
-  if turn:
+  if turn and not dry:
     first = takes[turn][2][0][1]
     if spec.get("turn_cue"):
       word = ACTS[turn]["cues"][spec["turn_cue"]]
       first = next(tm for w, tm in takes[turn][2] if w == word)
     at = starts[turn] + first
-    hit, _ = music_bed(music, at, out / "music.wav", total - at - 1.0)
+    hit, _ = music_bed(music, at, out / "music.wav", total - at - 1.0, quiet)
     starts, total = layout(max(0.0, hit - at))
-  else:
-    music_bed(music, 0.0, out / "music.wav")
+  elif not dry:
+    music_bed(music, 0.0, out / "music.wav", quiet=quiet)
   total = round(total, 2)
 
   cues = {}
@@ -236,6 +251,8 @@ def build(spec, ACTS, out, voice, music, audio, plates=None, force=False):
   if "data" in spec:  # handed to the type layer untouched
     tl["data"] = spec["data"]
   (out / "timeline.json").write_text(json.dumps(tl, indent=2))
+  if dry:
+    return tl
 
   inputs = [x for a in ids for x in ("-i", str(takes[a][0]))]
   fc = ";".join(
@@ -265,17 +282,17 @@ def build(spec, ACTS, out, voice, music, audio, plates=None, force=False):
     ],
     check=True,
   )
-  for s in scenes:
+  if not quiet:
+    for s in scenes:
+      print(
+        f"  {s['name']:8s} {s['start']:6.2f} -> {s['end']:6.2f}  ({s['frames']} frames)"
+      )
     print(
-      f"  {s['name']:8s} {s['start']:6.2f} -> {s['end']:6.2f}  ({s['frames']} frames)"
+      f"{name} ({tl['format']}): {total}s"
+      + (
+        f"; the turn at {cues.get(spec.get('turn_cue')) or acts[turn][0]}s, the hit at {hit:.2f}s"
+        if turn
+        else ""
+      )
     )
-  print(
-    f"{name} ({tl['format']}): {total}s"
-    + (
-      f"; the turn at {cues.get(spec.get('turn_cue')) or acts[turn][0]}s, the hit at {hit:.2f}s"
-      if turn
-      else ""
-    )
-  )
-
   return tl

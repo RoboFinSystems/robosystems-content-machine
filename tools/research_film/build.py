@@ -4,13 +4,17 @@ Build one research film: a 60 to 90 second cut of a published brief, in the bran
   just research-film MSFT            (spec: projects/MSFT/film/MSFT_film.json)
   just research-film MSFT --check    (the figure check only: no voice, no render)
   just research-film MSFT --stills 4,20,41
+  just research-film PTC --dry --stills 3,12,20     (the picture laid out from word counts,
+                                                     before the words are approved or voiced)
 
 The spec is the film: its acts (the approved words, the cues, the scenes), the data its scenes
 draw, and the source of every figure on screen.
 
   { "name": "MSFT_film", "format": "wide", "turn": "turn", "acts": [...],
     "script": { act: { "lead", "text", "cues", "scenes" } },     as tools/film/timing.py reads them
-    "data": { claim, opener, number, beside, caveat, ask },      what renderer/templates/research_film.html draws
+    "data": { "scenes": { name: { "kind", "at", ... } } },        what renderer/templates/research_film.html draws:
+                                                                  one entry per scene the acts name; the kinds and
+                                                                  what each takes are listed at the top of the page
     "figures": [{ "text": "$364.6B", "source": "Form 10-Q, Note 12 (0001193125-26-436133)" }],
     "voice"?, "music"? }
 
@@ -57,8 +61,9 @@ def check_figures(spec):
   shown = set()
   for s in strings(spec["data"]):
     shown.update(FIGURE.findall(s))
-  if "facts" in spec["data"].get("opener", {}):
-    shown.add(f"{spec['data']['opener']['facts']:,}")
+  for sc in spec["data"]["scenes"].values():
+    if "facts" in sc:
+      shown.add(f"{sc['facts']:,}")
   listed = {f["text"]: f.get("source", "") for f in spec.get("figures", [])}
   bad = [f"on screen with no source: {t}" for t in sorted(shown - set(listed))]
   bad += [f"listed but not on screen: {t}" for t in sorted(set(listed) - shown)]
@@ -83,12 +88,14 @@ def main():
   import timing
 
   plates = {
-    "opener": {
+    name: {
       "file": str(IDENT),
       "holdout": 12,  # the ident's links are bright and thick: a wide cut around the type
-      "at": spec["data"]["opener"]["push_cue"],
+      "at": sc["at"]["push"],
       "mark": IDENT_PUSH,
     }
+    for name, sc in spec["data"]["scenes"].items()
+    if sc["kind"] == "ident"
   }
   tl = timing.build(
     spec,
@@ -99,6 +106,7 @@ def main():
     film / "audio",
     plates,
     "--force" in sys.argv,
+    dry="--dry" in sys.argv,
   )
   motion = [
     "node",
@@ -119,8 +127,9 @@ def main():
     "--out",
     str(film / "renders"),
   ]
-  if "--stills" in sys.argv:
-    motion += ["--stills", sys.argv[sys.argv.index("--stills") + 1]]
+  if "--stills" in sys.argv or "--dry" in sys.argv:
+    if "--stills" in sys.argv:
+      motion += ["--stills", sys.argv[sys.argv.index("--stills") + 1]]
     subprocess.run(motion, cwd=REPO, check=True)
     return
   subprocess.run(motion, cwd=REPO, check=True)

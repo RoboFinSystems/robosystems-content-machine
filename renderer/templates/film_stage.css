@@ -1,0 +1,11 @@
+/* The film stage's stylesheet half (film_stage.js is the other): the faces, the token aliases
+   a page's type uses, and the frame. A page links this after /ds/tokens/film.css and adds only
+   the styles of its own scenes. */
+@font-face { font-family: 'Space Grotesk'; src: url('/ds/fonts/SpaceGrotesk-Medium.ttf') format('truetype'); font-weight: 500; }
+@font-face { font-family: 'Space Grotesk'; src: url('/ds/fonts/SpaceGrotesk-Bold.ttf') format('truetype'); font-weight: 700; }
+@font-face { font-family: 'Orbitron'; src: url('/ds/fonts/Orbitron-VariableFont_wght.ttf') format('truetype'); font-weight: 400 900; }
+:root { --ink: var(--film-ink); --soft: var(--film-soft); --muted: var(--film-muted); --c300: var(--film-cyan-300); --display: var(--film-display); --body: var(--film-body); --mono: var(--film-mono); }
+html, body { margin: 0; background: #000; }
+#stage { position: relative; overflow: hidden; color: var(--ink); font-family: var(--body); }
+canvas { position: absolute; inset: 0; }
+.ov { position: absolute; inset: 0; opacity: 0; }

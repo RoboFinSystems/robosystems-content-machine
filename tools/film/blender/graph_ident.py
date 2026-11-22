@@ -1,9 +1,11 @@
 """
-The hero shot of the RoboSystems ad, built in Blender from nothing: scattered facts fly
+The graph ident, the film kit's own shot, built in Blender from nothing: scattered facts fly
 home onto a sphere, link into a graph around a polished core, and the graph turns over a
-reflective floor.
+reflective floor. Two films are cut from it: the brand film's hero (with --film, at the length
+of its "reveal" scene) and the filing ident research films open on (--push). A change here
+changes both: `just film-check` does not render, so compare a plate before and after.
 
-  Blender -b -P graph_hero.py -- <out_dir> [--stills 1,90,180] [--engine eevee|cycles]
+  Blender -b -P graph_ident.py -- <out_dir> [--stills 1,90,180] [--engine eevee|cycles]
                                  [--frames 180] [--samples 64]
 
 Everything is a function of the frame number, so the same call renders the same picture.
@@ -117,7 +119,9 @@ scene.world = world
 globe = add(bpy.data.objects.new("globe", None))
 R = 3.4
 N = FACTS or 150
-K = max(0.42, (150 / N) ** 0.5)  # more points, each smaller, so the sphere stays a surface
+K = max(
+  0.42, (150 / N) ** 0.5
+)  # more points, each smaller, so the sphere stays a surface
 
 core_me = sphere_mesh("core", 2.75, 5)
 core = add(bpy.data.objects.new("core", core_me))
@@ -189,7 +193,9 @@ globe.rotation_euler = (math.radians(14), math.radians(-8), 0)
 globe.keyframe_insert("rotation_euler", frame=1)
 TURN = (math.radians(14), math.radians(-8), math.radians(70 if not PUSH else 46))
 globe.rotation_euler = TURN
-globe.keyframe_insert("rotation_euler", frame=PUSH or FRAMES)  # an opener holds still to be read
+globe.keyframe_insert(
+  "rotation_euler", frame=PUSH or FRAMES
+)  # an opener holds still to be read
 
 # ── dust: small lights through the depth, for the lens to throw out of focus ────
 dust_me = sphere_mesh("dust", 0.03, 1)
