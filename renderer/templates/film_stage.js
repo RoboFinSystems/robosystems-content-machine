@@ -1,6 +1,6 @@
 /*
  * The film stage: what every page built on the brand film's form shares, so the look lives in
- * one place. A page (ad.html, research_film.html, the next lane's) imports this, takes the
+ * one place. A page (ad.html, film.html) imports this, takes the
  * stage, and keeps only its own scenes.
  *
  *   import { stage, fonts, seg, eo, eio, lerp, show, $ } from './film_stage.js'
