@@ -14,14 +14,14 @@ mkdir -p $F/plates $F/renders
 has() { python3 -c "import json,sys;sys.exit(0 if any(s['name']=='$1' for s in json.load(open('$F/timeline.json'))['scenes']) else 1)"; }
 plate() { # shot, script, extra args
   rm -rf $F/plates/$1
-  $BL -b -P $AD/blender/$2 -- "$PWD/$F/plates/$1" --film "$PWD/$F" $3 >/dev/null 2>&1
+  $BL -b -P $2 -- "$PWD/$F/plates/$1" --film "$PWD/$F" $3 >/dev/null 2>&1
   ffmpeg -v error -y -framerate 30 -start_number 1 -i $F/plates/$1/frame-%04d.png -c:v libx264 -pix_fmt yuv420p -crf 14 -movflags +faststart $F/plates/$1.mp4
   [ -f $F/plates/$1/anchors.json ] && cp $F/plates/$1/anchors.json $F/anchors_$1.json
   echo "  plate $1: $(ls $F/plates/$1 | grep -c frame-) frames"
 }
-if has reveal; then plate graph_hero graph_hero.py "--samples 32"; fi
-if has trace; then plate trace shots.py "--shot trace"; fi
-if has share; then plate share shots.py "--shot share"; fi
+if has reveal; then plate graph_hero tools/film/blender/graph_ident.py "--samples 32"  # the kit's ident, as the ad's hero; fi
+if has trace; then plate trace $AD/blender/shots.py "--shot trace"; fi
+if has share; then plate share $AD/blender/shots.py "--shot share"; fi
 SIZE=$(python3 -c "import json;print('1080 1920' if json.load(open('$F/timeline.json'))['format']=='tall' else '1920 1080')")
 set -- $SIZE
 node renderer/src/cli.mjs motion --root renderer/templates --html renderer/templates/ad.html --query "film=$NAME" --width $1 --height $2 \

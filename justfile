@@ -517,9 +517,14 @@ ad-film name:
 # leaves the graph for one fact. Rendered once (about two minutes), reused by every film.
 film-ident:
     mkdir -p showcase/film_kit/ident
-    /Applications/Blender.app/Contents/MacOS/Blender -b -P tools/ad/blender/graph_hero.py -- "$PWD/showcase/film_kit/ident" --frames 330 --facts 1000 --push 190 --samples 32 >/dev/null 2>&1
+    /Applications/Blender.app/Contents/MacOS/Blender -b -P tools/film/blender/graph_ident.py -- "$PWD/showcase/film_kit/ident" --frames 330 --facts 1000 --push 190 --samples 32 >/dev/null 2>&1
     ffmpeg -v error -y -framerate 30 -start_number 1 -i showcase/film_kit/ident/frame-%04d.png -c:v libx264 -pix_fmt yuv420p -crf 14 -movflags +faststart showcase/film_kit/ident_wide.mp4
     rm -rf showcase/film_kit/ident
+
+# The film kit's guard: recompute each brand film's timeline from its cached takes and compare
+# it with the tracked copy (tools/ad/films/expected/). `--save` records an intended change.
+film-check *args:
+    @UV_ENV_FILE=.env uv run --with faster-whisper --with 'av<16' --with librosa --with soundfile --with numpy python tools/film/check.py {{args}}
 
 # Build a research film from projects/TICKER/film/TICKER_film.json (words, cues, figures and
 # their sources): voice, timeline, the type layer over the filing ident, the mix.

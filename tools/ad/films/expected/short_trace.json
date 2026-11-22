@@ -1,0 +1,73 @@
+{
+  "format": "wide",
+  "total": 32.4,
+  "hit": 15.244,
+  "acts": {
+    "reveal": [
+      0.9,
+      5.7
+    ],
+    "how": [
+      7.404,
+      24.204
+    ],
+    "end": [
+      25.604,
+      29.604
+    ]
+  },
+  "cues": {
+    "meet": 0.9,
+    "name": 1.24,
+    "category": 2.96,
+    "ledger": 7.404,
+    "reports": 9.464,
+    "bench": 10.804,
+    "same": 12.704,
+    "every": 15.244,
+    "entries": 16.744,
+    "reads": 18.324,
+    "claude": 20.124,
+    "chatgpt": 21.224,
+    "mcp": 22.424,
+    "endname": 25.604,
+    "endline": 27.124
+  },
+  "scenes": [
+    {
+      "name": "reveal",
+      "start": 0.0,
+      "end": 6.954,
+      "frame": 0,
+      "frames": 209,
+      "plate": {
+        "file": "plates/graph_hero.mp4"
+      }
+    },
+    {
+      "name": "what",
+      "start": 6.954,
+      "end": 14.894,
+      "frame": 209,
+      "frames": 238
+    },
+    {
+      "name": "trace",
+      "start": 14.894,
+      "end": 25.004,
+      "frame": 447,
+      "frames": 304,
+      "plate": {
+        "file": "plates/trace.mp4",
+        "holdout": true
+      }
+    },
+    {
+      "name": "end",
+      "start": 25.004,
+      "end": 32.4,
+      "frame": 751,
+      "frames": 221
+    }
+  ]
+}

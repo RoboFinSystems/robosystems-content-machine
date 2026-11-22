@@ -1,0 +1,61 @@
+{
+  "format": "wide",
+  "total": 25.03,
+  "hit": 14.234,
+  "acts": {
+    "reveal": [
+      0.9,
+      5.7
+    ],
+    "share": [
+      7.394,
+      16.834
+    ],
+    "end": [
+      18.234,
+      22.234
+    ]
+  },
+  "cues": {
+    "meet": 0.9,
+    "name": 1.24,
+    "category": 2.96,
+    "publish": 7.394,
+    "shareit": 8.914,
+    "lands": 10.114,
+    "statements": 12.134,
+    "hold": 14.234,
+    "onemodel": 15.474,
+    "endname": 18.234,
+    "endline": 19.754
+  },
+  "scenes": [
+    {
+      "name": "reveal",
+      "start": 0.0,
+      "end": 6.894,
+      "frame": 0,
+      "frames": 207,
+      "plate": {
+        "file": "plates/graph_hero.mp4"
+      }
+    },
+    {
+      "name": "share",
+      "start": 6.894,
+      "end": 17.634,
+      "frame": 207,
+      "frames": 323,
+      "plate": {
+        "file": "plates/share.mp4"
+      }
+    },
+    {
+      "name": "end",
+      "start": 17.634,
+      "end": 25.03,
+      "frame": 530,
+      "frames": 221
+    }
+  ]
+}
