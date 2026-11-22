@@ -8,6 +8,10 @@ reflective floor.
 
 Everything is a function of the frame number, so the same call renders the same picture.
 Type is not set here: the HTML renderer lays it over the plate (see the ad's assembly).
+
+With --push F the shot is the filing ident, shared by every film that opens on a filing
+(just film-ident): a denser sphere (--facts N points), and from frame F the graph stops
+turning and the camera leaves the whole of it for one fact on its near face.
 """
 
 import math
@@ -32,7 +36,8 @@ SAMPLES = int(opt("--samples", "64"))
 FILM = opt(
   "--film", ""
 )  # a film folder: the shot takes its length and frame shape from its timeline
-TALL = False
+TALL = "--tall" in argv
+FACTS, PUSH = int(opt("--facts", "0")), int(opt("--push", "0"))  # the filing ident
 if FILM:
   import json
   from pathlib import Path
@@ -111,7 +116,8 @@ scene.world = world
 # ── the globe: everything that turns together ───────────────────────────────────
 globe = add(bpy.data.objects.new("globe", None))
 R = 3.4
-N = 150
+N = FACTS or 150
+K = max(0.42, (150 / N) ** 0.5)  # more points, each smaller, so the sphere stays a surface
 
 core_me = sphere_mesh("core", 2.75, 5)
 core = add(bpy.data.objects.new("core", core_me))
@@ -122,14 +128,14 @@ core.keyframe_insert("scale", frame=30)
 core.scale = (1, 1, 1)
 core.keyframe_insert("scale", frame=84)
 
-node_me = sphere_mesh("node", 0.075, 2)
-hub_me = sphere_mesh("hub", 0.13, 3)
+node_me = sphere_mesh("node", 0.075 * K, 2)
+hub_me = sphere_mesh("hub", 0.13 * K, 3)
 node_mat = emission("node", "#dff9ff", 5)
 hub_mat = emission("hub", "#67E8F9", 9)
 node_me.materials.append(node_mat)
 hub_me.materials.append(hub_mat)
 
-home = []
+home, objs = [], []
 for i in range(N):
   z = 1 - (i / (N - 1)) * 2
   r = math.sqrt(max(0.0, 1 - z * z))
@@ -145,16 +151,21 @@ for i in range(N):
   o.keyframe_insert("location", frame=start)
   o.location = h
   o.keyframe_insert("location", frame=start + 62)
+  objs.append(o)
 
 # ── the links: each fact to its three nearest, drawn after the facts land ───────
 pairs = set()
 for i, h in enumerate(home):
-  near = sorted(range(N), key=lambda j: (h - home[j]).length)[1:4]
+  # points sit along a spiral, so a point's neighbours are near it in the list too
+  near = sorted(
+    range(max(0, i - 400), min(N, i + 400)) if N > 800 else range(N),
+    key=lambda j: (h - home[j]).length_squared,
+  )[1:4]
   for j in near:
     pairs.add((min(i, j), max(i, j)))
 cu = bpy.data.curves.new("links", "CURVE")
 cu.dimensions = "3D"
-cu.bevel_depth = 0.011
+cu.bevel_depth = 0.011 * K
 cu.bevel_resolution = 2
 cu.bevel_factor_mapping_end = "SPLINE"
 for i, j in sorted(pairs):
@@ -176,8 +187,9 @@ links.keyframe_insert("hide_render", frame=80)
 
 globe.rotation_euler = (math.radians(14), math.radians(-8), 0)
 globe.keyframe_insert("rotation_euler", frame=1)
-globe.rotation_euler = (math.radians(14), math.radians(-8), math.radians(70))
-globe.keyframe_insert("rotation_euler", frame=FRAMES)
+TURN = (math.radians(14), math.radians(-8), math.radians(70 if not PUSH else 46))
+globe.rotation_euler = TURN
+globe.keyframe_insert("rotation_euler", frame=PUSH or FRAMES)  # an opener holds still to be read
 
 # ── dust: small lights through the depth, for the lens to throw out of focus ────
 dust_me = sphere_mesh("dust", 0.03, 1)
@@ -235,8 +247,35 @@ c.track_axis, c.up_axis = "TRACK_NEGATIVE_Z", "UP_Y"
 cam.location = (-1.6, -27.0, 2.2) if TALL else (-9.0, -25.5, 2.6)
 cam.keyframe_insert("location", frame=1)
 cam.location = (1.1, -22.0, 0.4) if TALL else (-3.2, -21.0, 0.6)
-cam.keyframe_insert("location", frame=FRAMES)
+cam.keyframe_insert("location", frame=PUSH or FRAMES)
 scene.camera = cam
+
+# ── the opener's push: from the whole filing to the one fact the film is about ───
+if PUSH:
+  from mathutils import Euler
+
+  rot = Euler(TURN, "XYZ").to_matrix()
+  eye = Vector(cam.location)
+  # the fact that faces the camera once the graph has stopped turning
+  fi = max(range(N), key=lambda j: (rot @ home[j]).normalized().dot(eye.normalized()))
+  fact = rot @ home[fi]
+  one = objs[fi]
+  one.data = sphere_mesh("fact", 0.13 * K, 3)
+  one.data.materials.append(emission("fact", "#ffffff", 14))
+  one.scale = (1, 1, 1)
+  one.keyframe_insert("scale", frame=PUSH)
+  one.scale = (2.6, 2.6, 2.6)
+  one.keyframe_insert("scale", frame=FRAMES)
+  target.keyframe_insert("location", frame=PUSH)
+  target.location = fact
+  target.keyframe_insert("location", frame=PUSH + round((FRAMES - PUSH) * 0.55))
+  focus = add(bpy.data.objects.new("focus", None))
+  focus.keyframe_insert("location", frame=PUSH)
+  focus.location = fact
+  focus.keyframe_insert("location", frame=PUSH + round((FRAMES - PUSH) * 0.55))
+  cam_data.dof.focus_object = focus
+  cam.location = fact + (eye - fact).normalized() * 2.4
+  cam.keyframe_insert("location", frame=FRAMES)
 
 # ── render settings ─────────────────────────────────────────────────────────────
 if ENGINE == "cycles":

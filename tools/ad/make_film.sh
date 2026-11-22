@@ -2,7 +2,8 @@
 # Build one film end to end from its spec. Run from the content machine's root:
 #   just ad-film <name>          (spec: tools/ad/films/<name>.json; output: showcase/robosystems_ad/films/<name>/)
 # Needs Blender (brew install --cask blender) and the renderer set up (just render-setup).
-# Steps: voice + timeline, the Blender plates its scenes need, the type layer, the assembly, a pop scan.
+# Steps: voice + timeline (the film kit, tools/film/), the Blender plates its scenes need, the type layer,
+# the assembly (the kit's), a pop scan.
 set -e
 NAME=$1
 AD=tools/ad
@@ -25,6 +26,6 @@ SIZE=$(python3 -c "import json;print('1080 1920' if json.load(open('$F/timeline.
 set -- $SIZE
 node renderer/src/cli.mjs motion --root renderer/templates --html renderer/templates/ad.html --query "film=$NAME" --width $1 --height $2 \
   --mount "/ds/=design-system,/node_modules/=renderer/node_modules,/films/=showcase/robosystems_ad/films" --name layer --out $F/renders | tail -1
-python3 $AD/assemble.py $NAME
+python3 tools/film/assemble.py $F
 uv run --with numpy python tools/motion/qa/pop-scan.py $F/renders/$NAME.mp4 --sheet none \
   --cuts "$(python3 -c "import json;print(','.join(str(s['start']) for s in json.load(open('$F/timeline.json'))['scenes'][1:]))")" | tail -12
