@@ -66,15 +66,15 @@ def tokens_css() -> str:
 
 
 def motion_runtime() -> str:
-  """motion/runtime.js (vendored from @robosystems/core) as plain declarations, so the
+  """renderer/templates/runtime.js (vendored from @robosystems/core) as plain declarations, so the
   deck's classic inline script can use it: the page renders from file://, where a module
   import of a sibling file is blocked. The runtime is dependency-free ESM whose only
   export forms are `export const` and `export function`; refuse anything else rather
   than inline a file that will not parse."""
-  src = (REPO / "motion" / "runtime.js").read_text()
+  src = (REPO / "renderer" / "templates" / "runtime.js").read_text()
   bad = re.findall(r"^(?:import\b|export\s+(?:\{|\*|default))", src, flags=re.M)
   if bad:
-    sys.exit(f"motion/runtime.js has {bad[0]!r}: it can no longer be inlined as-is")
+    sys.exit(f"renderer/templates/runtime.js has {bad[0]!r}: it can no longer be inlined as-is")
   return re.sub(r"^export ", "", src, flags=re.M)
 
 

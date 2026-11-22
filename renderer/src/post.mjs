@@ -7,7 +7,7 @@
  *
  * A slide is a native card (type sized for a phone feed) built here, so the video
  * templates keep their 16:9 layout. A chart or product shot inside a card is a
- * `visual`: a motion template (motion/: research bars, counters, board, flow; slide
+ * `visual`: a motion template (templates/: research bars, counters, board, flow; slide
  * number, compare, still) posed at its finished frame and cropped to its content,
  * or an image file (a product capture from `capture`). Every word and number comes
  * from the spec; nothing is generated. Spec shape: renderer/README.md, "post".
@@ -168,7 +168,7 @@ async function renderVisual(browser, visual, file) {
     '/fonts/': path.join(pub, 'fonts'),
     '/images/': path.join(pub, 'images'),
     ...(visual.stillsDir ? { '/stills/': visual.stillsDir } : {}),
-    '/': path.join(REPO, 'motion'),
+    '/': path.join(REPO, 'renderer', 'templates'),
   };
   const server = await serve({ html: '', mounts });
   try {

@@ -9,7 +9,7 @@ The episode is showcase/<episode>/episode.json, a list of segments:
   { "id": "chat", "kind": "clip", "file": "takes/chat.mp4", "in": 12.0, "out": 27.5,
     "narration": "...", "keepAudio": false }
 
-- motion       a template from motion/ (intro, outro, slide, research) rendered to the length
+- motion       a template from renderer/templates/ (intro, outro, slide, research) rendered to the length
                of its narration plus a tail, so the picture follows the voice. "cues":
                {name: "phrase"} times a build inside the shot to the word that names it:
                every "@name" in data becomes that word's time in seconds.
@@ -175,9 +175,9 @@ def render_motion(seg, secs, out_dir, name, public=RL_PUBLIC, data=None):
       str(REPO / "renderer/src/cli.mjs"),
       "motion",
       "--root",
-      str(REPO / "motion"),
+      str(REPO / "renderer" / "templates"),
       "--html",
-      str(REPO / "motion/render.html"),
+      str(REPO / "renderer" / "templates" / "render.html"),
       "--mount",
       mounts,
       "--query",

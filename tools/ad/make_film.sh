@@ -24,7 +24,7 @@ if has trace; then plate trace shots.py "--shot trace"; fi
 if has share; then plate share shots.py "--shot share"; fi
 SIZE=$(python3 -c "import json;print('1080 1920' if json.load(open('$F/timeline.json'))['format']=='tall' else '1920 1080')")
 set -- $SIZE
-node renderer/src/cli.mjs motion --root $AD --html $AD/ad.html --query "film=$NAME" --width $1 --height $2 \
+node renderer/src/cli.mjs motion --root renderer/templates --html renderer/templates/ad.html --query "film=$NAME" --width $1 --height $2 \
   --mount "/fonts/=$RL/fonts,/images/=$RL/images,/node_modules/=renderer/node_modules,/films/=showcase/robosystems_ad/films" --name layer --out $F/renders | tail -1
 python3 $AD/assemble.py $NAME
 uv run --with numpy python tools/motion/qa/pop-scan.py $F/renders/$NAME.mp4 --sheet none \
