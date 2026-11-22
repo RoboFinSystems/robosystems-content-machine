@@ -19,6 +19,7 @@ that is rebuilt on the film's form.
 | Consumer | Reads |
 | --- | --- |
 | `renderer/templates/ad.html` (the brand film's type layer; `just ad-film`) | `tokens/film.css`, `fonts/`, `assets/robosystems_icon.png` |
+| `renderer/templates/research_film.html` (a research film's type layer; `just research-film`) | `tokens/film.css`, `fonts/`, `assets/robosystems_icon.png` |
 | `tools/build_webdeck.py`, `tools/build_webdeck_short.py` | `tokens/*.css` (deck), `fonts/`, the lockup and the white mark |
 | `tools/gen_article_cover.py` | `fonts/` |
 

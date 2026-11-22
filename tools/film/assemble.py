@@ -3,7 +3,11 @@ Finish a film: screen each Blender plate under its window of the type layer, mix
 over the ducked music at -14 LUFS. A plate with labels set among its lines is first cut back
 around the type, so a line passes behind a label and never through it.
 
-  python3 tools/ad/assemble.py <film name>     -> showcase/robosystems_ad/films/<name>/renders/<name>.mp4
+A scene's plate is named in the timeline (tools/film/timing.py writes it): its file, whether
+it is held out around the type (true, or how many pixels wide the cut is), and how far into the footage the scene starts ("skip";
+negative holds the first frame that long).
+
+  python3 tools/film/assemble.py <film folder>     -> <film folder>/renders/<name>.mp4
 """
 
 import json
@@ -11,18 +15,10 @@ import subprocess
 import sys
 from pathlib import Path
 
-WORK = Path(__file__).resolve().parents[2] / "showcase" / "robosystems_ad"
-PLATE = {
-  "reveal": "graph_hero",
-  "trace": "trace",
-  "share": "share",
-}  # scene -> the Blender shot under it
-HOLDOUT = {"trace"}  # scenes whose plate is cut back around the type
-
-film = WORK / "films" / sys.argv[1]
+film = Path(sys.argv[1]).resolve()
 tl = json.loads((film / "timeline.json").read_text())
 total = tl["total"]
-held = [s["name"] for s in tl["scenes"] if s["name"] in PLATE and s["name"] in HOLDOUT]
+held = [s["name"] for s in tl["scenes"] if s.get("plate", {}).get("holdout")]
 ins, last, n = [], "v0", 0
 fc = (
   f"[0:v]split={len(held) + 1}[base]" + "".join(f"[h{i}]" for i in range(len(held)))
@@ -30,16 +26,22 @@ fc = (
   else "[0:v]copy[base]"
 ) + ";[base]format=gbrp[v0]"
 for s in tl["scenes"]:
-  if s["name"] not in PLATE:
+  plate = s.get("plate")
+  if not plate:
     continue
   n += 1
   f0, f1 = s["frame"], s["frame"] + s["frames"]
-  ins += ["-i", str(film / "plates" / f"{PLATE[s['name']]}.mp4")]
-  fc += f";[{n}:v]tpad=start={f0}:start_mode=clone:stop_mode=clone:stop_duration=90,format=gbrp"
-  if s["name"] in HOLDOUT:  # the type, widened and softened, as a matte over the plate
+  skip = round(plate.get("skip", 0) * 30)
+  ins += ["-i", str((film / plate["file"]).resolve())]
+  fc += (
+    f";[{n}:v]"
+    + (f"trim=start_frame={skip},setpts=PTS-STARTPTS," if skip > 0 else "")
+    + f"tpad=start={f0 - min(skip, 0)}:start_mode=clone:stop_mode=clone:stop_duration=90,format=gbrp"
+  )
+  if plate.get("holdout"):  # the type, widened and softened, as a matte over the plate
     fc += (
       f"[q{n}];[h{held.index(s['name'])}]format=gray,lut=y='clip((val-24)*5,0,255)',"
-      f"dilation,dilation,dilation,gblur=sigma=2,negate,format=gbrp[m{n}]"
+      f"{'dilation,' * (3 if plate['holdout'] is True else plate['holdout'])}gblur=sigma=2,negate,format=gbrp[m{n}]"
       f";[q{n}][m{n}]blend=all_mode=multiply"
     )
   fc += (

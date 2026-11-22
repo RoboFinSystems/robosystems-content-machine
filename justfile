@@ -513,6 +513,21 @@ ad-film name:
     @just ensure-env
     sh tools/ad/make_film.sh {{name}}
 
+# The filing ident every research film opens on: facts fly home onto a sphere, then the camera
+# leaves the graph for one fact. Rendered once (about two minutes), reused by every film.
+film-ident:
+    mkdir -p showcase/film_kit/ident
+    /Applications/Blender.app/Contents/MacOS/Blender -b -P tools/ad/blender/graph_hero.py -- "$PWD/showcase/film_kit/ident" --frames 330 --facts 1000 --push 190 --samples 32 >/dev/null 2>&1
+    ffmpeg -v error -y -framerate 30 -start_number 1 -i showcase/film_kit/ident/frame-%04d.png -c:v libx264 -pix_fmt yuv420p -crf 14 -movflags +faststart showcase/film_kit/ident_wide.mp4
+    rm -rf showcase/film_kit/ident
+
+# Build a research film from projects/TICKER/film/TICKER_film.json (words, cues, figures and
+# their sources): voice, timeline, the type layer over the filing ident, the mix.
+# Output: projects/TICKER/film/renders/TICKER_film.mp4. Needs `just film-ident` once.
+research-film ticker *args:
+    @just ensure-env
+    UV_ENV_FILE=.env uv run --with faster-whisper --with 'av<16' --with librosa --with soundfile --with numpy python tools/research_film/build.py {{ticker}} {{args}}
+
 # ─── Product demos (live UI walkthrough: real cursor, real clicks, component zoom) ───
 
 # List the anchors a walkthrough can aim at, read off the RUNNING app rather than

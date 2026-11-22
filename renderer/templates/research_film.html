@@ -1,0 +1,217 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Research film</title>
+    <script type="importmap">
+      { "imports": { "three": "/node_modules/three/build/three.module.js", "three/addons/": "/node_modules/three/examples/jsm/" } }
+    </script>
+    <link rel="stylesheet" href="/ds/tokens/film.css" />
+    <style>
+      @font-face { font-family: 'Space Grotesk'; src: url('/ds/fonts/SpaceGrotesk-Medium.ttf') format('truetype'); font-weight: 500; }
+      @font-face { font-family: 'Space Grotesk'; src: url('/ds/fonts/SpaceGrotesk-Bold.ttf') format('truetype'); font-weight: 700; }
+      @font-face { font-family: 'Orbitron'; src: url('/ds/fonts/Orbitron-VariableFont_wght.ttf') format('truetype'); font-weight: 400 900; }
+      :root { --ink: var(--film-ink); --soft: var(--film-soft); --muted: var(--film-muted); --c300: var(--film-cyan-300); --display: var(--film-display); --body: var(--film-body); }
+      html, body { margin: 0; background: #000; }
+      #stage { position: relative; overflow: hidden; width: 1920px; height: 1080px; color: var(--ink); font-family: var(--body); }
+      canvas { position: absolute; inset: 0; }
+      .ov { position: absolute; inset: 0; opacity: 0; }
+      .ctr { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+      .left { position: absolute; left: 130px; top: 0; bottom: 0; width: 900px; display: flex; flex-direction: column; justify-content: center; }
+      .kick { font: 600 26px var(--display); letter-spacing: .3em; text-transform: uppercase; color: var(--c300); }
+      .stat { font: 900 230px/1 var(--display); margin-top: 44px; }
+      .lab { font: 500 40px var(--body); color: var(--soft); margin-top: 22px; }
+      .quote { font: 500 50px/1.3 var(--body); max-width: 1400px; }
+      .by { font: 600 22px var(--display); letter-spacing: .24em; text-transform: uppercase; color: var(--muted); margin-top: 30px; }
+      .count { font: 900 150px/1 var(--display); margin-top: 40px; }
+      .note12 { font: 800 60px/1.1 var(--display); margin-top: 70px; }
+      .cap { position: absolute; left: 160px; right: 160px; bottom: 96px; text-align: center; font: 500 44px/1.3 var(--body); color: var(--ink); }
+      /* the turn: the figure, then the same figure against two others, to scale */
+      #n_top { position: absolute; left: 0; right: 0; top: 0; height: 1080px; display: flex; flex-direction: column; align-items: center; justify-content: center; transform-origin: 50% 0; }
+      .giant { font: 900 250px/1 var(--display); margin-top: 30px; }
+      .nlab { font: 600 30px var(--display); letter-spacing: .26em; text-transform: uppercase; }
+      #n_bars { position: absolute; left: 200px; right: 200px; top: 500px; }
+      .bar { margin-bottom: 40px; }
+      .bar .bl { font: 500 32px var(--body); margin-bottom: 12px; opacity: 1; }
+      .bar .track { position: relative; height: 62px; opacity: 1; }
+      .bar .fill { position: absolute; left: 0; top: 0; bottom: 0; background: #fff; border-radius: 6px; opacity: 1; }
+      .bar.other .fill { background: #04070c; }
+      .bar .bv { position: absolute; top: 0; font: 800 44px/62px var(--display); margin-left: 22px; opacity: 1; }
+      #n_cap { position: absolute; left: 0; right: 0; bottom: 60px; text-align: center; font: 600 30px var(--display); letter-spacing: .26em; text-transform: uppercase; }
+      .rows { position: absolute; left: 200px; right: 200px; top: 210px; }
+      .row { display: flex; align-items: baseline; justify-content: space-between; border-top: 1px solid rgba(255,255,255,.22); padding: 40px 0 34px; }
+      .row > div { opacity: 1; }
+      .row .rl { font: 500 46px var(--body); } .row .rs { font: 500 28px var(--body); color: var(--muted); margin-top: 12px; max-width: 860px; }
+      .row .rv { font: 800 76px var(--display); white-space: nowrap; }
+      .prompt { font: 500 46px/1.35 var(--body); max-width: 1380px; margin-top: 44px; }
+      .mark { display: flex; align-items: center; gap: 22px; margin-top: 70px; }
+      .mark img { width: 84px; height: 84px; border-radius: 20px; opacity: 1; } .mark span { font: 800 46px var(--display); opacity: 1; }
+      .url { font: 500 34px var(--body); color: var(--c300); margin-top: 26px; }
+      .fine { position: absolute; left: 0; right: 0; bottom: 34px; text-align: center; font: 500 24px var(--body); color: var(--muted); }
+    </style>
+  </head>
+  <body>
+    <div id="stage">
+      <canvas id="gl" width="1920" height="1080"></canvas>
+      <div class="ov" id="o_claim"><div class="ctr box"><div class="kick" id="c_k"></div><div class="stat" id="c_s"></div><div class="lab" id="c_l"></div></div>
+        <div class="ctr box"><div class="quote" id="c_q"></div><div class="by" id="c_b"></div></div></div>
+      <div class="ov" id="o_opener"><div class="left box"><div class="kick" id="f_k"></div><div class="count" id="f_n"></div><div class="lab" id="f_l"></div><div class="note12" id="f_t"></div></div>
+        <div class="cap" id="f_q"></div></div>
+      <div class="ov" id="o_number"><div id="n_top" class="box"><div class="nlab" id="n_l"></div><div class="giant" id="n_v"></div></div>
+        <div id="n_bars" class="box"></div><div id="n_cap"></div></div>
+      <div class="ov" id="o_beside"><div class="kick" id="b_k" style="position:absolute;left:200px;top:130px"></div><div class="rows box" id="b_rows"></div></div>
+      <div class="ov" id="o_caveat"><div class="ctr box"><div class="quote" id="v_q"></div><div class="by" id="v_b"></div><div class="note12" id="v_l" style="margin-top:90px"></div></div></div>
+      <div class="ov" id="o_ask"><div class="ctr box"><div class="kick" id="a_k" style="font-size:34px"></div><div class="prompt" id="a_p"></div>
+        <div class="mark box" id="a_m"><img src="/ds/assets/robosystems_icon.png" /><span>RoboSystems</span></div><div class="url" id="a_u"></div></div><div class="fine" id="a_n"></div></div>
+    </div>
+    <script type="module">
+      // The type layer of a research film (tools/research_film/build.py; projects/<TICKER>/film/).
+      // Every word and figure on screen comes from the spec's data; the scenes here are the form:
+      // claim, opener (over the Blender fact graph), number (the turn), beside, caveat, ask.
+      // The stage, the lens and the colours are the brand film's (ad.html, tokens/film.css).
+      import * as THREE from 'three'
+      import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js'
+      import { RenderPass } from 'three/addons/postprocessing/RenderPass.js'
+      import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
+      import { OutputPass } from 'three/addons/postprocessing/OutputPass.js'
+
+      const TL = await (await fetch('/film/timeline.json')).json()
+      const W = 1920, H = 1080, C = TL.cues, D = TL.data, SC = TL.scenes.map((s) => [s.name, s.start, s.end])
+      const clamp = (x) => Math.max(0, Math.min(1, x))
+      const seg = (t, a, b) => clamp((t - a) / (b - a))
+      const eo = (x) => 1 - Math.pow(1 - clamp(x), 3)
+      const eio = (x) => ((x = clamp(x)), x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2)
+      const lerp = (a, b, p) => a + (b - a) * p
+      const $ = (id) => document.getElementById(id)
+      const show = (el, pin, pout = 0, dy = 24) => { const e = eo(pin); el.style.opacity = clamp(pin * 1.4) * (1 - eo(pout)); el.style.filter = e < 1 ? `blur(${(1 - e) * 14}px)` : ''; el.style.translate = `0 ${(1 - e) * dy}px` }
+      let sd = 11
+      const rnd = () => ((sd = (sd * 16807) % 2147483647), sd / 2147483647)
+
+      // the words
+      const put = (id, s) => ($(id).textContent = s)
+      put('c_k', D.claim.kicker); put('c_s', D.claim.stat); put('c_l', D.claim.statlab); put('c_q', '“' + D.claim.quote + '”'); put('c_b', D.claim.quoteby)
+      put('f_k', D.opener.kicker); put('f_l', D.opener.factlab); put('f_t', D.opener.note); put('f_q', D.opener.quote)
+      put('n_l', D.number.label); put('n_v', D.number.value); put('n_cap', D.number.caption)
+      const BMAX = Math.max(...D.number.bars.map((b) => b.amount)), BW = W - 400 - 260
+      $('n_bars').innerHTML = D.number.bars.map((b, i) => `<div class="bar${b.other ? ' other' : ''}" id="bar${i}"><div class="bl">${b.label}</div><div class="track"><div class="fill" id="bf${i}"></div><div class="bv" id="bv${i}">${b.text}</div></div></div>`).join('')
+      put('b_k', D.beside.kicker)
+      $('b_rows').innerHTML = D.beside.rows.map((r, i) => `<div class="row" id="row${i}"><div><div class="rl">${r.label}</div><div class="rs">${r.sub}</div></div><div class="rv">${r.value}</div></div>`).join('')
+      put('v_q', D.caveat.quote); put('v_b', D.caveat.by); put('v_l', D.caveat.line)
+      put('a_k', D.ask.kicker); put('a_p', D.ask.prompt); put('a_u', D.ask.url); put('a_n', D.ask.note)
+
+      const renderer = new THREE.WebGLRenderer({ canvas: $('gl'), antialias: true, preserveDrawingBuffer: true })
+      renderer.setPixelRatio(1); renderer.setSize(W, H, false)
+      const scene = new THREE.Scene()
+      const cam = new THREE.PerspectiveCamera(38, W / H, 0.1, 400)
+      const composer = new EffectComposer(renderer)
+      composer.addPass(new RenderPass(scene, cam))
+      const bloom = new UnrealBloomPass(new THREE.Vector2(W, H), 0.55, 0.7, 0.82)
+      composer.addPass(bloom); composer.addPass(new OutputPass())
+
+      const DARK = new THREE.Color('#04070c'), BLACK = new THREE.Color('#000000')
+      const gc = Object.assign(document.createElement('canvas'), { width: 512, height: 288 })
+      const gx = gc.getContext('2d'); const gr = gx.createLinearGradient(0, 0, 512, 288)
+      gr.addColorStop(0, '#0891B2'); gr.addColorStop(0.52, '#2563EB'); gr.addColorStop(1, '#6366F1'); gx.fillStyle = gr; gx.fillRect(0, 0, 512, 288)
+      const FLOOD = new THREE.CanvasTexture(gc); FLOOD.colorSpace = THREE.SRGBColorSpace
+
+      const pointMat = (color, boost) => new THREE.ShaderMaterial({
+        transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+        uniforms: { uFocus: { value: 12 }, uAperture: { value: 0.08 }, uColor: { value: new THREE.Color(color).multiplyScalar(boost) }, uAlpha: { value: 1 } },
+        vertexShader: `attribute float size; uniform float uFocus, uAperture; varying float vA;
+          void main(){ vec4 mv = modelViewMatrix * vec4(position,1.); float d = -mv.z; float coc = abs(d-uFocus)*uAperture;
+            gl_PointSize = (size + coc*5.) * 60. / d; gl_Position = projectionMatrix * mv; vec2 n = abs(gl_Position.xy / gl_Position.w);
+            vA = smoothstep(1.5, 5., d) * smoothstep(1.02, 0.84, max(n.x, n.y)) / (1. + coc*coc*1.6); }`,
+        fragmentShader: `uniform vec3 uColor; uniform float uAlpha; varying float vA;
+          void main(){ float r = length(gl_PointCoord-.5); float a = smoothstep(.5,.32,r); gl_FragColor = vec4(uColor, a*vA*uAlpha); }`,
+      })
+      const cloud = (n, mat) => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(n * 3), 3)); g.setAttribute('size', new THREE.BufferAttribute(new Float32Array(n), 1)); const p = new THREE.Points(g, mat); p.frustumCulled = false; scene.add(p); return p }
+      const ND = 1600, dust = cloud(ND, pointMat('#22D3EE', 1.3))
+      for (let i = 0; i < ND; i++) { dust.geometry.attributes.position.setXYZ(i, (rnd() - 0.5) * 60, (rnd() - 0.5) * 34, -rnd() * 110 + 8); dust.geometry.attributes.size.setX(i, 0.3 + rnd() * 0.8) }
+      // the graph: scattered in the claim, at home on a sphere behind the turn and the end
+      const N = 150, R = 3.4, nodes = cloud(N, pointMat('#ffffff', 2.2)), scat = [], home = []
+      for (let i = 0; i < N; i++) {
+        scat.push(new THREE.Vector3((rnd() - 0.5) * 44, (rnd() - 0.5) * 24, -rnd() * 46 + 4))
+        const y = 1 - (i / (N - 1)) * 2, r = Math.sqrt(1 - y * y), a = i * 2.39996
+        home.push(new THREE.Vector3(Math.cos(a) * r * R, y * R, Math.sin(a) * r * R)); nodes.geometry.attributes.size.setX(i, rnd() > 0.82 ? 3.4 : 1.9)
+      }
+      const ev = []; home.forEach((h, i) => home.map((m, j) => [h.distanceTo(m), j]).sort((a, b) => a[0] - b[0]).slice(1, 4).forEach(([, j]) => i < j && ev.push(h.x, h.y, h.z, home[j].x, home[j].y, home[j].z)))
+      const edgeMat = new THREE.LineBasicMaterial({ color: new THREE.Color('#ffffff'), transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false })
+      const edges = new THREE.LineSegments(new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(ev, 3)), edgeMat); edges.frustumCulled = false
+      const globe = new THREE.Group(); globe.add(edges); globe.add(nodes); scene.add(globe)
+      const setNodes = (p) => { home.forEach((h, i) => { const s = scat[i]; nodes.geometry.attributes.position.setXYZ(i, lerp(s.x, h.x, p), lerp(s.y, h.y, p), lerp(s.z, h.z, p)) }); nodes.geometry.attributes.position.needsUpdate = true }
+      const fl = []; for (let i = -40; i <= 40; i++) { fl.push(i * 1.5, 0, 0, i * 1.5, 0, -120); if (i >= 0) fl.push(-60, 0, -i * 1.5, 60, 0, -i * 1.5) }
+      const floorMat = new THREE.LineBasicMaterial({ color: new THREE.Color('#22D3EE').multiplyScalar(0.9), transparent: true, opacity: 0.6 })
+      const floor = new THREE.LineSegments(new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(fl, 3)), floorMat); scene.add(floor)
+
+      const OV = ['claim', 'opener', 'number', 'beside', 'caveat', 'ask']
+      function seek(t) {
+        const [name, a, b] = SC.find(([, a, b]) => t >= a && t < b) || SC[SC.length - 1]
+        const u = t - a, d = b - a, k = u / d, is = (n) => name === n
+        OV.forEach((n) => ($('o_' + n).style.opacity = is(n) ? 1 : 0))
+        const flood = is('number'), grid = is('beside') || is('caveat')
+        scene.background = is('opener') ? BLACK : flood ? FLOOD : DARK
+        scene.fog = grid ? new THREE.Fog(DARK, 18, 78) : null
+        dust.visible = !flood && !is('opener'); floor.visible = grid; globe.visible = is('claim') || flood || is('ask')
+        bloom.strength = flood ? 0.36 : 0.6
+        dust.material.uniforms.uAlpha.value = 0.55; dust.material.uniforms.uAperture.value = 0.08; nodes.material.uniforms.uAlpha.value = 1
+        globe.position.set(0, 0, 0); globe.scale.setScalar(1); globe.rotation.set(0.28, t * 0.2, 0.12)
+
+        if (is('claim')) { // the reading everyone has: scattered facts, the lens pulling through them
+          cam.position.set(lerp(-1.2, 1.2, eio(k)), 0.3, lerp(14, 9, eio(k))); cam.lookAt(0, 0, -20)
+          const f = lerp(10, 26, eio(k)); dust.material.uniforms.uFocus.value = nodes.material.uniforms.uFocus.value = f; nodes.material.uniforms.uAperture.value = 0.08
+          globe.rotation.set(0, 0, 0); setNodes(0); edgeMat.opacity = 0
+          const out = seg(t, C.quote - 0.45, C.quote - 0.1)
+          show($('c_k'), seg(t, C.quarter - 0.2, C.quarter + 0.5), out, 12); show($('c_s'), seg(t, C.stat - 0.1, C.stat + 0.55), out, 30); show($('c_l'), seg(t, C.stat + 0.15, C.stat + 0.75), out, 12)
+          show($('c_q'), seg(t, C.quote, C.quote + 0.7), seg(u, d - 0.35, d)); show($('c_b'), seg(t, C.quote + 0.5, C.quote + 1.1), seg(u, d - 0.35, d), 10)
+        }
+        if (is('opener')) { // type only, on black: it is screened over the Blender plate
+          const out = seg(t, C.one - 0.5, C.one - 0.1)
+          show($('f_k'), seg(t, C.open - 0.1, C.open + 0.6), out, 12)
+          const n = Math.round(D.opener.facts * eo(seg(u, 0.2, 3.0))); $('f_n').textContent = n.toLocaleString('en-US')
+          show($('f_n'), seg(u, 0.2, 0.8), out, 0); show($('f_l'), seg(u, 0.6, 1.2), out, 10)
+          show($('f_t'), seg(t, C.note - 0.1, C.note + 0.5), out, 16)
+          show($('f_q'), seg(t, C.sentence - 0.5, C.sentence + 0.3), seg(u, d - 0.3, d), 14)
+        }
+        if (is('number')) { // the turn: the figure alone, then against a year ago and against every liability
+          setNodes(1); edgeMat.opacity = 0.3; nodes.material.uniforms.uAlpha.value = 0.5; globe.scale.setScalar(2.1)
+          cam.position.set(0, 0, lerp(15.5, 13.5, eio(k))); cam.lookAt(0, 0, 0)
+          nodes.material.uniforms.uFocus.value = cam.position.z - 5; nodes.material.uniforms.uAperture.value = 0.12
+          const p = seg(t, C.number - 0.05, C.number + 0.6), up = eio(seg(t, C.bar0 - 0.7, C.bar0 + 0.1))
+          show($('n_v'), p, 0, 40); show($('n_l'), seg(t, C.number + 0.5, C.number + 1.1), 0, 10)
+          $('n_top').style.transform = `translateY(${lerp(0, 70, up)}px) scale(${lerp(1, 0.62, up) * lerp(1.1, 1, eo(p))})`; $('n_top').style.height = lerp(1080, 560, up) + 'px'
+          const at = [C.bar0, C.bar0 + 0.5, C.bar2]
+          D.number.bars.forEach((bar, i) => { const g = eo(seg(t, at[i], at[i] + 0.9)), w = (bar.amount / BMAX) * BW * g
+            $('bar' + i).style.opacity = clamp(seg(t, at[i] - 0.15, at[i] + 0.25)); $('bf' + i).style.width = w + 'px'; $('bv' + i).style.left = w + 'px' })
+          show($('n_cap'), seg(t, C.caption - 0.1, C.caption + 0.5), 0, 10)
+        }
+        if (is('beside') || is('caveat')) { // plain statements, travelling forward over the grid
+          const u2 = t - SC.find(([n]) => n === 'beside')[1]
+          cam.position.set(0, 3.4, 6 - u2 * 1.6); cam.lookAt(0, 0.6, cam.position.z - 30); floor.position.set(0, 0, Math.ceil(cam.position.z / 1.5) * 1.5 - 1.5)
+          dust.material.uniforms.uFocus.value = 16; floorMat.opacity = is('caveat') ? 0.35 : 0.5
+        }
+        if (is('beside')) {
+          show($('b_k'), seg(u, 0.1, 0.7), seg(u, d - 0.3, d), 10)
+          D.beside.rows.forEach((r, i) => show($('row' + i), seg(t, C['row' + i] - 0.15, C['row' + i] + 0.45), seg(u, d - 0.3, d), 20))
+        }
+        if (is('caveat')) {
+          show($('v_q'), seg(t, C.says - 0.2, C.says + 0.5), seg(u, d - 0.3, d)); show($('v_b'), seg(t, C.says + 0.4, C.says + 1.0), seg(u, d - 0.3, d), 10)
+          show($('v_l'), seg(t, C.move - 0.1, C.move + 0.5), seg(u, d - 0.3, d), 16)
+        }
+        if (is('ask')) { // the graph, quiet, behind the question
+          setNodes(1); edgeMat.opacity = 0.12; nodes.material.uniforms.uAlpha.value = 0.26; globe.scale.setScalar(1.9)
+          cam.position.set(0, 0, lerp(14, 15.5, eio(k))); cam.lookAt(0, 0, 0); dust.material.uniforms.uFocus.value = 14
+          nodes.material.uniforms.uFocus.value = cam.position.z - 4; nodes.material.uniforms.uAperture.value = 0.1
+          show($('a_k'), seg(t, C.ask - 0.2, C.ask + 0.5), 0, 12); show($('a_p'), seg(t, C.ask + 0.3, C.ask + 1.1), 0, 16)
+          show($('a_m'), seg(t, C.ask + 1.3, C.ask + 1.9), 0, 10); show($('a_u'), seg(t, C.ask + 1.6, C.ask + 2.2), 0, 10); show($('a_n'), seg(u, 0.3, 1.0), 0, 0)
+        }
+        composer.render()
+      }
+      window.__init = async () => {
+        await Promise.all(['900 40px Orbitron', '500 40px "Space Grotesk"', '700 40px "Space Grotesk"'].map((f) => document.fonts.load(f))); await document.fonts.ready
+        window.__READY = true
+      }
+      window.__total = () => TL.total
+      window.__seek = seek
+    </script>
+  </body>
+</html>
