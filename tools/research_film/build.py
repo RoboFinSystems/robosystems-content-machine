@@ -39,7 +39,9 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "tools" / "film"))
 
-VOICE = "EXAVITQu4vr4xnSDxMaL"  # Sarah, the brand film's voice, until a research voice is chosen by ear
+VOICE = (
+  "EXAVITQu4vr4xnSDxMaL"  # Sarah: one voice for every film (chosen by ear, 2026-11-22)
+)
 MUSIC = REPO / "assets" / "music" / "brand_film.mp3"
 IDENT = REPO / "showcase" / "film_kit" / "ident_wide.mp4"
 IDENT_PUSH = (
