@@ -105,8 +105,28 @@ def snapshot_prior_version(bucket, ticker):
   )
 
 
+def require_aws_session():
+  """Stop before narrating or uploading when the AWS credentials are not usable. An
+  expired SSO session otherwise surfaces only after the narration is paid for, and
+  snapshot_prior_version reads a failed listing as "nothing published yet", so a
+  re-cover would overwrite the prior version without archiving it."""
+  r = subprocess.run(
+    ["aws", "sts", "get-caller-identity", "--query", "Arn", "--output", "text"],
+    capture_output=True,
+    text=True,
+  )
+  if r.returncode != 0:
+    err = r.stderr.strip().splitlines()
+    reason = err[-1] if err else f"exit {r.returncode}"
+    raise SystemExit(
+      f"AWS credentials are not usable: {reason}\n"
+      "Run `aws sso login`, then publish again."
+    )
+
+
 def publish(project, narrate=True):
   bucket = require_env("AWS_S3_BUCKET")
+  require_aws_session()
   project_dir = get_project_dir(project)
   ticker = project
   prefix = f"content/{ticker}/"
@@ -141,7 +161,7 @@ def publish(project, narrate=True):
   # placeholder would render literally on /research.
   promo = resolve_promo_code((reindex.project_meta(ticker) or {}).get("campaign"))
 
-  urls, published_keys = [], []
+  urls, published_keys, failed = [], [], []
   for rel_tmpl, ctype in ARTIFACTS:
     rel = rel_tmpl.format(t=ticker)
     local = os.path.join(project_dir, rel)
@@ -183,6 +203,7 @@ def publish(project, narrate=True):
       size = os.path.getsize(local)
     if r.returncode != 0:
       print(f"  FAILED: {name}")
+      failed.append(name)
       continue
     url = asset_url(key)
     print(f"  {url}  ({size / 1e6:.1f} MB)")
@@ -196,7 +217,17 @@ def publish(project, narrate=True):
   # the CDN would keep serving the previous video/thumbnail for its 24h TTL.
   invalidate_cdn(published_keys)
 
-  # self-describing version metadata + research catalog refresh (best-effort)
+  # A failed upload fails the publish, before meta.json dates the version: a batch loop
+  # reads the exit code, and a partial publish has to be re-run, not reported done.
+  if failed or not urls:
+    raise SystemExit(
+      f"{ticker}: {len(failed)} upload(s) failed ({', '.join(failed) or 'none found'}). "
+      f"Fix the cause and run `just publish-brief {ticker}` again."
+    )
+
+  # Self-describing version metadata + research catalog refresh. The uploads are
+  # already live, but the page is missing from /research until the catalog rebuilds,
+  # so a failure here fails the publish too.
   try:
     today = datetime.date.today().isoformat()
     meta = {
@@ -220,11 +251,15 @@ def publish(project, narrate=True):
       ],
       input=json.dumps(meta, indent=2, ensure_ascii=False),
       text=True,
+      check=True,
     )
     print()
     reindex.run()
   except Exception as e:  # noqa: BLE001
-    print(f"  (meta/catalog refresh skipped: {e})")
+    raise SystemExit(
+      f"{ticker}: artifacts uploaded, but meta.json or the catalog refresh failed: {e}\n"
+      f"Run `just publish-brief {ticker}` again (narration is reused)."
+    ) from e
 
   return urls
 
