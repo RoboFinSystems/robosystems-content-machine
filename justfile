@@ -504,6 +504,17 @@ motion-join-music *args="":
 motion-cue-sheet *args="":
     uv run --with librosa --with numpy --with soundfile python tools/motion/music/cue_sheet.py {{args}}
 
+# ─── Branches ───
+
+# Create a branch from origin/<base>, set its upstream and push it (type: feature|bugfix|hotfix|chore|refactor)
+# e.g. just create-feature feature brand-film
+create-feature type="feature" name="" base="main":
+    @tools/create_feature.sh {{type}} {{name}} {{base}}
+
+# Install git hooks (points core.hooksPath at .githooks: blocks direct pushes to main; safe to re-run)
+install-hooks:
+    git config core.hooksPath .githooks
+
 # ─── Brand film (tools/ad: one core, many films; a film is a spec in tools/ad/films/) ───
 
 # Build a film end to end: voice + timeline, Blender plates, the type layer, the mix, a pop scan.
