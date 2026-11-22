@@ -33,9 +33,10 @@ ensure-env:
 
 # ─── Environment (first run + maintenance) ───────────────────
 
-# First run: create .venv, install Python + Node deps, seed .env (idempotent)
+# First run: create .venv, install the git hooks and Python + Node deps, seed .env (idempotent)
 venv:
     uv venv
+    @just install-hooks
     @just install
 
 # Install Python deps from uv.lock (incl. the dev group: ruff) + the webdeck renderer's Node deps
