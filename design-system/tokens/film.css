@@ -1,0 +1,41 @@
+/* ============================================================
+   RoboSystems Content — Film Tokens
+   The look of the brand film (renderer/templates/ad.html and the
+   Blender plates in tools/ad/blender/): light on near-black, cyan
+   for structure, a blue to indigo field for the turn. Every video
+   built on the film's form reads these.
+
+   CSS reads them as variables. three.js and Blender cannot, so the
+   same values are written out in ad.html's script and in
+   tools/ad/blender/*.py: change one here and change it there.
+   ============================================================ */
+:root {
+  /* Stage */
+  --film-black: #04070c;      /* the world behind every plate */
+  --film-core: #0a1830;       /* the sphere's body */
+  --film-page: #0d2038;       /* the report as an object */
+
+  /* Type */
+  --film-ink: #f3f6fb;        /* headlines and figures */
+  --film-soft: #dbe3ee;       /* captions under a shot */
+  --film-muted: #9aa3b2;      /* secondary figures */
+  --film-faint: #6b7483;      /* the demo-company note */
+
+  /* Structure: nodes, links, labels */
+  --film-node: #dff9ff;
+  --film-cyan-300: #67e8f9;   /* links, hubs, eyebrow labels */
+  --film-cyan-400: #22d3ee;   /* dust, the key light */
+  --film-cyan-600: #0891b2;
+
+  /* The field under "yours" and the ledger line */
+  --film-blue: #2563eb;
+  --film-indigo: #6366f1;
+
+  /* The problem act only */
+  --film-alarm: #f87171;
+
+  /* Type families */
+  --film-display: 'Orbitron', sans-serif;
+  --film-body: 'Space Grotesk', sans-serif;
+  --film-mono: ui-monospace, Menlo, monospace;
+}

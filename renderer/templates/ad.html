@@ -6,11 +6,12 @@
     <script type="importmap">
       { "imports": { "three": "/node_modules/three/build/three.module.js", "three/addons/": "/node_modules/three/examples/jsm/" } }
     </script>
+    <link rel="stylesheet" href="/ds/tokens/film.css" />
     <style>
-      @font-face { font-family: 'Space Grotesk'; src: url('/fonts/SpaceGrotesk/SpaceGrotesk-Medium.ttf') format('truetype'); font-weight: 500; }
-      @font-face { font-family: 'Space Grotesk'; src: url('/fonts/SpaceGrotesk/SpaceGrotesk-Bold.ttf') format('truetype'); font-weight: 700; }
-      @font-face { font-family: 'Orbitron'; src: url('/fonts/Orbitron/Orbitron-VariableFont_wght.ttf') format('truetype'); font-weight: 400 900; }
-      :root { --ink: #f3f6fb; --muted: #9aa3b2; --c300: #67E8F9; --display: 'Orbitron', sans-serif; --body: 'Space Grotesk', sans-serif; --mono: ui-monospace, Menlo, monospace; }
+      @font-face { font-family: 'Space Grotesk'; src: url('/ds/fonts/SpaceGrotesk-Medium.ttf') format('truetype'); font-weight: 500; }
+      @font-face { font-family: 'Space Grotesk'; src: url('/ds/fonts/SpaceGrotesk-Bold.ttf') format('truetype'); font-weight: 700; }
+      @font-face { font-family: 'Orbitron'; src: url('/ds/fonts/Orbitron-VariableFont_wght.ttf') format('truetype'); font-weight: 400 900; }
+      :root { --ink: var(--film-ink); --muted: var(--film-muted); --c300: var(--film-cyan-300); --display: var(--film-display); --body: var(--film-body); --mono: var(--film-mono); }
       html, body { margin: 0; background: #000; }
       #stage { position: relative; overflow: hidden; color: var(--ink); font-family: var(--body); }
       canvas { position: absolute; inset: 0; }
@@ -73,7 +74,7 @@
         <div class="prop" id="p2">Your data trains<br />no one's model</div></div>
       <div class="ov" id="o_share"><div class="tag lab" id="sl0">Your company</div><div class="tag lab" id="sl1">Your investor's graph</div><div class="tag rep" id="sl2">Published report</div>
         <div class="cap" id="sc1">The statements, never the ledger.</div><div class="cap" id="sc2">Every company they hold, on one model.</div></div>
-      <div class="ov" id="o_end"><div class="ctr"><div class="mark" id="e_m"><img src="/images/logos/robosystems-icon.png" /><span class="wm endwm">RoboSystems</span></div>
+      <div class="ov" id="o_end"><div class="ctr"><div class="mark" id="e_m"><img src="/ds/assets/robosystems_icon.png" /><span class="wm endwm">RoboSystems</span></div>
         <div class="cyc"><div id="c0">Report on it</div><div id="c1">Plan on it</div><div id="c2">Benchmark on it</div><div id="c3" style="font-size:31px;letter-spacing:.2em;line-height:60px">The open-source knowledge graph for finance</div></div>
         <div class="url" id="e_u">robosystems.ai</div></div></div>
     </div>

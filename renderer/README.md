@@ -1,23 +1,19 @@
 # @robosystems/content-renderer
 
-Playwright-based **local renderer** for the content machine — the sibling Node
-package to `design-system/`. It does the jobs the Python pipeline can't:
+Playwright-based **local renderer** for the content machine. Brand tokens, fonts and
+logos come from `design-system/`. It does the jobs the Python pipeline can't:
 
 1. **`capture`** — drive the live **RoboLedger web UI** headlessly (login →
    navigate the demo's money screens → high-res stills/clips). This is the
    autonomous UI-capture track for the showcase series.
-2. **`short`** — mount the **real design-system components** in a headless
-   browser and shoot one screenshot per frame → a frame-accurate mp4 (9:16
-   research shorts, 16:9 demo cutaways). This replaced the retired Pillow
-   caption-card renderer: one brand source for both the deck and the short.
-3. **`demo`** — record a scripted **walkthrough of the live product**: a pointer
+2. **`demo`** — record a scripted **walkthrough of the live product**: a pointer
    travels, hovers, clicks and scrolls, and the UI responds, because the drawn
    cursor and the real mouse are the same mouse. Zoom is a camera over the live
    page aimed at a named component. This is the replacement for the old
    still-plus-Ken-Burns demo cut.
-4. **`probe`** — list the anchors a walkthrough can actually aim at, read off the
+3. **`probe`** — list the anchors a walkthrough can actually aim at, read off the
    running app.
-5. **`post`**: social **stills and carousels**, one 1080x1350 PNG per slide (LinkedIn's
+4. **`post`**: social **stills and carousels**, one 1080x1350 PNG per slide (LinkedIn's
    4:5 portrait) and, for more than one slide, a PDF carousel of the same pages. The
    visual layer for Joey's LinkedIn and X posts.
 
@@ -76,48 +72,6 @@ Flags: `--base-url`, `--email`/`--password` (instead of `--config`),
 `--theme dark|light|auto` (default `dark`), `--entity <name-prefix>` (e.g.
 `Driftline` / `Cadence` — switches the active company, persists for the session),
 `--viewport WxH`, `--full-page`, `--out DIR`.
-
-## short
-
-```bash
-just render-short showcase/coffee_roaster/driftline.short.json   # 9:16 research short
-just render-short showcase/coffee_roaster/driftline.demo.json     # 16:9 demo cutaway
-```
-
-Specs live in the repo-root `showcase/<company>/` (gitignored products). Output
-self-locates to `showcase/<company>/renders/<slug>.mp4` — silent, H.264, `yuv420p`.
-`image` scenes read `/cap/*.png` from `showcase/<company>/captures/`. Add
-`--keep-frames` to retain the PNG frames.
-
-### Spec format
-
-A spec is a JSON list of timed scenes (`showcase/coffee_roaster/driftline.short.json`
-is the worked example, tied to the real validated Driftline numbers):
-
-```jsonc
-{
-  "slug": "driftline_short", "width": 1080, "height": 1920, "fps": 30,
-  "scenes": [
-    { "kind": "hero", "eyebrow": "Net income · 16 months",
-      "value": 185057, "format": "currency", "tone": "positive",
-      "subline": "The P&L is winning.", "durationMs": 2400 },
-    { "kind": "metrics", "heading": "Where the profit went",
-      "cards": [
-        { "label": "Receivables", "value": "$161,000", "change": "4× the cash",
-          "changeTone": "negative", "highlight": true }
-      ], "durationMs": 3600 }
-  ]
-}
-```
-
-- **`hero`** — an eyebrow + a big eased **count-up** (`value`+`format`) or a
-  `title`, plus an optional `subline`. `tone`: positive|negative|warning|accent.
-- **`metrics`** — a heading + staggered **`MetricCard`** grid (the real DS
-  component; `highlight` rings the story card).
-
-Determinism: the harness exposes `window.__renderFrame(i)` and we drive it
-frame-by-frame (no wall-clock) — the same spec always renders the identical
-video.
 
 ## demo — the live product walkthrough
 
@@ -335,7 +289,7 @@ from the spec; nothing is generated, and nothing is an AI image.
 ## How it fits together
 
 ```
-design-system/  ──_ds_bundle.js + tokens + fonts──►  renderer (short)  ──►  silent mp4 ─┐
+design-system/  ──tokens + fonts + logos──►  renderer (motion, post)  ──►  silent mp4, stills ─┐
 robosystems UI  ──login + routes──►  renderer (capture)  ──►  stills/clips ──────────────┤
                                                                                           ▼
                                                              Python pipeline: VO + music + mux

@@ -1,8 +1,7 @@
 /*
- * A tiny static file server for the `short` render harness. It serves the
- * design-system assets (tokens, fonts, the component bundle) and the React UMD
- * builds by URL, so the harness page can <link>/<script> them and @font-face
- * relative URLs resolve. In-memory HTML is served at '/'.
+ * A tiny static file server for the render harnesses (`motion`, `post`). It
+ * serves each mounted folder by URL prefix, so a page can <link>/<script> its
+ * assets and @font-face relative URLs resolve. In-memory HTML is served at '/'.
  */
 import http from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
