@@ -4,7 +4,8 @@ Lane-neutral. A lane hands it a spec, its acts and where to write; the brand fil
 (tools/ad/film.py) and the research film (tools/research_film/build.py) both build on it.
 
   spec: { "name", "format": "wide" | "tall", "acts": [ids], "turn"?, "turn_cue"?,
-          "leads"?: { act: seconds }, "tail"?, "data"? }
+          "leads"?: { act: seconds }, "tail"?, "data"?,
+          "bed"?: { "file", "from": act id, "gain"?: dB } }
   acts: { id: { "lead", "text", "cues": { name: word },
                 "scenes": [[name, "act" | "cue", cue, offset]] } }
 
@@ -16,6 +17,8 @@ of its cues when the spec names a turn_cue.
 Voice: one take per act, cached by voice + act + text, so a new cut of existing acts costs
 nothing. Music: the bed has one big hit; it is lengthened by whole bars, or started later, so
 the hit lands on the turn, and bars after the hit are repeated when the film outlasts the bed.
+A long film names a second bed in its spec: the scored bed carries the opening and hands over,
+at the start of the named act, to a quieter one that loops under the rest.
 """
 
 import hashlib
@@ -143,6 +146,39 @@ def music_bed(music, turn_natural, out, after=0.0, quiet=False):
   return hit, y.shape[1] / sr
 
 
+def second_bed(out, bed, at, total):
+  """Hand the music over at `at` seconds: the scored bed fades out, `bed` fades in under it
+  and loops to the end of the film."""
+  first, mixed = out / "music.wav", out / "music_mix.wav"
+  subprocess.run(
+    [
+      "ffmpeg",
+      "-v",
+      "error",
+      "-y",
+      "-i",
+      str(first),
+      "-stream_loop",
+      "-1",
+      "-i",
+      str(REPO / bed["file"]),
+      "-filter_complex",
+      f"[0:a]afade=t=out:st={at - 0.5:.2f}:d=3[a];"
+      f"[1:a]volume={bed.get('gain', -5)}dB,afade=t=in:d=3,adelay={int((at - 1.0) * 1000)}:all=1[b];"
+      "[a][b]amix=inputs=2:normalize=0:duration=longest",
+      "-t",
+      str(total),
+      "-ar",
+      "44100",
+      "-ac",
+      "2",
+      str(mixed),
+    ],
+    check=True,
+  )
+  mixed.replace(first)
+
+
 def build(
   spec, ACTS, out, voice, music, audio, plates=None, force=False, quiet=False, dry=False
 ):
@@ -198,8 +234,13 @@ def build(
       word = ACTS[turn]["cues"][spec["turn_cue"]]
       first = next(tm for w, tm in takes[turn][2] if w == word)
     at = starts[turn] + first
-    hit, _ = music_bed(music, at, out / "music.wav", total - at - 1.0, quiet)
+    bed = spec.get("bed")
+    # with a second bed the scored one only has to reach the hand-over
+    after = starts[bed["from"]] - at + 3.0 if bed else total - at - 1.0
+    hit, _ = music_bed(music, at, out / "music.wav", after, quiet)
     starts, total = layout(max(0.0, hit - at))
+    if bed:
+      second_bed(out, bed, starts[bed["from"]], total)
   elif not dry:
     music_bed(music, 0.0, out / "music.wav", quiet=quiet)
   total = round(total, 2)

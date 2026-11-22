@@ -4,6 +4,8 @@ Build one research film: a 60 to 90 second cut of a published brief, in the bran
   just research-film MSFT            (spec: projects/MSFT/film/MSFT_film.json)
   just research-film MSFT --check    (the figure check only: no voice, no render)
   just research-film MSFT --stills 4,20,41
+  just research-film MSFT --cut long (a second cut of the same ticker: spec MSFT_film_long.json,
+                                      built in projects/MSFT/film/long/; voice takes are shared)
   just research-film PTC --dry --stills 3,12,20     (the picture laid out from word counts,
                                                      before the words are approved or voiced)
 
@@ -12,7 +14,7 @@ draw, and the source of every figure on screen.
 
   { "name": "MSFT_film", "format": "wide", "turn": "turn", "acts": [...],
     "script": { act: { "lead", "text", "cues", "scenes" } },     as tools/film/timing.py reads them
-    "data": { "scenes": { name: { "kind", "at", ... } } },        what renderer/templates/research_film.html draws:
+    "data": { "scenes": { name: { "kind", "at", ... } } },        what renderer/templates/film.html draws:
                                                                   one entry per scene the acts name; the kinds and
                                                                   what each takes are listed at the top of the page
     "figures": [{ "text": "$364.6B", "source": "Form 10-Q, Note 12 (0001193125-26-436133)" }],
@@ -43,7 +45,9 @@ IDENT = REPO / "showcase" / "film_kit" / "ident_wide.mp4"
 IDENT_PUSH = (
   190 / 30
 )  # the ident's own second at which the camera leaves for the one fact
-FIGURE = re.compile(r"\$[\d.,]*\d[BMK]?|[+−-]?\d[\d.,]*%|\b\d{1,3}(?:,\d{3})+\b")
+FIGURE = re.compile(
+  r"[+−-]?\$[\d.,]*\d[TBMK]?|[+−-]?\d[\d.,]*%|\b\d{1,3}(?:,\d{3})+\b|\b\d+¢|\b\d[\d.]* years\b"
+)
 
 
 def strings(x):
@@ -77,8 +81,12 @@ def check_figures(spec):
 
 def main():
   ticker = sys.argv[1].upper()
-  film = REPO / "projects" / ticker / "film"
-  spec = json.loads((film / f"{ticker}_film.json").read_text())
+  home = REPO / "projects" / ticker / "film"
+  cut = sys.argv[sys.argv.index("--cut") + 1] if "--cut" in sys.argv else ""
+  film = home / cut if cut else home
+  spec = json.loads(
+    (home / f"{ticker}_film{'_' + cut if cut else ''}.json").read_text()
+  )
   check_figures(spec)
   if "--check" in sys.argv:
     return
@@ -103,7 +111,7 @@ def main():
     film,
     spec.get("voice", VOICE),
     REPO / spec["music"] if spec.get("music") else MUSIC,
-    film / "audio",
+    home / "audio",
     plates,
     "--force" in sys.argv,
     dry="--dry" in sys.argv,
@@ -115,7 +123,7 @@ def main():
     "--root",
     "renderer/templates",
     "--html",
-    "renderer/templates/research_film.html",
+    "renderer/templates/film.html",
     "--width",
     "1920",
     "--height",
