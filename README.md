@@ -29,7 +29,8 @@ just new TICKER
 
 The first `just` command auto-creates `.env` from `.env.example`. Fill in your API keys (see [Setup](#setup)).
 Day to day: `just install` re-syncs from the lockfiles, `just update` upgrades and re-locks them,
-`just lint` / `just format` run ruff.
+`just lint` / `just format` run ruff, and `just create-feature feature <name>` starts a branch
+(a pre-push hook, installed by `just venv`, keeps direct pushes off `main`).
 
 ## How It Works
 

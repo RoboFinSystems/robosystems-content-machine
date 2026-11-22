@@ -1,0 +1,319 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>RoboSystems ad</title>
+    <script type="importmap">
+      { "imports": { "three": "/node_modules/three/build/three.module.js", "three/addons/": "/node_modules/three/examples/jsm/" } }
+    </script>
+    <style>
+      @font-face { font-family: 'Space Grotesk'; src: url('/fonts/SpaceGrotesk/SpaceGrotesk-Medium.ttf') format('truetype'); font-weight: 500; }
+      @font-face { font-family: 'Space Grotesk'; src: url('/fonts/SpaceGrotesk/SpaceGrotesk-Bold.ttf') format('truetype'); font-weight: 700; }
+      @font-face { font-family: 'Orbitron'; src: url('/fonts/Orbitron/Orbitron-VariableFont_wght.ttf') format('truetype'); font-weight: 400 900; }
+      :root { --ink: #f3f6fb; --muted: #9aa3b2; --c300: #67E8F9; --display: 'Orbitron', sans-serif; --body: 'Space Grotesk', sans-serif; --mono: ui-monospace, Menlo, monospace; }
+      html, body { margin: 0; background: #000; }
+      #stage { position: relative; overflow: hidden; color: var(--ink); font-family: var(--body); }
+      canvas { position: absolute; inset: 0; }
+      .ov { position: absolute; inset: 0; opacity: 0; }
+      .ov > *, .ctr > *, .left > *, .stack > * { opacity: 0; }
+      .kick { font: 600 26px var(--display); letter-spacing: .34em; text-transform: uppercase; }
+      .ctr { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; opacity: 1 !important; }
+      .left { position: absolute; left: 130px; top: 0; bottom: 0; width: 1080px; display: flex; flex-direction: column; justify-content: center; opacity: 1 !important; }
+      .wm { font: 800 124px/1 var(--display); letter-spacing: -.01em; }
+      .big { font: 800 82px/1.1 var(--display); letter-spacing: -.01em; }
+      .giant { font: 900 250px/0.95 var(--display); text-transform: uppercase; }
+      .stack { opacity: 1 !important; }
+      .tag.wl { font: 600 21px var(--display); letter-spacing: .26em; text-transform: uppercase; color: #fff; transform: translate(-50%, 0); }
+      .stack div { font: 800 50px/1.22 var(--display); margin-bottom: 26px; } .stack-x { font: 800 66px/1.3 var(--display); letter-spacing: -.01em; }
+      .tag { position: absolute; white-space: nowrap; }
+      .tag.num { font: 800 70px var(--display); transform: translate(-100%, -50%); margin-left: -44px; }
+      .tag.numlab { font: 600 20px var(--display); letter-spacing: .24em; text-transform: uppercase; color: var(--c300); transform: translate(-100%, -330%); margin-left: -44px; }
+      .tag.grp { font: 500 25px var(--body); transform: translate(18px, -150%); }
+      .tag.grp i { font-style: normal; font: 500 20px var(--body); color: var(--muted); margin-left: 14px; }
+      .tag.lab { font: 600 22px var(--display); letter-spacing: .26em; text-transform: uppercase; color: var(--c300); transform: translate(-50%, 0); }
+      .tag.rep { font: 500 26px var(--body); color: #dbe3ee; transform: translate(-50%, -520%); }
+      .tag.grp b { font: 500 23px var(--mono); color: var(--c300); margin-left: 12px; }
+      .cap { position: absolute; left: 0; right: 0; bottom: 92px; text-align: center; font: 500 46px var(--body); color: #dbe3ee; }
+      .chips { position: absolute; left: 0; right: 0; bottom: 70px; display: flex; gap: 26px; justify-content: center; opacity: 1 !important; }
+      .chips div, .three div { font: 600 38px var(--body); padding: 18px 36px; border-radius: 14px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.28); opacity: 0; }
+      .three { display: flex; gap: 28px; margin-top: 60px; opacity: 1 !important; }
+      .three div { background: rgba(255,255,255,.16); border-color: rgba(255,255,255,.4); font-size: 42px; }
+      .prop { position: absolute; left: 140px; right: 140px; top: 0; bottom: 330px; display: flex; align-items: center; justify-content: center; text-align: center; font: 800 96px/1.12 var(--display); letter-spacing: -.01em; }
+      .mark { display: flex; align-items: center; gap: 30px; }
+      .mark img { width: 128px; height: 128px; border-radius: 30px; }
+      .cyc { position: relative; height: 60px; width: 1500px; margin-top: 44px; opacity: 1 !important; }
+      .cyc div { position: absolute; inset: 0; font: 600 42px/60px var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--c300); opacity: 0; }
+      .url { font: 500 38px var(--body); color: var(--muted); margin-top: 52px; }
+      .rvwm { font-size: 102px; } .endwm { font-size: 118px; }
+      /* tall (9:16): one centred column, the object above and the words below */
+      .tall .left { left: 60px; right: 60px; width: auto; top: 1130px; bottom: auto; justify-content: flex-start; align-items: center; text-align: center; }
+      .tall .rvwm { font-size: 92px; } .tall .big { font-size: 70px; } .tall .kick { font-size: 24px; }
+      .tall .giant { font-size: 196px; } .tall .three { flex-direction: column; gap: 22px; align-items: center; }
+      .tall .prop { left: 64px; right: 64px; bottom: 600px; font-size: 70px; }
+      .tall .mark { flex-direction: column; gap: 30px; } .tall .endwm { font-size: 98px; }
+      .tall .cyc { width: 940px; height: 124px; } .tall .cyc div { white-space: normal; }
+      .note { position: absolute; left: 0; right: 0; bottom: 30px; text-align: center; font: 500 20px var(--body); color: #6b7483; opacity: 1 !important; }
+    </style>
+  </head>
+  <body>
+    <div id="stage">
+      <canvas id="gl"></canvas>
+      <div class="ov" id="o_field"><div class="ctr"><div class="kick" id="k1" style="font-size:36px">Every company runs on its numbers</div></div></div>
+      <div class="ov" id="o_reveal"><div class="left"><div class="wm rvwm" id="rv_wm">RoboSystems</div>
+        <div class="kick" id="rv_k" style="margin-top:56px;color:var(--c300)">The open-source</div><div class="big" id="rv_h" style="margin-top:20px">Knowledge graph<br />for finance</div></div></div>
+      <div class="ov" id="o_what"><div class="left"><div class="stack"><div id="w0">Your company's event ledger.</div><div id="w1">Reports from it.</div><div id="w2">Benchmarkable against<br />public filings.</div><div id="w3" style="color:#04070c">In the same ontology.</div></div></div>
+        <div class="tag wl" id="wl0">Your company</div><div class="tag wl" id="wl2">Report</div><div class="tag wl" id="wl1">Public filings</div></div>
+      <div class="ov" id="o_trace"><div class="tag numlab" id="tnl">Revenue · year ended Sep 30, 2026</div><div class="tag num" id="tn">$1,173,239.88</div><div id="tg" style="opacity:1"></div>
+        <div class="cap" id="tc1">Every number opens to the entries behind it.</div>
+        <div class="cap" id="tc2" style="bottom:176px">Your AI reads it all</div>
+        <div class="chips"><div id="cl0">Claude</div><div id="cl1">ChatGPT</div><div id="cl2">Any MCP client</div></div>
+        <div class="note">Driftline Coffee Roasters is a demo company.</div></div>
+      <div class="ov" id="o_yours"><div class="ctr"><div class="giant" id="y_h">Yours</div><div class="three"><div id="y0">The code</div><div id="y1">The data</div><div id="y2">The deployment</div></div></div></div>
+      <div class="ov" id="o_props" style="opacity:0"><div class="prop" id="p0">On your infrastructure</div><div class="prop" id="p1">With the model you choose</div>
+        <div class="prop" id="p2">Your data trains<br />no one's model</div></div>
+      <div class="ov" id="o_share"><div class="tag lab" id="sl0">Your company</div><div class="tag lab" id="sl1">Your investor's graph</div><div class="tag rep" id="sl2">Published report</div>
+        <div class="cap" id="sc1">The statements, never the ledger.</div><div class="cap" id="sc2">Every company they hold, on one model.</div></div>
+      <div class="ov" id="o_end"><div class="ctr"><div class="mark" id="e_m"><img src="/images/logos/robosystems-icon.png" /><span class="wm endwm">RoboSystems</span></div>
+        <div class="cyc"><div id="c0">Report on it</div><div id="c1">Plan on it</div><div id="c2">Benchmark on it</div><div id="c3" style="font-size:31px;letter-spacing:.2em;line-height:60px">The open-source knowledge graph for finance</div></div>
+        <div class="url" id="e_u">robosystems.ai</div></div></div>
+    </div>
+    <script type="module">
+      import * as THREE from 'three'
+      import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js'
+      import { RenderPass } from 'three/addons/postprocessing/RenderPass.js'
+      import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
+      import { OutputPass } from 'three/addons/postprocessing/OutputPass.js'
+
+      // the film: its timeline says the frame shape, the scenes and every cue
+      const FILM = new URLSearchParams(location.search).get('film') || 'main'
+      const TL = await (await fetch(`/films/${FILM}/timeline.json`)).json()
+      const TALL = TL.format === 'tall', W = TALL ? 1080 : 1920, H = TALL ? 1920 : 1080
+      const stageEl = document.getElementById('stage'); stageEl.style.width = W + 'px'; stageEl.style.height = H + 'px'; if (TALL) stageEl.classList.add('tall')
+      Object.assign(document.getElementById('gl'), { width: W, height: H })
+      const C = TL.cues, SC = TL.scenes.map((s) => [s.name, s.start, s.end]), HAS = (n) => TL.scenes.some((s) => s.name === n)
+      const PL = {}
+      for (const shot of ['trace', 'share']) if (HAS(shot)) PL[shot] = await (await fetch(`/films/${FILM}/anchors_${shot}.json`)).json()
+      const clamp = (x) => Math.max(0, Math.min(1, x))
+      const seg = (t, a, b) => clamp((t - a) / (b - a))
+      const eo = (x) => 1 - Math.pow(1 - clamp(x), 3)
+      const eio = (x) => ((x = clamp(x)), x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2)
+      const lerp = (a, b, p) => a + (b - a) * p
+      const $ = (id) => document.getElementById(id)
+      // in: 0..1 entrance; out: 0..1 exit. Blur to sharp on the way in, a plain fade on the way out.
+      const show = (el, pin, pout = 0, dy = 24) => { const e = eo(pin); el.style.opacity = clamp(pin * 1.4) * (1 - eo(pout)); el.style.filter = e < 1 ? `blur(${(1 - e) * 14}px)` : ''; el.style.translate = `0 ${(1 - e) * dy}px` }
+      let sd = 11
+      const rnd = () => ((sd = (sd * 16807) % 2147483647), sd / 2147483647)
+
+      const renderer = new THREE.WebGLRenderer({ canvas: $('gl'), antialias: true, preserveDrawingBuffer: true })
+      renderer.setPixelRatio(1); renderer.setSize(W, H, false)
+      const scene = new THREE.Scene()
+      const cam = new THREE.PerspectiveCamera(38, W / H, 0.1, 400)
+      const composer = new EffectComposer(renderer)
+      composer.addPass(new RenderPass(scene, cam))
+      const bloom = new UnrealBloomPass(new THREE.Vector2(W, H), 0.55, 0.7, 0.82)
+      composer.addPass(bloom); composer.addPass(new OutputPass())
+
+      const DARK = new THREE.Color('#04070c'), BLACK = new THREE.Color('#000000')
+      const gc = Object.assign(document.createElement('canvas'), { width: 512, height: 288 })
+      const gx = gc.getContext('2d'); const gr = gx.createLinearGradient(0, 0, 512, 288)
+      gr.addColorStop(0, '#0891B2'); gr.addColorStop(0.52, '#2563EB'); gr.addColorStop(1, '#6366F1'); gx.fillStyle = gr; gx.fillRect(0, 0, 512, 288)
+      const FLOOD = new THREE.CanvasTexture(gc); FLOOD.colorSpace = THREE.SRGBColorSpace
+
+      // points with a lens: off the focal plane a point grows and thins, so depth reads as bokeh
+      const pointMat = (color, boost) => new THREE.ShaderMaterial({
+        transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+        uniforms: { uFocus: { value: 12 }, uAperture: { value: 0.08 }, uColor: { value: new THREE.Color(color).multiplyScalar(boost) }, uAlpha: { value: 1 } },
+        vertexShader: `attribute float size; uniform float uFocus, uAperture; varying float vA;
+          void main(){ vec4 mv = modelViewMatrix * vec4(position,1.); float d = -mv.z; float coc = abs(d-uFocus)*uAperture;
+            gl_PointSize = (size + coc*5.) * 60. / d; gl_Position = projectionMatrix * mv; vec2 n = abs(gl_Position.xy / gl_Position.w);
+            vA = smoothstep(1.5, 5., d) * smoothstep(1.02, 0.84, max(n.x, n.y)) / (1. + coc*coc*1.6); }`,
+        fragmentShader: `uniform vec3 uColor; uniform float uAlpha; varying float vA;
+          void main(){ float r = length(gl_PointCoord-.5); float a = smoothstep(.5,.32,r); gl_FragColor = vec4(uColor, a*vA*uAlpha); }`,
+      })
+      const cloud = (n, mat) => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(n * 3), 3)); g.setAttribute('size', new THREE.BufferAttribute(new Float32Array(n), 1)); const p = new THREE.Points(g, mat); p.frustumCulled = false; scene.add(p); return p }
+
+      const ND = 1600, dust = cloud(ND, pointMat('#22D3EE', 1.3))
+      for (let i = 0; i < ND; i++) { dust.geometry.attributes.position.setXYZ(i, (rnd() - 0.5) * 60, (rnd() - 0.5) * 34, -rnd() * 110 + 8); dust.geometry.attributes.size.setX(i, 0.3 + rnd() * 0.8) }
+
+      // the graph: scattered at first, at home on a sphere
+      const N = 150, R = 3.4, nodes = cloud(N, pointMat('#ffffff', 2.2))
+      const scat = [], home = []
+      for (let i = 0; i < N; i++) {
+        scat.push(new THREE.Vector3((rnd() - 0.5) * 44, (rnd() - 0.5) * 24, -rnd() * 46 + 4))
+        const y = 1 - (i / (N - 1)) * 2, r = Math.sqrt(1 - y * y), a = i * 2.39996
+        home.push(new THREE.Vector3(Math.cos(a) * r * R, y * R, Math.sin(a) * r * R))
+        nodes.geometry.attributes.size.setX(i, rnd() > 0.82 ? 3.4 : 1.9)
+      }
+      const pairs = []
+      home.forEach((h, i) => home.map((m, j) => [h.distanceTo(m), j]).sort((a, b) => a[0] - b[0]).slice(1, 4).forEach(([, j]) => i < j && pairs.push([i, j])))
+      const ev = []; pairs.forEach(([i, j]) => ev.push(home[i].x, home[i].y, home[i].z, home[j].x, home[j].y, home[j].z))
+      const edgeMat = new THREE.LineBasicMaterial({ color: new THREE.Color('#ffffff'), transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false })
+      const edges = new THREE.LineSegments(new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(ev, 3)), edgeMat); edges.frustumCulled = false
+      const globe = new THREE.Group(); globe.add(edges); globe.add(nodes); scene.add(globe)
+      const setNodes = (p) => { home.forEach((h, i) => { const s = scat[i]; nodes.geometry.attributes.position.setXYZ(i, lerp(s.x, h.x, p), lerp(s.y, h.y, p), lerp(s.z, h.z, p)) }); nodes.geometry.attributes.position.needsUpdate = true }
+
+      // the floor: a ledger grid running to the horizon
+      const fl = []; for (let i = -40; i <= 40; i++) { fl.push(i * 1.5, 0, 0, i * 1.5, 0, -120); if (i >= 0) fl.push(-60, 0, -i * 1.5, 60, 0, -i * 1.5) }
+      const floorMat = new THREE.LineBasicMaterial({ color: new THREE.Color('#f87171'), transparent: true, opacity: 0.8 })
+      const floor = new THREE.LineSegments(new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(fl, 3)), floorMat); scene.add(floor)
+      const RED = new THREE.Color('#f87171').multiplyScalar(1.5), CYAN = new THREE.Color('#22D3EE').multiplyScalar(0.9)
+
+      function textPlane(lines, color, px, w) {
+        const c = Object.assign(document.createElement('canvas'), { width: 2560, height: 256 * lines.length }); const x = c.getContext('2d')
+        x.font = `900 ${px}px Orbitron`; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillStyle = color
+        lines.forEach((l, i) => x.fillText(l, 1280, 128 + i * 256))
+        const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 8
+        const m = new THREE.Mesh(new THREE.PlaneGeometry(w, (w * c.height) / c.width), new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, toneMapped: false }))
+        scene.add(m); return m
+      }
+      let hard1, hard2, chips = []
+      const CH = [['$4,182,300', -9, 3.2, -16, 0], ['source: unknown', 9, 4.6, -22, 1], ['58.6%', -6, 6.9, -30, 0], ['which entity?', 7, 2.4, -12, 1], ['$1,732,000', 13, 7, -36, 0], ['Revenue?', -13, 5, -26, 1]]
+
+      // the trace: one figure, its three sources, and the entries behind each
+      const GR = [['Subscriptions', '$521,999.88', 36], ['Wholesale', '$477,000.00', 43], ['Single orders', '$156,000.00', 12], ['Management fees', '$18,240.00', 32]]
+      const tr = { root: new THREE.Vector3(-1.4, 0, 0), grp: [], leaf: [], seg: [] }
+      GR.forEach((g, i) => { const gp = new THREE.Vector3(2.6, (1 - i) * 2.7, -1.2); tr.grp.push(gp); tr.seg.push([tr.root, gp, 0])
+        for (let k = 0; k < 11; k++) { const lp = new THREE.Vector3(5.5 + rnd() * 6, gp.y + (rnd() - 0.5) * 2.2, -3 - rnd() * 16); tr.leaf.push(lp); tr.seg.push([gp, lp, 1]) } })
+      const tpts = cloud(4 + tr.leaf.length, pointMat('#67E8F9', 2.4))
+      ;[tr.root, ...tr.grp, ...tr.leaf].forEach((p, i) => { tpts.geometry.attributes.position.setXYZ(i, p.x, p.y, p.z); tpts.geometry.attributes.size.setX(i, i === 0 ? 5 : i < 4 ? 3.4 : 1.7) })
+      const tgeo = new THREE.BufferGeometry(); tgeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(tr.seg.length * 6), 3))
+      const tlines = new THREE.LineSegments(tgeo, new THREE.LineBasicMaterial({ color: new THREE.Color('#22D3EE').multiplyScalar(1.4), transparent: true, opacity: 0.75, blending: THREE.AdditiveBlending, depthWrite: false }))
+      tlines.frustumCulled = false; scene.add(tlines)
+      $('tg').innerHTML = GR.map((g, i) => `<div class="tag grp" id="tg${i}">${g[0]}<b>${g[1]}</b><i>${g[2]} entries</i></div>`).join('')
+      const place = (el, v) => { const p = v.clone().project(cam); el.style.left = (p.x * 0.5 + 0.5) * W + 'px'; el.style.top = (-p.y * 0.5 + 0.5) * H + 'px' }
+
+      // sharing: the company's graph, a published report, and the investor's graph it lands in
+      const INV = new THREE.Vector3(5.1, 0, 0), CO = new THREE.Vector3(-5.6, 0, 0)
+      const slots = [0, 1, 2, 3, 4].map((i) => { const a = Math.PI * (0.5 + (i - 2) * 0.36) + Math.PI / 2; return new THREE.Vector3(INV.x + Math.cos(a) * 3.1 * (i === 2 ? 1.05 : 1), Math.sin(a) * 3.1, i === 2 ? 0 : -1.5 + (i % 2) * 2.2) })
+      const ball = (c, r, n) => Array.from({ length: n }, (_, k) => { const y = 1 - (k / (n - 1)) * 2, q = Math.sqrt(1 - y * y), a = k * 2.39996; return new THREE.Vector3(c.x + Math.cos(a) * q * r, c.y + y * r, c.z + Math.sin(a) * q * r) })
+      const fill = (cl, pts, size) => pts.forEach((p, i) => { cl.geometry.attributes.position.setXYZ(i, p.x, p.y, p.z); cl.geometry.attributes.size.setX(i, typeof size === 'function' ? size(i) : size) })
+      const others = cloud(4 * 26, pointMat('#67E8F9', 1.6)); fill(others, [0, 1, 3, 4].flatMap((i) => ball(slots[i], 0.62, 26)), 1.5)
+      const hub = cloud(40, pointMat('#ffffff', 2.4)); fill(hub, ball(INV, 0.95, 40), (i) => (i % 7 ? 1.9 : 3.2))
+      const landed = cloud(26, pointMat('#ffffff', 2.4)); fill(landed, ball(slots[2], 0.62, 26), 1.8)
+      const REP = []; for (let r = 0; r < 5; r++) for (let c = 0; c < 3; c++) REP.push(new THREE.Vector3((c - 1) * 0.3, (2 - r) * 0.24, 0))
+      const rep = cloud(REP.length, pointMat('#ffffff', 2.6))
+      const sgeo = new THREE.BufferGeometry(); sgeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(5 * 6), 3))
+      const slines = new THREE.LineSegments(sgeo, new THREE.LineBasicMaterial({ color: new THREE.Color('#22D3EE').multiplyScalar(1.4), transparent: true, opacity: 0.7, blending: THREE.AdditiveBlending, depthWrite: false })); slines.frustumCulled = false; scene.add(slines)
+      const SHARE = [others, hub, landed, rep, slines]
+      const bez = (a, b, c, p) => a.clone().multiplyScalar((1 - p) * (1 - p)).add(b.clone().multiplyScalar(2 * (1 - p) * p)).add(c.clone().multiplyScalar(p * p))
+
+      // the line at 19 seconds, drawn: the company's graph, a report from it, and the public filings it is set beside
+      const YC = new THREE.Vector3(2.9, 1.95, 0), RP = new THREE.Vector3(5.5, 2.55, 0.4), PUBC = new THREE.Vector3(5.75, -1.75, 0)
+      const PUBP = ball(PUBC, 1.85, 120)
+      const pub = cloud(PUBP.length, pointMat('#ffffff', 2.2)); fill(pub, PUBP, (i) => (i % 6 ? 1.7 : 3))
+      const wrep = cloud(REP.length, pointMat('#ffffff', 2.6)); fill(wrep, REP.map((v) => RP.clone().add(v.clone().multiplyScalar(1.15))), 2.3)
+      const PUBTOP = PUBP.map((p, i) => [p.y - Math.abs(p.z) * 0.5, i]).sort((a, b) => b[0] - a[0]).slice(0, 5).map(([, i]) => PUBP[i])
+      const wgeo = new THREE.BufferGeometry(); wgeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(6 * 6), 3))
+      const wlines = new THREE.LineSegments(wgeo, new THREE.LineBasicMaterial({ color: new THREE.Color('#ffffff'), transparent: true, opacity: 0.75, blending: THREE.AdditiveBlending, depthWrite: false })); wlines.frustumCulled = false; scene.add(wlines)
+      const WHAT = [pub, wrep, wlines]
+
+      const OV = ['field', 'reveal', 'what', 'trace', 'share', 'yours', 'props', 'end']
+      const GS = TALL ? { yours: 1.05, end: 0.62 } : { yours: 2.1, end: 1.9 } // how large the graph sits behind the type
+      function seek(t) {
+        const [name, a, b] = SC.find(([, a, b]) => t >= a && t < b) || SC[SC.length - 1]
+        const u = t - a, d = b - a, k = u / d, is = (n) => name === n
+        OV.forEach((n) => ($('o_' + n).style.opacity = is(n === 'field' ? 'field' : n) ? 1 : 0))
+        const flood = is('what') || is('yours')
+        const plate = is('reveal') || is('trace') || is('share')
+        scene.background = plate ? BLACK : flood ? FLOOD : DARK
+        scene.fog = is('problem') || is('props') ? new THREE.Fog(DARK, 18, 78) : null
+        dust.visible = !flood && !plate
+        floor.visible = is('problem') || is('props'); hard1.visible = hard2.visible = is('problem'); chips.forEach((c) => (c.visible = is('problem')))
+        globe.visible = is('field') || flood || is('end'); tpts.visible = tlines.visible = false; SHARE.forEach((o) => (o.visible = false)); WHAT.forEach((o) => (o.visible = is('what')))
+        bloom.strength = flood ? 0.36 : is('share') ? 0.3 : 0.6
+        dust.material.uniforms.uAlpha.value = is('problem') ? 0.35 : 0.55
+        dust.material.uniforms.uAperture.value = 0.08; nodes.material.uniforms.uAlpha.value = 1
+        globe.position.set(0, 0, 0); globe.scale.setScalar(1); globe.rotation.set(0.28, t * 0.2, 0.12)
+
+        if (is('field')) { // scattered facts, the lens pulling focus through them
+          cam.position.set(lerp(-1.2, 1.2, eio(k)), 0.3, lerp(14, 9, eio(k))); cam.lookAt(0, 0, -20)
+          const f = lerp(10, 26, eio(k)); dust.material.uniforms.uFocus.value = nodes.material.uniforms.uFocus.value = f; nodes.material.uniforms.uAperture.value = 0.08
+          globe.rotation.set(0, 0, 0); setNodes(0); edgeMat.opacity = 0
+          show($('k1'), seg(t, 1.0, 1.9), seg(u, d - 0.3, d))
+        }
+        if (is('problem')) { // low over the grid; the type stands in the scene
+          floorMat.color.copy(RED); floorMat.opacity = 0.8
+          cam.position.set(lerp(-0.8, 0.8, k), lerp(2.6, 2.1, eio(k)), lerp(10, 3.5, eio(k))); cam.lookAt(0, 3.4, -20)
+          floor.position.set(0, 0, (u * 3) % 1.5); dust.material.uniforms.uFocus.value = 22
+          const p1 = eo(seg(t, C.trace - 0.25, C.trace + 0.45)), p2 = eo(seg(t, C.harder - 0.05, C.harder + 0.45)), out1 = eo(seg(t, C.harder - 0.4, C.harder - 0.08))
+          hard1.position.set(0, 4.3, -20); hard1.rotation.x = lerp(-0.5, -0.1, p1); hard1.material.opacity = p1 * (1 - out1)
+          hard2.position.set(0, 4.3, -20); hard2.rotation.x = lerp(-0.5, -0.1, p2); hard2.material.opacity = p2
+          chips.forEach((c, i) => { c.material.opacity = 0.9 * eo(seg(u, 0.3 + i * 0.3, 0.9 + i * 0.3)); c.position.y = CH[i][2] + Math.sin(u * 0.7 + i) * 0.18; c.lookAt(cam.position) })
+        }
+        if (is('reveal')) { // type only, on black: it is screened over the Blender plate
+          show($('rv_wm'), seg(t, C.name - 0.15, C.name + 0.6)); show($('rv_k'), seg(t, C.category - 0.1, C.category + 0.5), 0, 12); show($('rv_h'), seg(t, C.category + 0.15, C.category + 0.9))
+        }
+        if (is('what')) { // the colour world: the ledger, a report from it, and the filings it is benchmarked against
+          setNodes(1); edgeMat.opacity = 0.55; globe.position.copy(YC); globe.scale.setScalar(0.45)
+          cam.position.set(0, 0, lerp(15, 13.6, eio(k))); cam.lookAt(0, 0, 0)
+          ;[nodes, pub, wrep].forEach((o) => { o.material.uniforms.uFocus.value = cam.position.z; o.material.uniforms.uAperture.value = 0.04 })
+          const rp = eo(seg(t, C.reports - 0.05, C.reports + 0.6)), bp = seg(t, C.bench, C.bench + 1.5)
+          wrep.material.uniforms.uAlpha.value = rp; pub.material.uniforms.uAlpha.value = eo(seg(t, C.bench - 0.1, C.bench + 0.7))
+          const wp = wgeo.attributes.position, from = YC.clone().add(new THREE.Vector3(1.45, 0.3, 0)), to = RP.clone().add(new THREE.Vector3(-0.55, 0, 0))
+          wp.setXYZ(0, from.x, from.y, from.z); wp.setXYZ(1, lerp(from.x, to.x, rp), lerp(from.y, to.y, rp), lerp(from.z, to.z, rp))
+          PUBTOP.forEach((q, i) => { const g = eo(seg(bp, i * 0.12, 0.5 + i * 0.12)), r0 = RP.clone().add(new THREE.Vector3((i - 2) * 0.17, -0.75, 0))
+            wp.setXYZ(2 + i * 2, r0.x, r0.y, r0.z); wp.setXYZ(3 + i * 2, lerp(r0.x, q.x, g), lerp(r0.y, q.y, g), lerp(r0.z, q.z, g)) })
+          wp.needsUpdate = true; cam.updateMatrixWorld()
+          place($('wl0'), YC.clone().add(new THREE.Vector3(0, -1.9, 0))); place($('wl2'), RP.clone().add(new THREE.Vector3(0, 1.25, 0))); place($('wl1'), PUBC.clone().add(new THREE.Vector3(0, -2.2, 0)))
+          show($('wl0'), seg(t, C.ledger + 0.2, C.ledger + 0.7), 0, 0); show($('wl2'), seg(t, C.reports + 0.2, C.reports + 0.7), 0, 0); show($('wl1'), seg(t, C.bench + 0.3, C.bench + 0.8), 0, 0)
+          show($('w0'), seg(t, C.ledger - 0.1, C.ledger + 0.55)); show($('w1'), seg(t, C.reports - 0.15, C.reports + 0.5)); show($('w2'), seg(t, C.bench - 0.15, C.bench + 0.5)); show($('w3'), seg(t, C.same - 0.15, C.same + 0.5))
+        }
+        const at = (shot, name) => { const k = PL[shot], f = Math.max(0, Math.min(k.frames - 1, Math.round(t * 30) - k.start)); return k.anchors[name][f] }
+        const pin = (el, xy) => { el.style.left = xy[0] + 'px'; el.style.top = xy[1] + 'px' }
+        if (is('trace')) { // type only: the figure opening to its entries is the Blender plate under it
+          const e0 = C.every
+          pin($('tn'), at('trace', 'root')); pin($('tnl'), at('trace', 'root')); show($('tn'), seg(u, 0.05, 0.6), 0, 0); show($('tnl'), seg(u, 0.3, 0.8), 0, 0)
+          GR.forEach((g, i) => { pin($('tg' + i), at('trace', 'g' + i)); $('tg' + i).style.opacity = eo(seg(t, e0 + 0.8 + i * 0.12, e0 + 1.3 + i * 0.12)) })
+          show($('tc1'), seg(t, C.entries - 0.5, C.entries + 0.1), seg(t, C.reads - 0.35, C.reads - 0.05), 12)
+          show($('tc2'), seg(t, C.reads, C.reads + 0.6), 0, 12)
+          ;['claude', 'chatgpt', 'mcp'].forEach((c, i) => show($('cl' + i), seg(t, C[c] - 0.1, C[c] + 0.45), 0, 14))
+        }
+        if (is('share')) { // type only, over the Blender plate
+          pin($('sl0'), at('share', 'company')); pin($('sl1'), at('share', 'investor')); pin($('sl2'), at('share', 'report'))
+          show($('sl0'), seg(u, 0.2, 0.8), 0, 0); show($('sl1'), seg(u, 0.5, 1.1), 0, 0)
+          $('sl2').style.opacity = eo(seg(t, C.publish + 0.5, C.publish + 1.0)) * (1 - seg(t, C.shareit + 0.3, C.shareit + 0.7))
+          show($('sc1'), seg(t, C.statements - 0.2, C.statements + 0.4), seg(t, C.hold - 0.45, C.hold - 0.15), 12)
+          show($('sc2'), seg(t, C.hold, C.hold + 0.6), 0, 12)
+        }
+        if (is('yours')) { // the turn: the graph fills the frame behind one word
+          setNodes(1); edgeMat.opacity = 0.3; nodes.material.uniforms.uAlpha.value = 0.55; globe.scale.setScalar(GS.yours)
+          cam.position.set(0, 0, lerp(15.5, 13.5, eio(k))); cam.lookAt(0, 0, 0)
+          nodes.material.uniforms.uFocus.value = cam.position.z - 5; nodes.material.uniforms.uAperture.value = 0.12
+          const p = seg(t, C.yours - 0.05, C.yours + 0.6); show($('y_h'), p, 0, 40); $('y_h').style.scale = lerp(1.12, 1, eo(p))
+          ;['code', 'data', 'deployment'].forEach((c, i) => show($('y' + i), seg(t, C[c] - 0.1, C[c] + 0.4), 0, 16))
+        }
+        if (is('props')) { // four plain statements, travelling forward over the same grid
+          floorMat.color.copy(CYAN); floorMat.opacity = 0.6
+          cam.position.set(0, 3.4, 6 - u * 2.2); cam.lookAt(0, 0.6, cam.position.z - 30); floor.position.set(0, 0, Math.ceil(cam.position.z / 1.5) * 1.5 - 1.5)
+          dust.material.uniforms.uFocus.value = 16
+          const cu = [C.infra, C.model, C.trains - 0.55, b + 1]
+          for (let i = 0; i < 3; i++) show($('p' + i), seg(t, cu[i] - 0.1, cu[i] + 0.45), seg(t, cu[i + 1] - 0.4, cu[i + 1] - 0.12), 30)
+        }
+        if (is('end')) { // the graph, quiet, behind the name
+          setNodes(1); edgeMat.opacity = 0.14; nodes.material.uniforms.uAlpha.value = 0.3; globe.scale.setScalar(GS.end)
+          cam.position.set(0, 0, lerp(14, 15.5, eio(k))); cam.lookAt(0, 0, 0); dust.material.uniforms.uFocus.value = 14
+          nodes.material.uniforms.uFocus.value = cam.position.z - 4; nodes.material.uniforms.uAperture.value = 0.1
+          show($('e_m'), seg(t, C.endname - 0.3, C.endname + 0.5), 0, 16)
+          const c0 = C.endline, step = 0.8
+          for (let i = 0; i < 4; i++) { const a0 = i < 3 ? c0 + 1.9 + i * step : c0; const el = $('c' + i)
+            // the category line is said first; the three verbs then take its place in turn, and it returns to close
+            if (i === 3) el.style.opacity = Math.max(eo(seg(t, c0 - 0.1, c0 + 0.4)) * (1 - eo(seg(t, c0 + 1.65, c0 + 1.9))), eo(seg(t, c0 + 4.3, c0 + 4.7)))
+            else el.style.opacity = eo(seg(t, a0, a0 + 0.25)) * (1 - eo(seg(t, a0 + step - 0.25, a0 + step))) }
+          show($('e_u'), seg(t, C.endline + 0.9, C.endline + 1.5), 0, 10)
+        }
+        composer.render()
+      }
+      window.__init = async () => {
+        await Promise.all(['900 40px Orbitron', '500 40px "Space Grotesk"', '700 40px "Space Grotesk"'].map((f) => document.fonts.load(f))); await document.fonts.ready
+        hard1 = textPlane(['HARD TO', 'TRACE'], '#f87171', 250, 30); hard2 = textPlane(['HARDER', 'TO TRUST'], '#f87171', 250, 30)
+        chips = CH.map(([txt, x, y, z, q]) => { const c = Object.assign(document.createElement('canvas'), { width: 512, height: 96 }); const g = c.getContext('2d')
+          g.font = '500 44px Menlo, monospace'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.strokeStyle = q ? 'rgba(248,113,113,.6)' : 'rgba(255,255,255,.3)'; g.lineWidth = 2; g.strokeRect(4, 4, 504, 88)
+          g.fillStyle = q ? '#f87171' : '#9aa3b2'; g.fillText(txt, 256, 50)
+          const m = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 0.79), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c), transparent: true, depthWrite: false })); m.position.set(x, y, z); scene.add(m); return m })
+        window.__READY = true
+      }
+      window.__total = () => TL.total
+      window.__seek = seek
+    </script>
+  </body>
+</html>

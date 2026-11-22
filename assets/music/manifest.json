@@ -72,5 +72,18 @@
     ],
     "description": "Warm analog pads, quiet piano, slow pulse around 80 BPM, lift in the last 20 seconds. Inspired and serious: a mission-film bed, not a product-tour looper, not EDM, not cheesy corporate. No vocals. Built for the ~75s finance film about great books driving great decisions. Not a Shorts or ticker-research track.",
     "source": "ElevenLabs Music API"
+  },
+  {
+    "id": "brand_film",
+    "file": "brand_film.mp3",
+    "duration": 66.0,
+    "mood": [
+      "cinematic",
+      "electronic",
+      "build",
+      "confident"
+    ],
+    "description": "Cinematic electronic underscore for the 65s brand film (tools/ad). Sparse and dark for 10s, a clean beat and arpeggios building to one big hit at about 40s, then the fullest section and a held chord out by 60s. The film's builder moves the hit onto the turn. No vocals.",
+    "source": "ElevenLabs Music API"
   }
 ]
