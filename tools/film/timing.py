@@ -146,10 +146,30 @@ def music_bed(music, turn_natural, out, after=0.0, quiet=False):
   return hit, y.shape[1] / sr
 
 
+def long_enough(bed, need, out):
+  """A bed shorter than the film needs is lengthened from its own middle: whole bars between
+  its first and last minute are repeated, so its opening and its ending are each heard once."""
+  import librosa
+  import soundfile as sf
+
+  y, sr = librosa.load(str(bed), sr=44100, mono=False)
+  if y.shape[1] / sr >= need:
+    return bed
+  _, beats = librosa.beat.beat_track(y=librosa.to_mono(y), sr=sr, hop_length=512)
+  bt = librosa.frames_to_time(beats, sr=sr, hop_length=512)
+  mid = [b for b in bt if 60.0 <= b <= y.shape[1] / sr - 60.0]
+  mid = mid[: 1 + 4 * ((len(mid) - 1) // 4)]  # whole bars
+  while y.shape[1] / sr < need and len(mid) > 4:
+    y = repeat(y, int(mid[0] * sr), int(mid[-1] * sr), sr)
+  sf.write(str(out), y.T, sr)
+  return out
+
+
 def second_bed(out, bed, at, total):
-  """Hand the music over at `at` seconds: the scored bed fades out, `bed` fades in under it
-  and loops to the end of the film."""
+  """Hand the music over at `at` seconds: the scored bed fades out, `bed` comes in from its
+  own beginning under it and plays to the end of the film."""
   first, mixed = out / "music.wav", out / "music_mix.wav"
+  body = long_enough(REPO / bed["file"], total - at + 4.0, out / "music_body.wav")
   subprocess.run(
     [
       "ffmpeg",
@@ -158,13 +178,11 @@ def second_bed(out, bed, at, total):
       "-y",
       "-i",
       str(first),
-      "-stream_loop",
-      "-1",
       "-i",
-      str(REPO / bed["file"]),
+      str(body),
       "-filter_complex",
       f"[0:a]afade=t=out:st={at - 0.5:.2f}:d=3[a];"
-      f"[1:a]volume={bed.get('gain', -5)}dB,afade=t=in:d=3,adelay={int((at - 1.0) * 1000)}:all=1[b];"
+      f"[1:a]volume={bed.get('gain', 0)}dB,afade=t=in:d=3,adelay={int((at - 1.0) * 1000)}:all=1[b];"
       "[a][b]amix=inputs=2:normalize=0:duration=longest",
       "-t",
       str(total),
