@@ -1,0 +1,292 @@
+id,parent,level,label,carried
+consumer-goods,,sector,Consumer Goods,
+consumer-goods/automobile,consumer-goods,subsector,Automobile,
+consumer-goods/automobile/manufacturers,consumer-goods/automobile,category,Manufacturers,
+consumer-goods/automobile/parts,consumer-goods/automobile,category,Parts,
+consumer-goods/beverages,consumer-goods,subsector,Beverages,
+consumer-goods/beverages/brewery,consumer-goods/beverages,category,Brewery,
+consumer-goods/beverages/soft-drinks,consumer-goods/beverages,category,Soft Drinks,
+consumer-goods/beverages/wine-and-spirits,consumer-goods/beverages,category,Wine & Spirits,
+consumer-goods/cannabis,consumer-goods,subsector,Cannabis,
+consumer-goods/cannabis/cannabis,consumer-goods/cannabis,category,Cannabis,yes
+consumer-goods/equipment,consumer-goods,subsector,Equipment,
+consumer-goods/equipment/business,consumer-goods/equipment,category,Business,
+consumer-goods/equipment/electronic,consumer-goods/equipment,category,Electronic,
+consumer-goods/farm-products,consumer-goods,subsector,Farm Products,
+consumer-goods/farm-products/farm-products,consumer-goods/farm-products,category,Farm Products,yes
+consumer-goods/food-products,consumer-goods,subsector,Food Products,
+consumer-goods/food-products/food-products,consumer-goods/food-products,category,Food Products,yes
+consumer-goods/home-furnishings,consumer-goods,subsector,Home Furnishings,
+consumer-goods/home-furnishings/home-furnishings,consumer-goods/home-furnishings,category,Home Furnishings,yes
+consumer-goods/household-products,consumer-goods,subsector,Household Products,
+consumer-goods/household-products/household-products,consumer-goods/household-products,category,Household Products,yes
+consumer-goods/luxury-goods,consumer-goods,subsector,Luxury Goods,
+consumer-goods/luxury-goods/luxury-goods,consumer-goods/luxury-goods,category,Luxury Goods,yes
+consumer-goods/packaging-and-containers,consumer-goods,subsector,Packaging & Containers,
+consumer-goods/packaging-and-containers/packaging-and-containers,consumer-goods/packaging-and-containers,category,Packaging & Containers,yes
+consumer-goods/paper-products,consumer-goods,subsector,Paper Products,
+consumer-goods/paper-products/paper-products,consumer-goods/paper-products,category,Paper Products,yes
+consumer-goods/personal-products,consumer-goods,subsector,Personal Products,
+consumer-goods/personal-products/personal-products,consumer-goods/personal-products,category,Personal Products,yes
+consumer-goods/recreational-vehicles,consumer-goods,subsector,Recreational Vehicles,
+consumer-goods/recreational-vehicles/recreational-vehicles,consumer-goods/recreational-vehicles,category,Recreational Vehicles,yes
+consumer-goods/sporting-goods,consumer-goods,subsector,Sporting Goods,
+consumer-goods/sporting-goods/sporting-goods,consumer-goods/sporting-goods,category,Sporting Goods,yes
+consumer-goods/textiles,consumer-goods,subsector,Textiles,
+consumer-goods/textiles/apparel,consumer-goods/textiles,category,Apparel,
+consumer-goods/textiles/footwear,consumer-goods/textiles,category,Footwear,
+consumer-goods/tobacco-products,consumer-goods,subsector,Tobacco Products,
+consumer-goods/tobacco-products/tobacco-products,consumer-goods/tobacco-products,category,Tobacco Products,yes
+consumer-goods/toys,consumer-goods,subsector,Toys,
+consumer-goods/toys/toys,consumer-goods/toys,category,Toys,yes
+energy,,sector,Energy,
+energy/infrastructure,energy,subsector,Infrastructure,
+energy/infrastructure/lng-and-terminals,energy/infrastructure,category,LNG & Terminals,
+energy/infrastructure/pipelines,energy/infrastructure,category,Pipelines,
+energy/infrastructure/storage,energy/infrastructure,category,Storage,
+energy/production,energy,subsector,Production,
+energy/production/exploration,energy/production,category,Exploration,
+energy/production/majors,energy/production,category,Majors,
+energy/production/refining,energy/production,category,Refining,
+energy/production/royalty,energy/production,category,Royalty,
+energy/renewables,energy,subsector,Renewables,
+energy/renewables/biofuels,energy/renewables,category,Biofuels,
+energy/renewables/diversified,energy/renewables,category,Diversified,
+energy/renewables/hydrogen,energy/renewables,category,Hydrogen,
+energy/renewables/solar,energy/renewables,category,Solar,
+energy/renewables/wind,energy/renewables,category,Wind,
+financials,,sector,Financials,
+financials/asset-management,financials,subsector,Asset Management,
+financials/asset-management/asset-management,financials/asset-management,category,Asset Management,yes
+financials/bdc,financials,subsector,BDC,
+financials/bdc/bdc,financials/bdc,category,BDC,yes
+financials/banks,financials,subsector,Banks,
+financials/banks/domestic,financials/banks,category,Domestic,
+financials/banks/foreign,financials/banks,category,Foreign,
+financials/banks/savings-and-thrifts,financials/banks,category,Savings & Thrifts,
+financials/brokerage,financials,subsector,Brokerage,
+financials/brokerage/brokerage,financials/brokerage,category,Brokerage,yes
+financials/closed-end-funds,financials,subsector,Closed-End Funds,
+financials/closed-end-funds/closed-end-funds,financials/closed-end-funds,category,Closed-End Funds,yes
+financials/digital-assets,financials,subsector,Digital Assets,
+financials/digital-assets/exchanges-and-brokers,financials/digital-assets,category,Exchanges & Brokers,
+financials/digital-assets/infrastructure,financials/digital-assets,category,Infrastructure,
+financials/digital-assets/miners,financials/digital-assets,category,Miners,
+financials/digital-assets/treasury-companies,financials/digital-assets,category,Treasury Companies,
+financials/holding-companies,financials,subsector,Holding Companies,
+financials/holding-companies/holding-companies,financials/holding-companies,category,Holding Companies,yes
+financials/insurance,financials,subsector,Insurance,
+financials/insurance/accident-and-health,financials/insurance,category,Accident & Health,
+financials/insurance/brokers,financials/insurance,category,Brokers,
+financials/insurance/life,financials/insurance,category,Life,
+financials/insurance/property-and-casualty,financials/insurance,category,Property & Casualty,
+financials/insurance/reinsurance,financials/insurance,category,Reinsurance,
+financials/insurance/title-and-surety,financials/insurance,category,Title & Surety,
+financials/lending,financials,subsector,Lending,
+financials/lending/commercial,financials/lending,category,Commercial,
+financials/lending/consumer,financials/lending,category,Consumer,
+financials/lending/mortgage,financials/lending,category,Mortgage,
+financials/patent-and-ip-licensing,financials,subsector,Patent & IP Licensing,
+financials/patent-and-ip-licensing/patent-and-ip-licensing,financials/patent-and-ip-licensing,category,Patent & IP Licensing,yes
+financials/shell-companies-and-spacs,financials,subsector,Shell Companies & SPACs,
+financials/shell-companies-and-spacs/shell-companies-and-spacs,financials/shell-companies-and-spacs,category,Shell Companies & SPACs,yes
+financials/structured-finance,financials,subsector,Structured Finance,
+financials/structured-finance/structured-finance,financials/structured-finance,category,Structured Finance,yes
+health-care,,sector,Health Care,
+health-care/animal-health,health-care,subsector,Animal Health,
+health-care/animal-health/animal-health,health-care/animal-health,category,Animal Health,yes
+health-care/biotechnology,health-care,subsector,Biotechnology,
+health-care/biotechnology/biotechnology,health-care/biotechnology,category,Biotechnology,yes
+health-care/contract-research,health-care,subsector,Contract Research,
+health-care/contract-research/contract-research,health-care/contract-research,category,Contract Research,yes
+health-care/diagnostics,health-care,subsector,Diagnostics,
+health-care/diagnostics/diagnostics,health-care/diagnostics,category,Diagnostics,yes
+health-care/drug-manufacturers,health-care,subsector,Drug Manufacturers,
+health-care/drug-manufacturers/generic,health-care/drug-manufacturers,category,Generic,
+health-care/drug-manufacturers/major,health-care/drug-manufacturers,category,Major,
+health-care/drug-manufacturers/specialty,health-care/drug-manufacturers,category,Specialty,
+health-care/health-care-plans,health-care,subsector,Health Care Plans,
+health-care/health-care-plans/health-care-plans,health-care/health-care-plans,category,Health Care Plans,yes
+health-care/health-care-technology,health-care,subsector,Health Care Technology,
+health-care/health-care-technology/health-care-technology,health-care/health-care-technology,category,Health Care Technology,yes
+health-care/hospitals,health-care,subsector,Hospitals,
+health-care/hospitals/hospitals,health-care/hospitals,category,Hospitals,yes
+health-care/medical-equipment,health-care,subsector,Medical Equipment,
+health-care/medical-equipment/medical-equipment,health-care/medical-equipment,category,Medical Equipment,yes
+health-care/medical-laboratories,health-care,subsector,Medical Laboratories,
+health-care/medical-laboratories/medical-laboratories,health-care/medical-laboratories,category,Medical Laboratories,yes
+health-care/specialized-services,health-care,subsector,Specialized Services,
+health-care/specialized-services/specialized-services,health-care/specialized-services,category,Specialized Services,yes
+industrials,,sector,Industrials,
+industrials/aerospace-and-defense,industrials,subsector,Aerospace & Defense,
+industrials/aerospace-and-defense/commercial-aerospace,industrials/aerospace-and-defense,category,Commercial Aerospace,
+industrials/aerospace-and-defense/defense,industrials/aerospace-and-defense,category,Defense,
+industrials/aerospace-and-defense/defense-technology-and-drones,industrials/aerospace-and-defense,category,Defense Technology & Drones,
+industrials/aerospace-and-defense/space,industrials/aerospace-and-defense,category,Space,
+industrials/building-materials,industrials,subsector,Building Materials,
+industrials/building-materials/building-materials,industrials/building-materials,category,Building Materials,yes
+industrials/conglomerates,industrials,subsector,Conglomerates,
+industrials/conglomerates/conglomerates,industrials/conglomerates,category,Conglomerates,yes
+industrials/electrical-equipment,industrials,subsector,Electrical Equipment,
+industrials/electrical-equipment/electrical-equipment,industrials/electrical-equipment,category,Electrical Equipment,yes
+industrials/general-contractors,industrials,subsector,General Contractors,
+industrials/general-contractors/general-contractors,industrials/general-contractors,category,General Contractors,yes
+industrials/lumber-production,industrials,subsector,Lumber Production,
+industrials/lumber-production/lumber-production,industrials/lumber-production,category,Lumber Production,yes
+industrials/machinery,industrials,subsector,Machinery,
+industrials/machinery/agricultural,industrials/machinery,category,Agricultural,
+industrials/machinery/construction-and-mining,industrials/machinery,category,Construction & Mining,
+industrials/machinery/industrial,industrials/machinery,category,Industrial,
+industrials/machinery/trucks,industrials/machinery,category,Trucks,
+industrials/rubber-and-plastics,industrials,subsector,Rubber & Plastics,
+industrials/rubber-and-plastics/rubber-and-plastics,industrials/rubber-and-plastics,category,Rubber & Plastics,yes
+industrials/semiconductors,industrials,subsector,Semiconductors,
+industrials/semiconductors/communications,industrials/semiconductors,category,Communications,
+industrials/semiconductors/diversified,industrials/semiconductors,category,Diversified,
+industrials/semiconductors/equipment,industrials/semiconductors,category,Equipment,
+industrials/semiconductors/foundry,industrials/semiconductors,category,Foundry,
+industrials/semiconductors/memory,industrials/semiconductors,category,Memory,
+industrials/tools,industrials,subsector,Tools,
+industrials/tools/tools,industrials/tools,category,Tools,yes
+industrials/waste-management,industrials,subsector,Waste Management,
+industrials/waste-management/waste-management,industrials/waste-management,category,Waste Management,yes
+materials,,sector,Materials,
+materials/base-metals-royalty,materials,subsector,Base Metals Royalty,
+materials/base-metals-royalty/base-metals-royalty,materials/base-metals-royalty,category,Base Metals Royalty,yes
+materials/chemicals,materials,subsector,Chemicals,
+materials/chemicals/agricultural,materials/chemicals,category,Agricultural,
+materials/chemicals/diversified,materials/chemicals,category,Diversified,
+materials/chemicals/specialty,materials/chemicals,category,Specialty,
+materials/industrial-metals-and-minerals,materials,subsector,Industrial Metals & Minerals,
+materials/industrial-metals-and-minerals/aluminum,materials/industrial-metals-and-minerals,category,Aluminum,
+materials/industrial-metals-and-minerals/coal,materials/industrial-metals-and-minerals,category,Coal,
+materials/industrial-metals-and-minerals/copper,materials/industrial-metals-and-minerals,category,Copper,
+materials/industrial-metals-and-minerals/diversified,materials/industrial-metals-and-minerals,category,Diversified,
+materials/industrial-metals-and-minerals/lithium,materials/industrial-metals-and-minerals,category,Lithium,
+materials/industrial-metals-and-minerals/minerals,materials/industrial-metals-and-minerals,category,Minerals,
+materials/industrial-metals-and-minerals/nickel,materials/industrial-metals-and-minerals,category,Nickel,
+materials/industrial-metals-and-minerals/rare-earths,materials/industrial-metals-and-minerals,category,Rare Earths,
+materials/industrial-metals-and-minerals/steel,materials/industrial-metals-and-minerals,category,Steel,
+materials/industrial-metals-and-minerals/uranium,materials/industrial-metals-and-minerals,category,Uranium,
+materials/mining,materials,subsector,Mining,
+materials/mining/explorer,materials/mining,category,Explorer,
+materials/mining/junior-developer,materials/mining,category,Junior Developer,
+materials/mining/junior-producer,materials/mining,category,Junior Producer,
+materials/mining/large-producer,materials/mining,category,Large Producer,
+materials/mining/mid-tier-producer,materials/mining,category,Mid-Tier Producer,
+materials/mining/project-generator,materials/mining,category,Project Generator,
+materials/precious-metals,materials,subsector,Precious Metals,
+materials/precious-metals/gold,materials/precious-metals,category,Gold,
+materials/precious-metals/palladium,materials/precious-metals,category,Palladium,
+materials/precious-metals/platinum,materials/precious-metals,category,Platinum,
+materials/precious-metals/silver,materials/precious-metals,category,Silver,
+materials/precious-metals-royalty,materials,subsector,Precious Metals Royalty,
+materials/precious-metals-royalty/large-tier,materials/precious-metals-royalty,category,Large-Tier,
+materials/precious-metals-royalty/mid-tier,materials/precious-metals-royalty,category,Mid-Tier,
+materials/precious-metals-royalty/small-tier,materials/precious-metals-royalty,category,Small-Tier,
+real-estate,,sector,Real Estate,
+real-estate/cell-towers,real-estate,subsector,Cell Towers,
+real-estate/cell-towers/cell-towers,real-estate/cell-towers,category,Cell Towers,yes
+real-estate/data-centers,real-estate,subsector,Data Centers,
+real-estate/data-centers/data-centers,real-estate/data-centers,category,Data Centers,yes
+real-estate/diversified,real-estate,subsector,Diversified,
+real-estate/diversified/diversified,real-estate/diversified,category,Diversified,yes
+real-estate/health-care,real-estate,subsector,Health Care,
+real-estate/health-care/health-care,real-estate/health-care,category,Health Care,yes
+real-estate/hotels,real-estate,subsector,Hotels,
+real-estate/hotels/lodging,real-estate/hotels,category,Lodging,
+real-estate/hotels/casino,real-estate/hotels,category,Casino,
+real-estate/industrial,real-estate,subsector,Industrial,
+real-estate/industrial/industrial,real-estate/industrial,category,Industrial,yes
+real-estate/mortgage,real-estate,subsector,Mortgage,
+real-estate/mortgage/mortgage,real-estate/mortgage,category,Mortgage,yes
+real-estate/office,real-estate,subsector,Office,
+real-estate/office/office,real-estate/office,category,Office,yes
+real-estate/residential,real-estate,subsector,Residential,
+real-estate/residential/residential,real-estate/residential,category,Residential,yes
+real-estate/retail,real-estate,subsector,Retail,
+real-estate/retail/retail,real-estate/retail,category,Retail,yes
+real-estate/self-storage,real-estate,subsector,Self-Storage,
+real-estate/self-storage/self-storage,real-estate/self-storage,category,Self-Storage,yes
+real-estate/specialty,real-estate,subsector,Specialty,
+real-estate/specialty/specialty,real-estate/specialty,category,Specialty,yes
+real-estate/timberland,real-estate,subsector,Timberland,
+real-estate/timberland/timberland,real-estate/timberland,category,Timberland,yes
+services,,sector,Services,
+services/airlines,services,subsector,Airlines,
+services/airlines/airlines,services/airlines,category,Airlines,yes
+services/business-services,services,subsector,Business Services,
+services/business-services/consulting,services/business-services,category,Consulting,
+services/business-services/rental-and-leasing,services/business-services,category,Rental & Leasing,
+services/business-services/specialty,services/business-services,category,Specialty,
+services/business-services/staffing,services/business-services,category,Staffing,
+services/business-services/technical,services/business-services,category,Technical,
+services/communications,services,subsector,Communications,
+services/communications/advertising,services/communications,category,Advertising,
+services/communications/carriers,services/communications,category,Carriers,
+services/communications/media-and-broadcasting,services/communications,category,Media & Broadcasting,
+services/communications/social-and-search,services/communications,category,Social & Search,
+services/educational,services,subsector,Educational,
+services/educational/educational,services/educational,category,Educational,yes
+services/energy,services,subsector,Energy,
+services/energy/energy,services/energy,category,Energy,yes
+services/entertainment,services,subsector,Entertainment,
+services/entertainment/film-and-studios,services/entertainment,category,Film & Studios,
+services/entertainment/streaming,services/entertainment,category,Streaming,
+services/entertainment/video-games,services/entertainment,category,Video Games,
+services/financial,services,subsector,Financial,
+services/financial/exchanges,services/financial,category,Exchanges,
+services/financial/information,services/financial,category,Information,
+services/financial/payments,services/financial,category,Payments,
+services/gaming-and-casinos,services,subsector,Gaming & Casinos,
+services/gaming-and-casinos/gaming-and-casinos,services/gaming-and-casinos,category,Gaming & Casinos,yes
+services/information-technology,services,subsector,Information Technology,
+services/information-technology/cloud-infrastructure,services/information-technology,category,Cloud Infrastructure,
+services/information-technology/cybersecurity,services/information-technology,category,Cybersecurity,
+services/information-technology/it-services,services/information-technology,category,IT Services,
+services/leisure,services,subsector,Leisure,
+services/leisure/cruise-lines,services/leisure,category,Cruise Lines,
+services/leisure/recreation-and-fitness,services/leisure,category,Recreation & Fitness,
+services/real-estate,services,subsector,Real Estate,
+services/real-estate/development,services/real-estate,category,Development,
+services/real-estate/management,services/real-estate,category,Management,
+services/real-estate/residential-construction,services/real-estate,category,Residential Construction,
+services/retail,services,subsector,Retail,
+services/retail/apparel,services/retail,category,Apparel,
+services/retail/automotive,services/retail,category,Automotive,
+services/retail/discount,services/retail,category,Discount,
+services/retail/electronics,services/retail,category,Electronics,
+services/retail/grocery,services/retail,category,Grocery,
+services/retail/home-improvement,services/retail,category,Home Improvement,
+services/retail/internet,services/retail,category,Internet,
+services/retail/luxury,services/retail,category,Luxury,
+services/retail/pharmacy,services/retail,category,Pharmacy,
+services/retail/restaurants,services/retail,category,Restaurants,
+services/software,services,subsector,Software,
+services/software/business,services/software,category,Business,
+services/software/diversified,services/software,category,Diversified,
+services/software/entertainment,services/software,category,Entertainment,
+services/software/travel,services/software,category,Travel,
+services/transportation,services,subsector,Transportation,
+services/transportation/delivery,services/transportation,category,Delivery,
+services/transportation/logistics,services/transportation,category,Logistics,
+services/transportation/railroads,services/transportation,category,Railroads,
+services/transportation/shipping,services/transportation,category,Shipping,
+services/transportation/trucking,services/transportation,category,Trucking,
+services/wholesale,services,subsector,Wholesale,
+services/wholesale/food-products,services/wholesale,category,Food Products,
+services/wholesale/health-care,services/wholesale,category,Health Care,
+services/wholesale/industrial,services/wholesale,category,Industrial,
+utilities,,sector,Utilities,
+utilities/diversified,utilities,subsector,Diversified,
+utilities/diversified/diversified,utilities/diversified,category,Diversified,yes
+utilities/electric,utilities,subsector,Electric,
+utilities/electric/electric,utilities/electric,category,Electric,yes
+utilities/gas,utilities,subsector,Gas,
+utilities/gas/gas,utilities/gas,category,Gas,yes
+utilities/independent-power-producers,utilities,subsector,Independent Power Producers,
+utilities/independent-power-producers/independent-power-producers,utilities/independent-power-producers,category,Independent Power Producers,yes
+utilities/renewable,utilities,subsector,Renewable,
+utilities/renewable/renewable,utilities/renewable,category,Renewable,yes
+utilities/water,utilities,subsector,Water,
+utilities/water/water,utilities/water,category,Water,yes

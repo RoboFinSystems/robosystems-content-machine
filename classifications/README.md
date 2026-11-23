@@ -13,17 +13,48 @@ data pipeline.
 
 | File | What it is |
 |---|---|
-| `industry-classification.csv` | The **company** vocabulary: a 3-level `Sector > Subsector > Category` taxonomy (~189 leaves across 9 sectors). Bespoke, not GICS/NAICS - it carries finance-native buckets (Digital Assets, Defense Technology & Drones, mining producer tiers) and a `Consumer Goods > Cannabis` subsector. Depth varies: some leaves terminate at the subsector (Cannabis has no category breakout). |
+| `industries.csv` | The **company** vocabulary, one row per node: `id`, `parent`, `level`, `label`, `carried`. Three guaranteed levels, `Sector > Subsector > Category` (9 sectors, 94 subsectors, 188 categories), and open below that: a micro-industry is a new row under a category. Bespoke, not GICS/NAICS - it carries finance-native buckets (Digital Assets, Defense Technology & Drones, mining producer tiers) and a `Consumer Goods > Cannabis` subsector. The `id` is the slug path (`consumer-goods/cannabis/cannabis`), so a node's ancestors are its id's prefixes. |
+| `companies.csv` | The **master list**: one row per company-industry pair - `key` (the `projects/` slug), `cik`, `name`, `industry` (a node id), `primary`, `method`, `review`, `notes`. A company has exactly one `primary` row and any number of secondary rows. |
 | `sic-crosswalk.csv` | ~400 SIC codes mapped to a company-taxonomy node, with a `Match Quality` column (`exact` / `parent` / `review` / `approx`) and a `Notes` column. A routing hint, not the answer: `exact` full-leaf matches can be trusted; everything else needs judgment. |
 | `etf-classifications.csv` | The **ETF / fund** vocabulary: a 4-level `Asset Class > Sector > Subsector > Category` taxonomy organized by investment STRUCTURE (Alternatives, Commodities, Crypto, Currencies, Equities, Fixed Income, Multi-Asset), not operating-company industry. A cannabis sector fund is `Equities > Industries > Cannabis`; a leveraged one is `Alternatives > Leveraged & Inverse > Index Leveraged`. |
 | `keys.csv` | The **aggregate-key registry**: ticker-form keys (CANNABIS, CONSUMER) for the sector / industry coverage nodes, each mapped to a taxonomy node + its parent key. The aggregate counterpart to SEC's `company_tickers.json`. |
+
+## Levels, carried categories and growth
+
+Every company has a sector, a subsector and a category. Not every subsector has been
+divided into categories yet (62 of the 94 have not), so an undivided subsector carries
+itself over as its one category, marked `carried = yes`: `Consumer Goods > Cannabis >
+Cannabis`. Nothing downstream has to handle a missing level, and the flag is the list of
+subsectors still waiting to be divided.
+
+- **A carried name shows once.** Display paths drop the carried row: `Consumer Goods >
+  Cannabis`, never `Consumer Goods > Cannabis > Cannabis`.
+- **A split replaces the carried row.** When a subsector is divided, every member moves to
+  a real category and the carried row is deleted. Left beside the new categories it would
+  become a catch-all.
+- **Attach a company at the deepest node that fits.** Its ancestors are derived from the
+  id, so a group that is too small can fall back up the tree without a second column.
+- **Add industries as they develop.** A new category or micro-industry is one row in
+  `industries.csv` plus moving the members' rows in `companies.csv`.
+
+`just classify` checks every rule above (and that `sic-crosswalk.csv` and `keys.csv`
+still name real nodes); `just classify MSFT IREN` shows a company's industries.
+
+## The catalog field
+
+`tools/reindex.py` writes each published item's memberships into the research catalog as
+`industries`: a list of `{id, labels, primary}`, primary first, rebuilt from these tables
+on every reindex. An aggregate key from `keys.csv` (CANNABIS) carries the node it is the
+hub of, with `hub: true`. A published ticker with no row in `companies.csv` is named at
+the end of the reindex. So classifying a company is one line in `companies.csv` before its
+brief is published.
 
 ## Two entity types, two classification systems
 
 Classification is entity-type-aware. Route first, then classify:
 
 - **Operating companies** (they file 10-K / 20-F / 40-F financials) classify into the
-  **company taxonomy** (`industry-classification.csv`), via the SIC crosswalk floor +
+  **company taxonomy** (`industries.csv`), via the SIC crosswalk floor +
   recall. A cannabis MSO is `Consumer Goods > Cannabis`.
 - **ETFs / funds** (they hold other companies) classify into the **ETF taxonomy**
   (`etf-classifications.csv`). A cannabis sector fund is `Equities > Industries >
@@ -102,10 +133,14 @@ Pathways) or a tobacco company with a cannabis investment is **not** cannabis.
 
 ## Multi-industry
 
-Default: exactly one primary classification per entity. A second is allowed only
-when the entity draws material revenue from a genuinely distinct sector (SNDL is
-cannabis + liquor retail; Village Farms is cannabis + produce). Hard cap of two.
-Never add a secondary just because a company touches software or technology.
+A company can sit in more than one industry: one `primary` row and a row for each other
+industry it draws **material revenue** from (Tilray is cannabis + brewing; IREN is cloud
+infrastructure + bitcoin mining). There is no cap, but the materiality test holds: never
+add an industry because a company touches software, technology or AI, or the groups stop
+meaning anything.
+
+Links and peer groups use every membership. A rollup uses the **primary only**, so a
+sector aggregate never counts a two-industry company twice.
 
 ## Aggregation levels (rollup reports)
 
