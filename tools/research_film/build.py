@@ -20,6 +20,8 @@ draw, and the source of every figure on screen.
                                                                   one entry per scene the acts name; the kinds and
                                                                   what each takes are listed at the top of the page
     "figures": [{ "text": "$364.6B", "source": "Form 10-Q, Note 12 (0001193125-26-436133)" }],
+    "cover"?: { "hook", "line", "badge", "tone"? },             the words on the ticker's cover (just thumbnails
+                                                                  reads them); its figures are checked like the rest
     "voice"?, "music"? }
 
 The figure check runs first and stops the build: every figure the picture shows must be listed
@@ -67,7 +69,7 @@ def strings(x):
 
 def check_figures(spec):
   shown = set()
-  for s in strings(spec["data"]):
+  for s in [*strings(spec["data"]), *strings(spec.get("cover", {}))]:
     shown.update(FIGURE.findall(s))
   for sc in spec["data"]["scenes"].values():
     if "facts" in sc:

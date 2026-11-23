@@ -322,6 +322,23 @@ def main():
     f"  chat model: {model}  ·  image model: {IMAGE_MODEL}  ·  quality: {args.quality}"
   )
   el = extract_elements(key, model, brief)
+  # A ticker with a film takes its cover's words from the film's spec ("cover": { "hook",
+  # "line", "badge" }), so the cover that opens the film says what the film says. The long
+  # cut's spec wins over the short one's; a flag on the command line wins over both.
+  film = os.path.join(project_dir, "film")
+  for spec_name in (f"{ticker}_film_long.json", f"{ticker}_film.json"):
+    spec_path = os.path.join(film, spec_name)
+    cover = (
+      json.load(open(spec_path)).get("cover") if os.path.exists(spec_path) else None
+    )
+    if cover:
+      print(f"  cover words from film/{spec_name}")
+      for arg, k in (("hook", "hook"), ("hook_line", "line"), ("badge", "badge")):
+        if not getattr(args, arg, None) and cover.get(k):
+          setattr(args, arg, cover[k])
+      if cover.get("tone"):
+        el["tone"] = cover["tone"]
+      break
   for flag, field in (
     ("hook", "hook_stat"),
     ("hook_line", "hook_line"),
