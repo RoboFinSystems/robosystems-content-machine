@@ -23,6 +23,7 @@ import subprocess
 
 import card_thumbnails
 import narrate_research
+import page_check
 import reindex
 from helpers import (
   apply_promo_code,
@@ -261,6 +262,8 @@ def publish(project, narrate=True):
       f"Run `just publish-brief {ticker}` again (narration is reused)."
     ) from e
 
+  print()
+  page_check.check_research_page(ticker)
   return urls
 
 
