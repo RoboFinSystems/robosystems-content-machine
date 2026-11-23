@@ -167,6 +167,10 @@ Useful for covering more filings than you have render time for, and for names wh
 analysis is the whole product. A brief-only name still ships audio: `publish-brief` narrates
 it like any other, so the page has a written report and a spoken one even with no video.
 
+Every publish ends by requesting the live page (`tools/page_check.py`) and fails if it
+answers with an error. The artifacts are published by then, so the fix is in the page, not
+a second publish. `just check-page TICKER` runs the check alone.
+
 ### The audio edition
 
 **Every report ships a "Listen to this report" narration** - a single-voice ElevenLabs read of

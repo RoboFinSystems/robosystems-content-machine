@@ -372,6 +372,10 @@ republish-brief project: (validate-brief project)
     @just ensure-env
     UV_ENV_FILE={{_env}} uv run python tools/republish_brief.py {{project}}
 
+# Check that published research pages serve (publish and republish run this themselves)
+check-page +tickers:
+    uv run python tools/page_check.py {{tickers}}
+
 # ─── Blog Pipeline (markdown essays → S3 blog/ + blog/index.json) ─────────────
 
 # Scaffold a new blog post: blog/<slug>/post.md from the template (site: robosystems | roboledger)

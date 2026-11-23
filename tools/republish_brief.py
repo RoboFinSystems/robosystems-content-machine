@@ -19,6 +19,7 @@ import argparse
 import os
 import subprocess
 
+import page_check
 import reindex
 from helpers import (
   apply_promo_code,
@@ -77,6 +78,9 @@ def main():
     republish_brief(ticker)
   # The catalog carries the description read off the brief, so rebuild it once.
   reindex.run()
+  # After every ticker is corrected, so one failing page does not strand the rest.
+  for ticker in args.tickers:
+    page_check.check_research_page(ticker)
 
 
 if __name__ == "__main__":
