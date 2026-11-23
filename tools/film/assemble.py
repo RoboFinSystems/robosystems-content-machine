@@ -7,7 +7,10 @@ A scene's plate is named in the timeline (tools/film/timing.py writes it): its f
 it is held out around the type (true, or how many pixels wide the cut is), and how far into the footage the scene starts ("skip";
 negative holds the first frame that long).
 
-  python3 tools/film/assemble.py <film folder>     -> <film folder>/renders/<name>.mp4
+  python3 tools/film/assemble.py <film folder> [cover image]   -> <film folder>/renders/<name>.mp4
+
+A cover image becomes the film's first frame, and only that one: where a video plays in a feed,
+the first frame is what is shown before it plays.
 """
 
 import json
@@ -49,6 +52,16 @@ for s in tl["scenes"]:
     f";[{last}][p{n}]blend=all_mode=screen:enable='gte(t,{f0 / 30 - 0.005:.3f})*lt(t,{f1 / 30 - 0.005:.3f})'[v{n}]"
   )
   last = f"v{n}"
+cover = Path(sys.argv[2]).resolve() if len(sys.argv) > 2 else None
+if cover:  # the film's first frame, and only that one
+  size = "1080:1920" if tl.get("format") == "tall" else "1920:1080"
+  ins += ["-loop", "1", "-t", "0.2", "-i", str(cover)]
+  n += 1
+  fc += (
+    f";[{n}:v]scale={size}:force_original_aspect_ratio=increase,crop={size},format=gbrp[cv]"
+    f";[{last}][cv]overlay=enable='eq(n,0)':eof_action=pass[vc]"
+  )
+  last = "vc"
 fc += (
   f";[{last}]format=yuv420p[v];[{n + 1}:a]asplit=2[vo][key];[{n + 2}:a]volume=-11dB,afade=t=out:st={total - 1.95:.2f}:d=1.9[mus]"
   ";[mus][key]sidechaincompress=threshold=0.02:ratio=5:attack=120:release=700[duck]"

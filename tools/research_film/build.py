@@ -175,6 +175,8 @@ def main():
     subprocess.run(motion, cwd=REPO, check=True)
     return
   motion += ["--workers", "4"]
+  # the ticker's cover is the film's first frame: what a feed shows before the video plays
+  cover = [str(c)] if (c := home.parent / "assets" / "yt.png").exists() else []
   start = tail_start(sys.argv, old, tl, film)
   if start is None:
     subprocess.run(motion, cwd=REPO, check=True)
@@ -193,7 +195,7 @@ def main():
     (r / "layer_new.mp4").replace(r / "layer.mp4")
     (r / "layer_tail.mp4").unlink()
   subprocess.run(
-    [sys.executable, "tools/film/assemble.py", str(film)], cwd=REPO, check=True
+    [sys.executable, "tools/film/assemble.py", str(film), *cover], cwd=REPO, check=True
   )
   subprocess.run(
     [
