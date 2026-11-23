@@ -4,6 +4,8 @@ Build one research film: a 60 to 90 second cut of a published brief, in the bran
   just research-film MSFT            (spec: projects/MSFT/film/MSFT_film.json)
   just research-film MSFT --check    (the figure check only: no voice, no render)
   just research-film MSFT --stills 4,20,41
+  just research-film MSFT --cut long --from how   (re-render the picture from the scene named, and
+                                      keep what is before it: for a change near the end of a long film)
   just research-film MSFT --cut long (a second cut of the same ticker: spec MSFT_film_long.json,
                                       built in projects/MSFT/film/long/; voice takes are shared)
   just research-film PTC --dry --stills 3,12,20     (the picture laid out from word counts,
@@ -81,6 +83,34 @@ def check_figures(spec):
   print(f"figure check: {len(shown)} figures on screen, each with a source")
 
 
+def tail_start(argv, old, tl, film):
+  """Where a --from render may start: the named scene's first second, if every scene before
+  it is timed and drawn as it was in the last build. None means render the whole film."""
+  if "--from" not in argv:
+    return None
+  name = argv[argv.index("--from") + 1]
+  names = [s["name"] for s in tl["scenes"]]
+  if old is None or name not in names or not (film / "renders" / "layer.mp4").exists():
+    print(f"--from {name}: nothing to keep, rendering the whole film")
+    return None
+  i = names.index(name)
+  edge = tl["scenes"][i]["start"]
+
+  def kept(t):  # the scenes before the edge, as timed and as drawn
+    return [
+      (s["name"], s["start"], s["end"], t["data"]["scenes"][s["name"]])
+      for s in t["scenes"][:i]
+    ]
+
+  def cues(t):
+    return {k: v for k, v in t["cues"].items() if v < edge}
+
+  if len(old["scenes"]) < i or kept(old) != kept(tl) or cues(old) != cues(tl):
+    print(f"--from {name}: a scene before it changed, rendering the whole film")
+    return None
+  return tl["scenes"][i]["frame"] / 30
+
+
 def main():
   ticker = sys.argv[1].upper()
   home = REPO / "projects" / ticker / "film"
@@ -107,6 +137,8 @@ def main():
     for name, sc in spec["data"]["scenes"].items()
     if sc["kind"] == "ident"
   }
+  before = film / "timeline.json"
+  old = json.loads(before.read_text()) if before.exists() else None
   tl = timing.build(
     spec,
     spec["script"],
@@ -142,9 +174,28 @@ def main():
       motion += ["--stills", sys.argv[sys.argv.index("--stills") + 1]]
     subprocess.run(motion, cwd=REPO, check=True)
     return
-  subprocess.run(motion, cwd=REPO, check=True)
+  motion += ["--workers", "4"]
+  # the ticker's cover is the film's first frame: what a feed shows before the video plays
+  cover = [str(c)] if (c := home.parent / "assets" / "yt.png").exists() else []
+  start = tail_start(sys.argv, old, tl, film)
+  if start is None:
+    subprocess.run(motion, cwd=REPO, check=True)
+  else:  # the picture before `start` stands: render the rest and join the two
+    motion[motion.index("layer")] = "layer_tail"
+    subprocess.run([*motion, "--from", str(start)], cwd=REPO, check=True)
+    r = film / "renders"
+    subprocess.run(
+      [
+        "ffmpeg", "-v", "error", "-y", "-i", str(r / "layer.mp4"), "-i", str(r / "layer_tail.mp4"),
+        "-filter_complex", f"[0:v]trim=end_frame={round(start * 30)},setpts=PTS-STARTPTS[a];[a][1:v]concat=n=2:v=1[v]",
+        "-map", "[v]", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "12", "-movflags", "+faststart", str(r / "layer_new.mp4"),
+      ],
+      check=True,
+    )  # fmt: skip
+    (r / "layer_new.mp4").replace(r / "layer.mp4")
+    (r / "layer_tail.mp4").unlink()
   subprocess.run(
-    [sys.executable, "tools/film/assemble.py", str(film)], cwd=REPO, check=True
+    [sys.executable, "tools/film/assemble.py", str(film), *cover], cwd=REPO, check=True
   )
   subprocess.run(
     [

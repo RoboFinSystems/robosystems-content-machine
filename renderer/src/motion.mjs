@@ -79,13 +79,32 @@ export async function motion(args) {
     const framesDir = path.join(outDir, `${name}-frames`);
     await rm(framesDir, { recursive: true, force: true });
     await mkdir(framesDir, { recursive: true });
-    const count = Math.round(total * fps);
-    console.log(`  rendering ${count} frames @ ${fps}fps (${W}x${H}) = ${total.toFixed(1)}s`);
-    for (let i = 0; i < count; i++) {
-      await pose(i / fps);
-      await page.screenshot({ path: path.join(framesDir, `frame-${String(i).padStart(5, '0')}.png`) });
-      if (i % (fps * 5) === 0) process.stdout.write(`\r  ${Math.round((i / count) * 100)}%`);
+    // --from/--to (seconds) render part of the film: frame files are numbered from 0 at --from
+    const first = Math.max(0, Math.round(Number(args.from || 0) * fps));
+    const last = Math.min(Math.round(total * fps), args.to ? Math.round(Number(args.to) * fps) : Infinity);
+    const count = last - first;
+    const workers = Math.max(1, Math.min(Number(args.workers || 1), count));
+    console.log(`  rendering ${count} frames @ ${fps}fps (${W}x${H}) = ${(count / fps).toFixed(1)}s${workers > 1 ? `, ${workers} pages` : ''}`);
+    // a frame is a pure function of its time, so pages can share the work: each takes every
+    // workers-th frame, which keeps heavy and light stretches spread evenly between them
+    const shoot = async (pg, k) => {
+      const poseOn = (t) => pg.evaluate((s) => new Promise((r) => { window.__seek(s); requestAnimationFrame(() => requestAnimationFrame(r)); }), t);
+      for (let i = first + k; i < last; i += workers) {
+        await poseOn(i / fps);
+        await pg.screenshot({ path: path.join(framesDir, `frame-${String(i - first).padStart(5, '0')}.png`) });
+        if (k === 0 && (i - first) % (fps * 5) < workers) process.stdout.write(`\r  ${Math.round(((i - first) / count) * 100)}%`);
+      }
+    };
+    const pages = [page];
+    for (let k = 1; k < workers; k++) {
+      const pg = await browser.newPage({ viewport: { width: W, height: H }, deviceScaleFactor: 1 });
+      await pg.goto(url, { waitUntil: 'load' });
+      await pg.waitForFunction(() => typeof window.__init === 'function');
+      await pg.evaluate(() => window.__init());
+      await pg.waitForFunction(() => window.__READY === true);
+      pages.push(pg);
     }
+    await Promise.all(pages.map((pg, k) => shoot(pg, k)));
     const outFile = path.join(outDir, `${name}.mp4`);
     await framesToMp4({ framePattern: path.join(framesDir, 'frame-%05d.png'), fps, out: outFile });
     console.log(`\n✓ ${path.relative(process.cwd(), outFile)}  (silent)`);

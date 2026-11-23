@@ -31,8 +31,10 @@
   --film-blue: #2563eb;
   --film-indigo: #6366f1;
 
-  /* The problem act only */
+  /* Alarm: the brand film's problem act, and a figure an author marks as bad news */
   --film-alarm: #f87171;
+  /* A figure an author marks as good news. Never applied by sign alone. */
+  --film-good: #34d399;
 
   /* Type families */
   --film-display: 'Orbitron', sans-serif;
