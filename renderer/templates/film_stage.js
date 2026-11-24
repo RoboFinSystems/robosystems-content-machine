@@ -97,9 +97,9 @@ export function stage({ W, H, canvas }) {
   const floorMat = new THREE.LineBasicMaterial({ color: new THREE.Color('#22D3EE'), transparent: true, opacity: 0.6 })
   const floor = new THREE.LineSegments(new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(fl, 3)), floorMat); scene.add(floor)
 
-  // the knowledge graph in clusters: the picture in robosystems.ai's hero, node for node (the
-  // same seed and the same draws as robosystems-app's graphStageGl.ts; change one and change
-  // the other). Nodes sit in clusters about white hubs, drift a little, and a pulse of light
+  // the knowledge graph in clusters: the picture in the three sites' heroes, node for node (the
+  // same seed and the same draws as graph-stage/graphStageGl.ts in robosystems-core; change one
+  // and change the other). Nodes sit in clusters about white hubs, drift a little, and a pulse of light
   // travels each link between hubs. It keeps a sequence of its own and stays hidden until a
   // page shows it, so it moved nothing in the films made before it.
   const clusters = (() => {
