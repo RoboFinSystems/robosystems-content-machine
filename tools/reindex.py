@@ -33,6 +33,7 @@ import re
 import subprocess
 import time
 
+from classifications import catalog_industries
 from helpers import asset_url, require_env
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -354,6 +355,8 @@ def run(allow_shrink=False):
     and d != "archive"
   )  # archive/ = retired tickers, not a ticker
 
+  industries = catalog_industries()
+  unclassified = []
   items = []
   for t in tickers:
     flat = f"content/{t}/"
@@ -396,6 +399,12 @@ def run(allow_shrink=False):
         }
       )
     item["history"] = history
+    # Written fresh on every rebuild from classifications/, never from meta.json: a
+    # company moved to another industry changes every page on the next reindex.
+    if t in industries:
+      item["industries"] = industries[t]
+    else:
+      unclassified.append(t)
     items.append(item)
 
   index = {
@@ -436,6 +445,11 @@ def run(allow_shrink=False):
       f"  {it['ticker']:6} {it.get('version', '?')}  {len(it['assets'])} assets{extra}"
     )
   print(f"Local copy: {local_copy}")
+  if unclassified:
+    print(
+      f"No industry yet ({len(unclassified)}): {', '.join(unclassified)}\n"
+      "  Add a row to classifications/companies.csv and reindex again."
+    )
   return index
 
 

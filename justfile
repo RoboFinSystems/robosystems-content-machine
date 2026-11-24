@@ -58,6 +58,10 @@ update:
     uv sync
     cd tools/webdeck && npm update --no-audit --no-fund --silent
 
+# Check the industry tables (classifications/), or show a company's industries: just classify MSFT IREN
+classify *keys:
+    uv run python tools/classifications.py {{keys}}
+
 # Lint + format check (ruff.toml pins the robosystems house style)
 lint:
     uv run ruff check .

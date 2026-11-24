@@ -15,8 +15,9 @@ coverage gaps.
 ## Read before starting
 - **`campaign.yml`** - the industry key and the coverage policy.
 - **`../../classifications/README.md`** - the model + the classification method.
-- **`../../classifications/industry-classification.csv`** - the vocabulary. Confirm
-  the exact leaf: `Consumer Goods,Cannabis,` (subsector, no category).
+- **`../../classifications/industries.csv`** - the vocabulary. Confirm
+  the exact node: the `consumer-goods/cannabis` subsector, divided into `us-operators`,
+  `canadian-producers` and `hemp-and-cbd`.
 - **`../../classifications/sic-crosswalk.csv`** - the SIC routing hints. Note there
   is **no cannabis SIC**: MSOs file under `2833` (crosswalks to Health Care > Drug
   Manufacturers - wrong), agricultural `0100`/`0200`, drug retail, or "Services".
