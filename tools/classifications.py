@@ -5,7 +5,7 @@ is this company in".
 Two tables in classifications/:
 
   industries.csv  one row per node: id, parent, level, label, carried. The id is the
-                  slug path (consumer-goods/cannabis/cannabis), so a node's ancestors
+                  slug path (consumer-goods/cannabis/us-operators), so a node's ancestors
                   are its id's prefixes. Depth is open: a micro-industry is a new row
                   under a category.
   companies.csv   one row per company-industry pair: key (the projects/ slug), cik,
@@ -167,8 +167,6 @@ def check():
       continue
     if industries[node]["level"] in ("sector", "subsector"):
       problems.append(f"{key}: attach at a category or deeper, not {node}")
-    if kids[node]:
-      problems.append(f"{key}: {node} has been divided; attach at one of its children")
     if r["primary"] == "yes":
       primaries[key] += 1
     else:
