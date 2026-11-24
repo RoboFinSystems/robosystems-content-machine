@@ -13,33 +13,37 @@ data pipeline.
 
 | File | What it is |
 |---|---|
-| `industries.csv` | The **company** vocabulary, one row per node: `id`, `parent`, `level`, `label`, `carried`. Three guaranteed levels, `Sector > Subsector > Category` (9 sectors, 100 subsectors, 333 categories, 99 micro-industries), and open below that: a micro-industry is a new row under a category. Bespoke, not GICS/NAICS - it carries finance-native buckets (Digital Assets, Defense Technology & Drones, mining producer tiers) and a `Consumer Goods > Cannabis` subsector. The `id` is the slug path (`consumer-goods/cannabis/us-operators`), so a node's ancestors are its id's prefixes. |
+| `industries.csv` | The **company** vocabulary, one row per node: `id`, `parent`, `level`, `label`, `carried`. Three guaranteed levels, `Sector > Subsector > Industry` (11 sectors, 100 subsectors, 333 industries), then an optional fourth, the sub-industry (99 so far), and open below that: a sub-industry is a new row under an industry. Bespoke, not GICS/NAICS - it carries finance-native buckets (Digital Assets, Defense Technology & Drones, mining producer tiers) and a `Consumer Goods > Cannabis` subsector. The `id` is the slug path (`consumer-goods/cannabis/us-operators`), so a node's ancestors are its id's prefixes. |
 | `companies.csv` | The **master list**: one row per company-industry pair - `key` (the `projects/` slug, or the ticker for a filer we have not covered), `cik`, `name`, `industry` (a node id), `primary`, `method`, `confidence`, `review`, `notes`. A company has exactly one `primary` row and any number of secondary rows. It holds every operating company, SPAC and shell in the public SEC filer index. |
 | `funds.csv` | The filers that are **funds, not companies** (spot commodity and crypto trusts, futures pools, ETF series): `key`, `cik`, `name`, `holds`. They are kept out of `companies.csv` and wait for the ETF taxonomy. |
 | `sic-crosswalk.csv` | ~400 SIC codes mapped to a company-taxonomy node, with a `Match Quality` column (`exact` / `parent` / `review` / `approx`) and a `Notes` column. A routing hint, not the answer: `exact` full-leaf matches can be trusted; everything else needs judgment. |
 | `etf-classifications.csv` | The **ETF / fund** vocabulary: a 4-level `Asset Class > Sector > Subsector > Category` taxonomy organized by investment STRUCTURE (Alternatives, Commodities, Crypto, Currencies, Equities, Fixed Income, Multi-Asset), not operating-company industry. A cannabis sector fund is `Equities > Industries > Cannabis`; a leveraged one is `Alternatives > Leveraged & Inverse > Index Leveraged`. |
 | `keys.csv` | The **aggregate-key registry**: ticker-form keys (CANNABIS, CONSUMER) for the sector / industry coverage nodes, each mapped to a taxonomy node + its parent key. The aggregate counterpart to SEC's `company_tickers.json`. |
 
-## Levels, carried categories and growth
+## Levels, carried industries and growth
 
-Every company has a sector, a subsector and a category. Not every subsector has been
-divided into categories yet (32 of the 100 have not), so an undivided subsector carries
-itself over as its one category, marked `carried = yes`: `Consumer Goods > Tobacco
+The levels are **sector > subsector > industry > sub-industry**. The eleven sectors are
+Communications & Media, Consumer Goods, Consumer Services, Energy, Financials, Health
+Care, Industrials, Materials, Real Estate, Technology and Utilities.
+
+Every company has a sector, a subsector and an industry. Not every subsector has been
+divided into industries yet (32 of the 100 have not), so an undivided subsector carries
+itself over as its one industry, marked `carried = yes`: `Consumer Goods > Tobacco
 Products > Tobacco Products`. Nothing downstream has to handle a missing level, and the flag is the list of
 subsectors still waiting to be divided.
 
 - **A carried name shows once.** Display paths drop the carried row: `Consumer Goods >
   Tobacco Products`, never with the name twice.
 - **A split replaces the carried row.** When a subsector is divided, every member moves to
-  a real category and the carried row is deleted. Left beside the new categories it would
+  a real industry and the carried row is deleted. Left beside the new industries it would
   become a catch-all.
 - **Attach a company at the deepest node that fits.** Its ancestors are derived from the
   id, so a group that is too small can fall back up the tree without a second column.
-  Micro-industries are optional: a company that fits none of a category's micros stays
-  at the category.
+  Sub-industries are optional: a company that fits none of an industry's sub-industries
+  stays at the industry.
 - **Thin industries are fine.** Two or three companies that an analyst would compare are
-  a node; they still roll up into the category and subsector above them.
-- **Add industries as they develop.** A new category or micro-industry is one row in
+  a node; they still roll up into the industry and subsector above them.
+- **Add industries as they develop.** A new industry or sub-industry is one row in
   `industries.csv` plus moving the members' rows in `companies.csv`.
 
 `just classify` checks every rule above (and that `sic-crosswalk.csv` and `keys.csv`
@@ -107,7 +111,7 @@ Everything in the coverage graph is a **ticker-form key** that indexes
 
 Sectors and industries are not different *kinds* of thing - each is just a key that
 maps to a taxonomy node, and the **level is derived** from that node: a key resolving to
-a `Sector` only is sector-level; one resolving to a subsector / category is
+a `Sector` only is sector-level; one resolving to a subsector / industry is
 industry-level. So `keys.csv` holds both in one table:
 
 | key | parent | taxonomy node | campaign |
@@ -192,8 +196,8 @@ taxonomy. A key's rung is derived from its `keys.csv` node; `tools/rollup_source
 walks it - a leaf key (CANNABIS) gathers member companies, a sector key (CONSUMER)
 gathers its child industry reports, through the same code path.
 
-Where a subsector has categories (e.g. `Financials > Banks > {US Commercial, Foreign,
+Where a subsector has industries (e.g. `Financials > Banks > {US Commercial, Foreign,
 Savings & Thrifts}`), there is an intermediate rollup between company and subsector, and
-again at each micro-industry. The CANNABIS key sits on the `Consumer Goods > Cannabis`
-subsector, so it rolls up all three of its categories (US Operators, Canadian Producers,
+again at each sub-industry. The CANNABIS key sits on the `Consumer Goods > Cannabis`
+subsector, so it rolls up all three of its industries (US Operators, Canadian Producers,
 Hemp & CBD).

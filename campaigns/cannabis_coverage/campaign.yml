@@ -10,11 +10,11 @@
 key: CANNABIS
 
 # Resolution into the taxonomy (../../classifications/industries.csv).
-# "Cannabis" is a Consumer Goods subsector with no category breakout, so the
-# leaf terminates at the subsector.
+# "Cannabis" is a Consumer Goods subsector; the key sits on the subsector and so
+# covers all of its industries (US Operators, Canadian Producers, Hemp & CBD).
 sector: Consumer Goods
 subsector: Cannabis
-category: null
+industry: null
 
 # How the universe is built from classification.
 coverage:

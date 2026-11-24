@@ -37,13 +37,13 @@ DEFAULT_ROLLUP_WHEN = ["DONE", "READY"]
 
 
 def load_keys():
-  """Registry of aggregate keys: key -> row (parent, sector, subsector, category, campaign, title)."""
+  """Registry of aggregate keys: key -> row (parent, sector, subsector, industry, campaign, title)."""
   with KEYS_CSV.open(encoding="utf-8") as f:
     return {r["key"]: r for r in csv.DictReader(f)}
 
 
 def node_str(row):
-  return " > ".join(p for p in (row["sector"], row["subsector"], row["category"]) if p)
+  return " > ".join(p for p in (row["sector"], row["subsector"], row["industry"]) if p)
 
 
 def extract_cik(text):
