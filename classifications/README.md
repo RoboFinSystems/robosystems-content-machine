@@ -14,7 +14,8 @@ data pipeline.
 | File | What it is |
 |---|---|
 | `industries.csv` | The **company** vocabulary, one row per node: `id`, `parent`, `level`, `label`, `carried`. Three guaranteed levels, `Sector > Subsector > Category` (9 sectors, 100 subsectors, 333 categories, 99 micro-industries), and open below that: a micro-industry is a new row under a category. Bespoke, not GICS/NAICS - it carries finance-native buckets (Digital Assets, Defense Technology & Drones, mining producer tiers) and a `Consumer Goods > Cannabis` subsector. The `id` is the slug path (`consumer-goods/cannabis/us-operators`), so a node's ancestors are its id's prefixes. |
-| `companies.csv` | The **master list**: one row per company-industry pair - `key` (the `projects/` slug), `cik`, `name`, `industry` (a node id), `primary`, `method`, `review`, `notes`. A company has exactly one `primary` row and any number of secondary rows. |
+| `companies.csv` | The **master list**: one row per company-industry pair - `key` (the `projects/` slug, or the ticker for a filer we have not covered), `cik`, `name`, `industry` (a node id), `primary`, `method`, `confidence`, `review`, `notes`. A company has exactly one `primary` row and any number of secondary rows. It holds every operating company, SPAC and shell in the public SEC filer index. |
+| `funds.csv` | The filers that are **funds, not companies** (spot commodity and crypto trusts, futures pools, ETF series): `key`, `cik`, `name`, `holds`. They are kept out of `companies.csv` and wait for the ETF taxonomy. |
 | `sic-crosswalk.csv` | ~400 SIC codes mapped to a company-taxonomy node, with a `Match Quality` column (`exact` / `parent` / `review` / `approx`) and a `Notes` column. A routing hint, not the answer: `exact` full-leaf matches can be trusted; everything else needs judgment. |
 | `etf-classifications.csv` | The **ETF / fund** vocabulary: a 4-level `Asset Class > Sector > Subsector > Category` taxonomy organized by investment STRUCTURE (Alternatives, Commodities, Crypto, Currencies, Equities, Fixed Income, Multi-Asset), not operating-company industry. A cannabis sector fund is `Equities > Industries > Cannabis`; a leveraged one is `Alternatives > Leveraged & Inverse > Index Leveraged`. |
 | `keys.csv` | The **aggregate-key registry**: ticker-form keys (CANNABIS, CONSUMER) for the sector / industry coverage nodes, each mapped to a taxonomy node + its parent key. The aggregate counterpart to SEC's `company_tickers.json`. |
@@ -43,6 +44,24 @@ subsectors still waiting to be divided.
 
 `just classify` checks every rule above (and that `sic-crosswalk.csv` and `keys.csv`
 still name real nodes); `just classify MSFT IREN` shows a company's industries.
+
+## How a row was placed
+
+`method` says what the placement rests on, and `confidence` how far to trust it:
+
+| method | meaning |
+|---|---|
+| `filing` | Placed from the business description in the filer's own latest annual (or quarterly) report. |
+| `recall` | Placed from knowledge of the company, without reading its filing. |
+| `crosswalk` | The SIC baseline only. Nobody has judged it; it may sit at a subsector. |
+
+Every `filing` row was read twice. Where the two readers chose different industries the
+row carries `review = yes`, low confidence, and the other reader's node in `notes`. For a
+`filing` or `recall` row placed by this pass, `notes` opens with what the company does.
+
+To classify a new company: look up its SIC in `sic-crosswalk.csv` for a starting point,
+read the business section of its latest annual report, and attach it at the deepest node
+that fits. SIC is a hint, never the answer.
 
 ## The catalog field
 
