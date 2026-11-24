@@ -9,8 +9,9 @@ Two tables in classifications/:
                   are its id's prefixes. Depth is open: a micro-industry is a new row
                   under a category.
   companies.csv   one row per company-industry pair: key (the projects/ slug), cik,
-                  name, industry, primary. A company has one primary row and any
-                  number of secondary rows.
+                  name, industry, primary, method, confidence. A company has one
+                  primary row and any number of secondary rows. method says how the
+                  row was placed; a crosswalk row is an unjudged SIC baseline.
 
 Every subsector has at least one category. Where nobody has divided a subsector yet, its
 one category is the subsector carried over (carried = yes); splitting it later replaces
@@ -33,6 +34,9 @@ CROSSWALK_CSV = DIR / "sic-crosswalk.csv"
 KEYS_CSV = DIR / "keys.csv"
 
 LEVELS = ["sector", "subsector", "category", "micro"]
+# How a row was placed: the SIC crosswalk alone, recall of the company, or its filing read.
+METHODS = {"crosswalk", "recall", "filing"}
+CONFIDENCE = {"high", "medium", "low"}
 
 
 def _rows(path):
@@ -165,8 +169,16 @@ def check():
     if node not in industries:
       problems.append(f"{key}: industry '{node}' is not a node")
       continue
-    if industries[node]["level"] in ("sector", "subsector"):
+    level = industries[node]["level"]
+    # A crosswalk row is a SIC baseline nobody has judged, so it may sit at a subsector.
+    if level == "sector" or (level == "subsector" and r["method"] != "crosswalk"):
       problems.append(f"{key}: attach at a category or deeper, not {node}")
+    if r["method"] not in METHODS:
+      problems.append(f"{key}: method '{r['method']}' is not one of {sorted(METHODS)}")
+    if r["confidence"] not in CONFIDENCE:
+      problems.append(
+        f"{key}: confidence '{r['confidence']}' is not high, medium or low"
+      )
     if r["primary"] == "yes":
       primaries[key] += 1
     else:
@@ -209,8 +221,10 @@ def main():
     f"({', '.join(f'{levels[lv]} {lv}' for lv in LEVELS if levels[lv])}; "
     f"{carried} categories carried over from their subsector)"
   )
+  methods = Counter(r["method"] for r in companies if r["primary"] == "yes")
   print(
-    f"companies:  {len(by_key)} classified, {len(companies)} memberships, "
+    f"companies:  {len(by_key)} classified, {len(companies)} memberships "
+    f"({', '.join(f'{n} by {m}' for m, n in methods.most_common())}), "
     f"{sum(1 for r in companies if r['review'] == 'yes')} marked for review"
   )
   if problems:
