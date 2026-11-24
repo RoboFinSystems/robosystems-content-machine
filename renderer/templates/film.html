@@ -182,14 +182,16 @@
       //           the mark, what the product is, the offer and where to go
       //
       // A scene's "stage" overrides where it plays: field, plate, flood, grid, graph, horizon
-      // (the graph as a horizon under the type) or orbit (the graph large and turning, off to the right).
+      // (the graph as a horizon under the type), orbit (the graph large and turning, off to the right)
+      // or clusters (the knowledge graph in clusters, as on robosystems.ai, turning behind the words;
+      // no kind plays there unless its scene asks).
       // The stage, the lens and the colours are the film kit's (film_stage.js).
       import { stage, fonts, seg, eo, eio, lerp, show, $ } from './film_stage.js'
 
       const TL = await (await fetch('/film/timeline.json')).json()
       const W = 1920, H = 1080, C = TL.cues, SC = TL.scenes.map((s) => ({ ...TL.data.scenes[s.name], name: s.name, a: s.start, b: s.end }))
       const clamp = (x) => Math.max(0, Math.min(1, x))
-      const { scene, cam, composer, bloom, DARK, BLACK, FLOOD, THREE, dust, nodes, edgeMat, globe, setNodes, floor, floorMat } = stage({ W, H, canvas: $('gl') })
+      const { scene, cam, composer, bloom, DARK, BLACK, FLOOD, THREE, dust, nodes, edgeMat, globe, setNodes, floor, floorMat, clusters } = stage({ W, H, canvas: $('gl') })
       const STAGE = { stat: 'field', ident: 'plate', number: 'flood', rows: 'grid', quote: 'grid', ask: 'graph', title: 'graph', table: 'horizon', columns: 'grid', points: 'horizon', change: 'orbit', capture: 'graph', end: 'graph', line: 'horizon', cards: 'orbit', dual: 'grid', waterfall: 'grid', share: 'horizon', timeline: 'orbit' }
       const FLOOR = { rows: 0.5, quote: 0.35, table: 0.3, columns: 0.3, points: 0.4, change: 0.3, dual: 0.3, waterfall: 0.3 }
       const el = (parent, cls, text) => { const e = document.createElement('div'); e.className = cls; if (text != null) e.textContent = text; parent.appendChild(e); return e }
@@ -398,7 +400,7 @@
         SC.forEach((x) => (x.el.style.opacity = x === s ? 1 : 0))
         scene.background = on === 'plate' ? BLACK : on === 'flood' ? FLOOD : DARK
         scene.fog = on === 'grid' ? new THREE.Fog(DARK, 18, 78) : null
-        dust.visible = on !== 'flood' && on !== 'plate'; floor.visible = on === 'grid'; globe.visible = on === 'field' || on === 'flood' || on === 'graph' || on === 'horizon' || on === 'orbit'
+        dust.visible = on !== 'flood' && on !== 'plate'; floor.visible = on === 'grid'; globe.visible = on === 'field' || on === 'flood' || on === 'graph' || on === 'horizon' || on === 'orbit'; clusters.group.visible = on === 'clusters'
         bloom.strength = on === 'flood' ? 0.36 : 0.6
         dust.material.uniforms.uAlpha.value = 0.55; dust.material.uniforms.uAperture.value = 0.08; nodes.material.uniforms.uAlpha.value = 1
         globe.position.set(0, 0, 0); globe.scale.setScalar(1); globe.rotation.set(0.28, t * 0.2, 0.12)
@@ -430,6 +432,11 @@
           setNodes(1); edgeMat.opacity = 0.16; nodes.material.uniforms.uAlpha.value = 0.34; globe.scale.setScalar(2.7); globe.position.set(9.5, -1.5, -6)
           globe.rotation.set(0.3, t * 0.12, 0.1); cam.position.set(lerp(-0.6, 0.6, eio(k)), 0, 15); cam.lookAt(0, 0, 0)
           dust.material.uniforms.uFocus.value = 15; nodes.material.uniforms.uFocus.value = 20; nodes.material.uniforms.uAperture.value = 0.06
+        }
+        if (on === 'clusters') { // the knowledge graph in clusters, large and turning behind the words
+          clusters.set(t); clusters.group.scale.setScalar(2.3); clusters.group.rotation.set(0.22, t * 0.07, 0)
+          cam.position.set(0, 0, lerp(14, 15.5, eio(k))); cam.lookAt(0, 0, 0); dust.material.uniforms.uFocus.value = 14
+          clusters.look({ alpha: 0.42, links: 0.2, focus: cam.position.z - 3, aperture: 0.07 })
         }
         s.draw(t, u, d, k)
         composer.render()

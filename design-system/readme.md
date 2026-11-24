@@ -37,6 +37,10 @@ the look is fixed here so every film, short cut, research film and demo wrapper 
 - **Structure is cyan.** Nodes are near-white (`--film-node`), links and labels cyan-300
   (#67e8f9), dust and the key light cyan-400 (#22d3ee). The rim light is indigo (#6366f1), the
   fill blue (#2563eb).
+- **The clusters.** The second graph, beside the sphere: nodes in clusters about white hubs, in
+  cyan, blue and indigo, the hubs linked and a pulse of light on each link. It is the picture in
+  robosystems.ai's hero, node for node, and it is decoration: the clusters stand for nothing, so
+  it carries no labels. The sphere stays the brand film's own object.
 - **The field.** A blue to indigo gradient is held back for the turn of a film and for the
   line that states what the product is. It is the only time the frame leaves black.
 - **Alarm red** (`--film-alarm` #f87171) belongs to the problem act and nowhere else.

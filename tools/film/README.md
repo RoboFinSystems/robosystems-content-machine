@@ -18,7 +18,7 @@ Two lanes build on it today.
 | Timing | `timing.py` | One voice take per act, word timings, the music fitted so its hit lands on the turn, and `timeline.json` |
 | Assembly | `assemble.py` | Screens each plate under its window of the type layer, cuts a plate back around the type where asked, mixes voice over ducked music at -14 LUFS |
 | The graph ident | `blender/graph_ident.py` | The sphere of facts. The brand film's hero and the filing ident research opens on (`just film-ident`) are both cut from it |
-| The stage | `renderer/templates/film_stage.js`, `film_stage.css` | The renderer, lens, bloom, dust, graph, floor, backgrounds, fonts and the easing a page's scenes use |
+| The stage | `renderer/templates/film_stage.js`, `film_stage.css` | The renderer, lens, bloom, dust, graph, floor, backgrounds, fonts and the easing a page's scenes use. It also holds the clusters: the knowledge graph as robosystems.ai's hero draws it, hidden until a page shows it. On the kit's page a scene asks for it with `"stage": "clusters"` |
 | The page | `renderer/templates/film.html` | The type layer of any film whose scenes are data: a spec lists its scenes and each names a kind (figures: `stat`, `number`, `rows`, `cards`; charts: `columns` (with an earlier period beside each), `line`, `waterfall`, `share`, `table`; words: `title`, `points`, `dual`, `quote`, `change`, `timeline`; the rest: `ident`, `capture`, `ask`, `end`). What each kind takes is listed at the top of the page |
 | The guard | `check.py` | `just film-check`: recomputes the brand films' timelines and compares them with the tracked copies |
 
