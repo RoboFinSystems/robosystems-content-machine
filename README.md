@@ -2,14 +2,12 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Automated equity-research content pipeline. Turns a company's SEC filings into a narrated
-**16:9 video**, a written **brief** that publishes as-is, and an **audio edition** of that
-brief - one analysis, every surface.
+**The equity-research content pipeline built on [RoboSystems](https://github.com/RoboFinSystems/robosystems), the open-source knowledge graph for finance.** It turns a company's SEC filings into a narrated **16:9 video**, a written **brief** that publishes as-is, and an **audio edition** of that brief: one analysis, every surface.
 
-- **Campaign-Driven** - reusable campaign templates define the editorial angle, analytical framework, and output specs; apply them to any ticker.
-- **Authored in Claude Code** - one session reads the filings over MCP ([RoboSystems](https://robosystems.ai) for the corpus, [xbrlkit](https://github.com/RoboFinSystems/xbrlkit) to confirm a figure against the filing itself) and writes the brief, the video script, and the social copy. No hand-off to another app.
-- **Rendered locally** - the deck is HTML built from the script, shot frame-by-frame in headless Chrome, and muxed with ffmpeg. No cloud render service, no per-render cost.
-- **No hand-authored slides** - you write numbers into `script.json`; the renderer draws every slide.
+- **Campaign-driven**: reusable campaign templates set the editorial angle, the analytical framework and the output specs; apply them to any ticker
+- **Authored in Claude Code**: one session reads the filings over MCP ([RoboSystems](https://robosystems.ai) for the corpus, [xbrlkit](https://github.com/RoboFinSystems/xbrlkit) to confirm a figure against the filing itself) and writes the brief, the video script and the social copy, with no hand-off to another app
+- **Rendered locally**: the deck is HTML built from the script, shot frame by frame in headless Chrome and muxed with ffmpeg, with no cloud render service and no per-render cost
+- **No hand-authored slides**: you write numbers into `script.json`; the renderer draws every slide
 
 > 🎙️ **Voiceover & music run on [ElevenLabs](https://try.elevenlabs.io/v9z3wzm97gk3).** Setting this up? Signing up through our **referral link** costs you nothing extra and directly supports the project. <sub>Affiliate link.</sub>
 
@@ -338,19 +336,16 @@ just reindex           # rebuild content/index.json (CDN urls)
 just infra-outputs     # show bucket / CDN url / distribution id
 ```
 
-## Resources
+## Documentation
 
-- [RoboSystems Platform](https://robosystems.ai)
-- [GitHub Repository](https://github.com/RoboFinSystems/robosystems)
-- [Python Client](https://github.com/RoboFinSystems/robosystems-python-client)
-- [xbrlkit](https://github.com/RoboFinSystems/xbrlkit) - work with XBRL filings above Arelle ([viewer](https://xbrlkit.com))
+- **Product guides**: [robosystems.ai/docs/guides](https://robosystems.ai/docs/guides). For this pipeline: [SEC filings](https://robosystems.ai/docs/guides/sec-filings) · [Connect an MCP client](https://robosystems.ai/docs/guides/connect-an-mcp-client)
+- **Technical docs**: [robosystems.ai/docs/technical](https://robosystems.ai/docs/technical). For this pipeline: [SEC Data Model & Query Rules](https://robosystems.ai/docs/technical/sec-data-model-and-query-rules) · [AI Operators & MCP](https://robosystems.ai/docs/technical/ai-operators-and-mcp)
+- **Published output**: [robosystems.ai/research](https://robosystems.ai/research)
+- **Related**: [RoboSystems](https://github.com/RoboFinSystems/robosystems) · [xbrlkit](https://github.com/RoboFinSystems/xbrlkit) ([viewer](https://xbrlkit.com)) · [Python client](https://github.com/RoboFinSystems/robosystems-python-client)
 
 ## Support
 
-- [Issues](https://github.com/RoboFinSystems/robosystems-content-machine/issues)
-- [Documentation](https://robosystems.ai/docs/technical)
-- [Projects](https://github.com/orgs/RoboFinSystems/projects)
-- [Discussions](https://github.com/orgs/RoboFinSystems/discussions)
+- [Issues](https://github.com/RoboFinSystems/robosystems-content-machine/issues) · [Discussions](https://github.com/orgs/RoboFinSystems/discussions) · [Projects](https://github.com/orgs/RoboFinSystems/projects)
 
 ## Acknowledgements
 
